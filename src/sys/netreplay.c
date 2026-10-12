@@ -1,3 +1,10 @@
+#ifdef __SWITCH__
+/* Must precede every include: newlib's sys/_types.h defines __need_wint_t
+ * and expects a later <stddef.h> to typedef wint_t, but common.h pulls
+ * stddef.h first (guard already set) so that include no-ops. aarch64
+ * __WINT_TYPE__ == unsigned int. */
+typedef __WINT_TYPE__ wint_t;
+#endif
 #include <sys/netreplay.h>
 #include <sys/netsync.h>
 
