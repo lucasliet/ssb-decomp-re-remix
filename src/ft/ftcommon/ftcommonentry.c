@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <gr/ground.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#endif
 #ifdef PORT
 #include "fighter_registry.h"
 #endif
@@ -97,7 +100,11 @@ void ftCommonAppearUpdateEffects(GObj *fighter_gobj)
 
     if (fp->motion_vars.flags.flag1 != 0)
     {
-        if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindPurin) || (fp->fkind == nFTKindNPikachu) || (fp->fkind == nFTKindNPurin))
+        if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindPurin) || (fp->fkind == nFTKindNPikachu) || (fp->fkind == nFTKindNPurin)
+#ifdef REGION_REMIX
+            || (fp->fkind == REMIX_ID_EPIKA) || (fp->fkind == REMIX_ID_JPIKA) || (fp->fkind == REMIX_ID_JPUFF) || (fp->fkind == REMIX_ID_EPUFF) /* pokemon_spawn_fix */
+#endif
+        )
         {
             efManagerMBallRaysMakeEffect(&fp->entry_pos);
         }

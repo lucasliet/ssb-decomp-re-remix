@@ -7,6 +7,9 @@
 #include "enhancements/enhancements.h"
 #include "sc/scmanager.h"
 #include "sc/sctypes.h"
+#ifdef PORT
+#include "port_input_script.h"
+#endif
 
 // 0x800450F0
 OSMesgQueue sSYControllerInitMesgQueue; // Queue for OS controller Init, Status, and Read
@@ -120,6 +123,13 @@ void syControllerReadDeviceData(void)
     osContStartReadData(&sSYControllerInitMesgQueue);
     osRecvMesg(&sSYControllerInitMesgQueue, NULL, OS_MESG_BLOCK);
     osContGetReadData(sSYControllerData);
+
+#ifdef PORT
+    for (i = 0; i != MAXCONTROLLERS; i++)
+    {
+        port_input_script_override(i, &sSYControllerData[i].button, &sSYControllerData[i].stick_x, &sSYControllerData[i].stick_y);
+    }
+#endif
 
     for (i = 0; i != MAXCONTROLLERS; i++)
     {

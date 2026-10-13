@@ -1,4 +1,7 @@
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <ft/fighter.h>
 #include <reloc_data.h>
 #ifdef PORT
@@ -214,8 +217,17 @@ sb32 wpSamusBombProcReflector(GObj *weapon_gobj)
 // 0x80169328
 GObj* wpSamusBombMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
 {
+#ifdef REGION_REMIX
+    WPDesc weapon_desc = dWPSamusBombWeaponDesc;
+    GObj *weapon_gobj;
+    WPStruct *wp;
+
+    weapon_desc.p_weapon = ftRemixSamusSharedBombFile(ftGetStruct(fighter_gobj), weapon_desc.p_weapon);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &weapon_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPSamusBombWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
     WPStruct *wp;
+#endif
 
     if (weapon_gobj == NULL)
     {

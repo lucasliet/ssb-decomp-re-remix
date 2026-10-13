@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#endif
 #include <if/interface.h>
 #include <sc/scene.h>
 #include <sys/malloc.h>
@@ -784,7 +787,11 @@ void ftDisplayMainDrawDefault(DObj *dobj)
             case 0:
                 sp58 = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-                if ((parts != NULL) && (parts->gobj != NULL) && (fp->fkind == nFTKindPurin))
+                if ((parts != NULL) && (parts->gobj != NULL) && ((fp->fkind == nFTKindPurin)
+#ifdef REGION_REMIX
+                    || (fp->fkind == REMIX_ID_JPUFF) || (fp->fkind == REMIX_ID_EPUFF) /* pokemon_hat_fix_2 */
+#endif
+                ))
                 {
                     ftDisplayMainDrawAccessory(fp, dobj, parts);
                 }
@@ -824,12 +831,20 @@ void ftDisplayMainDrawDefault(DObj *dobj)
         {
             sp58 = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-            if ((parts != NULL) && (parts->gobj != NULL) && (fp->fkind == nFTKindPurin))
+            if ((parts != NULL) && (parts->gobj != NULL) && ((fp->fkind == nFTKindPurin)
+#ifdef REGION_REMIX
+                || (fp->fkind == REMIX_ID_JPUFF) || (fp->fkind == REMIX_ID_EPUFF) /* pokemon_hat_fix_2 */
+#endif
+            ))
             {
                 ftDisplayMainDrawAccessory(fp, dobj, parts);
             }
         }
-        if ((parts != NULL) && (parts->gobj != NULL) && (fp->fkind == nFTKindPikachu))
+        if ((parts != NULL) && (parts->gobj != NULL) && ((fp->fkind == nFTKindPikachu)
+#ifdef REGION_REMIX
+            || (fp->fkind == REMIX_ID_EPIKA) || (fp->fkind == REMIX_ID_JPIKA) /* pokemon_hat_fix_1 */
+#endif
+        ))
         {
             ftDisplayMainDrawAccessory(fp, dobj, parts);
         }

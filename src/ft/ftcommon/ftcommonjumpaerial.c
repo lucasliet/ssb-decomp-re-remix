@@ -1,4 +1,8 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 #ifdef PORT
 #include <enhancements/enhancements.h>
@@ -108,6 +112,11 @@ void ftCommonJumpAerialProcPhysics(GObj *fighter_gobj)
     {
     case nFTKindKirby:
     case nFTKindNKirby:
+#ifdef REGION_REMIX
+    case REMIX_ID_JKIRBY: /* jump_fix_4 */
+    case REMIX_ID_DEDEDE:
+    case REMIX_ID_NDEDEDE:
+#endif
         if (ftPhysicsCheckClampAirVelXDecMax(fp, attr) == FALSE)
         {
             ftPhysicsClampAirVelXStickRange(fp, FTPHYSICS_AIRDRIFT_CLAMP_RANGE_MIN, attr->air_accel * FTKIRBY_JUMPAERIAL_VEL_MUL, attr->air_speed_max_x * FTKIRBY_JUMPAERIAL_VEL_MUL);
@@ -116,6 +125,10 @@ void ftCommonJumpAerialProcPhysics(GObj *fighter_gobj)
 
     case nFTKindPurin:
     case nFTKindNPurin:
+#ifdef REGION_REMIX
+    case REMIX_ID_JPUFF:
+    case REMIX_ID_EPUFF:
+#endif
         if (ftPhysicsCheckClampAirVelXDecMax(fp, attr) == FALSE)
         {
             ftPhysicsClampAirVelXStickRange(fp, FTPHYSICS_AIRDRIFT_CLAMP_RANGE_MIN, attr->air_accel * FTPURIN_JUMPAERIAL_VEL_MUL, attr->air_speed_max_x * FTPURIN_JUMPAERIAL_VEL_MUL);
@@ -195,11 +208,20 @@ void ftCommonJumpAerialMultiSetStatus(GObj *fighter_gobj, s32 input_source)
     {
     case nFTKindKirby:
     case nFTKindNKirby:
+#ifdef REGION_REMIX
+    case REMIX_ID_JKIRBY: /* jump_fix_1 */
+    case REMIX_ID_DEDEDE:
+    case REMIX_ID_NDEDEDE:
+#endif
         status_id = fp->jumps_used + nFTKirbyStatusJumpAerialF1 - 1;
         break;
 
     case nFTKindPurin:
     case nFTKindNPurin:
+#ifdef REGION_REMIX
+    case REMIX_ID_JPUFF:
+    case REMIX_ID_EPUFF:
+#endif
         status_id = fp->jumps_used + nFTPurinStatusJumpAerialF1 - 1;
         break;
     }
@@ -229,12 +251,27 @@ void ftCommonJumpAerialMultiSetStatus(GObj *fighter_gobj, s32 input_source)
     {
     case nFTKindKirby:
     case nFTKindNKirby:
+#ifdef REGION_REMIX
+    case REMIX_ID_JKIRBY: /* jump_fix_2 */
+#endif
         fp->physics.vel_air.y = dFTKirbyJumpAerialFVelocities[fp->jumps_used - 2] * (stick_range_y / F_CONTROLLER_RANGE_MAX);
 
         break;
 
+#ifdef REGION_REMIX
+    case REMIX_ID_DEDEDE:
+    case REMIX_ID_NDEDEDE:
+        fp->physics.vel_air.y = ftRemixDededeJumpAerialMultiplier(fp->jumps_used) * (stick_range_y / F_CONTROLLER_RANGE_MAX);
+
+        break;
+#endif
+
     case nFTKindPurin:
     case nFTKindNPurin:
+#ifdef REGION_REMIX
+    case REMIX_ID_JPUFF:
+    case REMIX_ID_EPUFF:
+#endif
         fp->physics.vel_air.y = dFTPurinJumpAerialFVelocities[fp->jumps_used - 2] * (stick_range_y / F_CONTROLLER_RANGE_MAX);
 
         break;
@@ -294,7 +331,12 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
     {
         return FALSE;
     }
-    else if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby) || (fp->fkind == nFTKindPurin) || (fp->fkind == nFTKindNPurin))
+    else if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby) || (fp->fkind == nFTKindPurin) || (fp->fkind == nFTKindNPurin)
+#ifdef REGION_REMIX
+        || (fp->fkind == REMIX_ID_JKIRBY) || (fp->fkind == REMIX_ID_DEDEDE) || (fp->fkind == REMIX_ID_NDEDEDE) /* jump_fix_3 */
+        || (fp->fkind == REMIX_ID_JPUFF) || (fp->fkind == REMIX_ID_EPUFF)
+#endif
+    )
     {
         if (fp->jumps_used < fp->attr->jumps_max)
         {
@@ -313,6 +355,11 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
             {
             case nFTKindKirby:
             case nFTKindNKirby:
+#ifdef REGION_REMIX
+            case REMIX_ID_JKIRBY: /* jump_fix_5 */
+            case REMIX_ID_DEDEDE:
+            case REMIX_ID_NDEDEDE:
+#endif
                 if ((fp->status_id < nFTKirbyStatusJumpAerialF1) || (fp->status_id > nFTKirbyStatusJumpAerialF5) || (fp->motion_vars.flags.flag1 != 0))
                 {
                     input_source = ftCommonJumpAerialMultiGetJumpInputType(fp);
@@ -328,6 +375,10 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
 
             case nFTKindPurin:
             case nFTKindNPurin:
+#ifdef REGION_REMIX
+            case REMIX_ID_JPUFF:
+            case REMIX_ID_EPUFF:
+#endif
                 if ((fp->status_id < nFTPurinStatusJumpAerialF1) || (fp->status_id > nFTPurinStatusJumpAerialF5) || (fp->motion_vars.flags.flag1 != 0))
                 {
                     input_source = ftCommonJumpAerialMultiGetJumpInputType(fp);

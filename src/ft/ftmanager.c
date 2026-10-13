@@ -3,8 +3,12 @@
 #include <sys/develop.h>
 #include <lb/library.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#endif
 #ifdef PORT
 #include <string.h>
+#include <stdlib.h>
 #include <sys/debug.h>
 extern void port_log(const char *fmt, ...);
 #endif
@@ -64,6 +68,106 @@ size_t gFTManagerFigatreeHeapSize;
  * original cap tripped "Force Status Buffer is full !!" on rapid status
  * transitions (Crash transitioning between Walk/Run/Jump/etc.). */
 LBFileNode sFTManagerForceStatusBuffer[64];
+
+#ifdef PORT
+/* File sizes indexed by fkind for synth fighters (>= nFTKindEnumCount), which
+ * gSCManagerFighterFileSizes cannot hold. Without them a synth's figatree heap
+ * is 0 bytes and its first anim load overwrites its own DObjs. */
+static FTFileSize *sFTManagerPortFileSizes;
+static s32 sFTManagerPortFileSizesNum;
+
+/* Largest anim file among `count` motions, skipping shieldpose motions. */
+static size_t ftManagerPortGetLargestAnimSize(FTMotionDesc *motion_descs, s32 count, size_t largest_size)
+{
+    s32 j;
+
+    for (j = 0; j < count; j++)
+    {
+        FTMotionDesc *motion_desc = &motion_descs[j];
+        size_t current_size;
+
+        if ((motion_desc->anim_file_id == 0) || (motion_desc->anim_desc.flags.is_use_shieldpose))
+        {
+            continue;
+        }
+        current_size = lbRelocGetFileSize(motion_desc->anim_file_id);
+
+        if (largest_size < current_size)
+        {
+            largest_size = current_size;
+        }
+    }
+    return largest_size;
+}
+
+/* Mirrors ftManagerSetupFileSize for every registered synth fkind. */
+static void ftManagerPortSetupSynthFileSizes(void)
+{
+    s32 fkind;
+
+    free(sFTManagerPortFileSizes);
+    sFTManagerPortFileSizesNum = port_fighter_kind_limit();
+    sFTManagerPortFileSizes = malloc((size_t)sFTManagerPortFileSizesNum * sizeof(FTFileSize));
+
+    if (sFTManagerPortFileSizes == NULL)
+    {
+        port_log("SSB64: ftManagerPortSetupSynthFileSizes - malloc failed for %d fkinds\n", sFTManagerPortFileSizesNum);
+        sFTManagerPortFileSizesNum = 0;
+        return;
+    }
+    bzero(sFTManagerPortFileSizes, (size_t)sFTManagerPortFileSizesNum * sizeof(FTFileSize));
+    for (fkind = nFTKindEnumCount; fkind < sFTManagerPortFileSizesNum; fkind++)
+    {
+        FTData *data = port_fighter_data(fkind);
+        FTFileSize *file_size = &sFTManagerPortFileSizes[fkind];
+
+        if (data == NULL)
+        {
+            continue;
+        }
+        file_size->main = lbRelocGetFileSize(data->file_main_id);
+        file_size->mainmotion_largest_anim = ftManagerPortGetLargestAnimSize(data->mainmotion->motion_desc, data->mainmotion_array_count, 0);
+        file_size->submotion_largest_anim = ftManagerPortGetLargestAnimSize(data->submotion->motion_desc, *data->submotion_array_count, file_size->mainmotion_largest_anim);
+    }
+}
+
+/* Mirrors the ftManagerAllocFighter size loop for synth fkinds. Returns the
+ * figatree heap size grown to cover them. */
+static size_t ftManagerPortAllocSynthFileSizes(u32 data_flags, size_t heap_size)
+{
+    s32 fkind;
+
+    for (fkind = nFTKindEnumCount; fkind < sFTManagerPortFileSizesNum; fkind++)
+    {
+        FTData *data = port_fighter_data(fkind);
+        FTFileSize *file_size = &sFTManagerPortFileSizes[fkind];
+        size_t largest_size = 0;
+
+        if (data == NULL)
+        {
+            continue;
+        }
+        *data->p_file_main = NULL;
+        data->file_main_size = file_size->main;
+
+        if (data_flags & FTDATA_FLAG_MAINMOTION)
+        {
+            largest_size = file_size->mainmotion_largest_anim;
+        }
+        if ((data_flags & FTDATA_FLAG_SUBMOTION) && (largest_size < file_size->submotion_largest_anim))
+        {
+            largest_size = file_size->submotion_largest_anim;
+        }
+        data->file_anim_size = largest_size;
+
+        if (heap_size < largest_size)
+        {
+            heap_size = largest_size;
+        }
+    }
+    return heap_size;
+}
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -144,6 +248,9 @@ void ftManagerSetupFileSize(void)
         }
         file_size->submotion_largest_anim = largest_size;
     }
+#ifdef PORT
+    ftManagerPortSetupSynthFileSizes();
+#endif
 }
 
 // 0x800D7194
@@ -220,6 +327,9 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
             heap_size = data->file_anim_size;
         }
     }
+#ifdef PORT
+    heap_size = ftManagerPortAllocSynthFileSizes(data_flags, heap_size);
+#endif
     gFTManagerFigatreeHeapSize = heap_size;
 
     if (data_flags & FTDATA_FLAG_SUBMOTION)
@@ -387,6 +497,14 @@ void ftManagerSetupFilesAllKind(s32 fkind)
         ftManagerSetupFilesMainKind(fkind);
         ftManagerSetupFilesKind(fkind);
     }
+#ifdef PORT
+    /* Specials a synth fighter inherits run the parent's routines, which read
+     * the parent's own file globals (e.g. gFTDataFoxMain for the blaster). */
+    if ((fkind >= nFTKindEnumCount) && (port_fighter_parent_fkind(fkind) != fkind))
+    {
+        ftManagerSetupFilesAllKind(port_fighter_parent_fkind(fkind));
+    }
+#endif
 }
 
 // 0x800D78B4
@@ -464,11 +582,19 @@ void ftManagerDestroyFighterWeapons(GObj *fighter_gobj)
     {
     case nFTKindKirby:
     case nFTKindNKirby:
+#ifdef REGION_REMIX
+    case REMIX_ID_JKIRBY: /* kirby_blast_fix_1 */
+#endif
         ftKirbyCopyLinkSpecialNDestroyBoomerang(fighter_gobj);
         break;
 
     case nFTKindLink:
     case nFTKindNLink:
+#ifdef REGION_REMIX
+    case REMIX_ID_YLINK: /* kirby_blast_fix_1 */
+    case REMIX_ID_ELINK:
+    case REMIX_ID_JLINK:
+#endif
         ftLinkSpecialNDestroyBoomerang(fighter_gobj);
         break;
     }
@@ -672,6 +798,9 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
 
     case nFTKindKirby:
     case nFTKindNKirby:
+#ifdef REGION_REMIX
+    case REMIX_ID_JKIRBY: /* kirby_load_with_hat_fix_ */
+#endif
         fp->passive_vars.kirby.copy_id = desc->copy_kind;
 
         fp->passive_vars.kirby.copysamus_charge_level = 0;

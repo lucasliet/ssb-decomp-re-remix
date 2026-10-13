@@ -1,4 +1,8 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -55,7 +59,11 @@ void ftCommonThrowProcUpdate(GObj *fighter_gobj)
     }
     if (fighter_gobj->anim_frame <= 0.0F)
     {
-        if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey))
+        if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey)
+#ifdef REGION_REMIX
+            || ftRemixDKSharedIsCargoClone(fp->fkind)
+#endif
+        )
         {
             if (fp->status_id == nFTCommonStatusThrowF)
             {
@@ -92,9 +100,17 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
                    ? (s32)nFTKindMario : (s32)catch_fp->fkind;
 #endif
 
+#ifdef REGION_REMIX
+    /* REMIX-TODO(PokemonAnnouncer): kirby_fthrow_1_fix also plays the seismic toss announcement for JKIRBY, BOWSER and
+     * GBOWSER and sets action 0xE5 for the Bowser ids; neither is ported, so those forward throws stay vanilla. */
+#endif
     if ((is_throwf != FALSE) || ((this_fp->input.pl.stick_range.x * this_fp->lr) >= 0))
     {
-        if ((this_fp->fkind == nFTKindKirby) || (this_fp->fkind == nFTKindNKirby))
+        if ((this_fp->fkind == nFTKindKirby) || (this_fp->fkind == nFTKindNKirby)
+#ifdef REGION_REMIX
+            || (this_fp->fkind == REMIX_ID_JKIRBY) /* kirby_fthrow_1_fix */
+#endif
+        )
         {
             status_id = nFTKirbyStatusThrowF;
 
@@ -123,7 +139,11 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
     this_fp->motion_vars.flags.flag2 = 0;
     this_fp->motion_vars.flags.flag1 = 0;
 
+#ifdef REGION_REMIX
+    if (ftRemixSamusSharedHasGrappleBeam(this_fp->fkind))
+#else
     if ((this_fp->fkind == nFTKindSamus) || (this_fp->fkind == nFTKindNSamus))
+#endif
     {
         if (efManagerSamusGrappleBeamGlowMakeEffect(fighter_gobj) != NULL)
         {
@@ -136,7 +156,11 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
     }
     else ftCommonThrownSetStatusImmediate(catch_gobj, thrown_status->status2);
 
-    if ((this_fp->fkind == nFTKindKirby) || (this_fp->fkind == nFTKindNKirby))
+    if ((this_fp->fkind == nFTKindKirby) || (this_fp->fkind == nFTKindNKirby)
+#ifdef REGION_REMIX
+        || (this_fp->fkind == REMIX_ID_JKIRBY) /* kirby_fthrow_2_fix */
+#endif
+    )
     {
         if (status_id == nFTKirbyStatusThrowF)
         {

@@ -1,5 +1,8 @@
 #include <string.h>
 #include <it/item.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremix.h"
+#endif
 #include <ft/fighter.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
@@ -442,6 +445,19 @@ void itMainSetFighterDrop(GObj *item_gobj, Vec3f *vel, f32 throw_mul)
     GObj *owner_gobj = ip->owner_gobj;
     FTStruct *fp = ftGetStruct(owner_gobj);
 
+#ifdef REGION_REMIX
+    /* Item.asm extend_item_drop_check_ (0x80172B14) */
+    if (itRemixIsCustomKind(ip->kind))
+    {
+        const ITRemixItemDesc *desc = itRemixGetItemDesc(ip->kind);
+
+        if ((desc != NULL) && (desc->proc_dropped != NULL))
+        {
+            desc->proc_dropped(item_gobj);
+        }
+    }
+    else
+#endif
     if (dITMainProcDroppedList[ip->kind] != NULL)
     {
         dITMainProcDroppedList[ip->kind](item_gobj);
@@ -467,6 +483,19 @@ void itMainSetFighterThrow(GObj *item_gobj, Vec3f *vel, f32 throw_mul, sb32 is_s
     }
     else ftParamMakeRumble(fp, (is_smash_throw != FALSE) ? 9 : 6, 0);
 
+#ifdef REGION_REMIX
+    /* Item.asm extend_item_throw_table (0x80172C08) */
+    if (itRemixIsCustomKind(ip->kind))
+    {
+        const ITRemixItemDesc *desc = itRemixGetItemDesc(ip->kind);
+
+        if ((desc != NULL) && (desc->proc_thrown != NULL))
+        {
+            desc->proc_thrown(item_gobj);
+        }
+    }
+    else
+#endif
     if (dITMainProcThrownList[ip->kind] != NULL)
     {
         dITMainProcThrownList[ip->kind](item_gobj);
@@ -537,6 +566,19 @@ void itMainSetFighterHold(GObj *item_gobj, GObj *fighter_gobj)
     efManagerItemGetSwirlProcUpdate(&pos);
     gcSetDObjTransformsForGObj(item_gobj, PORT_RESOLVE(ip->attr->data));
 
+#ifdef REGION_REMIX
+    /* Item.asm extend_item_pre_pickup_table_ (0x80172DD4) */
+    if (itRemixIsCustomKind(ip->kind))
+    {
+        const ITRemixItemDesc *desc = itRemixGetItemDesc(ip->kind);
+
+        if ((desc != NULL) && (desc->proc_hold != NULL))
+        {
+            desc->proc_hold(item_gobj);
+        }
+    }
+    else
+#endif
     if (dITMainProcHoldList[ip->kind] != NULL)
     {
         dITMainProcHoldList[ip->kind](item_gobj);

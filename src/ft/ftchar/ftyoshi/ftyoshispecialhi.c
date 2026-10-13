@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -135,6 +138,9 @@ void ftYoshiSpecialHiSwitchStatusAir(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixBowserUSPLedgeGrabPatch(fp);
+#endif
     mpCommonSetFighterAir(fp);
     ftMainSetStatus(fighter_gobj, nFTYoshiStatusSpecialAirHi, fighter_gobj->anim_frame, 1.0F, FTSTATUS_PRESERVE_EFFECT);
 

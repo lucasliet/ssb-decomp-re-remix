@@ -1,6 +1,9 @@
 #include <it/item.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 #ifdef PORT
 #include <config.h>
@@ -635,6 +638,9 @@ GObj *itLinkBombMakeItem(GObj *fighter_gobj, Vec3f *pos, Vec3f *vel)
 
 		ip->physics.vel_air.x = ip->physics.vel_air.y = ip->physics.vel_air.z = 0.0F;
 
+#ifdef REGION_REMIX
+		ftRemixYoungLinkBombSetOwner(item_gobj, ftGetStruct(fighter_gobj));
+#endif
 		itMainSetFighterHold(item_gobj, fighter_gobj);
 	}
 	return item_gobj;

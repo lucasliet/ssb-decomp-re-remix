@@ -1,4 +1,7 @@
 #include <it/item.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <sc/scene.h>
@@ -697,7 +700,11 @@ void itProcessSearchHitFighter(GObj *item_gobj) // Check fighters for hit detect
 
             if ((gSCManagerBattleState->is_team_battle == TRUE) && (gSCManagerBattleState->is_team_attack == FALSE) && (((fp->throw_gobj != NULL) ? fp->throw_team : fp->team) == ip->team) && !(ip->is_damage_all)) goto next_gobj;
             
+#ifdef REGION_REMIX
+            if ((fp->is_catchstatus) && (ftRemixGoemonDSPIgnoresCatchStatus(fp) == FALSE)) goto next_gobj;
+#else
             if (fp->is_catchstatus) goto next_gobj;
+#endif
             
             k = 0;
 

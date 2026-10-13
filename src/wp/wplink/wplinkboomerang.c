@@ -1,6 +1,10 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -287,7 +291,11 @@ void wpLinkBoomerangClearGObjs(WPStruct *wp)
     {
         FTStruct *fp = ftGetStruct(wp->weapon_vars.boomerang.parent_gobj);
 
-        if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby))
+        if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby)
+#ifdef REGION_REMIX
+            || (fp->fkind == REMIX_ID_JKIRBY) /* kirby_boomerangfix_2 */
+#endif
+        )
         {
             fp->passive_vars.kirby.copylink_boomerang_gobj = NULL;
         }
@@ -298,7 +306,7 @@ void wpLinkBoomerangClearGObjs(WPStruct *wp)
 }
 
 // 0x8016D35C
-void wpLinkBoomerangCheckOwnerCatch(GObj *weapon_gobj, f32 distance)
+sb32 wpLinkBoomerangCheckOwnerCatch(GObj *weapon_gobj, f32 distance)
 {
     WPStruct *wp = wpGetStruct(weapon_gobj);
 
@@ -310,7 +318,11 @@ void wpLinkBoomerangCheckOwnerCatch(GObj *weapon_gobj, f32 distance)
 
             if (fp->is_special_interrupt)
             {
-                if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby))
+                if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby)
+#ifdef REGION_REMIX
+                    || (fp->fkind == REMIX_ID_JKIRBY) /* kirby_boomerangfix_1 */
+#endif
+                )
                 {
                     ftKirbyCopyLinkSpecialNGetSetStatus(wp->weapon_vars.boomerang.parent_gobj);
                 }
@@ -318,8 +330,15 @@ void wpLinkBoomerangCheckOwnerCatch(GObj *weapon_gobj, f32 distance)
             }
         }
         wpLinkBoomerangClearGObjs(wp);
+#ifdef REGION_REMIX
+        /* Remix patch 0xE7E34: a caught boomerang that is also out of the blast zone was destroyed twice (crash).
+         * The caller destroys it through its return value instead. */
+        return TRUE;
+#else
         wpMainDestroyWeapon(weapon_gobj);
+#endif
     }
+    return FALSE;
 }
 
 // 0x8016D40C
@@ -375,7 +394,11 @@ sb32 wpLinkBoomerangProcUpdate(GObj *weapon_gobj)
     {
         wpLinkBoomerangUpdateVelLR(wp, wpLinkBoomerangAddVelSqrt(wp, 1.0F));
 
+#ifdef REGION_REMIX
+        return wpLinkBoomerangCheckOwnerCatch(weapon_gobj, wpLinkBoomerangGetDistUpdateAngle(weapon_gobj));
+#else
         wpLinkBoomerangCheckOwnerCatch(weapon_gobj, wpLinkBoomerangGetDistUpdateAngle(weapon_gobj));
+#endif
     }
     else
     {
@@ -556,6 +579,9 @@ GObj* wpLinkBoomerangMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
     WPStruct *wp;
     Vec3f offset;
     s32 unused;
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPLinkBoomerangWeaponDesc;
+#endif
 
     offset = *pos;
 
@@ -563,7 +589,12 @@ GObj* wpLinkBoomerangMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
 
     offset.x = (fp->lr == +1) ? offset.x + WPBOOMERANG_OFF_X : offset.x - WPBOOMERANG_OFF_X;
 
+#ifdef REGION_REMIX
+    ftRemixLinkSharedBoomerangWeapon(fp, &remix_desc);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &remix_desc, &offset, WEAPON_FLAG_PARENT_FIGHTER);
+#else
     weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPLinkBoomerangWeaponDesc, &offset, WEAPON_FLAG_PARENT_FIGHTER);
+#endif
 
     if (weapon_gobj == NULL)
     {
@@ -576,12 +607,20 @@ GObj* wpLinkBoomerangMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
     if (fp->status_vars.link.specialn.is_smash == TRUE)
     {
         wp->lifetime = WPBOOMERANG_LIFETIME_SMASH;
+#ifdef REGION_REMIX
+        wp->weapon_vars.boomerang.default_angle = wpLinkBoomerangGetAngleSetVel(&wp->physics.vel_air, fp, wp->lr, ftRemixYoungLinkBoomerangSmashVel(fp, WPBOOMERANG_VEL_SMASH));
+#else
         wp->weapon_vars.boomerang.default_angle = wpLinkBoomerangGetAngleSetVel(&wp->physics.vel_air, fp, wp->lr, WPBOOMERANG_VEL_SMASH);
+#endif
     }
     else
     {
         wp->lifetime = WPBOOMERANG_LIFETIME_TILT;
+#ifdef REGION_REMIX
+        wp->weapon_vars.boomerang.default_angle = wpLinkBoomerangGetAngleSetVel(&wp->physics.vel_air, fp, wp->lr, ftRemixYoungLinkBoomerangTiltVel(fp, WPBOOMERANG_VEL_TILT));
+#else
         wp->weapon_vars.boomerang.default_angle = wpLinkBoomerangGetAngleSetVel(&wp->physics.vel_air, fp, wp->lr, WPBOOMERANG_VEL_TILT);
+#endif
     }
     wp->proc_setoff = wpLinkBoomerangProcSetOff;
     wp->proc_dead = wpLinkBoomerangProcDead;

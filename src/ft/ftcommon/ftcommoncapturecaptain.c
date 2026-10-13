@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #include <it/item.h>
 #include <reloc_data.h>
+#include "fighter_registry.h"
 
 // 0x8014D0F0
 void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gobj, Vec3f *pos)
@@ -15,6 +16,11 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
 #else
     Vec2h *offset_add = lbRelocGetFileData(Vec2h*, gFTDataCaptainMainMotion, &llCaptainMainMotionSpecialHiVec2h);
 #endif
+#ifdef PORT
+    s32 offset_row = port_fighter_parent_fkind(capture_fp->fkind);
+#else
+    s32 offset_row = capture_fp->fkind;
+#endif
     s32 unused;
 
     pos->x = 0.0F;
@@ -24,8 +30,8 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
     gmCollisionGetFighterPartsWorldPosition(this_fp->joints[29], pos);
     gmCollisionGetFighterPartsWorldPosition(capture_fp->joints[nFTPartsJointTopN], &offset);
 
-    offset.x += (offset_add[capture_fp->fkind].x * this_fp->lr);
-    offset.y += offset_add[capture_fp->fkind].y;
+    offset.x += (offset_add[offset_row].x * this_fp->lr);
+    offset.y += offset_add[offset_row].y;
 
     syVectorSub3D(pos, &offset);
 }

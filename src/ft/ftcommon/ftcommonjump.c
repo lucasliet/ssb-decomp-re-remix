@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -11,7 +14,11 @@ void ftCommonJumpProcInterrupt(GObj *fighter_gobj)
 {
     if ((ftCommonSpecialAirCheckInterruptCommon(fighter_gobj) == FALSE) && (ftCommonAttackAirCheckInterruptCommon(fighter_gobj) == FALSE))
     {
+#ifdef REGION_REMIX
+        ftRemixPeachJumpAerialCheckOrFloat(fighter_gobj);
+#else
         ftCommonJumpAerialCheckInterruptCommon(fighter_gobj);
+#endif
     }
 }
 

@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -51,7 +54,11 @@ void ftDonkeyThrowFKneeBendSetStatus(GObj *fighter_gobj, s32 input_source)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, nFTDonkeyStatusThrowFKneeBend, 0.0F, ftRemixMarinaCargoAnimSpeed(fp), FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, nFTDonkeyStatusThrowFKneeBend, 0.0F, 0.0F, FTSTATUS_PRESERVE_NONE);
+#endif
 
     fp->status_vars.common.throwf.jump_force = fp->input.pl.stick_range.y;
     fp->status_vars.common.throwf.kneebend_anim_frame = 0.0F;

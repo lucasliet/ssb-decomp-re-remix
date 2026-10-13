@@ -1,5 +1,8 @@
 #include <it/item.h>
 #include <sys/netsync.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremix.h"
+#endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <gr/ground.h>
@@ -498,6 +501,21 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
 // 0x8016EA78
 GObj* itManagerMakeItemSetupCommon(GObj *parent_gobj, s32 index, Vec3f *pos, Vec3f *vel, u32 spawn_flags)
 {
+#ifdef REGION_REMIX
+    /* Item.asm extend_item_spawn_ / extend_item_spawn_gfx_ (0x8016EA84, 0x8016EAC8) */
+    if (itRemixIsCustomKind(index))
+    {
+        const ITRemixItemDesc *desc = itRemixGetItemDesc(index);
+        GObj *remix_gobj = itRemixMakeItem(parent_gobj, index, pos, vel, spawn_flags);
+
+        if ((remix_gobj != NULL) && (desc->is_show_spawn_gfx != FALSE))
+        {
+            efManagerItemSpawnSwirlMakeEffect(pos);
+            itMainSetAppearSpin(remix_gobj, FALSE);
+        }
+        return remix_gobj;
+    }
+#endif
     GObj *item_gobj = dITManagerProcMakeList[index](parent_gobj, pos, vel, spawn_flags);
 
     if (item_gobj != NULL)
@@ -751,5 +769,11 @@ void itManagerInitMonsterVars(void)
 // 0x8016F238
 GObj* itManagerMakeItemKind(GObj *parent_gobj, s32 kind, Vec3f *pos, Vec3f *vel, u32 flags)
 {
+#ifdef REGION_REMIX
+    if (itRemixIsCustomKind(kind))
+    {
+        return itRemixMakeItem(parent_gobj, kind, pos, vel, flags);
+    }
+#endif
     return dITManagerProcMakeList[kind](parent_gobj, pos, vel, flags);
 }

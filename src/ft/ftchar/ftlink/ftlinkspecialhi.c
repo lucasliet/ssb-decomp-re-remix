@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -230,7 +233,11 @@ void ftLinkSpecialAirHiProcUpdate(GObj *fighter_gobj)
         {
             ftLinkSpecialHiDestroyWeapon(fp, wpGetStruct(fp->status_vars.link.specialhi.spin_attack_gobj));
         }
+#ifdef REGION_REMIX
+        ftCommonFallSpecialSetStatus(fighter_gobj, ftRemixLinkSharedUpSpecialFallDrift(fp, FTLINK_SPINATTACK_FALLSPECIAL_DRIFT), FALSE, TRUE, TRUE, ftRemixYoungLinkUpSpecialLandingLag(fp, FTLINK_SPINATTACK_LANDING_LAG), FALSE);
+#else
         ftCommonFallSpecialSetStatus(fighter_gobj, FTLINK_SPINATTACK_FALLSPECIAL_DRIFT, FALSE, TRUE, TRUE, FTLINK_SPINATTACK_LANDING_LAG, FALSE);
+#endif
     }
 }
 
@@ -360,7 +367,11 @@ void ftLinkSpecialAirHiSetStatus(GObj *fighter_gobj)
     ftMainSetStatus(fighter_gobj, nFTLinkStatusSpecialAirHi, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 
+#ifdef REGION_REMIX
+    fp->physics.vel_air.y = ftRemixLinkSharedUpSpecialAirVelY(fp, ftRemixYoungLinkUpSpecialAirVelY(fp, FTLINK_SPINATTACK_AIR_VEL_Y));
+#else
     fp->physics.vel_air.y = FTLINK_SPINATTACK_AIR_VEL_Y;
+#endif
 
     fp->jumps_used = fp->attr->jumps_max;
 

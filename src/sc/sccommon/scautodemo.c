@@ -11,6 +11,9 @@ extern void port_coroutine_yield(void);
 #include <it/itmanager.h>
 #include <sys/audio.h>
 #include <wp/wpmanager.h>
+#ifdef PORT
+#include "fighter_registry.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 extern void func_800266A0_272A0(void);
 
@@ -633,7 +636,20 @@ void scAutoDemoInitSObjs(void)
 
 	for (player = 0; player < ARRAY_COUNT(gSCManagerSceneData.demo_fkind); player++)
 	{
+#ifdef PORT
+		/* The name table only covers the 12 playable vanilla fighters; synth
+		 * fighters show their parent's name, anything else Mario's. */
+		s32 name_fkind = port_fighter_parent_fkind(gSCManagerBattleState->players[player].fkind);
+		SObj *sobj;
+
+		if (name_fkind >= ARRAY_COUNT(dSCAutoDemoFighterNameSpriteOffsets))
+		{
+			name_fkind = nFTKindMario;
+		}
+		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, dSCAutoDemoFighterNameSpriteOffsets[name_fkind]));
+#else
 		SObj *sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, dSCAutoDemoFighterNameSpriteOffsets[gSCManagerBattleState->players[player].fkind]));
+#endif
 
 		sobj->sprite.red   = 0xFF;
 		sobj->sprite.green = 0xFF;

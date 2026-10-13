@@ -1,5 +1,9 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#include "remix/remix_roster_data.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -30,6 +34,18 @@ void ftMarioSpecialNProcAccessory(GObj *fighter_gobj)
 
         gmCollisionGetFighterPartsWorldPosition(fp->joints[FTMARIO_FIREBALL_SPAWN_JOINT], &pos);
 
+#ifdef REGION_REMIX
+        if (fp->fkind == REMIX_ID_PIANO)
+        {
+            wpRemixPianoBookMake(fighter_gobj, &pos);
+            return;
+        }
+        fireball_item_id = wpRemixMarioFireballIndexForFkind(fp->fkind);
+        if (fireball_item_id < 0)
+        {
+            return;
+        }
+#else
         switch (fp->fkind) // jtbl at 0x8018C630
         {
         case nFTKindMario:
@@ -50,6 +66,7 @@ void ftMarioSpecialNProcAccessory(GObj *fighter_gobj)
             fireball_item_id = 1;
             break;
         }
+#endif
         wpMarioFireballMakeWeapon(fighter_gobj, &pos, fireball_item_id);
     }
 }

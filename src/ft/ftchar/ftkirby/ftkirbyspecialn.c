@@ -1,5 +1,10 @@
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#include "fighter_registry.h"
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#include "remix/remix_roster_data.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 
 // // // // // // // // // // // //
@@ -85,22 +90,37 @@ void ftKirbySpecialNGotoSetCatchParams(GObj *fighter_gobj)
 // 0x80161EB4
 void ftKirbySpecialNInitPassiveVars(FTStruct *fp)
 {
+#ifdef REGION_REMIX
+    switch (ftRemixSamusSharedKirbyCopyPowerFkind(fp->passive_vars.kirby.copy_id))
+#else
     switch (fp->passive_vars.kirby.copy_id)
+#endif
     {
     case nFTKindSamus:
         fp->passive_vars.kirby.copysamus_charge_level = 0;
         fp->passive_vars.kirby.copysamus_charge_recoil = 0;
         break;
 
+#ifdef REGION_REMIX
+    case REMIX_ID_JDK:
+#endif
     case nFTKindDonkey:
         fp->passive_vars.kirby.copydonkey_charge_level = 0;
         break;
 
+#ifdef REGION_REMIX
+    case REMIX_ID_JFALCON:
+    case REMIX_ID_GND:
+#endif
     case nFTKindCaptain:
         fp->passive_vars.kirby.copycaptain_falcon_punch_unk = 0;
         break;
 
     case nFTKindPurin:
+#ifdef REGION_REMIX
+    case REMIX_ID_JPUFF: /* kirby_power_change_ */
+    case REMIX_ID_EPUFF:
+#endif
         fp->passive_vars.kirby.copypurin_unk = 0;
         break;
     }
@@ -129,6 +149,9 @@ void ftKirbySpecialNCopyInitCopyVars(GObj *fighter_gobj)
 
             copy_id = fp->status_vars.kirby.specialn.copy_id;
             fp->passive_vars.kirby.copy_id = copy_id;
+#ifdef REGION_REMIX
+            ftRemixKirbyCopyAmmo(fp);
+#endif
 
             ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, copy[copy_id].copy_modelpart_id);
             ftParamResetModelPartAll(fighter_gobj);
@@ -193,12 +216,20 @@ void ftKirbySpecialNCatchProcUpdate(GObj *fighter_gobj)
 
         victim_fp->status_vars.common.capturekirby.is_goto_capturewait = TRUE;
 
-        if ((victim_fp->fkind == nFTKindKirby) || (victim_fp->fkind == nFTKindNKirby))
+        if ((victim_fp->fkind == nFTKindKirby) || (victim_fp->fkind == nFTKindNKirby)
+#ifdef REGION_REMIX
+            || (victim_fp->fkind == REMIX_ID_JKIRBY) /* kirby_power_steal_check_ */
+#endif
+        )
         {
             kirby_fp->status_vars.kirby.specialn.copy_id = victim_fp->passive_vars.kirby.copy_id;
             victim_fp->status_vars.common.capturekirby.is_kirby = TRUE;
         }
+#ifdef PORT
+        else kirby_fp->status_vars.kirby.specialn.copy_id = copy[port_fighter_parent_fkind(victim_fp->fkind)].copy_id;
+#else
         else kirby_fp->status_vars.kirby.specialn.copy_id = copy[victim_fp->fkind].copy_id;
+#endif
 
         func_800269C0_275C0(nSYAudioFGMKirbySpecialNCopyEat);
 

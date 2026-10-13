@@ -29,6 +29,20 @@ s32 sFTCommonThrownScriptID;
 //                               //
 // // // // // // // // // // // //
 
+#ifdef PORT
+/* Smash Remix grabbers can reach a parent's throw routine through a move
+ * whose script never ran SetThrow (Banjo's up-B uses Captain's Falcon Dive),
+ * leaving throw_desc NULL; release them with the no-damage knockback. */
+static FTThrowHitDesc *ftCommonThrownGetThrowDesc(FTStruct *capture_fp, s32 id)
+{
+    if (capture_fp->throw_desc == NULL)
+    {
+        return &dFTCommonThrownNoDamageKnockback;
+    }
+    return &capture_fp->throw_desc[id];
+}
+#endif
+
 // 0x8014ADB0
 void ftCommonThrownReleaseFighterLoseGrip(GObj *fighter_gobj)
 {
@@ -163,7 +177,11 @@ void ftCommonThrownReleaseThrownUpdateStats(GObj *fighter_gobj, s32 lr, s32 scri
     }
     mpCommonSetFighterAir(this_fp);
 
+#ifdef PORT
+    ft_throw = ftCommonThrownGetThrowDesc(capture_fp, 0);
+#else
     ft_throw = capture_fp->throw_desc;
+#endif
 
     knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, this_fp->attr->weight, capture_fp->handicap, this_fp->handicap);
 
@@ -213,7 +231,11 @@ void ftCommonThrownUpdateDamageStats(FTStruct *this_fp)
 {
     GObj *capture_gobj = this_fp->capture_gobj;
     FTStruct *capture_fp = ftGetStruct(capture_gobj);
+#ifdef PORT
+    FTThrowHitDesc *ft_throw = ftCommonThrownGetThrowDesc(capture_fp, 1);
+#else
     FTThrowHitDesc *ft_throw = &capture_fp->throw_desc[1];
+#endif
     s32 damage = ftParamGetStaledDamage(capture_fp->player, ft_throw->damage, capture_fp->motion_attack_id, capture_fp->motion_count);
 
     ftParamUpdateDamage(this_fp, damage);
@@ -257,7 +279,11 @@ void ftCommonThrownSetStatusDamageRelease(GObj *fighter_gobj)
     {
         mpCommonSetFighterAir(this_fp);
     }
+#ifdef PORT
+    ft_throw = ftCommonThrownGetThrowDesc(capture_fp, 1);
+#else
     ft_throw = &capture_fp->throw_desc[1];
+#endif
 
     knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, this_fp->attr->weight, capture_fp->handicap, this_fp->handicap);
 

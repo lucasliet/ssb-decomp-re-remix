@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <it/item.h>
 #ifdef PORT
 #include "enhancements/enhancements.h"
@@ -15,7 +18,11 @@ void ftCommonAttackAirLwProcHit(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixLinkSharedIsLinkFamily(fp))
+#else
     if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+#endif
     {
         ftParamClearAttackCollAll(fighter_gobj);
 
@@ -36,7 +43,11 @@ void ftCommonAttackAirLwProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixLinkSharedIsLinkFamily(fp))
+#else
     if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+#endif
     {
         if (fp->status_vars.common.attackair.rehit_timer != 0)
         {
@@ -106,7 +117,11 @@ sb32 ftCommonAttackAirCheckInterruptCommon(GObj *fighter_gobj)
     {
         if (ftHammerCheckHoldHammer(fighter_gobj) == FALSE)
         {
+#ifdef REGION_REMIX
+            if (ftRemixPeachLightThrowCheckItemTypeThrow(fp) != FALSE)
+#else
             if (ftCommonLightThrowCheckItemTypeThrow(fp) != FALSE)
+#endif
             {
                 if ((ABS(fp->input.pl.stick_range.x) < FTCOMMON_ATTACKAIR_DIRECTION_STICK_RANGE_MIN) && (ABS(fp->input.pl.stick_range.y) < FTCOMMON_ATTACKAIR_DIRECTION_STICK_RANGE_MIN))
                 {
@@ -208,6 +223,9 @@ sb32 ftCommonAttackAirCheckInterruptCommon(GObj *fighter_gobj)
                 fp->motion_vars.flags.flag1 = 0;
 
                 ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_FASTFALL);
+#ifdef REGION_REMIX
+                ftRemixPeachFloatAutoCancelAerial(fp);
+#endif
 
                 if (status_id == nFTCommonStatusAttackAirLw)
                 {

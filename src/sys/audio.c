@@ -153,7 +153,11 @@ SYAudioSettings dSYAudioPublicSettings =
 // PORT: Larger heap — N64 heap was sized for 4MB RDRAM.  On PC we need
 // space for parsed bank structs, sequence data copies, FGM packages,
 // Acmd double buffers, and audio output triple buffers.
+#ifdef REGION_REMIX
+u8 gSYAudioHeapBuffer[0x400000]; // 4 MB: Remix banks have 1137 SFX slots and 71 instruments
+#else
 u8 gSYAudioHeapBuffer[0x100000]; // 1 MB
+#endif
 #elif defined(REGION_US)
 u8 gSYAudioHeapBuffer[0x56000];
 #else

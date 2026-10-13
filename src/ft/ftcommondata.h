@@ -32,4 +32,8 @@ extern SYColorRGBA dFTCommonDataShadowColorTeams[/* */];
 // 0x8012DBD0
 extern GMColDesc dGMColScriptsDescs[/* */]; // 0x8012DBD0
 
+#ifdef PORT
+extern const s32 dGMColScriptsDescsNum;
+#endif
+
 #endif

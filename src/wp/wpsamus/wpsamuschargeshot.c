@@ -1,6 +1,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 extern void ftParamPlayLoopSFX(FTStruct*, u16);
@@ -157,22 +160,27 @@ void wpSamusChargeShotLaunch(GObj *weapon_gobj) // Set Charge Shot's attributes 
 {
     WPStruct *wp = wpGetStruct(weapon_gobj);
     f32 coll_size;
+#ifdef REGION_REMIX
+    const wpSamusChargeShotAttributes *attributes = ftRemixDSamusChargeShotAttributes(wp, dWPSamusChargeShotWeaponAttributes);
+#else
+    const wpSamusChargeShotAttributes *attributes = dWPSamusChargeShotWeaponAttributes;
+#endif
 
-    wp->physics.vel_air.x = dWPSamusChargeShotWeaponAttributes[wp->weapon_vars.charge_shot.charge_size].vel_x * wp->lr;
+    wp->physics.vel_air.x = attributes[wp->weapon_vars.charge_shot.charge_size].vel_x * wp->lr;
 
-    wp->attack_coll.damage = dWPSamusChargeShotWeaponAttributes[wp->weapon_vars.charge_shot.charge_size].damage;
-    wp->attack_coll.size = dWPSamusChargeShotWeaponAttributes[wp->weapon_vars.charge_shot.charge_size].attack_size * 0.5F;
+    wp->attack_coll.damage = attributes[wp->weapon_vars.charge_shot.charge_size].damage;
+    wp->attack_coll.size = attributes[wp->weapon_vars.charge_shot.charge_size].attack_size * 0.5F;
 
-    coll_size = dWPSamusChargeShotWeaponAttributes[wp->weapon_vars.charge_shot.charge_size].coll_size * 0.5F;
+    coll_size = attributes[wp->weapon_vars.charge_shot.charge_size].coll_size * 0.5F;
 
     wp->coll_data.map_coll.width = coll_size;
     wp->coll_data.map_coll.top = coll_size;
     wp->coll_data.map_coll.bottom = -coll_size;
 
-    func_800269C0_275C0(dWPSamusChargeShotWeaponAttributes[wp->weapon_vars.charge_shot.charge_size].shoot_fgm_id);
+    func_800269C0_275C0(attributes[wp->weapon_vars.charge_shot.charge_size].shoot_fgm_id);
 
-    wp->attack_coll.fgm_id = dWPSamusChargeShotWeaponAttributes[wp->weapon_vars.charge_shot.charge_size].attack_fgm_id;
-    wp->attack_coll.priority = dWPSamusChargeShotWeaponAttributes[wp->weapon_vars.charge_shot.charge_size].priority;
+    wp->attack_coll.fgm_id = attributes[wp->weapon_vars.charge_shot.charge_size].attack_fgm_id;
+    wp->attack_coll.priority = attributes[wp->weapon_vars.charge_shot.charge_size].priority;
 
     wp->weapon_vars.charge_shot.owner_gobj = NULL;
 }
@@ -274,8 +282,17 @@ sb32 wpSamusChargeShotProcReflector(GObj *weapon_gobj)
 GObj* wpSamusChargeShotMakeWeapon(GObj *fighter_gobj, Vec3f *pos, s32 charge_level, sb32 is_release) 
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+#ifdef REGION_REMIX
+    WPDesc weapon_desc = dWPSamusChargeShotWeaponDesc;
+    GObj *weapon_gobj;
+    WPStruct *wp;
+
+    weapon_desc.p_weapon = ftRemixSamusSharedChargeShotFile(fp, weapon_desc.p_weapon);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &weapon_desc, pos, (is_release != FALSE) ? (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER) : WEAPON_FLAG_PARENT_FIGHTER);
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPSamusChargeShotWeaponDesc, pos, (is_release != FALSE) ? (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER) : WEAPON_FLAG_PARENT_FIGHTER);
     WPStruct *wp;
+#endif
 
     if (weapon_gobj == NULL)
     {

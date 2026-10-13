@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 #include <gr/grcommon/grinishie.h>
 extern void *func_800269C0_275C0(u16 id);
@@ -102,6 +105,9 @@ void ftCommonDokanStartSetStatus(GObj *fighter_gobj, s32 material)
     (
         (fp->fkind == nFTKindMario) || (fp->fkind == nFTKindMMario) || (fp->fkind == nFTKindNMario) ||
         (fp->fkind == nFTKindLuigi) || (fp->fkind == nFTKindNLuigi)
+#ifdef REGION_REMIX
+        || ftRemixIsPipeTurnFkind(fp->fkind) /* pipe_turn_enter */
+#endif
     )
     {
         fp->status_vars.common.dokan.turn_stop_wait = 0;
@@ -287,7 +293,11 @@ void ftCommonDokanEndSetStatus(GObj *fighter_gobj)
     fp->is_jostle_ignore = TRUE;
     fp->status_vars.common.dokan.playertag_wait = FTCOMMON_DOKAN_PLAYERTAG_WAIT;
 
-    if ((fp->fkind != nFTKindMario) && (fp->fkind != nFTKindMMario) && (fp->fkind != nFTKindNMario) && (fp->fkind != nFTKindLuigi) && (fp->fkind != nFTKindNLuigi))
+    if ((fp->fkind != nFTKindMario) && (fp->fkind != nFTKindMMario) && (fp->fkind != nFTKindNMario) && (fp->fkind != nFTKindLuigi) && (fp->fkind != nFTKindNLuigi)
+#ifdef REGION_REMIX
+        && !ftRemixIsPipeTurnFkind(fp->fkind) /* pipe_turn_exit */
+#endif
+    )
     {
         fp->status_vars.common.dokan.turn_stop_wait = FTCOMMON_DOKAN_TURN_STOP_WAIT_DEFAULT;
         fp->joints[nFTPartsJointTopN]->rotate.vec.f.y = 0.0F;

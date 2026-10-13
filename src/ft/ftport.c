@@ -24,7 +24,13 @@
 #include <sys/objdef.h>          /* nGCCommonLinkIDFighter */
 #include <sc/scsubsys/scsubsys.h>
 
+#include <stdlib.h>
+#include <port_log.h>
 #include "fighter_registry.h"
+#include "remix/remix_synth_ft.h"
+#include "remix/remix_ram_image.h"
+#include "bridge/lbreloc_figatree.h"
+#include "ft/ftremix/ftremix.h"
 
 /* Per-character status descs (used as the ft_data row's special_descs). */
 extern FTStatusDesc *dFTMainSpecialStatusDescs[];
@@ -160,6 +166,7 @@ void port_fighter_seed_vanilla(void)
         for (i = 0; i < (s32)sizeof(desc); i++) p[i] = 0;
         (void)zero_data;
 
+        desc.parent_fkind                       = fkind;
         desc.ft_data                            = dFTManagerDataFiles[fkind];
         desc.special_descs                      = dFTMainSpecialStatusDescs[fkind];
         desc.special_descs_count                = 0;  /* vanilla never bounds-checks; synth fills this */
@@ -211,6 +218,181 @@ void port_fighter_seed_vanilla(void)
 
         port_fighter_register(fkind, &desc);
     }
+}
+
+/* Storage behind one synth FTData. `data` must stay the first member: the
+ * FTData pointer handed out is cast back to this block in
+ * port_fighter_synth_ft_destroy. */
+typedef struct PortSynthFtOwned
+{
+    FTData data;
+    void *file_slots[PORT_SYNTH_FILE_COUNT];
+    s32 particle_slot;
+    s32 submotion_count_slot;
+    FTMotionDesc *mainmotion;
+    FTMotionDesc *submotion;
+} PortSynthFtOwned;
+
+/* Remix stores scripts it adds as raw RAM addresses into its image. Those
+ * become host pointers, which ftMainSetStatus takes as-is (> 0x100000).
+ * File offsets and the 0x80000000 "no script" sentinel pass through. */
+static intptr_t ftPortMapMotionOffset(u32 command_offset)
+{
+    void *script = remix_ram_image_resolve(command_offset);
+
+    if (script == NULL)
+    {
+        script = ftRemixFindDemoScript(command_offset);
+    }
+    if (script != NULL)
+    {
+        return (intptr_t)script;
+    }
+    /* Other N64 RAM addresses have no host mapping; read
+     * as a host pointer they crash, so treat them as "no script". */
+    if (command_offset > 0x80000000u)
+    {
+        port_log("SSB64: ftPortMapMotionOffset: unmapped script address 0x%08X, row gets no script\n",
+                 command_offset);
+        return (intptr_t)0x80000000u;
+    }
+    return (intptr_t)command_offset;
+}
+
+/* XRotN / TransN / YRotN: the hidden joints a motion row asks ftMainSetStatus
+ * to build. */
+#define FTPORT_HIDDEN_JOINT_FLAGS 0xE0000000u
+
+/* Hidden-joint flags of the parent's row `i`, or 0 when it has none. Remix
+ * rows for moves it reimplements omit them, but those moves still run the
+ * parent's status routines, which read e.g. joints[nFTPartsJointTransN]. */
+static u32 ftPortParentHiddenJointFlags(const FTData *parent, u32 i)
+{
+    if ((parent == NULL) || (parent->mainmotion == NULL) || ((s32)i >= parent->mainmotion_array_count))
+    {
+        return 0;
+    }
+    return parent->mainmotion->motion_desc[i].anim_desc.word & FTPORT_HIDDEN_JOINT_FLAGS;
+}
+
+/* Copies `count` rows into a new native FTMotionDesc array, merging in the
+ * hidden-joint flags of `parent`'s matching rows (NULL skips the merge).
+ * Returns NULL for count 0 or on allocation failure. */
+static FTMotionDesc *ftPortCopyMotionArray(const PortSynthMotion *src, u32 count, const FTData *parent)
+{
+    FTMotionDesc *dst;
+    u32 i;
+
+    if (count == 0)
+    {
+        return NULL;
+    }
+    dst = malloc(count * sizeof(FTMotionDesc));
+    if (dst == NULL)
+    {
+        return NULL;
+    }
+    for (i = 0; i < count; i++)
+    {
+        if (src[i].anim_file_id != 0)
+        {
+            portRelocMarkFighterFigatreeFile(src[i].anim_file_id);
+        }
+        dst[i].anim_file_id = src[i].anim_file_id;
+        dst[i].offset = ftPortMapMotionOffset(src[i].command_offset);
+        dst[i].anim_desc.word = src[i].flags | ftPortParentHiddenJointFlags(parent, i);
+    }
+    return dst;
+}
+
+/* Overwrites the Remix-supplied fields and points the runtime slots at storage
+ * owned by the block, so the synth never writes into vanilla arrays. */
+static void ftPortSetSynthFields(PortSynthFtOwned *owned, const PortSynthFtSpec *spec)
+{
+    FTData *data = &owned->data;
+
+    data->file_main_id = spec->file_ids[0];
+    data->file_mainmotion_id = spec->file_ids[1];
+    data->file_submotion_id = spec->file_ids[2];
+    data->file_model_id = spec->file_ids[3];
+    data->file_shieldpose_id = spec->file_ids[4];
+    data->file_special1_id = spec->file_ids[5];
+    data->file_special2_id = spec->file_ids[6];
+    data->file_special3_id = spec->file_ids[7];
+    data->file_special4_id = spec->file_ids[8];
+    data->file_main_size = spec->file_main_size;
+    data->o_attributes = spec->o_attributes;
+    data->file_anim_size = spec->file_anim_size;
+
+    data->p_file_main = &owned->file_slots[0];
+    data->p_file_mainmotion = &owned->file_slots[1];
+    data->p_file_submotion = &owned->file_slots[2];
+    data->p_file_model = &owned->file_slots[3];
+    data->p_file_shieldpose = &owned->file_slots[4];
+    data->p_file_special1 = &owned->file_slots[5];
+    data->p_file_special2 = &owned->file_slots[6];
+    data->p_file_special3 = &owned->file_slots[7];
+    data->p_file_special4 = &owned->file_slots[8];
+    data->p_particle = &owned->particle_slot;
+    data->submotion_array_count = &owned->submotion_count_slot;
+
+    data->mainmotion = (FTMotionDescArray *)owned->mainmotion;
+    data->submotion = (FTMotionDescArray *)owned->submotion;
+    data->mainmotion_array_count = (s32)spec->mainmotion_count;
+    owned->submotion_count_slot = (s32)spec->submotion_count;
+}
+
+struct FTData *port_fighter_synth_ft_create(int parent_fkind, const PortSynthFtSpec *spec)
+{
+    const FTData *parent = port_fighter_data(parent_fkind);
+    PortSynthFtOwned *owned;
+
+    if (parent == NULL)
+    {
+        return NULL;
+    }
+    owned = malloc(sizeof(PortSynthFtOwned));
+    if (owned == NULL)
+    {
+        return NULL;
+    }
+    owned->data = *parent;
+    owned->mainmotion = ftPortCopyMotionArray(spec->mainmotion, spec->mainmotion_count, parent);
+    owned->submotion = ftPortCopyMotionArray(spec->submotion, spec->submotion_count, NULL);
+    if ((spec->mainmotion_count != 0 && owned->mainmotion == NULL)
+        || (spec->submotion_count != 0 && owned->submotion == NULL))
+    {
+        port_fighter_synth_ft_destroy(&owned->data);
+        return NULL;
+    }
+    ftPortSetSynthFields(owned, spec);
+    return &owned->data;
+}
+
+void port_fighter_synth_ft_destroy(struct FTData *ft)
+{
+    PortSynthFtOwned *owned;
+
+    if (ft == NULL)
+    {
+        return;
+    }
+    owned = (PortSynthFtOwned *)ft;
+    free(owned->mainmotion);
+    free(owned->submotion);
+    free(owned);
+}
+
+int port_fighter_set_attributes_offset(int fkind, uint32_t o_attributes)
+{
+    FTData *data = port_fighter_data(fkind);
+
+    if (data == NULL)
+    {
+        return 0;
+    }
+    data->o_attributes = o_attributes;
+    return 1;
 }
 
 #endif /* PORT */

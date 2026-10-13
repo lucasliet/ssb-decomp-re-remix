@@ -56,6 +56,10 @@ void ftKirbyCopyFoxSpecialNInitStatusVars(GObj *fighter_gobj)
 
     fp->motion_vars.flags.flag0 = 0;
     fp->motion_vars.flags.flag1 = 0;
+#ifdef REGION_REMIX
+    /* Remix Phantasm.asm set_variables_: arms Falco's Phantasm (INITIAL_SETUP). */
+    fp->motion_vars.flags.flag2 = 1;
+#endif
 }
 
 // 0x80156DD8

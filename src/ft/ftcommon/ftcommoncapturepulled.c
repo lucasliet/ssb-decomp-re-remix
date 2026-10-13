@@ -18,8 +18,19 @@ void ftCommonCapturePulledRotateScale(GObj *fighter_gobj, Vec3f *this_pos, Vec3f
 #if defined(REGION_US)
     DObj *joint = DObjGetStruct(fighter_gobj)->child;
     Mtx44f mtx;
+#ifdef PORT
+    DObj *capture_joint = capture_fp->joints[capture_fp->attr->joint_itemheavy_id];
 
+    /* Smash Remix grabbers can reach this through a parent's throw while
+     * their own model never built that joint (Bowser: id 31, 27 parts). */
+    if (capture_joint == NULL)
+    {
+        capture_joint = capture_fp->joints[nFTPartsJointTopN];
+    }
+    func_ovl0_800C9A38(mtx, capture_joint);
+#else
     func_ovl0_800C9A38(mtx, capture_fp->joints[capture_fp->attr->joint_itemheavy_id]);
+#endif
     func_ovl2_800EDA0C(mtx, rotate);
 
     this_pos->x = (-joint->translate.vec.f.x * DObjGetStruct(fighter_gobj)->scale.vec.f.x);

@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -11,7 +14,11 @@ void ftCommonFallProcInterrupt(GObj *fighter_gobj)
 {
     if ((ftCommonSpecialAirCheckInterruptCommon(fighter_gobj) == FALSE) && (ftCommonAttackAirCheckInterruptCommon(fighter_gobj) == FALSE))
     {
+#ifdef REGION_REMIX
+        ftRemixPeachJumpAerialCheckOrFloat(fighter_gobj);
+#else
         ftCommonJumpAerialCheckInterruptCommon(fighter_gobj);
+#endif
     }
 }
 
@@ -30,6 +37,9 @@ void ftCommonFallSetStatus(GObj *fighter_gobj)
         {
             mpCommonSetFighterAir(fp);
         }
+#ifdef REGION_REMIX
+        if (ftRemixPeachFallOverride(fighter_gobj) == FALSE)
+#endif
         ftMainSetStatus(fighter_gobj, ((fp->jumps_used >= fp->attr->jumps_max) ? nFTCommonStatusFallAerial : nFTCommonStatusFall), 0.0F, 1.0F, FTSTATUS_PRESERVE_FASTFALL);
 
         ftPhysicsClampAirVelXMax(fp);

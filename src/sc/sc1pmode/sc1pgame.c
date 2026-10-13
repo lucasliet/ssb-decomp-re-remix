@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void port_coroutine_yield(void);
 #endif
@@ -2967,7 +2970,11 @@ check_heavy_damage:
         // Throw Down
         gSCManagerSceneData.bonus_get_mask[0] |= SC1PGAME_BONUS_MASK0_THROWDOWN;
     }
+#ifdef REGION_REMIX
+    if ((sSC1PGameBonusStatEndPlayerStatus == nFTCommonStatusAppeal) || ftRemixLankyIsStanceBonus(gSCManagerBattleState->players[gSCManagerSceneData.player].fkind, sSC1PGameBonusStatEndPlayerStatus))
+#else
     if (sSC1PGameBonusStatEndPlayerStatus == nFTCommonStatusAppeal)
+#endif
     {
         // Fighter Stance
         gSCManagerSceneData.bonus_get_mask[1] |= SC1PGAME_BONUS_MASK1_FIGHTERSTANCE;

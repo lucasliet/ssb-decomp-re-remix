@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <it/item.h>
 #ifdef PORT
 #include <if/ifscreenflash.h>
@@ -436,7 +439,11 @@ sb32 ftCommonDamageCheckCatchResist(FTStruct *fp)
     {
         return TRUE;
     }
-    if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey))
+    if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey)
+#ifdef REGION_REMIX
+        || ftRemixDKSharedIsCargoClone(fp->fkind)
+#endif
+    )
     {
         if ((fp->status_id >= nFTDonkeyStatusThrowFStart) && (fp->status_id <= nFTDonkeyStatusThrowFEnd) && (ftCommonDamageGetDamageLevel(ftParamGetHitStun(fp->damage_knockback)) < 3))
         {
@@ -600,6 +607,9 @@ s32 damage_index, s32 element, s32 damage_player_num, sb32 is_rumble, sb32 is_fo
     {
         ftKirbySpecialNDamageCheckLoseCopy(this_gobj);
     }
+#ifdef REGION_REMIX
+    ftRemixLankyUpSpecialDamageStatus(this_fp, &status_id_set, &status_id_var);
+#endif
     ftMainSetStatus(this_gobj, status_id_set, 0.0F, 1.0F, FTSTATUS_PRESERVE_DAMAGEPLAYER);
     ftMainPlayAnimEventsAll(this_gobj);
 
@@ -818,7 +828,11 @@ void ftCommonDamageUpdateMain(GObj *fighter_gobj)
     }
     if (this_fp->item_gobj != NULL)
     {
-        if ((itGetStruct(this_fp->item_gobj)->weight == nITWeightHeavy) && ((this_fp->fkind == nFTKindDonkey) || (this_fp->fkind == nFTKindNDonkey) || (this_fp->fkind == nFTKindGDonkey)))
+        if ((itGetStruct(this_fp->item_gobj)->weight == nITWeightHeavy) && ((this_fp->fkind == nFTKindDonkey) || (this_fp->fkind == nFTKindNDonkey) || (this_fp->fkind == nFTKindGDonkey)
+#ifdef REGION_REMIX
+            || ftRemixDKSharedIsCargoClone(this_fp->fkind)
+#endif
+        ))
         {
             if (ftCommonDamageCheckCatchResist(this_fp) != FALSE)
             {

@@ -1,6 +1,9 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
-// // // // // // // // // // // //
+// // //// // // // // // // // //
 //                               //
 //           FUNCTIONS           //
 //                               //
@@ -19,7 +22,11 @@ void ftCommonThrownProcUpdate(GObj *fighter_gobj)
         (
             (capture_fp->fkind != nFTKindDonkey)                      &&
             (capture_fp->fkind != nFTKindNDonkey)                     &&
-            (capture_fp->fkind != nFTKindGDonkey)                     ||
+            (capture_fp->fkind != nFTKindGDonkey)
+#ifdef REGION_REMIX
+            && !ftRemixDKSharedIsCargoClone(capture_fp->fkind)
+#endif
+            ||
             (capture_fp->status_id != nFTCommonStatusThrowF)
         )
         {

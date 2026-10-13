@@ -1278,6 +1278,8 @@ GMColDesc dGMColScriptsDescs[/* */] =
 };
 
 #ifdef PORT
+const s32 dGMColScriptsDescsNum = ARRAY_COUNT(dGMColScriptsDescs);
+
 typedef struct GMColScriptLink
 {
 	u32 *script;

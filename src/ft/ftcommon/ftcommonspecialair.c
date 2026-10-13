@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 #include "fighter_registry.h"
 #endif
@@ -177,6 +180,13 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
+
+#ifdef REGION_REMIX
+    if (ftRemixSonicUSPIsUpSpecialUsed(fp))
+    {
+        return FALSE;
+    }
+#endif
 
     if (fp->input.pl.button_tap & fp->input.button_mask_b)
     {

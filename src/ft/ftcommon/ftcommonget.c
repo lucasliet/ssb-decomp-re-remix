@@ -1,5 +1,9 @@
 #include <ft/fighter.h>
 #include <it/item.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremix.h"
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <sc/scene.h>
 
 // // // // // // // // // // // //
@@ -118,6 +122,18 @@ void ftCommonLightGetProcDamage(GObj *fighter_gobj)
                 break;
 
             default:
+#ifdef REGION_REMIX
+                /* Item.asm item_pickup_check_ (0x80145C14) */
+                if (itRemixIsCustomKind(ip->kind))
+                {
+                    const ITRemixItemDesc *desc = itRemixGetItemDesc(ip->kind);
+
+                    if ((desc != NULL) && (desc->proc_consume != NULL))
+                    {
+                        desc->proc_consume(fp, item_gobj);
+                    }
+                }
+#endif
                 break;
             }
         }
@@ -158,7 +174,11 @@ void ftCommonGetProcUpdate(GObj *fighter_gobj)
         {
             if (fp->item_gobj != NULL)
             {
-                if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey))
+                if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey)
+#ifdef REGION_REMIX
+                    || ftRemixDKSharedIsCargoClone(fp->fkind)
+#endif
+                )
                 {
                     ftDonkeyThrowFWaitSetStatus(fighter_gobj);
                 }

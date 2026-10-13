@@ -1,6 +1,13 @@
 #ifndef SSB64_TYPES_H
 #define SSB64_TYPES_H
 
+#ifdef __SWITCH__
+/* newlib's sys/_types.h defines __need_wint_t and expects a later <stddef.h>
+ * to typedef wint_t, but a prior stddef.h include already set its guard so
+ * that include no-ops. aarch64 __WINT_TYPE__ == unsigned int. */
+typedef __WINT_TYPE__ wint_t;
+#endif
+
 #include <PR/ultratypes.h>
 
 // When building with IDO, define some stdint types

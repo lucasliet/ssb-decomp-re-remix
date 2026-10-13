@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -22,7 +25,11 @@ void ftCommonAppealSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby))
+    if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby)
+#ifdef REGION_REMIX
+        || (fp->fkind == REMIX_ID_JKIRBY) /* kirby_taunt_fix_1 */
+#endif
+    )
     {
         if ((fp->passive_vars.kirby.copy_id != nFTKindKirby) && (fp->passive_vars.kirby.is_ignore_losecopy == FALSE))
         {

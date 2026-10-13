@@ -1,10 +1,46 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
 //           FUNCTIONS           //
 //                               //
 // // // // // // // // // // // //
+
+#ifdef REGION_REMIX
+/* Remix Falco.asm up_special_delay_: Firefox startup frames per Fox clone. */
+static s32 ftFoxSpecialHiGetLaunchDelay(FTStruct *fp)
+{
+    switch (fp->fkind)
+    {
+    case REMIX_ID_FALCO: return 0x16;
+    case REMIX_ID_SLIPPY: return 12;
+    case REMIX_ID_PEPPY: return 16;
+    default: return FTFOX_FIREFOX_LAUNCH_DELAY;
+    }
+}
+
+/* Remix Falco.asm up_special_velocity_1_/2_/3_: Firefox speed per Fox clone. */
+static f32 ftFoxSpecialHiGetVel(FTStruct *fp)
+{
+    switch (fp->fkind)
+    {
+    case REMIX_ID_FALCO: return 98.0F;
+    case REMIX_ID_PEPPY: return 125.0F;
+    default: return FTFOX_FIREFOX_VEL;
+    }
+}
+
+#define FTFOX_SLIPPY_FIREFOX_TRAVEL_TIME 64 /* SlippyUSP.DURATION */
+#define FTFOX_SLIPPY_FIREFOX_STICK_Y 0x12C  /* Slippy.up_special_angle_patch_1/2/3_: only x steers the angle */
+
+static s32 ftFoxSpecialHiGetStickY(FTStruct *fp)
+{
+    return (fp->fkind == REMIX_ID_SLIPPY) ? FTFOX_SLIPPY_FIREFOX_STICK_Y : fp->input.pl.stick_range.y;
+}
+#endif
 
 // 0x8015BD00
 void ftFoxSpecialHiStartProcUpdate(GObj *fighter_gobj)
@@ -115,7 +151,11 @@ void ftFoxSpecialHiHoldSwitchStatusAir(GObj *fighter_gobj)
 void ftFoxSpecialHiHoldInitStatusVars(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+#ifdef REGION_REMIX
+    fp->status_vars.fox.specialhi.launch_delay = ftFoxSpecialHiGetLaunchDelay(fp);
+#else
     fp->status_vars.fox.specialhi.launch_delay = FTFOX_FIREFOX_LAUNCH_DELAY;
+#endif
 }
 
 // 0x8015BFCC
@@ -220,9 +260,27 @@ void ftFoxSpecialAirHiProcMap(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     u16 mask;
 
+    sb32 is_pass;
+
     fp->status_vars.fox.specialhi.pass_timer++;
 
-    if (mpCommonCheckFighterPass(fighter_gobj, ftFoxSpecialHiProcPass) != FALSE)
+#ifdef REGION_REMIX
+    if (fp->fkind == REMIX_ID_SLIPPY)
+    {
+        /* Slippy.usp_collision_patch_ (0x8015C2C0): the pass check also catches the ledge */
+        is_pass = mpCommonCheckFighterPassCliff(fighter_gobj, ftFoxSpecialHiProcPass);
+
+        if ((is_pass != FALSE) && (fp->coll_data.mask_stat & MAP_FLAG_CLIFF_MASK))
+        {
+            ftCommonCliffCatchSetStatus(fighter_gobj);
+            return;
+        }
+    }
+    else is_pass = mpCommonCheckFighterPass(fighter_gobj, ftFoxSpecialHiProcPass);
+#else
+    is_pass = mpCommonCheckFighterPass(fighter_gobj, ftFoxSpecialHiProcPass);
+#endif
+    if (is_pass != FALSE)
     {
         mask = (fp->coll_data.mask_prev ^ fp->coll_data.mask_curr) & fp->coll_data.mask_curr & MAP_FLAG_FLOOR;
 
@@ -282,7 +340,12 @@ void ftFoxSpecialAirHiSetStatus(GObj *fighter_gobj)
 // 0x8015C4C8
 void ftFoxSpecialHiInitStatusVars(FTStruct *fp)
 {
+#ifdef REGION_REMIX
+    /* Slippy.up_special_duration_ (0x8015C4C8) */
+    fp->status_vars.fox.specialhi.anim_frames = (fp->fkind == REMIX_ID_SLIPPY) ? FTFOX_SLIPPY_FIREFOX_TRAVEL_TIME : FTFOX_FIREFOX_TRAVEL_TIME;
+#else
     fp->status_vars.fox.specialhi.anim_frames = FTFOX_FIREFOX_TRAVEL_TIME;
+#endif
     fp->status_vars.fox.specialhi.decelerate_wait = 0;
     fp->status_vars.fox.specialhi.pass_timer = 0;
 }
@@ -301,7 +364,11 @@ void ftFoxSpecialHiDecideSetStatus(GObj *fighter_gobj)
     )
     {
         angle.x = fp->input.pl.stick_range.x;
+#ifdef REGION_REMIX
+        angle.y = ftFoxSpecialHiGetStickY(fp);
+#else
         angle.y = fp->input.pl.stick_range.y;
+#endif
         angle.z = 0.0F;
 
         if (syVectorAngleDiff3D(&fp->coll_data.floor_angle, &angle) < F_CST_DTOR32(90.0F))
@@ -314,7 +381,11 @@ void ftFoxSpecialHiDecideSetStatus(GObj *fighter_gobj)
             ftMainSetStatus(fighter_gobj, nFTFoxStatusSpecialHi, 0.0F, 1.0F, FTSTATUS_PRESERVE_COLANIM);
             ftFoxSpecialHiInitStatusVars(fp);
 
+#ifdef REGION_REMIX
+            fp->physics.vel_ground.x = ftFoxSpecialHiGetVel(fp);
+#else
             fp->physics.vel_ground.x = 115.0F;
+#endif
             fp->status_vars.fox.specialhi.angle = syUtilsArcTan2(-fp->coll_data.floor_angle.x * fp->lr, fp->coll_data.floor_angle.y);
             return;
         }
@@ -336,15 +407,24 @@ void ftFoxSpecialAirHiSetStatusFromGround(GObj *fighter_gobj)
         {
             ftParamSetStickLR(fp);
         }
+#ifdef REGION_REMIX
+        fp->status_vars.fox.specialhi.angle = syUtilsArcTan2(ftFoxSpecialHiGetStickY(fp), fp->input.pl.stick_range.x * fp->lr);
+#else
         fp->status_vars.fox.specialhi.angle = syUtilsArcTan2(fp->input.pl.stick_range.y, fp->input.pl.stick_range.x * fp->lr);
+#endif
     }
     else fp->status_vars.fox.specialhi.angle = F_CST_DTOR32(90.0F);
     
     ftMainSetStatus(fighter_gobj, nFTFoxStatusSpecialAirHi, 0.0F, 1.0F, FTSTATUS_PRESERVE_COLANIM);
     ftFoxSpecialHiInitStatusVars(fp);
 
+#ifdef REGION_REMIX
+    fp->physics.vel_air.x = (__cosf(fp->status_vars.fox.specialhi.angle) * ftFoxSpecialHiGetVel(fp) * fp->lr);
+    fp->physics.vel_air.y = (__sinf(fp->status_vars.fox.specialhi.angle) * ftFoxSpecialHiGetVel(fp));
+#else
     fp->physics.vel_air.x = (__cosf(fp->status_vars.fox.specialhi.angle) * FTFOX_FIREFOX_VEL * fp->lr);
     fp->physics.vel_air.y = (__sinf(fp->status_vars.fox.specialhi.angle) * FTFOX_FIREFOX_VEL);
+#endif
 
     ftFoxSpecialHiUpdateModelPitch(fighter_gobj);
 

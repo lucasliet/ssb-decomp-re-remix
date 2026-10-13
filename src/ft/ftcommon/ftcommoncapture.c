@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 #include "fighter_registry.h"
 #endif
@@ -157,7 +160,12 @@ void ftCommonCaptureShoulderedSetStatus(GObj *fighter_gobj)
     ftCommonCaptureTrappedInitBreakoutVars(this_fp, (this_fp->percent_damage * 0.08F) + 20.0F);
 #endif
 
+#ifdef REGION_REMIX
+    ftRemixMarinaCargoThrowFInitGemSpawned(capture_fp);
+    damage = ftParamGetStaledDamage(capture_fp->player, ftRemixMarinaCargoThrowFDamage(capture_fp), capture_fp->motion_attack_id, capture_fp->motion_count);
+#else
     damage = ftParamGetStaledDamage(capture_fp->player, 8, capture_fp->motion_attack_id, capture_fp->motion_count);
+#endif
 
     if (ftParamGetBestHitStatusAll(fighter_gobj) != nGMHitStatusNormal)
     {

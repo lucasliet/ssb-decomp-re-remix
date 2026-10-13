@@ -1,6 +1,10 @@
 #include <ft/fighter.h>
 #include <it/item.h>
 #include <reloc_data.h>
+#include "fighter_registry.h"
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -315,7 +319,11 @@ void ftCommonThrownCommonStarUpdatePhysics(GObj *fighter_gobj, f32 decelerate)
     {
         if (fp->motion_vars.flags.flag2 == 1)
         {
-            if (((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby)) && (fp->status_vars.common.capturekirby.is_kirby != FALSE))
+            if (((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby)
+#ifdef REGION_REMIX
+                || (fp->fkind == REMIX_ID_JKIRBY) /* kirby_power_stolen_check_ */
+#endif
+                ) && (fp->status_vars.common.capturekirby.is_kirby != FALSE))
             {
                 ftKirbySpecialNInitPassiveVars(fp);
 
@@ -498,7 +506,11 @@ void ftCommonThrownKirbyStarSetStatus(GObj *fighter_gobj)
 
         if (attack_coll->attack_state == nGMAttackStateNew)
         {
+#ifdef PORT
+            attack_coll->damage = copy[port_fighter_parent_fkind(fp->fkind)].star_damage;
+#else
             attack_coll->damage = copy[fp->fkind].star_damage;
+#endif
         }
     }
     fp->is_invisible = fp->is_shadow_hide = TRUE;

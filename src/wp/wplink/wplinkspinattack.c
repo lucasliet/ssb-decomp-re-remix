@@ -1,6 +1,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -118,10 +121,18 @@ GObj* wpLinkSpinAttackMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
     GObj *weapon_gobj;
     WPStruct *wp;
     Vec3f offset = *pos;
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPLinkSpinAttackWeaponDesc;
+#endif
 
     offset.y += WPSPINATTACK_OFF_Y;
 
+#ifdef REGION_REMIX
+    ftRemixLinkSharedUpSpecialWeapon(fp, &remix_desc);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &remix_desc, &offset, WEAPON_FLAG_PARENT_FIGHTER);
+#else
     weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPLinkSpinAttackWeaponDesc, &offset, WEAPON_FLAG_PARENT_FIGHTER);
+#endif
 
     if (weapon_gobj == NULL)
     {

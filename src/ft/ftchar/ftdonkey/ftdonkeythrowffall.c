@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -39,7 +42,11 @@ void ftDonkeyThrowFFallSetStatus(GObj *fighter_gobj)
     {
         mpCommonSetFighterAir(fp);
     }
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, nFTDonkeyStatusThrowFFall, 0.0F, ftRemixMarinaCargoAnimSpeed(fp), FTSTATUS_PRESERVE_FASTFALL);
+#else
     ftMainSetStatus(fighter_gobj, nFTDonkeyStatusThrowFFall, 0.0F, 0.0F, FTSTATUS_PRESERVE_FASTFALL);
+#endif
     ftPhysicsClampAirVelXMax(fp);
 }
 
@@ -52,7 +59,11 @@ void ftDonkeyThrowFJumpSetStatus(GObj *fighter_gobj)
     s32 vel_y;
 
     mpCommonSetFighterAir(fp);
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, ftRemixMarinaCargoJumpStatusId(fp), 0.0F, ftRemixMarinaCargoAnimSpeed(fp), FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, nFTDonkeyStatusThrowFFall, 0.0F, 0.0F, FTSTATUS_PRESERVE_NONE);
+#endif
 
     switch (fp->status_vars.common.throwf.input_source)
     {

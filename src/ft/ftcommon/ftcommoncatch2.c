@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -76,7 +79,11 @@ void ftCommonCatchWaitSetStatus(GObj *fighter_gobj)
 
     ftParamSetCaptureImmuneMask(fp, FTCATCHKIND_MASK_ALL);
 
+#ifdef REGION_REMIX
+    if (ftRemixLinkSharedIsLinkFamily(fp))
+#else
     if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+#endif
     {
         ftParamSetModelPartID(fighter_gobj, 21, 0);
         ftParamSetModelPartID(fighter_gobj, 19, -1);

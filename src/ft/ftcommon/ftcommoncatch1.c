@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
 #endif
@@ -111,7 +114,11 @@ void ftCommonCatchSetStatus(GObj *fighter_gobj)
 
     fp->is_shield_catch = FALSE;
 
+#ifdef REGION_REMIX
+    if (ftRemixSamusSharedHasGrappleBeam(fp->fkind) && (efManagerSamusGrappleBeamGlowMakeEffect(fighter_gobj) != NULL))
+#else
     if (((fp->fkind == nFTKindSamus) || (fp->fkind == nFTKindNSamus)) && (efManagerSamusGrappleBeamGlowMakeEffect(fighter_gobj) != NULL))
+#endif
     {
         fp->is_effect_attach = TRUE;
     }

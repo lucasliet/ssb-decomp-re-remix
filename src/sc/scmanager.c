@@ -1,5 +1,6 @@
 #ifdef PORT
 #include <port_log.h>
+#include "remix/remix_debug.h"
 #ifdef PORT
 extern char *getenv(const char *name);
 extern int atoi(const char *s);
@@ -943,6 +944,42 @@ void scManagerRunLoop(sb32 arg)
 			int f = atoi(fkind_env);
 			gSCManagerSceneData.fkind = f;
 			port_log("SSB64: SSB64_SPGAME_FKIND override → fkind=%d\n", f);
+		}
+		/* SSB64_START_SCENE=61 (Auto-Demo) never passes through the title, so
+		 * the SSB64_DEMO_FKINDS override is applied here too. */
+		gSCManagerSceneData.demo_fkind[0] = remix_debug_demo_fkind(0, gSCManagerSceneData.demo_fkind[0]);
+		gSCManagerSceneData.demo_fkind[1] = remix_debug_demo_fkind(1, gSCManagerSceneData.demo_fkind[1]);
+		if ((remix_debug_vs_fkind(0) >= 0) && (remix_debug_vs_fkind(1) >= 0))
+		{
+			int i;
+
+			for (i = 0; i < ARRAY_COUNT(gSCManagerTransferBattleState.players); i++)
+			{
+				gSCManagerTransferBattleState.players[i].pkind = nFTPlayerKindNot;
+			}
+			gSCManagerTransferBattleState.players[0].pkind = nFTPlayerKindMan;
+			gSCManagerTransferBattleState.players[0].fkind = remix_debug_vs_fkind(0);
+			gSCManagerTransferBattleState.players[0].costume = 0;
+			gSCManagerTransferBattleState.players[1].pkind = nFTPlayerKindCom;
+			gSCManagerTransferBattleState.players[1].fkind = remix_debug_vs_fkind(1);
+			gSCManagerTransferBattleState.players[1].costume = 0;
+			gSCManagerTransferBattleState.players[1].level = 1;
+			for (i = 2; i < ARRAY_COUNT(gSCManagerTransferBattleState.players); i++)
+			{
+				if (remix_debug_vs_fkind(i) >= 0)
+				{
+					gSCManagerTransferBattleState.players[i].pkind = nFTPlayerKindCom;
+					gSCManagerTransferBattleState.players[i].fkind = remix_debug_vs_fkind(i);
+					gSCManagerTransferBattleState.players[i].costume = 0;
+					gSCManagerTransferBattleState.players[i].level = 1;
+				}
+			}
+			gSCManagerTransferBattleState.gkind = nGRKindPupupu;
+			gSCManagerSceneData.gkind = nGRKindPupupu;
+			gSCManagerSceneData.scene_curr = nSCKindVSBattle;
+			gSCManagerSceneData.scene_prev = nSCKindPlayersVS;
+			port_log("SSB64: SSB64_VS_FKINDS override → VS battle P1=%d (human) P2=%d (CPU)\n",
+			         (int)gSCManagerTransferBattleState.players[0].fkind, (int)gSCManagerTransferBattleState.players[1].fkind);
 		}
 		/* Classic Co-op debug: inject a P2 handoff without going through
 		 * the CSS, for direct-boot testing of the co-op game side, e.g.

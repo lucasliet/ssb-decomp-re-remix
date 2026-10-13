@@ -4,6 +4,9 @@
 #ifdef PORT
 #include <ft/ftcommon/ftcommonfunctions.h>
 #endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -441,6 +444,10 @@ void mpCommonSetFighterLandingParams(GObj *fighter_gobj)
         }
         fp->public_knockback = 0.0F;
     }
+#ifdef REGION_REMIX
+    /* Remix get_grounded_script_ (Character.asm:1600) dispatches through a per-id table */
+    ftRemixRunGroundedScript(fp);
+#endif
     switch (fp->fkind)
     {
     case nFTKindMario:
@@ -570,6 +577,9 @@ sb32 mpCommonRunFighterSpecialCollisions(MPCollData *coll_data, GObj *fighter_go
             next_gobj:
                 cliffcatch_gobj = cliffcatch_gobj->link_next;
             }
+#ifdef REGION_REMIX
+            ftRemixPeachLandingSetLedgeFlag(this_fp);
+#endif
             mpCommonSetFighterLandingParams(fighter_gobj);
 
             coll_data->is_coll_end = TRUE;

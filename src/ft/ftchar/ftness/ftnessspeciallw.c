@@ -1,6 +1,9 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -49,6 +52,13 @@ void ftNessSpecialLwProcAbsorb(GObj *fighter_gobj)
 
     ftParamsUpdateFighterPartsTransformAll(fp->joints[nFTPartsJointTopN]);
 
+#ifdef REGION_REMIX
+    /* PianoDSP absorb patches (0x80155278): Mad Piano enters its own absorb status */
+    if (ftRemixPianoDSPAbsorbRedirect(fp, fighter_gobj) != FALSE)
+    {
+        return;
+    }
+#endif
     if (fp->ga == nMPKineticsGround)
     {
         ftNessSpecialLwHitSetStatus(fighter_gobj);

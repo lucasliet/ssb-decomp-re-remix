@@ -5,6 +5,9 @@
 #include <ft/ftcommondata.h>
 #include <sys/objanim.h>
 #include <sys/audio.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void func_80026738_27338(void *arg0);
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -13,6 +16,11 @@ extern alSoundEffect* func_800269C0_275C0(u16);
 extern void *portFixupFTTexturePartContainer(void *container);
 #include <port_log.h>
 #include "fighter_registry.h"
+#endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixcommand.h"
+#include "ft/ftremix/ftremixhooks.h"
+#include "remix/remix_roster_data.h"
 #endif
 
 /* Resolve `attr->textureparts_container` (a reloc token under PORT, a real
@@ -340,6 +348,13 @@ void ftParamStopVoice(FTStruct *fp)
 // 0x800E8190
 void ftParamPlayLoopSFX(FTStruct *fp, u16 sfx_id)
 {
+#ifdef REGION_REMIX
+    /* Remix spin_dash_fgm_patch_ (Sonic.asm:703): Spin Dash charge FGMs restart on every call */
+    if ((sfx_id == 0x3D8) || (sfx_id == 0x3DE))
+    {
+        ftParamStopLoopSFX(fp);
+    }
+#endif
     if (fp->p_loop_sfx == NULL)
     {
         fp->p_loop_sfx = func_800269C0_275C0(sfx_id);
@@ -404,6 +419,10 @@ void ftParamStopVoiceRunProcDamage(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixRunOnHit(fp);
+    ftRemixPeachEndFloatOnHit(fp);
+#endif
     ftParamStopVoice(fp);
 
     if (fp->proc_damage != NULL)
@@ -548,6 +567,9 @@ void ftParamClearAttackCollAll(GObj *fighter_gobj)
      * slots is NOT an engine hook: mods that need it (CE) install a funchook
      * detour on ftParamClearAttackCollAll via mod_install_hook, zero their
      * own slots, and call the original. */
+#ifdef REGION_REMIX
+    ftRemixCommandResetAttackAll(fp);
+#endif
 
     for (i = 0; i < ARRAY_COUNT(fp->attack_colls); i++)
     {
@@ -612,7 +634,11 @@ void ftParamLinkResetShieldModelParts(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixLinkSharedIsLinkFamily(fp))
+#else
     if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+#endif
     {
         ftParamSetModelPartDefaultID(fighter_gobj, 21, 0);
         ftParamSetModelPartDefaultID(fighter_gobj, 19, -1);
@@ -624,7 +650,11 @@ void ftParamSetHammerParams(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixLinkSharedIsLinkFamily(fp))
+#else
     if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+#endif
     {
         ftParamSetModelPartDefaultID(fighter_gobj, 21, -1);
         ftParamSetModelPartDefaultID(fighter_gobj, 19, 0);
@@ -1266,6 +1296,13 @@ void ftParamSetTexturePartID(GObj *fighter_gobj, s32 texturepart_id, s32 texture
     s32 detail = texturepart->detail[fp->detail_curr - nFTPartsDetailStart];
     DObj *joint = fp->joints[texturepart->joint_id];
 
+#ifdef REGION_REMIX
+    /* Remix texture_form_fix_ (0x800E962C): Metal Mario ignores texture changes. */
+    if (fp->fkind == nFTKindMMario)
+    {
+        return;
+    }
+#endif
     if (joint != NULL)
     {
         MObj *mobj = joint->mobj;
@@ -1343,6 +1380,15 @@ void ftParamResetTexturePartAll(GObj *fighter_gobj)
 // 0x800E974C
 sb32 ftParamCheckSetColAnimID(GMColAnim *colanim, s32 colanim_id, s32 length)
 {
+#ifdef PORT
+    /* Smash Remix motion scripts request its extended gfx routines (ids
+     * >= 0x56, GFXRoutine.asm), which live in its own table; skip them
+     * instead of reading past the vanilla one. */
+    if ((colanim_id < 0) || (colanim_id >= dGMColScriptsDescsNum))
+    {
+        return FALSE;
+    }
+#endif
     if (dGMColScriptsDescs[colanim_id].priority >= dGMColScriptsDescs[colanim->colanim_id].priority)
     {
         s32 i;
@@ -1439,7 +1485,14 @@ void ftParamResetStatUpdateColAnim(GObj *fighter_gobj)
                 ftParamCheckSetFighterColAnimID(fighter_gobj, nGMColAnimFighterCommonSpecialNCharge, 0);
             }
         }
-        if ((fp->passive_vars.kirby.copy_id == nFTKindDonkey) || (fp->passive_vars.kirby.copy_id == nFTKindNDonkey) || (fp->passive_vars.kirby.copy_id == nFTKindGDonkey))
+#ifdef REGION_REMIX
+        ftRemixSamusSharedKirbyCopyChargeFlash(fighter_gobj);
+#endif
+        if ((fp->passive_vars.kirby.copy_id == nFTKindDonkey) || (fp->passive_vars.kirby.copy_id == nFTKindNDonkey) || (fp->passive_vars.kirby.copy_id == nFTKindGDonkey)
+#ifdef REGION_REMIX
+            || (fp->passive_vars.kirby.copy_id == REMIX_ID_JDK)
+#endif
+        )
         {
             if (fp->passive_vars.kirby.copydonkey_charge_level == FTKIRBY_COPYDONKEY_GIANTPUNCH_CHARGE_MAX)
             {
@@ -1689,6 +1742,9 @@ s32 ftParamGetHitLag(s32 damage, s32 status_id, f32 hitlag_mul)
 // 0x800EA248
 void ftParamUpdateDamage(FTStruct *fp, s32 damage)
 {
+#ifdef REGION_REMIX
+    damage = ftRemixMarthDSPCounterDamage(fp, damage);
+#endif
     fp->percent_damage += damage;
 
     gSCManagerBattleState->players[fp->player].total_damage_all += damage;
@@ -1705,7 +1761,11 @@ void ftParamUpdateDamage(FTStruct *fp, s32 damage)
         {
             ITStruct *ip = itGetStruct(fp->item_gobj);
 
-            if ((ip->weight != nITWeightHeavy) || (fp->fkind != nFTKindDonkey) && (fp->fkind != nFTKindNDonkey) && (fp->fkind != nFTKindGDonkey))
+            if ((ip->weight != nITWeightHeavy) || (fp->fkind != nFTKindDonkey) && (fp->fkind != nFTKindNDonkey) && (fp->fkind != nFTKindGDonkey)
+#ifdef REGION_REMIX
+                && !ftRemixDKSharedIsCargoClone(fp->fkind)
+#endif
+            )
             {
                 if ((damage > syUtilsRandIntRange(60)) || ((itMainCheckShootNoAmmo(fp->item_gobj) != FALSE) && (syUtilsRandIntRange(2) == 0)))
                 {
@@ -1986,7 +2046,11 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
     switch (effect_id)
     {
     case nEFKindChargeSparkle:
+#ifdef REGION_REMIX
+        switch (ftRemixSamusSharedChargeSparkleFkind(fp->fkind))
+#else
         switch (fp->fkind)
+#endif
         {
         case nFTKindSamus:
             joint_id = FTSAMUS_CHARGE_EFFECT_JOINT;
@@ -1997,6 +2061,9 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
             effect_pos = &effect_pos_mod;
             break;
 
+#ifdef REGION_REMIX
+        case REMIX_ID_JDK:
+#endif
         case nFTKindDonkey:
             joint_id = FTDONKEY_CHARGE_EFFECT_JOINT;
 
@@ -2007,6 +2074,9 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
             break;
 
         case nFTKindKirby:
+#ifdef REGION_REMIX
+        case REMIX_ID_JKIRBY: /* kirby fully_charged_check_ */
+#endif
             joint_id = FTKIRBY_CHARGE_EFFECT_JOINT;
 
             effect_pos_mod.z = effect_pos_mod.y = 0.0F;

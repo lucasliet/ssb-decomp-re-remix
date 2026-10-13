@@ -4,6 +4,9 @@
 #include <wp/weapon.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 #include "fighter_registry.h"
 #endif
@@ -4706,6 +4709,8 @@ GObj* efManagerKirbyVulcanJabMakeEffect(Vec3f *pos, s32 lr, f32 rotate, f32 vel,
 }
 
 // 0x80101E80
+/* REMIX-TODO(GFX): Dark Samus grapple glow (Remix 0x80101E88) uses file 6 with its own DObj/MObj/Anim offsets
+ * (0x380/0x210/0x410/0x480 + 0x2970) and proc 0x8000DF34; not ported yet, see build/remixasm/notes/shared_samus2.md. */
 GObj* efManagerSamusGrappleBeamGlowMakeEffect(GObj *fighter_gobj)
 {
     GObj *effect_gobj = efManagerMakeEffectNoForce(&dEFManagerSamusGrappleBeamEffectDesc);
@@ -4735,7 +4740,11 @@ GObj* efManagerCaptainFalconKickMakeEffect(GObj *fighter_gobj)
     FTStruct *fp;
     DObj *dobj;
 
+#ifdef REGION_REMIX
+    effect_gobj = efManagerMakeEffectForce(ftRemixCaptainSharedKickDesc(ftGetStruct(fighter_gobj), &dEFManagerCaptainFalconKickEffectDesc));
+#else
     effect_gobj = efManagerMakeEffectForce(&dEFManagerCaptainFalconKickEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -4767,7 +4776,11 @@ GObj* efManagerCaptainFalconPunchMakeEffect(GObj *fighter_gobj)
     DObj *dobj, *joint;
     GObj *effect_gobj;
 
+#ifdef REGION_REMIX
+    effect_gobj = efManagerMakeEffectForce(ftRemixCaptainSharedPunchDesc(ftGetStruct(fighter_gobj), &dEFManagerCaptainFalconPunchEffectDesc));
+#else
     effect_gobj = efManagerMakeEffectForce(&dEFManagerCaptainFalconPunchEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -4781,7 +4794,11 @@ GObj* efManagerCaptainFalconPunchMakeEffect(GObj *fighter_gobj)
 
     dobj = DObjGetStruct(effect_gobj);
 
+#ifdef REGION_REMIX
+    joint = ((fp->fkind == nFTKindCaptain) || (fp->fkind == nFTKindNCaptain) || ftRemixCaptainSharedUsesFalconHandBone(fp->fkind)) ? fp->joints[16] : fp->joints[30];
+#else
     joint = ((fp->fkind == nFTKindCaptain) || (fp->fkind == nFTKindNCaptain)) ? fp->joints[16] : fp->joints[30];
+#endif
 
     dobj->user_data.p = joint;
 
@@ -5687,6 +5704,8 @@ GObj* efManagerDonkeyEntryTaruMakeEffect(Vec3f *pos)
 }
 
 // 0x80103474
+/* REMIX-TODO(GFX): Dark Samus (file 6) and Crash (file 8) entry glows need the owner fighter, which
+ * this signature lacks; callers ftport.c and ftcommonentry.c have it. See build/remixasm/notes/shared_samus2.md. */
 GObj* efManagerSamusEntryPointMakeEffect(Vec3f *pos)
 {
     GObj *effect_gobj;
@@ -5963,7 +5982,11 @@ void efManagerCaptureKirbyStarProcUpdate(GObj *effect_gobj)
 
     if (ep->effect_vars.capture_kirby_star.effect_timer % EFCOMMON_CAPTUREKIRBYSTAR_SPARK_TIMER_MOD)
     {
+#ifdef PORT
+        f32 effect_scale = copy[port_fighter_parent_fkind(fp->fkind)].effect_scale;
+#else
         f32 effect_scale = copy[fp->fkind].effect_scale;
+#endif
         pos = DObjGetStruct(ep->fighter_gobj)->translate.vec.f;
 
         pos.y += syUtilsRandIntRange(effect_scale * EFCOMMON_CAPTUREKIRBYSTAR_SPARK_SCATTER_Y);
@@ -6024,7 +6047,12 @@ GObj* efManagerCaptureKirbyStarMakeEffect(GObj *fighter_gobj)
 
     dobj->child->user_data.p = ftGetStruct(fighter_gobj)->joints[nFTPartsJointTopN];
 
+#ifdef PORT
+    dobj->child->scale.vec.f.x = dobj->child->scale.vec.f.y =
+        copy[port_fighter_parent_fkind(ftGetStruct(fighter_gobj)->fkind)].effect_scale;
+#else
     dobj->child->scale.vec.f.x = dobj->child->scale.vec.f.y = copy[ftGetStruct(fighter_gobj)->fkind].effect_scale;
+#endif
     dobj->child->scale.vec.f.z = 1.0F;
 
     ep->effect_vars.capture_kirby_star.effect_timer = 0;

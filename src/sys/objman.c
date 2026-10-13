@@ -1902,6 +1902,15 @@ void gcEjectGObj(GObj *gobj)
 	         (void*)gobj->gobjproc_head, gobj->obj,
 	         (void*)gobj->link_next, (void*)gobj->link_prev);
 
+#ifdef REGION_REMIX
+	{
+		/* SonicNSP.destroyed_target_fix_ (SonicSpecial.asm:1137, 0x80009A98): a destroyed
+		 * fighter or item stops being Sonic's homing target. */
+		extern void ftRemixSonicNSPForgetTarget(GObj *destroyed_gobj);
+
+		ftRemixSonicNSPForgetTarget(gobj);
+	}
+#endif
 	gcEndProcessAll(gobj);
 
 	switch (gobj->obj_kind)

@@ -9,6 +9,11 @@ extern void port_dump_backtrace(void);
 #include "fighter_registry.h"
 #include "hooks/Events.h"
 #endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixcommand.h"
+#include "ft/ftremix/ftremixhooks.h"
+#include "it/itremix/itremix.h"
+#endif
 #include <sys/controller.h>
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -526,6 +531,17 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventLoopEnd:
+#ifdef PORT
+        /* An unmatched LoopEnd (Smash Remix Mewtwo moveset/USP_END.bin) indexes
+         * loop_count[-2] and p_goto[-2]. On N64 those alias script_id and
+         * p_script, and the second pass loads p_script from script_wait
+         * (0.0F), so the script ends. The LP64 layout loops forever instead. */
+        if (ms->script_id < 2)
+        {
+            ms->p_script = NULL;
+            break;
+        }
+#endif
         if (--ms->loop_count[ms->script_id - 2] != 0)
         {
             ms->p_script = ms->p_goto[ms->script_id - 2];
@@ -579,7 +595,8 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
             p_damage = (FTMotionDamageScript*)PORT_RESOLVE(ftMotionEventCast(ms, FTMotionEventSetDamageThrown2)->p_subroutine);
 
             {
-                u32 script_token = p_damage->p_script[fp->status_vars.common.damage.script_id][fkind];
+                /* synth fkind (>= nFTKindEnumCount) indexes the parent's row */
+                u32 script_token = p_damage->p_script[fp->status_vars.common.damage.script_id][port_fighter_parent_fkind(fkind)];
                 if (script_token != 0)
                 {
                     ms->p_goto[ms->script_id] = lbRelocGetFileData(void*, ms->p_script, sizeof(FTMotionEventSetDamageThrown2));
@@ -831,7 +848,14 @@ void ftMainUpdateMotionEventsAll(GObj *fighter_gobj)
                         break;
                     }
 #endif
-    
+#ifdef REGION_REMIX
+                    /* Remix load_command_ (0x800E0388): custom commands 0xD0-0xFF. */
+                    if (ftRemixCommandCheckRun(fighter_gobj, fp, ms, FALSE) != FALSE)
+                    {
+                        continue;
+                    }
+#endif
+
                     if ((ev_kind == nFTMotionEventEffect || ev_kind == nFTMotionEventEffectItemHold) && (fp->is_events_forward))
                     {
                         ftMotionEventAdvance(ms, FTMotionEventMakeEffect);
@@ -888,6 +912,13 @@ void ftMainUpdateMotionEventsForward(GObj *fighter_gobj)
                     {
                         break;
                     }
+#ifdef REGION_REMIX
+                    /* Remix load_command_2_ (0x800E0548). */
+                    if (ftRemixCommandCheckRun(fighter_gobj, fp, ms, TRUE) != FALSE)
+                    {
+                        continue;
+                    }
+#endif
                     ev_kind = ftMotionEventCast(ms, FTMotionEventDefault)->opcode;
 
                     switch (ev_kind)
@@ -985,6 +1016,13 @@ void ftMainUpdateMotionEventsForwardEffect(GObj *fighter_gobj)
                     {
                         break;
                     }
+#ifdef REGION_REMIX
+                    /* Remix load_command_2_ (0x800E072C). */
+                    if (ftRemixCommandCheckRun(fighter_gobj, fp, ms, TRUE) != FALSE)
+                    {
+                        continue;
+                    }
+#endif
                     ev_kind = ftMotionEventCast(ms, FTMotionEventDefault)->opcode;
 
                     switch (ev_kind)
@@ -1639,7 +1677,12 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
         }
         if (this_fp->proc_interrupt != NULL)
         {
+#ifdef REGION_REMIX
+            /* SonicSpecial.asm teleport_cancel_patch_ (0x800E1998) */
+            ftRemixSSonicUSPInterruptPatch(fighter_gobj, this_fp->proc_interrupt);
+#else
             this_fp->proc_interrupt(fighter_gobj);
+#endif
         }
         if (!(this_fp->is_hitstun))
         {
@@ -2248,7 +2291,12 @@ void ftMainPlayHitSFX(FTStruct *fp, FTAttackColl *attack_coll)
         func_80026738_27338(fp->p_sfx);
     }
     fp->p_sfx = NULL, fp->sfx_id = 0;
+#ifdef REGION_REMIX
+    /* Remix apply_fgm_ (0x800E2CA8): command 0xD8 per-hitbox FGM override. */
+    ftRemixCommandPlayHitFGM(fp, attack_coll, dFTMainHitCollisionFGMs[attack_coll->fgm_kind][attack_coll->fgm_level], fp->joints[nFTPartsJointTopN]->translate.vec.f.x);
+#else
     lbCommonMakePositionFGM(dFTMainHitCollisionFGMs[attack_coll->fgm_kind][attack_coll->fgm_level], fp->joints[nFTPartsJointTopN]->translate.vec.f.x);
+#endif
 }
 
 // 0x800E2CC0
@@ -2668,6 +2716,22 @@ void ftMainUpdateDamageStatItem(ITStruct *ip, ITAttackColl *it_attack_coll, s32 
         case nITKindGLucky:
             ftParamSetHealDamage(fp, it_attack_coll->damage);
             break;
+
+#ifdef REGION_REMIX
+        default:
+            /* Item.asm extend_player_collision_check_ (0x800E3A18) */
+            if (itRemixIsCustomKind(ip->kind))
+            {
+                const ITRemixItemDesc *desc = itRemixGetItemDesc(ip->kind);
+
+                if ((desc != NULL) && (desc->proc_touch != NULL))
+                {
+                    ip->hit_normal_damage = 1;
+                    desc->proc_touch(fp, ip, item_gobj);
+                }
+            }
+            break;
+#endif
         }
     }
     else
@@ -3493,6 +3557,9 @@ void ftMainSearchHitWeapon(GObj *fighter_gobj)
 
                                 else if (gmCollisionCheckWeaponAttackSpecialCollide(wp_attack_coll, i, fp, fp->special_coll) != FALSE)
                                 {
+#ifdef REGION_REMIX
+                                    ftRemixMarinaDSPAbsorbProjectileCharge(fp, wp);
+#endif
                                     ftMainUpdateReflectorStatWeapon(wp, wp_attack_coll, fp, fighter_gobj);
 
                                     goto next_gobj;
@@ -3688,6 +3755,9 @@ void ftMainSearchHitItem(GObj *fighter_gobj)
                                 }
                                 else if (gmCollisionCheckItemAttackSpecialCollide(it_attack_coll, i, fp, fp->special_coll) != FALSE)
                                 {
+#ifdef REGION_REMIX
+                                    ftRemixMarinaDSPAbsorbItemCharge(fp, ip);
+#endif
                                     ftMainUpdateReflectorStatItem(ip, it_attack_coll, fp, fighter_gobj);
 
                                     goto next_gobj;
@@ -4185,7 +4255,11 @@ void ftMainProcParams(GObj *fighter_gobj)
         switch (fp->afterimage.is_itemswing)
         {
         case FALSE:
+#ifdef REGION_REMIX
+            if (ftRemixLinkSharedHasSwordTrail(fp) && (fp->modelpart_status[11 - nFTPartsJointCommonStart].modelpart_id_curr == 0))
+#else
             if ((fp->fkind == nFTKindLink) && (fp->modelpart_status[11 - nFTPartsJointCommonStart].modelpart_id_curr == 0))
+#endif
             {
                 FTParts *parts = fp->joints[11]->user_data.p;
 
@@ -4615,11 +4689,17 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     DObj *transn_child;                 // Child of TransN_Joint
     s32 i;
 
+#ifdef REGION_REMIX
+    status_id = ftRemixDededeMapKirbyInhaleStatus(fp, status_id);
+#endif
 #ifdef PORT
     /* SR change_action_ (0x800E6F2C) — the per-status-change reset of SR
      * translation multiplier / env color override is NOT an engine hook:
      * mods that need it (CE) install a funchook detour on ftMainSetStatus
      * via mod_install_hook, reset their own state, and call the original. */
+#ifdef REGION_REMIX
+    ftRemixCommandResetStatus(fp);
+#endif
 
     /* SR dig_ecb_patch_ (0x800E6F4C, CrashSpecial.asm:2152-2194): resize
      * the fighter's ECB diamond per the new action. SR's patch hard-codes

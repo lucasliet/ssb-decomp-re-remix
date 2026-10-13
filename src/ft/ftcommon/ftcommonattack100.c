@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#endif
 
 #ifdef PORT
 /* The rapid-jab (Attack100) entry + per-character status/input switches key on
@@ -112,7 +115,11 @@ void ftCommonAttack100LoopKirbyUpdateEffect(FTStruct *fp)
 {
     Vec3f pos;
 
-    if (fp->fkind == nFTKindKirby)
+    if ((fp->fkind == nFTKindKirby)
+#ifdef REGION_REMIX
+        || (fp->fkind == REMIX_ID_JKIRBY) /* kirby_infinite_1 */
+#endif
+    )
     {
         if (fp->motion_vars.flags.flag2 != 0)
         {

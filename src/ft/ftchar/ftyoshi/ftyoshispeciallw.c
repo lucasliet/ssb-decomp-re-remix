@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -28,6 +31,9 @@ void ftYoshiSpecialLwLandingProcUpdate(GObj *fighter_gobj)
         pos.z = 0.0F;
 
         gmCollisionGetFighterPartsWorldPosition(fp->joints[FTYOSHI_YOSHIBOMB_STAR_SPAWN_JOINT], &pos);
+#ifdef REGION_REMIX
+        if (ftRemixBowserDSPSkipsStars(fp) == FALSE)
+#endif
         wpYoshiStarMakeStars(fighter_gobj, &pos);
     }
     ftAnimEndCheckSetStatus(fighter_gobj, ftCommonWaitSetStatus);

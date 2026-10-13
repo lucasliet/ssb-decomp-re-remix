@@ -261,6 +261,14 @@ void sc1PManagerTrySaveBackup(sb32 is_complete_spgame)
 {
     sb32 is_write_data = FALSE;
 
+#ifdef PORT
+    /* synth fkind (>= GMCOMMON_FIGHTERS_PLAYABLE_NUM) has no row in the 12-entry spgame_records */
+    if (gSCManagerSceneData.fkind >= GMCOMMON_FIGHTERS_PLAYABLE_NUM)
+    {
+        return;
+    }
+#endif
+
     if (gSCManagerBackupData.spgame_records[gSCManagerSceneData.fkind].spgame_hiscore < gSCManagerSceneData.spgame_score)
     {
         gSCManagerBackupData.spgame_records[gSCManagerSceneData.fkind].spgame_hiscore   = gSCManagerSceneData.spgame_score;

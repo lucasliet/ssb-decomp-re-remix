@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -116,6 +119,12 @@ sb32 ftDonkeyThrowFFCheckInterruptThrowFCommon(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     sb32 is_turn = FALSE;
 
+#ifdef REGION_REMIX
+    if (ftRemixMarinaCargoShakeCheckInterrupt(fighter_gobj) != FALSE)
+    {
+        return TRUE;
+    }
+#endif
     if (fp->input.pl.button_tap & (fp->input.button_mask_a | fp->input.button_mask_b))
     {
         if ((ABS(fp->input.pl.stick_range.x) >= FTCOMMON_THROWFF_TURN_STICK_RANGE_MIN) && ((fp->input.pl.stick_range.x * fp->lr) < 0) && (fp->ga == nMPKineticsAir))

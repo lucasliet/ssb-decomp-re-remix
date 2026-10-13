@@ -1,4 +1,8 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -17,7 +21,11 @@ void ftKirbySpecialLwUpdateColAnim(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (fp->damage_resist < ftRemixKirbyStoneHealthMid(fp, FTKIRBY_STONE_HEALTH_MID)) // Apply color overlay based on remaining Stone HP (kirby_rock_2)
+#else
     if (fp->damage_resist < FTKIRBY_STONE_HEALTH_MID) // Apply color overlay based on remaining Stone HP
+#endif
     {
         if (fp->damage_resist < FTKIRBY_STONE_HEALTH_LOW)
         {
@@ -46,7 +54,11 @@ void ftKirbySpecialLwSetDamageResist(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
     fp->is_damage_resist = TRUE;
+#ifdef REGION_REMIX
+    fp->damage_resist = ftRemixKirbyStoneHealthMax(fp, FTKIRBY_STONE_HEALTH_MAX); /* kirby_rock */
+#else
     fp->damage_resist = FTKIRBY_STONE_HEALTH_MAX;
+#endif
 
     fp->status_vars.kirby.speciallw.duration = FTKIRBY_STONE_DURATION_MAX;
     fp->status_vars.kirby.speciallw.colanim_id = nGMColAnimFighterKirbySpeciaLwHigh;
@@ -82,7 +94,11 @@ sb32 ftKirbySpecialLwCheckRelease(GObj *fighter_gobj, sb32 is_allow_release)
             return TRUE;
         }
     }
+#ifdef REGION_REMIX
+    else if ((fp->status_vars.kirby.speciallw.duration < ftRemixKirbyStoneReleaseDuration(fp, FTKIRBY_STONE_DURATION_MAX - FTKIRBY_STONE_DURATION_MIN)) && (fp->input.pl.button_tap & fp->input.button_mask_b))
+#else
     else if ((fp->status_vars.kirby.speciallw.duration < (FTKIRBY_STONE_DURATION_MAX - FTKIRBY_STONE_DURATION_MIN)) && (fp->input.pl.button_tap & fp->input.button_mask_b))
+#endif
     {
         return TRUE;
     }

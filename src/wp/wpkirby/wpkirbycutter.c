@@ -1,6 +1,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -140,7 +143,12 @@ sb32 wpKirbyCutterProcReflector(GObj *weapon_gobj)
 GObj* wpKirbyCutterMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+#ifdef REGION_REMIX
+    WPDesc *weapon_desc = ftRemixKirbyCutterWeaponDesc(fp, &dWPKirbyCutterWeaponDesc);
+    GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, weapon_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPKirbyCutterWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     WPStruct *wp;
 
     if (weapon_gobj == NULL)

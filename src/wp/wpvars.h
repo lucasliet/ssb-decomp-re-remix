@@ -158,6 +158,11 @@ typedef struct wpMarioFireballAttributes
 	f32 anim_frame; // Frame of texture animation to use? 0 = Mario Fireball, 1
 					// = Luigi Fireball
 
+#ifdef REGION_REMIX
+	s32 file_fkind;    // Remix: fkind whose p_file_special1 holds the projectile file (0 = use p_weapon)
+	s32 palette_base;  // Remix: first palette index of the random palette range
+	s32 palette_range; // Remix: size of the random palette range (0 = use anim_frame)
+#endif
 } wpMarioFireballAttributes;
 
 typedef struct wpSamusChargeShotAttributes

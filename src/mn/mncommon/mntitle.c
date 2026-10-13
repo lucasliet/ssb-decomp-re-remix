@@ -6,6 +6,9 @@
 #include <sys/rdp.h>
 #include <reloc_data.h>
 #include <sys/audio.h>
+#ifdef PORT
+#include "remix/remix_debug.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 extern void func_800266A0_272A0(void);
 
@@ -343,6 +346,10 @@ s32 mnTitleSetDemoFighterKinds(void)
 		gSCManagerSceneData.demo_fkind[1] = mnTitleGetShuffledFighterKind(unlocked_mask, gSCManagerSceneData.demo_mask_prev, syUtilsRandIntRange(non_recently_demoed_count));
 		gSCManagerSceneData.demo_mask_prev |= LBBACKUP_MASK_FIGHTER(gSCManagerSceneData.demo_fkind[1]);
 	}
+#ifdef PORT
+	gSCManagerSceneData.demo_fkind[0] = remix_debug_demo_fkind(0, gSCManagerSceneData.demo_fkind[0]);
+	gSCManagerSceneData.demo_fkind[1] = remix_debug_demo_fkind(1, gSCManagerSceneData.demo_fkind[1]);
+#endif
 	return 0;
 }
 

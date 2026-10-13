@@ -4,6 +4,9 @@
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -262,7 +265,11 @@ void wpYoshiEggThrowProcDisplay(GObj *weapon_gobj)
 GObj* wpYoshiEggThrowMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+#ifdef REGION_REMIX
+    GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, ftRemixYoshiEggWeaponDesc(fp, &dWPYoshiEggThrowWeaponDesc), pos, WEAPON_FLAG_PARENT_FIGHTER);
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPYoshiEggThrowWeaponDesc, pos, WEAPON_FLAG_PARENT_FIGHTER);
+#endif
     WPStruct *wp;
 
     if (weapon_gobj == NULL)

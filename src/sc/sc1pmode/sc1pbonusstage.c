@@ -583,6 +583,7 @@ void sc1PBonusStageUpdateTargetCount(void)
 		if
 		(
 			(gSCManagerSceneData.scene_prev != nSCKind1PGame) &&
+			(gSCManagerSceneData.bonus_fkind < GMCOMMON_FIGHTERS_PLAYABLE_NUM) &&
 			(gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus1_task_count == SCBATTLE_BONUSGAME_TASK_MAX) &&
 			(gSCManagerBattleState->time_passed < gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus1_time)
 		)
@@ -742,6 +743,7 @@ void sc1PBonusStageUpdatePlatformCount(DObj *dobj)
 		if
 		(
 			(gSCManagerSceneData.scene_prev != nSCKind1PGame) &&
+			(gSCManagerSceneData.bonus_fkind < GMCOMMON_FIGHTERS_PLAYABLE_NUM) &&
 			(gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus2_task_count == SCBATTLE_BONUSGAME_TASK_MAX) &&
 			(gSCManagerBattleState->time_passed < gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus2_time)
 		)
@@ -1253,6 +1255,13 @@ void sc1PBonusStageSetBonusStats(s32 tasks_remain)
 // 0x8018E95C
 void sc1PBonusStageWriteBackup(sb32 is_tasks_fail, s32 fkind)
 {
+#ifdef PORT
+	/* synth fkind (>= GMCOMMON_FIGHTERS_PLAYABLE_NUM) has no row in the 12-entry spgame_records */
+	if (fkind >= GMCOMMON_FIGHTERS_PLAYABLE_NUM)
+	{
+		return;
+	}
+#endif
 	if (gSCManagerSceneData.is_reset == FALSE)
 	{
 		if (gSCManagerBattleState->gkind <= nGRKindBonus1End)

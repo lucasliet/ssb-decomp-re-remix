@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -74,7 +77,11 @@ void ftCommonFallSpecialSetStatus(GObj *fighter_gobj, f32 drift, sb32 unknown, s
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
 
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, ftRemixPeachFallSpecialStatus(fp, nFTCommonStatusFallSpecial), 0.0F, 1.0F, FTSTATUS_PRESERVE_FASTFALL);
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusFallSpecial, 0.0F, 1.0F, FTSTATUS_PRESERVE_FASTFALL);
+#endif
 
     fp->status_vars.common.fallspecial.drift = (attr->air_speed_max_x * drift);
 

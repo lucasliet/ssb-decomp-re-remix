@@ -1,7 +1,10 @@
 #include <ft/fighter.h>
 #include <it/item.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
-// // // // // // // // // // // //
+// // //// // // // // // // // //
 //                               //
 //           FUNCTIONS           //
 //                               //
@@ -86,7 +89,11 @@ void ftCommonItemThrowProcUpdate(GObj *fighter_gobj)
     {
         if 
         (
-            (fp->fkind == nFTKindDonkey || fp->fkind == nFTKindNDonkey || fp->fkind == nFTKindGDonkey) &&
+            (fp->fkind == nFTKindDonkey || fp->fkind == nFTKindNDonkey || fp->fkind == nFTKindGDonkey
+#ifdef REGION_REMIX
+                || ftRemixDKSharedIsCargoClone(fp->fkind)
+#endif
+            ) &&
             (fp->status_id >= nFTDonkeyStatusHeavyThrowStart && fp->status_id <= nFTDonkeyStatusHeavyThrowEnd)
         )
         {
@@ -239,7 +246,11 @@ void ftCommonHeavyThrowDecideSetStatus(GObj *fighter_gobj)
     }
     else status_id = nFTCommonStatusHeavyThrowStart;
 
-    if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey))
+    if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey)
+#ifdef REGION_REMIX
+        || ftRemixDKSharedIsCargoClone(fp->fkind)
+#endif
+    )
     {
         status_id += nFTCommonStatusHeavyThrow4Start;
     }

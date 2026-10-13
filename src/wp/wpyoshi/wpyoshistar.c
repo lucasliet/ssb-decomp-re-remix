@@ -1,6 +1,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -176,7 +179,11 @@ sb32 wpYoshiStarProcReflector(GObj *weapon_gobj)
     }
     else offset.x -= WPYOSHISTAR_OFF_X;
     
+#ifdef REGION_REMIX
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, ftRemixYoshiStarWeaponDesc(ftGetStruct(fighter_gobj), &dWPYoshiStarWeaponDesc), &offset, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#else
     weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPYoshiStarWeaponDesc, &offset, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
 
     if (weapon_gobj == NULL)
     {

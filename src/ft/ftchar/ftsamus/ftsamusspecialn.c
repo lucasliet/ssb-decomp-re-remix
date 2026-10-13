@@ -3,6 +3,9 @@
 #ifdef PORT
 #include <ft/ftcommon/ftcommonfunctions.h>
 #endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -34,6 +37,12 @@ void ftSamusSpecialNProcDamage(GObj *fighter_gobj)
 // 0x8015D35C
 void ftSamusSpecialNGetChargeShotPosition(FTStruct *fp, Vec3f *pos)
 {
+#ifdef REGION_REMIX
+    if (ftRemixMewtwoSpecialNGetBallPosition(fp, pos))
+    {
+        return;
+    }
+#endif
     pos->y = pos->z = 0.0F;
     pos->x = FTSAMUS_CHARGE_OFF_X;
 
@@ -62,6 +71,12 @@ void ftSamusSpecialNStartProcUpdate(GObj *fighter_gobj)
     {
         if (fp->ga == nMPKineticsAir)
         {
+#ifdef REGION_REMIX
+            if (ftRemixDSamusNSPCheckAerialCharge(fighter_gobj) != FALSE)
+            {
+                return;
+            }
+#endif
             ftSamusSpecialAirNEndSetStatus(fighter_gobj);
         }
         else if (fp->status_vars.samus.specialn.is_release != FALSE)
@@ -118,6 +133,12 @@ void ftSamusSpecialNStartSwitchStatusAir(GObj *fighter_gobj)
 
     fp->proc_damage = ftSamusSpecialNProcDamage;
 
+#ifdef REGION_REMIX
+    if (ftRemixDSamusNSPKeepsReleaseOnAirSwitch(fp) != FALSE)
+    {
+        return;
+    }
+#endif
     fp->status_vars.samus.specialn.is_release = TRUE;
 }
 
@@ -249,9 +270,22 @@ void ftSamusSpecialNEndProcUpdate(GObj *fighter_gobj)
         {
             charge_recoil_x = (fp->passive_vars.samus.charge_level + 1);
 
+#ifdef REGION_REMIX
+            {
+                f32 recoil_base = FTSAMUS_CHARGE_RECOIL_BASE;
+                f32 recoil_y_step = -FTSAMUS_CHARGE_RECOIL_BASE;
+
+                ftRemixMewtwoSpecialNGetShootRecoil(fp, &recoil_base, &recoil_y_step);
+
+                fp->physics.vel_air.x = ((FTSAMUS_CHARGE_RECOIL_MUL * charge_recoil_x) + recoil_base) * -fp->lr;
+
+                charge_recoil_y = charge_recoil_x + FTSAMUS_CHARGE_RECOIL_ADD + (fp->passive_vars.samus.charge_recoil * recoil_y_step);
+            }
+#else
             fp->physics.vel_air.x = ((FTSAMUS_CHARGE_RECOIL_MUL * charge_recoil_x) + FTSAMUS_CHARGE_RECOIL_BASE) * -fp->lr;
 
             charge_recoil_y = charge_recoil_x + FTSAMUS_CHARGE_RECOIL_ADD + (fp->passive_vars.samus.charge_recoil * -FTSAMUS_CHARGE_RECOIL_BASE);
+#endif
 
             if (fp->physics.vel_air.y < charge_recoil_y)
             {
@@ -369,5 +403,9 @@ void ftSamusSpecialAirNStartSetStatus(GObj *fighter_gobj)
     ftMainPlayAnimEventsAll(fighter_gobj);
     ftSamusSpecialNStartInitStatusVars(fp);
 
+#ifdef REGION_REMIX
+    fp->status_vars.samus.specialn.is_release = ftRemixDSamusNSPAirStartIsRelease(fp, TRUE);
+#else
     fp->status_vars.samus.specialn.is_release = TRUE;
+#endif
 }

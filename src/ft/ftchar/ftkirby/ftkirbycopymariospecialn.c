@@ -1,5 +1,10 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#include "remix/remix_roster_data.h"
+#define FTKIRBY_COPYPIANO_FIREBALL_SPAWN_JOINT 7 /* N64 0x0904 in fireball.asm Book.kirby_fix_ */
+#endif
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -36,6 +41,19 @@ void ftKirbyCopyMarioSpecialNProcAccessory(GObj *fighter_gobj)
         pos.y = 0.0F;
         pos.z = 0.0F;
 
+#ifdef REGION_REMIX
+        gmCollisionGetFighterPartsWorldPosition(fp->joints[(fp->passive_vars.kirby.copy_id == REMIX_ID_PIANO) ? FTKIRBY_COPYPIANO_FIREBALL_SPAWN_JOINT : FTKIRBY_COPYMARIO_FIREBALL_SPAWN_JOINT], &pos);
+        if (fp->passive_vars.kirby.copy_id == REMIX_ID_PIANO)
+        {
+            wpRemixPianoBookMake(fighter_gobj, &pos);
+            return;
+        }
+        fireball_kind = wpRemixMarioFireballIndexForFkind(fp->passive_vars.kirby.copy_id);
+        if (fireball_kind < 0)
+        {
+            return;
+        }
+#else
         gmCollisionGetFighterPartsWorldPosition(fp->joints[FTKIRBY_COPYMARIO_FIREBALL_SPAWN_JOINT], &pos);
 
         switch (fp->passive_vars.kirby.copy_id) // jtbl at 0x8018C6A0
@@ -57,6 +75,7 @@ void ftKirbyCopyMarioSpecialNProcAccessory(GObj *fighter_gobj)
             fireball_kind = 1;
             break;
         }
+#endif
         wpMarioFireballMakeWeapon(fighter_gobj, &pos, fireball_kind);
     }
 }

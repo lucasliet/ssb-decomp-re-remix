@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -72,6 +75,9 @@ void ftCommonCliffQuickOrSlowSetStatus(GObj *fighter_gobj, s32 status_input)
 
     fp->status_vars.common.cliffmotion.status_id = status_input + status_queue;
     fp->status_vars.common.cliffmotion.cliff_id = fp->coll_data.cliff_id;
+#ifdef REGION_REMIX
+    ftRemixPeachCliffRestoreFloat(fp);
+#endif
 
     fp->is_cliff_hold = TRUE;
 
