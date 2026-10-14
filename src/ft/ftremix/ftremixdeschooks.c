@@ -10,12 +10,15 @@
 
 #include "ftremix.h"
 #include "fighter_registry.h"
+#include "ftremixhooks.h"
 
 int ftRemixCrashNSPShieldHitlagSkip(GObj *fighter_gobj, int status_id);
 int ftRemixCrashDSPECBOverride(FTStruct *fp, int next_status_id, float *out_upper, float *out_middle);
 
 void ftRemixBindDescriptorHooks(s32 remix_id, struct FighterDescriptor *descriptor)
 {
+    descriptor->entry_make_effect = ftRemixEntryMakeEffect;
+
     switch (remix_id)
     {
     case REMIX_ID_CRASH:

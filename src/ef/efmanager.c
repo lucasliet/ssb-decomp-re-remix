@@ -5750,6 +5750,14 @@ GObj* efManagerCaptainEntryCarMakeEffect(Vec3f *pos, s32 lr)
     GObj *effect_gobj;
     DObj *dobj;
     s32 i;
+#ifdef REGION_REMIX
+    void *car_file = gFTDataCaptainSpecial2;
+    intptr_t o_car_anim = llCaptainSpecial2_6200_AnimJoint;
+    intptr_t o_wheel_anim_l = llCaptainSpecial2_6518_AnimJoint;
+    intptr_t o_wheel_anim_r = llCaptainSpecial2_6598_AnimJoint;
+
+    ftRemixEntryGetCarAnim(&car_file, &o_car_anim, &o_wheel_anim_l, &o_wheel_anim_r);
+#endif
 
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerCaptainEntryCarEffectDesc);
 
@@ -5759,18 +5767,30 @@ GObj* efManagerCaptainEntryCarMakeEffect(Vec3f *pos, s32 lr)
     }
     dobj = DObjGetStruct(effect_gobj);
 
+    #ifdef REGION_REMIX
+    gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, car_file, o_car_anim), 0.0F);
+#else
     gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gFTDataCaptainSpecial2, llCaptainSpecial2_6200_AnimJoint), 0.0F);
+#endif
 
     node_dobj = dobj->child->child->child;
 
     for (i = nFTPartsJointCommonStart; i > 0; i--)
     {
         gcAddXObjForDObjFixed(node_dobj, nGCMatrixKindRecalcRotRpyRSca, 0);
+#ifdef REGION_REMIX
+        gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, car_file, o_wheel_anim_l), 0.0F);
+#else
         gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, gFTDataCaptainSpecial2, llCaptainSpecial2_6518_AnimJoint), 0.0F);
+#endif
 
         node_dobj = node_dobj->sib_next;
 
+#ifdef REGION_REMIX
+        gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, car_file, o_wheel_anim_r), 0.0F);
+#else
         gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, gFTDataCaptainSpecial2, llCaptainSpecial2_6598_AnimJoint), 0.0F);
+#endif
 
         node_dobj = node_dobj->sib_next;
     }

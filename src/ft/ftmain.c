@@ -5009,6 +5009,19 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             fp->anim_desc.word & ~(FTANIM_FLAG_SUBMOTION_SCRIPT | FTANIM_FLAG_ANIMJOINT | FTANIM_FLAG_TRANSLATE_SCALES | FTANIM_FLAG_SHIELDPOSE | FTANIM_FLAG_ANIMLOCKS);
             
             fp->anim_desc.word = motion_desc->anim_desc.word;
+#ifdef REGION_REMIX
+            /* DEVIATION from the Remix data (docs/bugs/remix_entry_effects_and_polygon_entry_2026-10-14.md): polygon
+             * variants (NDrMario, NWario, NWolf...) enter with ftCommonEntryNullProcUpdate and no physics, and their
+             * motion row still carries 0x40000000. With that bit the port poses the polygon crouched into the floor;
+             * without it they stand. The N64 almost certainly does not sink, so some engine difference is still
+             * unexplained. Lead: this bit sends the status through the TransN hidden part (ftMainAddHiddenPartID reparent
+             * dance), which may hit a different joint in the polygon skeletons. */
+            if ((status_struct != NULL) && (status_struct[status_struct_id].proc_update == ftCommonEntryNullProcUpdate)
+                && (status_struct[status_struct_id].proc_physics == NULL))
+            {
+                fp->anim_desc.flags.is_use_transn_joint = FALSE;
+            }
+#endif
 
             anim_desc_update =
             fp->anim_desc.word & ~(FTANIM_FLAG_SUBMOTION_SCRIPT | FTANIM_FLAG_ANIMJOINT | FTANIM_FLAG_TRANSLATE_SCALES | FTANIM_FLAG_SHIELDPOSE | FTANIM_FLAG_ANIMLOCKS);

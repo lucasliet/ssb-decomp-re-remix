@@ -974,8 +974,13 @@ void scManagerRunLoop(sb32 arg)
 					gSCManagerTransferBattleState.players[i].level = 1;
 				}
 			}
-			gSCManagerTransferBattleState.gkind = nGRKindPupupu;
-			gSCManagerSceneData.gkind = nGRKindPupupu;
+			{
+				const char *stage_env = getenv("SSB64_VS_STAGE");
+				u8 gkind = (stage_env != NULL) ? (u8)atoi(stage_env) : nGRKindPupupu;
+
+				gSCManagerTransferBattleState.gkind = gkind;
+				gSCManagerSceneData.gkind = gkind;
+			}
 			gSCManagerSceneData.scene_curr = nSCKindVSBattle;
 			gSCManagerSceneData.scene_prev = nSCKindPlayersVS;
 			port_log("SSB64: SSB64_VS_FKINDS override → VS battle P1=%d (human) P2=%d (CPU)\n",

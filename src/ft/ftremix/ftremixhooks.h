@@ -135,6 +135,13 @@ sb32 wpRemixMarioFireballHitEffect(GObj *weapon_gobj);
 sb32 wpRemixMarioFireballBounceEffect(GObj *weapon_gobj);
 GObj* wpRemixPianoBookMake(GObj *fighter_gobj, Vec3f *pos);
 
+/* Entry script of every synth fighter, ftremixentry.c: installed as the descriptor's entry_make_effect */
+void ftRemixEntryMakeEffect(FTStruct *fp);
+
+/* captainshared.asm get_entry_file_ptr_ and clown_car_animation1/2: the file and the three animation joint offsets
+ * efManagerCaptainEntryCarMakeEffect reads; the arguments hold the vanilla values on entry */
+void ftRemixEntryGetCarAnim(void **car_file, intptr_t *o_car_anim, intptr_t *o_wheel_anim_l, intptr_t *o_wheel_anim_r);
+
 /* Yoshi clones, ftremixyoshishared.c (yoshishared.asm): the egg and star descriptors point at the clone's own file */
 WPDesc *ftRemixYoshiEggWeaponDesc(FTStruct *fp, WPDesc *vanilla_desc);
 WPDesc *ftRemixYoshiStarWeaponDesc(FTStruct *fp, WPDesc *vanilla_desc);
