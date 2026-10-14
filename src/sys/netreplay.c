@@ -14,6 +14,10 @@ typedef __WINT_TYPE__ wint_t;
 #include <sys/netinput.h>
 #include <sys/utils.h>
 
+#ifdef REGION_REMIX
+#include "it/itremix/itremixspawn.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -409,7 +413,16 @@ sb32 syNetReplayWriteDebugFile(const char *path)
 	}
 	header.magic = SYNETINPUT_REPLAY_MAGIC;
 	header.version = SYNETINPUT_REPLAY_VERSION;
+#ifdef REGION_REMIX
+	/* sizeof(SYNetInputReplayMetadata) + the gITRemixExtendedToggles u32
+	 * appended after the metadata blob below. The loader's metadata_size
+	 * check rejects older files (they stop at the smaller vanilla size), so
+	 * replays recorded before the Remix mask was carried must be considered
+	 * incompatible whenever Remix items were toggled. */
+	header.metadata_size = sizeof(SYNetInputReplayMetadata) + sizeof(u32);
+#else
 	header.metadata_size = sizeof(SYNetInputReplayMetadata);
+#endif
 	header.frame_size = sizeof(SYNetInputFrame);
 	header.frame_count = syNetInputGetRecordedFrameCount();
 	header.player_count = MAXCONTROLLERS;
@@ -417,6 +430,11 @@ sb32 syNetReplayWriteDebugFile(const char *path)
 
 	fwrite(&header, sizeof(header), 1, fp);
 	fwrite(&metadata, sizeof(metadata), 1, fp);
+#ifdef REGION_REMIX
+	/* Symmetric with the extra u32 read in syNetReplayLoadDebugFile. Not part
+	 * of SYNetInputReplayMetadata because that struct is shared with vanilla. */
+	fwrite(&gITRemixExtendedToggles, sizeof(gITRemixExtendedToggles), 1, fp);
+#endif
 
 	for (tick = 0; tick < header.frame_count; tick++)
 	{
@@ -466,7 +484,11 @@ sb32 syNetReplayLoadDebugFile(const char *path)
 	}
 	if ((header.magic != SYNETINPUT_REPLAY_MAGIC) ||
 		(header.version != SYNETINPUT_REPLAY_VERSION) ||
+#ifdef REGION_REMIX
+		(header.metadata_size != sizeof(SYNetInputReplayMetadata) + sizeof(u32)) ||
+#else
 		(header.metadata_size != sizeof(SYNetInputReplayMetadata)) ||
+#endif
 		(header.frame_size != sizeof(SYNetInputFrame)) ||
 		(header.frame_count == 0) || (header.frame_count > SYNETINPUT_REPLAY_MAX_FRAMES) ||
 		(header.player_count != MAXCONTROLLERS))
@@ -483,6 +505,13 @@ sb32 syNetReplayLoadDebugFile(const char *path)
 		fclose(fp);
 		return FALSE;
 	}
+#ifdef REGION_REMIX
+	if (fread(&gITRemixExtendedToggles, sizeof(gITRemixExtendedToggles), 1, fp) != 1)
+	{
+		fclose(fp);
+		return FALSE;
+	}
+#endif
 	syNetReplayClearLoadedFrames();
 	sSYNetReplayLoadedFrameCount = header.frame_count;
 	sSYNetReplayLoadedInputChecksum = header.input_checksum;

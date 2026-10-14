@@ -1,6 +1,9 @@
 #ifdef PORT
 #include <port_log.h>
 #include "remix/remix_debug.h"
+#ifdef REGION_REMIX
+#include "it/itremix/itremixspawn.h"
+#endif
 #ifdef PORT
 extern char *getenv(const char *name);
 extern int atoi(const char *s);
@@ -1127,6 +1130,13 @@ void scManagerRunLoop(sb32 arg)
 		 * the union from scratch. */
 		memset(&gGRCommonStruct, 0, sizeof(gGRCommonStruct));
 #endif
+#ifdef REGION_REMIX
+		/* Item.asm clear_active_custom_items_: Remix item effects carry
+		 * per-port state that outlives their GObjs (cloak flags, mushroom
+		 * size timers, stopwatch speed). Reset it at the same boundary so
+		 * no effect leaks into CSS / the next match. */
+		itRemixClearActiveItems();
+#endif
 		switch (gSCManagerSceneData.scene_curr)
 		{
 			case nSCKindNoController:
@@ -1255,6 +1265,15 @@ void scManagerRunLoop(sb32 arg)
 				break;
 
 			case nSCKindPlayersVS:
+				// restore Remix extended item toggles
+				{
+#ifdef REGION_REMIX
+					/* Render.asm _css: entering the CSS restores the saved extended
+					 * item-toggle mask so a restricted mode that zeroed the live mask
+					 * does not leak into the next battle's item spawns. */
+					itRemixRestoreExtendedToggles();
+#endif
+				}
 				syDmaLoadOverlay(&dSCManagerOverlays[2]);
 				syDmaLoadOverlay(&dSCManagerOverlays[1]);
 				syDmaLoadOverlay(&dSCManagerOverlays[26]);
@@ -1296,6 +1315,9 @@ void scManagerRunLoop(sb32 arg)
 						gSCManagerTransferBattleState.stocks = 3; // 4 Stocks
 						gSCManagerTransferBattleState.is_show_score = FALSE;
 						gSCManagerTransferBattleState.item_toggles = 0; // No Items
+#ifdef REGION_REMIX
+						gITRemixExtendedToggles = 0; // competitive ruleset forces Remix items off too
+#endif
 						gSCManagerTransferBattleState.item_appearance_rate = 4; // None
 						gSCManagerTransferBattleState.gkind = nGRKindPupupu; // Dream Land
 

@@ -6,6 +6,25 @@
 /* Spawns the Smashketball basketball (Remix item 0x40). Fighter and mode call sites use this signature. */
 GObj* itRemixBasketballMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags);
 
+/*
+ * Basketball.asm vanilla hooks (REGION_REMIX only). Each routine checks the
+ * item kind itself and is a no-op for anything that is not the basketball.
+ */
+
+/* Basketball.bounce_patch_ (four jal hooks in itMapCheckCollideAllRebound):
+ * squashes the joint, offsets the translate, sets the bounce hitlag, plays the
+ * bounce FGM, then runs the vanilla lbCommonReflect2D. */
+void itRemixBasketballApplyBounce(GObj *item_gobj, Vec3f *angle, f32 x_scale, f32 y_scale, f32 x_offset, f32 y_offset);
+
+/* Basketball multiply_player_hitlag_ / multiply_ball_hitlag_hurtbox_ /
+ * add_ball_hitlag_hitbox_: TRUE when item_gobj is the basketball with the fire
+ * state on (asm ITStruct 0x1D4). */
+sb32 itRemixBasketballIsFire(GObj *item_gobj);
+
+/* Basketball bounce_patch_ / prevent_bounce_fgm_: TRUE when item_gobj is the
+ * basketball with the bounce squash applied (asm ITStruct 0x1E4). */
+sb32 itRemixBasketballIsBounceScaled(GObj *item_gobj);
+
 extern const ITRemixItemDesc dITRemixBasketballItemDesc;
 
 #endif

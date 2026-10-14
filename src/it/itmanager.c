@@ -544,6 +544,15 @@ ITStruct* itManagerGetCurrentAlloc(void)
 // 0x8016EB0C
 void itManagerSetItemSpawnWait(void)
 {
+#ifdef REGION_REMIX
+    /* Debug-only fast spawn for item sweeps (SSB64_REMIX_FORCE_ITEM); the
+    normal appearance-rate table is untouched when the env is unset. */
+    if (remix_debug_force_item_kind() >= 0)
+    {
+        gITManagerAppearActor.spawn_wait = ITREMIX_DEBUG_SPAWN_WAIT;
+        return;
+    }
+#endif
     gITManagerAppearActor.spawn_wait = 
     dITManagerAppearanceRatesMin[gSCManagerBattleState->item_appearance_rate] + 
     syUtilsRandIntRange

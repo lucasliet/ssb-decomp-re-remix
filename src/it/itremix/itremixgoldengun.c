@@ -19,7 +19,6 @@
 #include "if/ifcommon.h"
 #include "sys/utils.h"
 
-#define ITREMIX_GOLDENGUN_ID 0x35
 #define ITREMIX_GOLDENGUN_FILE_OFFSET 0xFC0 /* asm FILE_OFFSET: item footer in the common item file */
 #define ITREMIX_GOLDENGUN_AMMO_COUNT 1 /* asm AMMO_COUNT, stored in ITStruct.multi (asm offset 0x033E) */
 

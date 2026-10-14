@@ -9,6 +9,9 @@ GObj* itRemixCloakingDeviceMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u
 /* Forgets every port's cloak. Meant for the scene-end hook (see notes, Vanilla patches). */
 void itRemixCloakingDeviceClearStates(void);
 
+/* TRUE while `player` (port index) is cloaked; gates the damage-immunity patch. */
+sb32 itRemixCloakingDeviceIsCloaked(s32 player);
+
 extern const ITRemixItemDesc dITRemixCloakingDeviceItemDesc;
 
 #endif

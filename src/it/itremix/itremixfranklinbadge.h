@@ -15,6 +15,9 @@ sb32 itRemixFranklinBadgeIsActive(FTStruct *fp);
 /* TRUE when a status change must keep the reflect flag (keep_on_action_change_ hook in notes). */
 sb32 itRemixFranklinBadgeKeepsReflect(FTStruct *fp);
 
+/* TRUE when the badge absorbs the hitbox of item `ip` held by `fp` (grant_item_immunity_ hook in notes). */
+sb32 itRemixFranklinBadgeIsItemImmune(FTStruct *fp, ITStruct *ip);
+
 /* Drops every active badge at scene end (clear_active_franklin_badges_). */
 void itRemixFranklinBadgeClearAll(void);
 

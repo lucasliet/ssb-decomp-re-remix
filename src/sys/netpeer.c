@@ -15,6 +15,10 @@ typedef __WINT_TYPE__ wint_t;
 #include <sys/netsync.h>
 #include <sys/utils.h>
 
+#ifdef REGION_REMIX
+#include "it/itremix/itremixspawn.h"
+#endif
+
 #ifdef PORT
 extern char *getenv(const char *name);
 extern int atoi(const char *s);
@@ -38,7 +42,13 @@ extern void port_log(const char *fmt, ...);
 #define SYNETPEER_INPUT_HEADER_BYTES (4 + 2 + 2 + 4 + 4 + 4 + 1 + 1 + 1 + 1)
 #define SYNETPEER_PACKET_BYTES ((SYNETPEER_INPUT_HEADER_BYTES) + ((SYNETPEER_MAX_PACKET_FRAMES) * (SYNETPEER_FRAME_BYTES)) + 4)
 #define SYNETPEER_VALIDATION_INPUT_WINDOW 120
+#ifdef REGION_REMIX
+/* + 4: gITRemixExtendedToggles appended after item_toggles (see
+ * syNetPeerWriteMetadata); both peers must compile the same size. */
+#define SYNETPEER_METADATA_BYTES (11 * 4 + 8 + (MAXCONTROLLERS * 7) + 4)
+#else
 #define SYNETPEER_METADATA_BYTES (11 * 4 + 8 + (MAXCONTROLLERS * 7))
+#endif
 #define SYNETPEER_BOOTSTRAP_PACKET_BYTES (4 + 2 + 2 + 4 + SYNETPEER_METADATA_BYTES + 4)
 #define SYNETPEER_CONTROL_PACKET_BYTES (4 + 2 + 2 + 4 + 4)
 #define SYNETPEER_DEFAULT_INPUT_DELAY 2
@@ -224,6 +234,12 @@ void syNetPeerWriteMetadata(u8 **cursor, const SYNetInputReplayMetadata *metadat
 	syNetPeerWriteU32(cursor, metadata->time_limit);
 	syNetPeerWriteU32(cursor, metadata->item_switch);
 	syNetPeerWriteU32(cursor, metadata->item_toggles);
+#ifdef REGION_REMIX
+	/* SYNetInputReplayMetadata is shared with vanilla builds (sys/netinput.h),
+	 * so the Remix-only mask travels as the global, immediately after
+	 * item_toggles; syNetPeerReadMetadata reads it back in the same spot. */
+	syNetPeerWriteU32(cursor, gITRemixExtendedToggles);
+#endif
 	syNetPeerWriteU32(cursor, metadata->rng_seed);
 	syNetPeerWriteU32(cursor, metadata->game_type);
 	syNetPeerWriteU8(cursor, metadata->game_rules);
@@ -260,6 +276,9 @@ void syNetPeerReadMetadata(const u8 **cursor, SYNetInputReplayMetadata *metadata
 	metadata->time_limit = syNetPeerReadU32(cursor);
 	metadata->item_switch = syNetPeerReadU32(cursor);
 	metadata->item_toggles = syNetPeerReadU32(cursor);
+#ifdef REGION_REMIX
+	gITRemixExtendedToggles = syNetPeerReadU32(cursor);
+#endif
 	metadata->rng_seed = syNetPeerReadU32(cursor);
 	metadata->game_type = syNetPeerReadU32(cursor);
 	metadata->game_rules = syNetPeerReadU8(cursor);

@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <it/item.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremixgoldengun.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -55,7 +58,15 @@ void ftCommonLGunShootProcAccessory(GObj *fighter_gobj)
 
             ftParamMakeEffect(fighter_gobj, nEFKindDustDashSmall, nFTPartsJointTopN, &make_effect_offset, NULL, fp->lr, FALSE, FALSE);
 
+#ifdef REGION_REMIX
+            /* GoldenGun.asm projectile_shoot_fgm_fix (0x80147134): the golden gun plays
+             * FGM 0x04C2 where the ray gun plays nSYAudioFGMLGunShoot. The golden bullet
+             * itself is unported: REMIX-TODO(projectile) blocks GoldenGun.asm patches
+             * projectile_struct_fix (0x80175A6C) and projectile_properties_fix (0x80175A8C). */
+            func_800269C0_275C0((ip->kind == ITREMIX_GOLDENGUN_ID) ? 0x04C2 : nSYAudioFGMLGunShoot);
+#else
             func_800269C0_275C0(nSYAudioFGMLGunShoot);
+#endif
             ftParamMakeRumble(fp, 9, 0);
         }
         else
@@ -64,7 +75,13 @@ void ftCommonLGunShootProcAccessory(GObj *fighter_gobj)
             Vec3f dust_effect_offset = { FTCOMMON_LGUNSHOOT_AMMO_SPAWN_OFF_X, FTCOMMON_LGUNSHOOT_AMMO_SPAWN_OFF_Y, FTCOMMON_LGUNSHOOT_AMMO_SPAWN_OFF_Z };
 
             ftParamMakeEffect(fighter_gobj, nEFKindDustLight, fp->attr->joint_itemlight_id, &dust_effect_offset, NULL, -fp->lr, TRUE, FALSE);
+#ifdef REGION_REMIX
+            /* GoldenGun.asm projectile_no_ammo_fgm_fix (0x801471A0): the golden gun plays
+             * FGM 0x04C3 where the ray gun plays nSYAudioFGMLGunEmpty. */
+            func_800269C0_275C0((ip->kind == ITREMIX_GOLDENGUN_ID) ? 0x04C3 : nSYAudioFGMLGunEmpty);
+#else
             func_800269C0_275C0(nSYAudioFGMLGunEmpty);
+#endif
         }
         fp->motion_vars.flags.flag0 = 0;
     }
@@ -312,6 +329,14 @@ void ftCommonItemShootSetStatus(GObj *fighter_gobj)
         status_id = nFTCommonStatusFireFlowerShoot;
         proc_accessory = ftCommonFireFlowerShootProcAccessory;
         break;
+#ifdef REGION_REMIX
+    /* GoldenGun.asm extend_grounded_shoot_item_id_check (0x80147888): the golden gun
+     * takes the ray gun shoot action, at half frame speed (see ftMainSetStatus below). */
+    case ITREMIX_GOLDENGUN_ID:
+        status_id = nFTCommonStatusLGunShoot;
+        proc_accessory = ftCommonLGunShootProcAccessory;
+        break;
+#endif
 #ifdef PORT
     default:
         /* Guard against ip->type miscoding as nITTypeShoot for non-shootable items
@@ -328,7 +353,17 @@ void ftCommonItemShootSetStatus(GObj *fighter_gobj)
     }
     fp->motion_vars.flags.flag0 = 0;
 
+#ifdef REGION_REMIX
+    /* GoldenGun.asm extend_grounded_shoot_item_id_check (0x80147888): the golden gun
+     * enters the common tail with a3 = 0x3F00 (0.5F) instead of the vanilla 1.0F. */
+    if (ip->kind == ITREMIX_GOLDENGUN_ID)
+    {
+        ftMainSetStatus(fighter_gobj, status_id, 0.0F, 0.5F, FTSTATUS_PRESERVE_NONE);
+    }
+    else ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#endif
     ftMainPlayAnimEventsAll(fighter_gobj);
 
     fp->proc_accessory = proc_accessory;
@@ -355,10 +390,28 @@ void ftCommonItemShootAirSetStatus(GObj *fighter_gobj)
         status_id = nFTCommonStatusFireFlowerShootAir;
         proc_accessory = ftCommonFireFlowerShootProcAccessory;
         break;
+#ifdef REGION_REMIX
+    /* GoldenGun.asm extend_aerial_shoot_item_id_check (0x80147930): the golden gun
+     * takes the ray gun aerial shoot action, at half frame speed. */
+    case ITREMIX_GOLDENGUN_ID:
+        status_id = nFTCommonStatusLGunShootAir;
+        proc_accessory = ftCommonLGunShootProcAccessory;
+        break;
+#endif
     }
     fp->motion_vars.flags.flag0 = 0;
 
+#ifdef REGION_REMIX
+    /* GoldenGun.asm extend_aerial_shoot_item_id_check (0x80147930): the golden gun
+     * enters the common tail with a3 = 0x3F00 (0.5F) instead of the vanilla 1.0F. */
+    if (ip->kind == ITREMIX_GOLDENGUN_ID)
+    {
+        ftMainSetStatus(fighter_gobj, status_id, 0.0F, 0.5F, FTSTATUS_PRESERVE_NONE);
+    }
+    else ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#endif
     ftMainPlayAnimEventsAll(fighter_gobj);
 
     fp->proc_accessory = proc_accessory;

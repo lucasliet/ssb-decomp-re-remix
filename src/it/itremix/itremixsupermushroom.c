@@ -16,8 +16,6 @@
 #include <sys/objman.h>
 #include <sys/objdef.h>
 
-#define ITREMIX_SUPERMUSHROOM_KIND 0x2E
-#define ITREMIX_SUPERMUSHROOM_POISON_KIND 0x2F
 #define ITREMIX_SUPERMUSHROOM_FILE_OFFSET 0x0D90
 #define ITREMIX_SUPERMUSHROOM_XOBJ_KIND 0x2E /* render routine shared with Star (asm a1 = 0x2E) */
 #define ITREMIX_SUPERMUSHROOM_SPAWN_SPEED 16
@@ -35,6 +33,7 @@
 #define ITREMIX_SUPERMUSHROOM_FGM_GROW 0x00D4
 #define ITREMIX_SUPERMUSHROOM_FGM_SHRINK 0x00D5
 #define ITREMIX_SUPERMUSHROOM_FGM_CRASH 0x05BF
+#define ITREMIX_SUPERMUSHROOM_FLASH_COLANIM 5 /* asm Global.flash_ a1 = 5, quick bright flash */
 #define ITREMIX_SUPERMUSHROOM_SIZE_NORMAL 1.0F
 #define ITREMIX_SUPERMUSHROOM_SIZE_GIANT 2.25F /* 0x40100000 */
 #define ITREMIX_SUPERMUSHROOM_SIZE_TINY 0.5F /* 0x3F000000 */
@@ -201,9 +200,6 @@ extern void *func_800269C0_275C0(u16 id);
 
 static void itRemixSuperMushroomProcUpdate(GObj *routine_gobj);
 static void itRemixSuperMushroomFreeRoutine(ITRemixSuperMushroomRoutine *routine);
-static sb32 itRemixSuperMushroomMovementProcUpdate(GObj *item_gobj);
-static sb32 itRemixSuperMushroomGroundProcMap(GObj *item_gobj);
-static void itRemixSuperMushroomProcTouch(FTStruct *fp, ITStruct *ip, GObj *item_gobj);
 
 static ITDesc sITRemixSuperMushroomItemInfo =
 {
@@ -236,8 +232,10 @@ static ITRemixSuperMushroomVars* itRemixSuperMushroomGetVars(GObj *item_gobj)
     return (ITRemixSuperMushroomVars*) &ip->item_vars;
 }
 
-/* SuperMushroom: spawn velocity. Horizontal speed grows with each mushroom spawned this frame and alternates direction. */
-static void itRemixSuperMushroomGetSpawnVel(Vec3f *pos, Vec3f *vel)
+/* SuperMushroom: spawn velocity of spawn_custom_item_based_on_star_. Shared with the Poison
+ * Mushroom, whose SPAWN_ITEM is this same asm routine: horizontal speed grows with each mushroom
+ * spawned this frame (spawning_shrooms) and alternates direction. */
+void itRemixSuperMushroomGetSpawnVel(Vec3f *pos, Vec3f *vel)
 {
     CObj *cobj = CObjGetStruct(gGMCameraGObj);
     f32 speed;
@@ -253,8 +251,10 @@ static void itRemixSuperMushroomGetSpawnVel(Vec3f *pos, Vec3f *vel)
     vel->z = 0.0F;
 }
 
-/* SuperMushroom: stage_setting_ tail after itManagerMakeItem (Star code with the active delay and no gravity hold) */
-static void itRemixSuperMushroomSetupItem(GObj *item_gobj)
+/* SuperMushroom: tail of spawn_custom_item_based_on_star_ after itManagerMakeItem (Star code with
+ * the active delay and no gravity hold). Shared with the Poison Mushroom. The copied Star tail also
+ * sets ITStruct byte 0x2D3 bit 0x4 (asm lines 98-100, ROM 0xEF51C), ported as is_unused_item_bool. */
+void itRemixSuperMushroomSetupItem(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
     DObj *dobj = DObjGetStruct(item_gobj);
@@ -262,8 +262,8 @@ static void itRemixSuperMushroomSetupItem(GObj *item_gobj)
 
     ip->attack_coll.interact_mask = GMHITCOLLISION_FLAG_FIGHTER;
     ip->multi = ITREMIX_SUPERMUSHROOM_ACTIVE_DELAY;
+    ip->is_unused_item_bool = TRUE;
     itRemixSuperMushroomGetVars(item_gobj)->is_grounded = FALSE;
-    /* REMIX-TODO(struct): asm 0x2D3 |= 0x04 (ITStruct byte not named in struct_offsets.txt), not written */
     gcAddXObjForDObjFixed(dobj, ITREMIX_SUPERMUSHROOM_XOBJ_KIND, 0);
     dobj->rotate.vec.f.z = 0.0F;
     dobj->translate.vec.f = translate;
@@ -286,8 +286,10 @@ GObj* itRemixSuperMushroomMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u3
     return item_gobj;
 }
 
-/* SuperMushroom: movement_routine_no_bounce_. Star update with gravity skipped while grounded (coll_data.mask_stat MAP_FLAG_FLOOR). */
-static sb32 itRemixSuperMushroomMovementProcUpdate(GObj *item_gobj)
+/* SuperMushroom: movement_routine_no_bounce_ (ITDesc word 0x14 of both mushrooms). Star update
+ * with gravity skipped while grounded (coll_data.mask_stat MAP_FLAG_FLOOR). Shared with the
+ * Poison Mushroom (asm item_info word 0x14 of both items). */
+sb32 itRemixSuperMushroomMovementProcUpdate(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
 
@@ -311,8 +313,9 @@ static void itRemixSuperMushroomGroundToAirNoop(GObj *item_gobj)
 {
 }
 
-/* SuperMushroom: ground_collision_no_bounce_. Star ground collision with the floor bounce removed. */
-static sb32 itRemixSuperMushroomGroundProcMap(GObj *item_gobj)
+/* SuperMushroom: ground_collision_no_bounce_ (ITDesc word 0x18 of both mushrooms). Star ground
+ * collision with the floor bounce removed. Shared with the Poison Mushroom. */
+sb32 itRemixSuperMushroomGroundProcMap(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
     ITRemixSuperMushroomVars *vars = itRemixSuperMushroomGetVars(item_gobj);
@@ -363,11 +366,13 @@ static void itRemixSuperMushroomPlayItemSfx(s32 kind)
     func_800269C0_275C0(ITREMIX_SUPERMUSHROOM_FGM_GROW);
 }
 
-/* SuperMushroom: _flash. Plays the item sfx and marks it as played this frame. REMIX-TODO(Global.flash): Global.flash_(player, 5, 0) is not ported. */
+/* SuperMushroom: _flash. Plays the item sfx, marks it as played this frame and adds the quick
+ * bright flash (asm Global.flash_, flash id 5). */
 static void itRemixSuperMushroomFlash(ITRemixSuperMushroomRoutine *routine)
 {
     routine->flash_sfx_kind = routine->kind;
     itRemixSuperMushroomPlayItemSfx(routine->kind);
+    ftParamCheckSetFighterColAnimID(routine->fp->fighter_gobj, ITREMIX_SUPERMUSHROOM_FLASH_COLANIM, 0);
 }
 
 /* SuperMushroom: the transition sfx on the first step, unless the flash already played one, then the rumble */
@@ -585,8 +590,10 @@ static void itRemixSuperMushroomInitRoutine(ITRemixSuperMushroomRoutine *routine
     routine->size_multiplier = ITREMIX_SUPERMUSHROOM_SIZE_NORMAL;
 }
 
-/* SuperMushroom: PLAYER_COLLISION (collide_mushroom_). Starts one effect routine on the fighter. */
-static void itRemixSuperMushroomProcTouch(FTStruct *fp, ITStruct *ip, GObj *item_gobj)
+/* SuperMushroom: PLAYER_COLLISION (collide_mushroom_). Shared by both mushrooms (asm
+ * PoisonMushroom.asm reuses this routine): dispatches on ip->kind, so a Poison pickup registers
+ * into the same per-port slot and the cross-kind handling of handle_active_mushroom_ applies. */
+void itRemixSuperMushroomProcTouch(FTStruct *fp, ITStruct *ip, GObj *item_gobj)
 {
     ITRemixSuperMushroomRoutine *routine;
     GObj *routine_gobj;
@@ -608,7 +615,9 @@ static void itRemixSuperMushroomProcTouch(FTStruct *fp, ITStruct *ip, GObj *item
     gcAddGObjProcess(routine_gobj, itRemixSuperMushroomProcUpdate, nGCProcessKindFunc, 3);
 }
 
-/* SuperMushroom: clear_active_mushrooms_. Forgets every effect. The routine GObjs are freed with the scene. */
+/* SuperMushroom: clear_active_mushrooms_. Forgets every effect of both mushroom kinds: the
+ * routine pool, the per-port active table (asm player_shrooms) and the spawn count (asm
+ * spawning_shrooms). The routine GObjs are freed with the scene. */
 void itRemixSuperMushroomClearStates(void)
 {
     s32 index;

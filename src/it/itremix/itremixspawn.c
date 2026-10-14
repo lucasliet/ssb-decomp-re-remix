@@ -6,6 +6,12 @@
 
 #include "itremix.h"
 #include "itremixspawn.h"
+#include "it/itremix/itremixcloakingdevice.h"
+#include "it/itremix/itremixfranklinbadge.h"
+#include "it/itremix/itremixlightning.h"
+#include "it/itremix/itremixpwing.h"
+#include "it/itremix/itremixstopwatch.h"
+#include "it/itremix/itremixsupermushroom.h"
 #include <sc/scene.h>
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
@@ -14,6 +20,19 @@
     ((REMIX_SYM_Stages__series_logo_table - REMIX_SYM_Stages__custom_item_spawn_rate_table) / ITREMIX_ITEMS_NUM)
 
 u32 gITRemixExtendedToggles = ITREMIX_EXTENDED_TOGGLES_DEFAULT;
+
+/* Saved copy of the extended toggles; Item.asm EXTENDED_ENABLED_BITMASK +0x04. */
+static u32 sITRemixExtendedTogglesSaved = ITREMIX_EXTENDED_TOGGLES_DEFAULT;
+
+void itRemixSaveExtendedToggles(void)
+{
+    sITRemixExtendedTogglesSaved = gITRemixExtendedToggles;
+}
+
+void itRemixRestoreExtendedToggles(void)
+{
+    gITRemixExtendedToggles = sITRemixExtendedTogglesSaved;
+}
 
 static sb32 itRemixStandardItemIsPorted(s32 index)
 {
@@ -54,6 +73,11 @@ s32 itRemixStandardItemGetWeight(s32 index)
 {
     s32 stage = gSCManagerBattleState->gkind;
 
+    /* Vanilla 1P suppression needs no code here: the gkind rows of the vanilla
+     * 1P stages (0x13..0x1C) are all zero in Stages.custom_item_spawn_rate_table
+     * (verified in the Remix RAM image), so weights are 0 there no matter the
+     * toggle state — the data-side equivalent of prevent_1p_custom_item_spawns_.
+     * Remix's own 1P stages (gkind 0x30/0x64/0xD7) carry nonzero rows. */
     if ((index < 0) || (index >= ITREMIX_STANDARD_ITEMS_NUM) || (stage >= ITREMIX_RATE_TABLE_ROWS))
     {
         return 0;
@@ -77,6 +101,22 @@ sb32 itRemixAnyStandardItemIsOn(void)
         }
     }
     return FALSE;
+}
+
+/*
+ * Item.asm clear_active_custom_items_ (called on every screen change to
+ * CSS/VS/Training/VS Results): forget every per-item effect state so nothing
+ * survives into the next scene. Poison state rides on the Super/Poison
+ * mushroom state unification (REMIX-TODO, see item notes).
+ */
+void itRemixClearActiveItems(void)
+{
+    itRemixCloakingDeviceClearStates();
+    itRemixSuperMushroomClearStates();
+    itRemixLightningClearActive();
+    itRemixFranklinBadgeClearAll();
+    itRemixPwingClearActive();
+    itRemixStopwatchClearActive();
 }
 
 #endif

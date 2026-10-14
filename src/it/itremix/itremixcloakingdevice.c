@@ -118,6 +118,16 @@ void itRemixCloakingDeviceClearStates(void)
     }
 }
 
+/* CloakingDevice: prevent_damage_when_cloaked_ reads this (asm cloaked_players[port]). */
+sb32 itRemixCloakingDeviceIsCloaked(s32 player)
+{
+    if ((player < 0) || (player >= ITREMIX_CLOAKINGDEVICE_PORTS))
+    {
+        return FALSE;
+    }
+    return sITRemixCloakingDeviceStates[player].is_active;
+}
+
 const ITRemixItemDesc dITRemixCloakingDeviceItemDesc =
 {
     ITREMIX_CLOAKINGDEVICE_KIND,

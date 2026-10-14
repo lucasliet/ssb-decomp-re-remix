@@ -9,6 +9,9 @@
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
+#ifdef REGION_REMIX
+#include "it/itremix/itremixspawn.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -115,6 +118,23 @@ LBFileNode sMNVSItemSwitchStatusBuffer[24];
 
 // 0x80133530
 void *sMNVSItemSwitchFiles[ARRAY_COUNT(dMNVSItemSwitchFileIDs)];
+
+#ifdef REGION_REMIX
+// Remix Item.asm item_switch_cursor_ free-space equivalents:
+// ITEM_SWITCH_PAGE(0x80133470), CUSTOM_ITEM_IMAGE(0x80133474),
+// CUSTOM_ON_OFF_ARRAY(0x80133478). Page 0 = vanilla items, page 1 = custom.
+s32 sMNVSItemSwitchPage;
+
+// Vanilla item grid GObj, ejected/recreated on page flip (Remix hides it
+// with a display flag; the port has no per-GObj hide, so we rebuild it).
+GObj *sMNVSItemSwitchItemListGObj;
+
+// Custom icon strip GObj (page 1), likewise rebuilt on each flip to page 1.
+GObj *sMNVSItemSwitchCustomItemListGObj;
+
+// ON/OFF values of the 13 Remix standard items (page-1 toggle rows 1..13).
+sb32 sMNVSItemSwitchCustomOptionStatuses[ITREMIX_STANDARD_ITEMS_NUM];
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -435,8 +455,12 @@ void mnVSItemSwitchMakeItemList(void)
 {
     GObj *gobj;
     SObj *sobj;
-    
+
+#ifdef REGION_REMIX
+    sMNVSItemSwitchItemListGObj = gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
+#else
     gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
+#endif
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
     
 #ifdef PORT
@@ -455,6 +479,19 @@ void mnVSItemSwitchMakeItemList(void)
     sobj->pos.x = 125.0F;
     sobj->pos.y = 48.0F;
 }
+
+#ifdef REGION_REMIX
+// Offset 0xBD70 of the decompressed Remix MNVSItemSwitch file (file_id 8,
+// decompressed size 0xBDC0 vs vanilla 0x98A0): the pre-rendered icon+name
+// strip for the 13 standard custom items appended by Smash Remix
+// (Item.asm item_switch_setup_, Render.draw_texture_at_offset ... 0xBD70).
+// Verified against the extracted baserom.remix.z64 file: it is a complete
+// 68-byte Sprite, identical in shape to llMNVSItemSwitchItemListSprite
+// (112x165, scale 1.0f, 3 bitmaps of 112x(72,72,23), texel data appended at
+// 0x98A8/0xA870/0xB838, every pointer slot a regular reloc chain node), so
+// it draws through the same SObj path as the vanilla grid.
+#define dMNVSItemSwitchCustomItemListOffset ((intptr_t) 0xBD70)
+#endif
 
 // 0x8013212C
 void mnVSItemSwitchSetCursorPosition(GObj *gobj, s32 option_id)
@@ -494,6 +531,92 @@ void mnVSItemSwitchMakeCursor(s32 off_y)
     
     mnVSItemSwitchSetCursorPosition(gobj, off_y);
 }
+
+#ifdef REGION_REMIX
+// Draw the Remix custom item strip (page 1) with the same SObj path and at
+// the same position as the vanilla grid (Item.asm item_switch_setup_).
+void mnVSItemSwitchMakeCustomItemList(void)
+{
+    GObj *gobj;
+    SObj *sobj;
+
+    sMNVSItemSwitchCustomItemListGObj = gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
+
+    gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
+
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSItemSwitchFiles[0], dMNVSItemSwitchCustomItemListOffset));
+
+    sobj->sprite.attr &= ~SP_FASTCOPY;
+    sobj->sprite.attr |= SP_TRANSPARENT;
+
+    sobj->sprite.red = 0xFF;
+    sobj->sprite.green = 0xFF;
+    sobj->sprite.blue = 0xFF;
+
+    sobj->pos.x = 125.0F;
+    sobj->pos.y = 48.0F;
+}
+
+// Page-aware status accessors: Remix Item.asm handle_custom_item_values_
+// redirects the row-N ON/OFF read/write to CUSTOM_ON_OFF_ARRAY[N-1] when
+// the custom page is active. Row 0 (appearance rate) stays vanilla on both
+// pages.
+sb32 mnVSItemSwitchGetPageOptionStatus(s32 option_id)
+{
+    if ((sMNVSItemSwitchPage != 0) && (option_id != 0))
+    {
+        return sMNVSItemSwitchCustomOptionStatuses[option_id - 1];
+    }
+    return sMNVSItemSwitchOptionStatuses[option_id];
+}
+
+void mnVSItemSwitchSetPageOptionStatus(s32 option_id, sb32 status)
+{
+    if ((sMNVSItemSwitchPage != 0) && (option_id != 0))
+    {
+        sMNVSItemSwitchCustomOptionStatuses[option_id - 1] = status;
+    }
+    else sMNVSItemSwitchOptionStatuses[option_id] = status;
+}
+
+// Recreate one toggle row GObj (used when flipping back to page 0, which
+// ejected rows 14-15 because the custom page only has 13 items).
+void mnVSItemSwitchMakeToggleRow(s32 option_id)
+{
+    GObj *gobj;
+
+    sMNVSItemSwitchOptionGObjs[option_id] = gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
+
+    gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
+    mnVSItemSwitchMakeToggle(gobj, 244.0F, option_id * 10 + 54);
+    mnVSItemSwitchSetToggleSpriteColors(gobj, mnVSItemSwitchGetPageOptionStatus(option_id));
+}
+
+// Highest selectable row on the current page (Item.asm restrict_cursor_:
+// 15 vanilla rows on page 0, 13 custom rows on page 1).
+s32 mnVSItemSwitchGetPageLastOptionID(void)
+{
+    if (sMNVSItemSwitchPage != 0)
+    {
+        return ITREMIX_STANDARD_ITEMS_NUM;
+    }
+    return ARRAY_COUNT(sMNVSItemSwitchOptionGObjs) - 1;
+}
+
+sb32 mnVSItemSwitchCheckAnyCustomToggleOn(void)
+{
+    s32 i;
+
+    for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+    {
+        if (sMNVSItemSwitchCustomOptionStatuses[i] != nMNOptionTabStatusOff)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+#endif
 
 // 0x80132224
 void mnVSItemSwitchMakeAppearance(s32 rate)
@@ -652,7 +775,7 @@ void mnVSItemSwitchMakeDecalCamera(void)
 void mnVSItemSwitchGetItemSettings(void)
 {
     s32 i;
-    
+
     sMNVSItemSwitchOptionStatuses[0] = gSCManagerTransferBattleState.item_appearance_rate;
 
     for (i = 1; i < (ARRAY_COUNT(dMNVSItemSwitchTogglesItemKinds) + ARRAY_COUNT(sMNVSItemSwitchOptionStatuses)) / 2; i++)
@@ -663,6 +786,34 @@ void mnVSItemSwitchGetItemSettings(void)
         }
         else sMNVSItemSwitchOptionStatuses[i] = nMNOptionTabStatusOff;
     }
+
+#ifdef REGION_REMIX
+    // Item.asm extend_item_switch_bitmask_.initialize_: custom item n reads
+    // item_toggles bit nITKindCommonEnd+1+n (n < 12, mask is full past that)
+    // or gITRemixExtendedToggles bit n-12.
+    for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+    {
+        u32 toggle_mask;
+        u32 toggles;
+
+        if (i < ITREMIX_VANILLA_TOGGLE_ITEMS_MAX)
+        {
+            toggle_mask = 1U << (nITKindCommonEnd + 1 + i);
+            toggles = gSCManagerTransferBattleState.item_toggles;
+        }
+        else
+        {
+            toggle_mask = 1U << (i - ITREMIX_VANILLA_TOGGLE_ITEMS_MAX);
+            toggles = gITRemixExtendedToggles;
+        }
+
+        if (toggles & toggle_mask)
+        {
+            sMNVSItemSwitchCustomOptionStatuses[i] = nMNOptionTabStatusOn;
+        }
+        else sMNVSItemSwitchCustomOptionStatuses[i] = nMNOptionTabStatusOff;
+    }
+#endif
 }
 
 // 0x801327B8
@@ -693,13 +844,61 @@ void mnVSItemSwitchSetItemSettings(void)
             }
         }
     }
+
+#ifdef REGION_REMIX
+    // Item.asm extend_item_switch_bitmask_.save_: write the custom item
+    // ON/OFF values back to item_toggles bits nITKindCommonEnd+1+n and to
+    // gITRemixExtendedToggles bit n-12.
+    {
+        sb32 is_any_custom_on = FALSE;
+
+        for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+        {
+            u32 toggle_mask;
+            u32 *toggles;
+
+            if (i < ITREMIX_VANILLA_TOGGLE_ITEMS_MAX)
+            {
+                toggle_mask = 1U << (nITKindCommonEnd + 1 + i);
+                toggles = &gSCManagerTransferBattleState.item_toggles;
+            }
+            else
+            {
+                toggle_mask = 1U << (i - ITREMIX_VANILLA_TOGGLE_ITEMS_MAX);
+                toggles = &gITRemixExtendedToggles;
+            }
+
+            if (sMNVSItemSwitchCustomOptionStatuses[i] != nMNOptionTabStatusOff)
+            {
+                is_any_custom_on = TRUE;
+                *toggles |= toggle_mask;
+            }
+            else *toggles &= ~toggle_mask;
+        }
+
+        // Same rule as vanilla "any item on": custom items being on forces
+        // the containers (Item.asm save_ ORs 0xF into the bitmask).
+        if (is_any_custom_on)
+        {
+            gSCManagerTransferBattleState.item_toggles |= ((1 << nITKindEgg) | (1 << nITKindCapsule) | (1 << nITKindTaru) | (1 << nITKindBox));
+        }
+
+        // Item.asm save_ stores the extended mask twice: live (+0x00) and
+        // saved (+0x04, restored at the CSS scene start).
+        itRemixSaveExtendedToggles();
+    }
+#endif
 }
 
 // 0x80132948
 void mnVSItemSwitchInitVars(void)
 {
     sMNVSItemSwitchOptionSelectID = 0;
-    
+
+#ifdef REGION_REMIX
+    sMNVSItemSwitchPage = 0;
+#endif
+
     mnVSItemSwitchGetItemSettings();
     
     sMNVSItemSwitchOptionChangeWait = 0;
@@ -726,6 +925,22 @@ sb32 mnVSItemSwitchCheckAllTogglesOff(void)
 // 0x80132A44
 void mnVSItemSwitchSetItemToggles(void)
 {
+#ifdef REGION_REMIX
+    // Item.asm always_update_item_frequency_: custom items count as "any
+    // item on" for the container/rate forcing, and the rate is saved even
+    // when every toggle is off (vanilla lazily keeps the previous rate).
+    if ((mnVSItemSwitchCheckAllTogglesOff() != FALSE) && (mnVSItemSwitchCheckAnyCustomToggleOn() == FALSE))
+    {
+        gSCManagerTransferBattleState.item_toggles = 0;
+        gSCManagerTransferBattleState.item_appearance_rate = sMNVSItemSwitchOptionStatuses[0];
+    }
+    else
+    {
+        mnVSItemSwitchSetItemSettings();
+
+        gSCManagerTransferBattleState.item_toggles |= ((1 << nITKindEgg) | (1 << nITKindCapsule) | (1 << nITKindTaru) | (1 << nITKindBox));
+    }
+#else
     if (mnVSItemSwitchCheckAllTogglesOff() != FALSE)
     {
         gSCManagerTransferBattleState.item_toggles = 0;
@@ -736,6 +951,7 @@ void mnVSItemSwitchSetItemToggles(void)
 
         gSCManagerTransferBattleState.item_toggles |= ((1 << nITKindEgg) | (1 << nITKindCapsule) | (1 << nITKindTaru) | (1 << nITKindBox));
     }
+#endif
 }
 
 // 0x80132A94
@@ -748,6 +964,94 @@ void mnVSItemSwitchUpdateOption(s32 option_id, s32 rate)
     }
     else mnVSItemSwitchSetToggleSpriteColors(sMNVSItemSwitchOptionGObjs[option_id], rate);
 }
+
+#ifdef REGION_REMIX
+// Item.asm item_switch_cursor_.handle_r_l_._toggle_items_on_off (physical
+// L): flip the first toggle row of the current page and write it to every
+// toggle row of that page, then refresh the ON/OFF sprites.
+void mnVSItemSwitchToggleAllPageItems(void)
+{
+    s32 i;
+    s32 last = mnVSItemSwitchGetPageLastOptionID();
+    sb32 status = mnVSItemSwitchGetPageOptionStatus(1);
+
+    if (status == nMNOptionTabStatusOff)
+    {
+        status = nMNOptionTabStatusOn;
+    }
+    else status = nMNOptionTabStatusOff;
+
+    for (i = 1; i <= last; i++)
+    {
+        mnVSItemSwitchSetPageOptionStatus(i, status);
+        mnVSItemSwitchUpdateOption(i, status);
+    }
+    func_800269C0_275C0(nSYAudioFGMMenuScroll1);
+}
+
+// Item.asm item_switch_cursor_.handle_r_l_ (physical R): flip between the
+// vanilla grid (page 0) and the custom item strip (page 1), clamp the
+// cursor to the page's row count and refresh the toggle sprites.
+void mnVSItemSwitchFlipPage(void)
+{
+    s32 i;
+    s32 last;
+
+    sMNVSItemSwitchPage ^= 1;
+
+    if (sMNVSItemSwitchPage != 0)
+    {
+        // Page 1: hide the vanilla item grid, show the custom strip.
+        // Remix flips a display flag; the port rebuilds the GObjs instead
+        // (gcEjectGObj(NULL) is not a no-op, so guard every eject).
+        if (sMNVSItemSwitchItemListGObj != NULL)
+        {
+            gcEjectGObj(sMNVSItemSwitchItemListGObj);
+            sMNVSItemSwitchItemListGObj = NULL;
+        }
+        mnVSItemSwitchMakeCustomItemList();
+
+        // Rows 14-15 have no custom counterpart; eject until we flip back.
+        for (i = ITREMIX_STANDARD_ITEMS_NUM + 1; i < ARRAY_COUNT(sMNVSItemSwitchOptionGObjs); i++)
+        {
+            if (sMNVSItemSwitchOptionGObjs[i] != NULL)
+            {
+                gcEjectGObj(sMNVSItemSwitchOptionGObjs[i]);
+                sMNVSItemSwitchOptionGObjs[i] = NULL;
+            }
+        }
+    }
+    else
+    {
+        // Page 0: restore the vanilla grid and toggle rows 14-15.
+        if (sMNVSItemSwitchCustomItemListGObj != NULL)
+        {
+            gcEjectGObj(sMNVSItemSwitchCustomItemListGObj);
+            sMNVSItemSwitchCustomItemListGObj = NULL;
+        }
+        mnVSItemSwitchMakeItemList();
+
+        for (i = ITREMIX_STANDARD_ITEMS_NUM + 1; i < ARRAY_COUNT(sMNVSItemSwitchOptionGObjs); i++)
+        {
+            mnVSItemSwitchMakeToggleRow(i);
+        }
+    }
+
+    last = mnVSItemSwitchGetPageLastOptionID();
+
+    if (sMNVSItemSwitchOptionSelectID > last)
+    {
+        sMNVSItemSwitchOptionSelectID = last;
+    }
+    for (i = 1; i <= last; i++)
+    {
+        mnVSItemSwitchUpdateOption(i, mnVSItemSwitchGetPageOptionStatus(i));
+    }
+    mnVSItemSwitchSetCursorPosition(sMNVSItemSwitchCursorGObj, sMNVSItemSwitchOptionSelectID);
+
+    func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+}
+#endif
 
 // 0x80132AF0
 void mnVSItemSwitchFuncRun(GObj *gobj)
@@ -794,7 +1098,11 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
             
             if (sMNVSItemSwitchOptionSelectID == 0)
             {
+#ifdef REGION_REMIX
+                sMNVSItemSwitchOptionSelectID = mnVSItemSwitchGetPageLastOptionID();
+#else
                 sMNVSItemSwitchOptionSelectID = (ARRAY_COUNT(sMNVSItemSwitchOptionGObjs) - 1);
+#endif
             }
             else sMNVSItemSwitchOptionSelectID--;
     
@@ -817,7 +1125,11 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
                 
             mnVSItemSwitchSetOptionChangeWaitN(is_button, stick_range, 7);
             
+#ifdef REGION_REMIX
+            if (sMNVSItemSwitchOptionSelectID == mnVSItemSwitchGetPageLastOptionID())
+#else
             if (sMNVSItemSwitchOptionSelectID == (ARRAY_COUNT(sMNVSItemSwitchOptionGObjs) - 1))
+#endif
             {
                 sMNVSItemSwitchOptionSelectID = 0;
             }
@@ -834,7 +1146,11 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
         }
         if
         (
+#ifdef REGION_REMIX
+            mnVSItemSwitchCheckGetOptionButtonInput(is_button, L_JPAD | L_CBUTTONS) ||
+#else
             mnVSItemSwitchCheckGetOptionButtonInput(is_button, L_JPAD | L_TRIG | L_CBUTTONS) ||
+#endif
             mnVSItemSwitchCheckGetOptionStickInputLR(stick_range, -20, 0)
         )
         {
@@ -853,6 +1169,16 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
                 gcEjectGObj(sMNVSItemSwitchUnkGObj);
                 mnItemSwitchMakeSubtitle(sMNVSItemSwitchOptionSelectID);
             }
+#ifdef REGION_REMIX
+            else if (mnVSItemSwitchGetPageOptionStatus(sMNVSItemSwitchOptionSelectID) == nMNOptionTabStatusOff)
+            {
+                func_800269C0_275C0(nSYAudioFGMMenuScroll1);
+
+                mnVSItemSwitchSetPageOptionStatus(sMNVSItemSwitchOptionSelectID, nMNOptionTabStatusOn);
+
+                mnVSItemSwitchUpdateOption(sMNVSItemSwitchOptionSelectID, nMNOptionTabStatusOn);
+            }
+#else
             else if (sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID] == nMNOptionTabStatusOff)
             {
                 func_800269C0_275C0(nSYAudioFGMMenuScroll1);
@@ -861,11 +1187,16 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
                 
                 mnVSItemSwitchUpdateOption(sMNVSItemSwitchOptionSelectID, sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID]);
             }
+#endif
             mnVSItemSwitchSetOptionChangeWaitN(is_button, stick_range, 7);
         }
         if
         (
+#ifdef REGION_REMIX
+            mnVSItemSwitchCheckGetOptionButtonInput(is_button, R_JPAD | R_CBUTTONS) ||
+#else
             mnVSItemSwitchCheckGetOptionButtonInput(is_button, R_JPAD | R_TRIG | R_CBUTTONS) ||
+#endif
             mnVSItemSwitchCheckGetOptionStickInputLR(stick_range, 20, 1)
         )
         {
@@ -884,6 +1215,16 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
                 gcEjectGObj(sMNVSItemSwitchUnkGObj);
                 mnItemSwitchMakeSubtitle(sMNVSItemSwitchOptionSelectID);
             }
+#ifdef REGION_REMIX
+            else if (mnVSItemSwitchGetPageOptionStatus(sMNVSItemSwitchOptionSelectID) == nMNOptionTabStatusOn)
+            {
+                func_800269C0_275C0(nSYAudioFGMMenuScroll1);
+
+                mnVSItemSwitchSetPageOptionStatus(sMNVSItemSwitchOptionSelectID, nMNOptionTabStatusOff);
+
+                mnVSItemSwitchUpdateOption(sMNVSItemSwitchOptionSelectID, nMNOptionTabStatusOff);
+            }
+#else
             else if (sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID] == nMNOptionTabStatusOn)
             {
                 func_800269C0_275C0(nSYAudioFGMMenuScroll1);
@@ -892,6 +1233,7 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
                 
                 mnVSItemSwitchUpdateOption(sMNVSItemSwitchOptionSelectID, sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID]);
             }
+#endif
             mnVSItemSwitchSetOptionChangeWaitP(is_button, stick_range, 7);
         }
         if (scSubsysControllerGetPlayerTapButtons(A_BUTTON) != FALSE)
@@ -914,7 +1256,16 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
             else
             {
                 func_800269C0_275C0(nSYAudioFGMMenuScroll1);
-                
+
+#ifdef REGION_REMIX
+                if (mnVSItemSwitchGetPageOptionStatus(sMNVSItemSwitchOptionSelectID) == nMNOptionTabStatusOff)
+                {
+                    mnVSItemSwitchSetPageOptionStatus(sMNVSItemSwitchOptionSelectID, nMNOptionTabStatusOn);
+                }
+                else mnVSItemSwitchSetPageOptionStatus(sMNVSItemSwitchOptionSelectID, nMNOptionTabStatusOff);
+
+                mnVSItemSwitchUpdateOption(sMNVSItemSwitchOptionSelectID, mnVSItemSwitchGetPageOptionStatus(sMNVSItemSwitchOptionSelectID));
+#else
                 if (sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID] == nMNOptionTabStatusOff)
                 {
                     sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID] = nMNOptionTabStatusOn;
@@ -922,8 +1273,23 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
                 else sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID] = nMNOptionTabStatusOff;
                 
                 mnVSItemSwitchUpdateOption(sMNVSItemSwitchOptionSelectID, sMNVSItemSwitchOptionStatuses[sMNVSItemSwitchOptionSelectID]);
+#endif
             }
         }
+
+#ifdef REGION_REMIX
+        // Item.asm item_switch_cursor_.handle_r_l_: with L_TRIG/R_TRIG
+        // removed from the option masks above, the physical buttons handle
+        // toggle-all (L) and page flip (R).
+        if (scSubsysControllerGetPlayerTapButtons(L_TRIG) != FALSE)
+        {
+            mnVSItemSwitchToggleAllPageItems();
+        }
+        if (scSubsysControllerGetPlayerTapButtons(R_TRIG) != FALSE)
+        {
+            mnVSItemSwitchFlipPage();
+        }
+#endif
     }
 }
 

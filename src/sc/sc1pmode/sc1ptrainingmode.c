@@ -4,6 +4,9 @@ extern void port_coroutine_yield(void);
 extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
 #endif
 #include <it/item.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremixspawn.h"
+#endif
 #include <gr/ground.h>
 #include <if/interface.h>
 #include <sc/scene.h>
@@ -676,6 +679,11 @@ void sc1PTrainingModeInitVars(void)
 	gSCManagerBattleState->time_limit = SCBATTLE_TIMELIMIT_INFINITE;
 	gSCManagerBattleState->is_show_score = FALSE;
 	gSCManagerBattleState->item_toggles = 0;
+#ifdef REGION_REMIX
+	/* Item.asm prevent_1p_custom_item_spawns_: training is not Remix 1P, so
+	 * custom items must not spawn even though the vanilla mask is zeroed. */
+	gITRemixExtendedToggles = 0;
+#endif
 
 	for (player = 0; player < ARRAY_COUNT(gSCManagerBattleState->players); player++)
 	{

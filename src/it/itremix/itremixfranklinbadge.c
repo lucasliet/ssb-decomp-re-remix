@@ -11,6 +11,7 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixfranklinbadge.h"
+#include "it/itremix/itremixsupermushroom.h"
 #include "it/itmanager.h"
 #include "it/itcommon/ittomato.h"
 #include "if/ifcommon.h"
@@ -224,6 +225,39 @@ sb32 itRemixFranklinBadgeIsActive(FTStruct *fp)
 sb32 itRemixFranklinBadgeKeepsReflect(FTStruct *fp)
 {
     return itRemixFranklinBadgeIsActive(fp) && fp->special_coll == &sITRemixFranklinBadgeReflectColl;
+}
+
+/**
+ * grant_item_immunity_ condition. TRUE when the badge absorbs this item's
+ * hitbox. Mushrooms and the Star are never absorbed; without a badge nothing
+ * is; with a badge everything except the Piranha Plant and the Pokémon
+ * range (Electrode..Mew).
+ */
+sb32 itRemixFranklinBadgeIsItemImmune(FTStruct *fp, ITStruct *ip)
+{
+    s32 kind = ip->kind;
+
+    if ((kind == ITREMIX_SUPERMUSHROOM_KIND) || (kind == ITREMIX_SUPERMUSHROOM_POISON_KIND) || (kind == nITKindStar))
+    {
+        return FALSE;
+    }
+    if (itRemixFranklinBadgeIsActive(fp) == FALSE)
+    {
+        return FALSE;
+    }
+    if (kind == nITKindPakkun) /* Hazards.stage.PIRANHA_PLANT */
+    {
+        return FALSE;
+    }
+    if (kind < nITKindMarumine) /* Hazards.stage.ELECTRODE */
+    {
+        return TRUE;
+    }
+    if (kind <= nITKindMew) /* Hazards.pokemon.MEW */
+    {
+        return FALSE;
+    }
+    return TRUE;
 }
 
 /** clear_active_franklin_badges_. Drops every active badge at scene end. */

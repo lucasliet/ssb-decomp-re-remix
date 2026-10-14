@@ -1,6 +1,9 @@
 #include <ft/fighter.h>
 #include <lb/library.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremixspawn.h"
+#endif
 #include <sys/video.h>
 #ifdef PORT
 #include <sys/audio.h>
@@ -153,6 +156,12 @@ void lbBackupCorrectErrors(void)
     {
         gSCManagerTransferBattleState.item_toggles = dSCManagerDefaultBattleState.item_toggles;
         gSCManagerTransferBattleState.item_appearance_rate  = dSCManagerDefaultBattleState.item_appearance_rate;
+#ifdef REGION_REMIX
+        /* lbBackupCorrectErrors runs on boot before the item-switch menu is
+         * unlocked; mirror the vanilla default reset for the Remix extended
+         * mask so stale custom toggles cannot survive a backup reset. */
+        gITRemixExtendedToggles = ITREMIX_EXTENDED_TOGGLES_DEFAULT;
+#endif
     }
 #endif
 }

@@ -7,6 +7,7 @@
 #include <sys/audio.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "it/itremix/itremixcloakingdevice.h"
 #endif
 extern void func_80026738_27338(void *arg0);
 
@@ -1744,6 +1745,17 @@ void ftParamUpdateDamage(FTStruct *fp, s32 damage)
 {
 #ifdef REGION_REMIX
     damage = ftRemixMarthDSPCounterDamage(fp, damage);
+    /* CloakingDevice prevent_damage_when_cloaked_ (0x800EA268): a cloaked
+     * port keeps its current percent (new = current) and contributes no
+     * move damage; zeroing here covers both, as in the asm patch. */
+    if (itRemixCloakingDeviceIsCloaked(fp->player))
+    {
+#ifdef PORT
+        port_log("SSB64: cloak immunity — damage %d blocked on port %d (percent stays %d)\n",
+                 damage, (int)fp->player, (int)fp->percent_damage);
+#endif
+        damage = 0;
+    }
 #endif
     fp->percent_damage += damage;
 

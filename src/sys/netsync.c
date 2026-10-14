@@ -21,6 +21,10 @@ typedef __WINT_TYPE__ wint_t;
 #include <sys/utils.h>
 #include <sys/netinput.h>
 
+#ifdef REGION_REMIX
+#include "it/itremix/itremixspawn.h"
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1226,6 +1230,11 @@ u32 syNetSyncHashBattleState(void)
 	h = hu(h, bs->is_stage_select);
 	h = hu(h, bs->damage_ratio);
 	h = hu(h, bs->item_toggles);
+#ifdef REGION_REMIX
+	/* gITRemixExtendedToggles is not in SCBattleState; it feeds item spawn
+	 * decisions exactly like item_toggles does, so peers must fold it too. */
+	h = hu(h, gITRemixExtendedToggles);
+#endif
 	h = hu(h, bs->is_reset_players);
 	h = hu(h, bs->game_status);
 	h = hu(h, bs->time_remain);

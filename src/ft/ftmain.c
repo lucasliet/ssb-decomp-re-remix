@@ -13,6 +13,9 @@ extern void port_dump_backtrace(void);
 #include "ft/ftremix/ftremixcommand.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "it/itremix/itremix.h"
+#include "it/itremix/itremixbasketball.h"
+#include "it/itremix/itremixfranklinbadge.h"
+#include "it/itremix/itremixstopwatch.h"
 #endif
 #include <sys/controller.h>
 
@@ -1932,7 +1935,14 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
 
     *coll_translate = *topn_translate;
 
+#ifdef REGION_REMIX
+    /* Stopwatch physics_map hitlag_check_1 (Stopwatch.asm 979-988, RAM 0x800E2088):
+     * on a slow-down freeze frame the hitlag read is spoofed to 1 so the physics
+     * block below is skipped and the player stays frozen. */
+    if ((itRemixStopwatchIsFunctionAbbr() ? 1 : fp->hitlag_tics) == 0)
+#else
     if (fp->hitlag_tics == 0)
+#endif
     {
         if (fp->cliffcatch_wait != 0)
         {
@@ -2026,11 +2036,23 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     }
     ftParamsUpdateFighterPartsTransformAll(fp->joints[nFTPartsJointTopN]);
 
+#ifdef REGION_REMIX
+    /* Stopwatch physics_map hitlag_check_2 (Stopwatch.asm 990-999, RAM 0x800E240C),
+     * taken after the ftParamsUpdateFighterPartsTransformAll call above. */
+    if ((itRemixStopwatchIsFunctionAbbr() ? 1 : fp->hitlag_tics) == 0)
+#else
     if (fp->hitlag_tics == 0)
+#endif
     {
         ftMainUpdateMotionEventsForwardEffect(fighter_gobj);
     }
+#ifdef REGION_REMIX
+    /* Stopwatch physics_map hitlag_check_3 (Stopwatch.asm 1001-1009, RAM 0x800E2420),
+     * taken after the ftMainUpdateMotionEventsForwardEffect call above. */
+    if ((itRemixStopwatchIsFunctionAbbr() ? 1 : fp->hitlag_tics) == 0)
+#else
     if (fp->hitlag_tics == 0)
+#endif
     {
         if (fp->proc_accessory != NULL)
         {
@@ -2120,6 +2142,15 @@ void ftMainProcPhysicsMapCapture(GObj *fighter_gobj)
 void ftMainSetHitInteractStats(FTStruct *fp, u32 attack_group_id, GObj *victim_gobj, s32 attack_type, u32 victim_group_id, sb32 ignore_damage_or_hit)
 {
     s32 i, j;
+
+#ifdef REGION_REMIX
+    /* Basketball multiply_player_hitlag_: hitting a fire basketball doubles
+     * the attacker's hitlag multiplier. */
+    if (itRemixBasketballIsFire(victim_gobj) != FALSE)
+    {
+        fp->hitlag_mul = 2.0F;
+    }
+#endif
 
     for (i = 0; i < ARRAY_COUNT(fp->attack_colls); i++)
     {
@@ -2691,6 +2722,16 @@ void ftMainUpdateDamageStatItem(ITStruct *ip, ITAttackColl *it_attack_coll, s32 
     s32 damage_temp = itMainGetDamageOutput(ip);
     s32 damage;
     s32 hit_lr;
+
+#ifdef REGION_REMIX
+    /* Basketball add_ball_hitlag_hitbox_: a fire basketball's hitbox doubles
+     * the victim's hitlag and gives the ball hitlag of its own. */
+    if (itRemixBasketballIsFire(item_gobj) != FALSE)
+    {
+        fp->hitlag_mul = 2.0F;
+        ip->hitlag_tics = ftParamGetHitLag(damage_temp, nFTCommonStatusWait, 2.0F);
+    }
+#endif
 
     itProcessSetHitInteractStats(it_attack_coll, fighter_gobj, (it_attack_coll->can_rehit_fighter) ? nGMHitTypeDamageRehit : nGMHitTypeDamage, 0);
 
@@ -3602,10 +3643,19 @@ void ftMainSearchHitWeapon(GObj *fighter_gobj)
                         {
                             for (i = 0; i < wp_attack_coll->attack_count; i++)
                             {
-                                if (gFTMainIsDamageDetect[i] == FALSE) 
+                                if (gFTMainIsDamageDetect[i] == FALSE)
                                 {
                                     continue;
                                 }
+#ifdef REGION_REMIX
+                                /* Remix grant_projectile_immunity_ (RAM 0x800E54F4): a
+                                 * fighter with an active Franklin Badge skips weapon
+                                 * damage collision entirely. */
+                                if (itRemixFranklinBadgeIsActive(fp) != FALSE)
+                                {
+                                    continue;
+                                }
+#endif
                                 else for (j = 0; j < ARRAY_COUNT(fp->damage_colls); j++)
                                 {
                                     damage_coll = &fp->damage_colls[j];
@@ -3784,10 +3834,19 @@ void ftMainSearchHitItem(GObj *fighter_gobj)
                         {
                             for (i = 0; i < it_attack_coll->attack_count; i++)
                             {
-                                if (gFTMainIsDamageDetect[i] == FALSE) 
+                                if (gFTMainIsDamageDetect[i] == FALSE)
                                 {
                                     continue;
                                 }
+#ifdef REGION_REMIX
+                                /* Remix grant_item_immunity_ (RAM 0x800E5B48): with an
+                                 * active Franklin Badge an item hitbox is absorbed per
+                                 * itRemixFranklinBadgeIsItemImmune. */
+                                if (itRemixFranklinBadgeIsItemImmune(fp, ip) != FALSE)
+                                {
+                                    continue;
+                                }
+#endif
                                 else for (j = 0; j < ARRAY_COUNT(fp->damage_colls); j++)
                                 {
                                     damage_coll = &fp->damage_colls[j];
@@ -4789,7 +4848,17 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     {
         ftParamProcStopEffect(fighter_gobj);
     }
+#ifdef REGION_REMIX
+    /* Remix keep_on_action_change_ (RAM 0x800E70EC): keep the reflect flag on a
+     * status change while the Franklin Badge countdown runs and its reflect
+     * hitbox is still the fighter's (fp->special_coll). */
+    if (itRemixFranklinBadgeKeepsReflect(fp) == FALSE)
+    {
+        fp->is_reflect = FALSE;
+    }
+#else
     fp->is_reflect = FALSE;
+#endif
     fp->is_absorb = FALSE;
     fp->is_shield = FALSE;
 

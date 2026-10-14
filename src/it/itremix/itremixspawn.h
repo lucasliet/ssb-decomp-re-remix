@@ -20,6 +20,9 @@
 #define ITREMIX_ITEMS_NUM 31 /* Item.NUM_ITEMS: bytes per stage row of the rate table */
 #define ITREMIX_EXTENDED_TOGGLES_DEFAULT 0x00000001 /* Item.EXTENDED_ENABLED_BITMASK_DEFAULT */
 
+/** spawn_wait used while SSB64_REMIX_FORCE_ITEM is set (~1s at 60fps). */
+#define ITREMIX_DEBUG_SPAWN_WAIT 60
+
 extern u32 gITRemixExtendedToggles;
 
 /** TRUE when standard item `index` is switched on in the current battle. */
@@ -33,5 +36,17 @@ s32 itRemixStandardItemGetWeight(s32 index);
 
 /** TRUE when any standard item is switched on (the vanilla "any toggle" gate). */
 sb32 itRemixAnyStandardItemIsOn(void);
+
+/** Item.asm clear_active_custom_items_: scene-boundary reset of item effect state. */
+void itRemixClearActiveItems(void);
+
+/*
+ * Item.asm extend_item_switch_bitmask_.save_ stores EXTENDED_ENABLED_BITMASK
+ * twice: live (+0x00, gITRemixExtendedToggles) and saved (+0x04). Save is
+ * called from the VS item-switch screen after any custom write; restore is
+ * called from the CSS scene start.
+ */
+void itRemixSaveExtendedToggles(void);
+void itRemixRestoreExtendedToggles(void);
 
 #endif

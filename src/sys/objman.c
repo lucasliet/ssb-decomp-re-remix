@@ -7,6 +7,10 @@
 #include <sys/rdp.h>
 #include <stddef.h>
 
+#ifdef REGION_REMIX
+#include "it/itremix/itremixstopwatch.h"
+#endif
+
 extern void port_log(const char *fmt, ...);
 
 #ifdef PORT
@@ -2304,6 +2308,30 @@ GObjProcess* gcRunGObjProcess(GObjProcess *gobjproc)
 		break;
 
 	case nGCProcessKindFunc:
+#ifdef REGION_REMIX
+		/* Speed.asm process_update_ (patched at RAM 0x8000A518, inside this same
+		 * func-kind path): before each fighter or projectile update, let the
+		 * Stopwatch skip it (1) or run it twice (2) for speed-up. Fighter double-
+		 * runs happen inside itRemixStopwatchCheckFunction itself, so 2 only comes
+		 * back for projectiles; repeating the plain C call mirrors Speed.asm's
+		 * jalr t9 and stays on this call stack. The second run is skipped if the
+		 * first one ejected/ended the GObj. */
+		if ((gobjproc->parent_gobj->id == nGCCommonKindFighter) || (gobjproc->parent_gobj->id == nGCCommonKindWeapon))
+		{
+			s32 stopwatch_check = itRemixStopwatchCheckFunction(gobjproc->parent_gobj, gobjproc->exec.func);
+
+			if (stopwatch_check != ITREMIX_STOPWATCH_CHECK_SKIP)
+			{
+				gobjproc->exec.func(gobjproc->parent_gobj);
+
+				if ((stopwatch_check == ITREMIX_STOPWATCH_CHECK_RUN_TWICE) && (sGCRunStatus == nGCRunStatusDefault))
+				{
+					gobjproc->exec.func(gobjproc->parent_gobj);
+				}
+			}
+		}
+		else
+#endif
 		gobjproc->exec.func(gobjproc->parent_gobj);
 		break;
 	}

@@ -1,6 +1,7 @@
 #include <it/item.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "it/itremix/itremixbasketball.h"
 #endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
@@ -1134,7 +1135,12 @@ next_check:
     }
     if (ip->damage_lag != 0)
     {
+#ifdef REGION_REMIX
+        /* Basketball multiply_ball_hitlag_hurtbox_: a fire basketball takes double hitlag */
+        ip->hitlag_tics = ftParamGetHitLag(ip->damage_lag, nFTCommonStatusWait, (itRemixBasketballIsFire(item_gobj) != FALSE) ? 2.0F : 1.0F);
+#else
         ip->hitlag_tics = ftParamGetHitLag(ip->damage_lag, nFTCommonStatusWait, 1.0F); // Maybe 10 is the "none" status ID?
+#endif
     }
 
     ip->hit_normal_damage = 0;

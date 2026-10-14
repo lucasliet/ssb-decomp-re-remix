@@ -1,5 +1,8 @@
 #include <it/item.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremixbasketball.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -169,35 +172,66 @@ sb32 itMapCheckCollideAllRebound(GObj *item_gobj, u32 check_flags, f32 mod_vel, 
     {
         if (lbCommonSim2D(&ip->physics.vel_air, &coll_data->lwall_angle) < 0.0F)
         {
+#ifdef REGION_REMIX
+            /* Basketball bounce_patch_._lwall */
+            itRemixBasketballApplyBounce(item_gobj, &coll_data->lwall_angle, 0.625F, 1.75F, +40.0F, 0.0F);
+#else
             lbCommonReflect2D(&ip->physics.vel_air, &coll_data->lwall_angle);
+#endif
 
             mod_pos.x = translate->x + coll_data->map_coll.width;
             mod_pos.y = translate->y + coll_data->map_coll.center;
 
             return_bool = TRUE;
 
+#ifdef REGION_REMIX
+            /* Basketball prevent_bounce_fgm_ (left wall) */
+            if (itRemixBasketballIsBounceScaled(item_gobj) == FALSE)
+            {
+                func_800269C0_275C0(nSYAudioFGMItemMapCollide);
+            }
+#else
             func_800269C0_275C0(nSYAudioFGMItemMapCollide);
+#endif
         }
     }
     if (coll_flags & check_flags & MAP_FLAG_RWALL)
     {
         if (lbCommonSim2D(&ip->physics.vel_air, &coll_data->rwall_angle) < 0.0F)
         {
+#ifdef REGION_REMIX
+            /* Basketball bounce_patch_._rwall */
+            itRemixBasketballApplyBounce(item_gobj, &coll_data->rwall_angle, 0.625F, 1.75F, -40.0F, 0.0F);
+#else
             lbCommonReflect2D(&ip->physics.vel_air, &coll_data->rwall_angle);
+#endif
 
             mod_pos.x = translate->x - coll_data->map_coll.width;
             mod_pos.y = translate->y + coll_data->map_coll.center;
 
             return_bool = TRUE;
 
+#ifdef REGION_REMIX
+            /* Basketball prevent_bounce_fgm_ (right wall) */
+            if (itRemixBasketballIsBounceScaled(item_gobj) == FALSE)
+            {
+                func_800269C0_275C0(nSYAudioFGMItemMapCollide);
+            }
+#else
             func_800269C0_275C0(nSYAudioFGMItemMapCollide);
+#endif
         }
     }
     if (coll_flags & check_flags & MAP_FLAG_CEIL)
     {
         if (lbCommonSim2D(&ip->physics.vel_air, &coll_data->ceil_angle) < 0.0F)
         {
+#ifdef REGION_REMIX
+            /* Basketball bounce_patch_._ceiling */
+            itRemixBasketballApplyBounce(item_gobj, &coll_data->ceil_angle, 1.75F, 0.625F, 0.0F, +40.0F);
+#else
             lbCommonReflect2D(&ip->physics.vel_air, &coll_data->ceil_angle);
+#endif
 
             mod_pos.x = translate->x;
             mod_pos.y = translate->y + coll_data->map_coll.top;
@@ -209,14 +243,27 @@ sb32 itMapCheckCollideAllRebound(GObj *item_gobj, u32 check_flags, f32 mod_vel, 
     {
         if (lbCommonSim2D(&ip->physics.vel_air, &coll_data->floor_angle) < 0.0F)
         {
+#ifdef REGION_REMIX
+            /* Basketball bounce_patch_._floor */
+            itRemixBasketballApplyBounce(item_gobj, &coll_data->floor_angle, 1.75F, 0.625F, 0.0F, -40.0F);
+#else
             lbCommonReflect2D(&ip->physics.vel_air, &coll_data->floor_angle);
+#endif
 
             mod_pos.x = translate->x;
             mod_pos.y = translate->y + coll_data->map_coll.bottom;
 
             return_bool = TRUE;
 
+#ifdef REGION_REMIX
+            /* Basketball prevent_bounce_fgm_ (floor) */
+            if (itRemixBasketballIsBounceScaled(item_gobj) == FALSE)
+            {
+                func_800269C0_275C0(nSYAudioFGMItemMapCollide);
+            }
+#else
             func_800269C0_275C0(nSYAudioFGMItemMapCollide);
+#endif
         }
     }
     if (return_bool != FALSE)

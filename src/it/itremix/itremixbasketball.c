@@ -21,6 +21,7 @@
 #include "ft/ftcommon/ftcommonfunctions.h"
 #include "if/ifcommon.h"
 #include "gr/grcommon/grjungle.h"
+#include <lb/lbcommon.h>
 #include <math.h>
 
 #define ITREMIX_BASKETBALL_KIND 0x40
@@ -93,6 +94,9 @@
 #define ITREMIX_BASKETBALL_FGM_FIRE_END 275
 #define ITREMIX_BASKETBALL_FGM_BARREL_SHOOT 281
 #define ITREMIX_BASKETBALL_FGM_WHOOSH 18
+#define ITREMIX_BASKETBALL_BOUNCE_SCALE_SPEED 40.0F            /* 0x42200000: bounce_patch_ squash threshold */
+#define ITREMIX_BASKETBALL_BOUNCE_HITLAG_SCALE 0.030029296875F /* 0x3CF60000 */
+#define ITREMIX_BASKETBALL_GOBJ_KIND 0x3F5                     /* nGCCommonKindItem: asm object type check for an item */
 
 enum itRemixBasketballStatus
 {
@@ -434,6 +438,81 @@ static void itRemixBasketballRestoreBounce(GObj *item_gobj)
     joint->translate.vec.f.y -= vars->bounce_y_offset;
     vars->bounce_x_offset = 0.0F;
     vars->bounce_y_offset = 0.0F;
+}
+
+/**
+ * Basketball.bounce_patch_: applies the Remix bounce squash and reflects the
+ * velocity (the asm helper ends by re-running the vanilla lbCommonReflect2D).
+ * The squash and offset apply at speed 40 and above; the bounce hitlag is set
+ * for every basketball bounce, scaled or not (the asm bc1fl only skips the
+ * squash). No-op for items that are not the basketball.
+ * item_gobj: item object that bounced.
+ * angle: collision angle passed to lbCommonReflect2D.
+ * x_scale, y_scale: joint scale of the squash.
+ * x_offset, y_offset: translate offset, undone by itRemixBasketballRestoreBounce.
+ */
+void itRemixBasketballApplyBounce(GObj *item_gobj, Vec3f *angle, f32 x_scale, f32 y_scale, f32 x_offset, f32 y_offset)
+{
+    ITStruct *ip = itGetStruct(item_gobj);
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    DObj *joint = DObjGetStruct(item_gobj);
+    f32 speed = itRemixBasketballGetSpeed(ip);
+
+    if (ip->kind == ITREMIX_BASKETBALL_KIND)
+    {
+        if (speed >= ITREMIX_BASKETBALL_BOUNCE_SCALE_SPEED)
+        {
+            joint->scale.vec.f.x = x_scale;
+            joint->scale.vec.f.y = y_scale;
+            vars->bounce_x_offset = x_offset;
+            vars->bounce_y_offset = y_offset;
+            vars->is_bounce_scaled = TRUE;
+            joint->translate.vec.f.x += x_offset;
+            joint->translate.vec.f.y += y_offset;
+        }
+        ip->hitlag_tics = (s32) (speed * ITREMIX_BASKETBALL_BOUNCE_HITLAG_SCALE) + 1;
+        if (vars->is_bounce_scaled)
+        {
+            func_800269C0_275C0(vars->is_fire ? ITREMIX_BASKETBALL_FGM_FIRE_BOUNCE : ITREMIX_BASKETBALL_FGM_BOUNCE);
+        }
+    }
+    lbCommonReflect2D(&ip->physics.vel_air, angle);
+}
+
+/**
+ * Basketball multiply_player_hitlag_ / multiply_ball_hitlag_hurtbox_ /
+ * add_ball_hitlag_hitbox_ checks: TRUE when item_gobj is the fire basketball.
+ * item_gobj: item object to test, or NULL.
+ */
+sb32 itRemixBasketballIsFire(GObj *item_gobj)
+{
+    if ((item_gobj == NULL) || (item_gobj->id != ITREMIX_BASKETBALL_GOBJ_KIND))
+    {
+        return FALSE;
+    }
+    if (itGetStruct(item_gobj)->kind != ITREMIX_BASKETBALL_KIND)
+    {
+        return FALSE;
+    }
+    return itRemixBasketballGetVars()->is_fire;
+}
+
+/**
+ * Basketball bounce_patch_ / prevent_bounce_fgm_ check: TRUE when item_gobj is
+ * the basketball with the bounce squash applied.
+ * item_gobj: item object to test, or NULL.
+ */
+sb32 itRemixBasketballIsBounceScaled(GObj *item_gobj)
+{
+    if ((item_gobj == NULL) || (item_gobj->id != ITREMIX_BASKETBALL_GOBJ_KIND))
+    {
+        return FALSE;
+    }
+    if (itGetStruct(item_gobj)->kind != ITREMIX_BASKETBALL_KIND)
+    {
+        return FALSE;
+    }
+    return itRemixBasketballGetVars()->is_bounce_scaled;
 }
 
 /**
