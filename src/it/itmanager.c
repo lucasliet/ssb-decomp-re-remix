@@ -2,6 +2,8 @@
 #include <sys/netsync.h>
 #ifdef REGION_REMIX
 #include "it/itremix/itremix.h"
+#include "it/itremix/itremixspawn.h"
+#include "remix/remix_debug.h"
 #endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
@@ -502,6 +504,10 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
 GObj* itManagerMakeItemSetupCommon(GObj *parent_gobj, s32 index, Vec3f *pos, Vec3f *vel, u32 spawn_flags)
 {
 #ifdef REGION_REMIX
+    if (remix_debug_force_item_kind() >= 0)
+    {
+        index = remix_debug_force_item_kind();
+    }
     /* Item.asm extend_item_spawn_ / extend_item_spawn_gfx_ (0x8016EA84, 0x8016EAC8) */
     if (itRemixIsCustomKind(index))
     {
@@ -596,7 +602,11 @@ GObj* itManagerMakeAppearActor(void)
 
     if (gSCManagerBattleState->item_appearance_rate != nSCBattleItemSwitchNone)
     {
+#ifdef REGION_REMIX
+        if ((gSCManagerBattleState->item_toggles != 0) || itRemixAnyStandardItemIsOn())
+#else
         if (gSCManagerBattleState->item_toggles != 0)
+#endif
         {
             if (gMPCollisionGroundData->item_weights != NULL)
             {
@@ -612,6 +622,12 @@ GObj* itManagerMakeAppearActor(void)
                         item_any_weights += p_any_weights->values[i];
                     }
                 }
+#ifdef REGION_REMIX
+                for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+                {
+                    item_any_weights += itRemixStandardItemGetWeight(i);
+                }
+#endif
                 if (item_any_weights == 0)
                 {
                     return NULL;
@@ -655,6 +671,15 @@ GObj* itManagerMakeAppearActor(void)
                         item_valid_weights++;
                     }
                 }
+#ifdef REGION_REMIX
+                for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+                {
+                    if (itRemixStandardItemGetWeight(i) != 0)
+                    {
+                        item_valid_weights++;
+                    }
+                }
+#endif
                 gITManagerAppearActor.weights.valids_num = item_valid_weights;
                 gITManagerAppearActor.weights.kinds = (u8*) syTaskmanMalloc(item_valid_weights * sizeof(*gITManagerAppearActor.weights.kinds), 0x0);
                 gITManagerAppearActor.weights.blocks = (u16*) syTaskmanMalloc(item_valid_weights * sizeof(*gITManagerAppearActor.weights.blocks), 0x2);
@@ -673,6 +698,21 @@ GObj* itManagerMakeAppearActor(void)
                         item_valid_weights++;
                     }
                 }
+#ifdef REGION_REMIX
+                for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+                {
+                    s32 custom_weight = itRemixStandardItemGetWeight(i);
+
+                    if (custom_weight != 0)
+                    {
+                        gITManagerAppearActor.weights.kinds[item_valid_weights] = ITREMIX_KIND_START + i;
+                        gITManagerAppearActor.weights.blocks[item_valid_weights] = weights_sum;
+                        weights_sum += custom_weight;
+
+                        item_valid_weights++;
+                    }
+                }
+#endif
                 itManagerSetItemSpawnWait();
 
                 return gobj;
@@ -696,7 +736,11 @@ void itManagerSetupContainerDrops(void)
     MPItemWeights *p_valid_weights;
     s32 i;
 
+#ifdef REGION_REMIX
+    if ((gSCManagerBattleState->item_appearance_rate != nSCBattleItemSwitchNone) && ((gSCManagerBattleState->item_toggles != 0) || itRemixAnyStandardItemIsOn()) && (gMPCollisionGroundData->item_weights != NULL))
+#else
     if ((gSCManagerBattleState->item_appearance_rate != nSCBattleItemSwitchNone) && (gSCManagerBattleState->item_toggles != 0) && (gMPCollisionGroundData->item_weights != NULL))
+#endif
     {
         item_any_toggles = gSCManagerBattleState->item_toggles >> nITKindUtilityStart;
         p_any_weights = (MPItemWeights*)PORT_RESOLVE(gMPCollisionGroundData->item_weights);
@@ -710,6 +754,12 @@ void itManagerSetupContainerDrops(void)
                 item_any_weights += p_any_weights->values[i];
             }
         }
+#ifdef REGION_REMIX
+        for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+        {
+            item_any_weights += itRemixStandardItemGetWeight(i);
+        }
+#endif
         gITManagerRandomWeights.weights_sum = item_any_weights;
 
         if (item_any_weights != 0)
@@ -724,6 +774,15 @@ void itManagerSetupContainerDrops(void)
                     item_valid_weights++;
                 }
             }
+#ifdef REGION_REMIX
+            for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+            {
+                if (itRemixStandardItemGetWeight(i) != 0)
+                {
+                    item_valid_weights++;
+                }
+            }
+#endif
             gITManagerRandomWeights.valids_num = ++item_valid_weights;
             gITManagerRandomWeights.kinds = (u8*) syTaskmanMalloc(item_valid_weights * sizeof(*gITManagerRandomWeights.kinds), 0x0);
             gITManagerRandomWeights.blocks = (u16*) syTaskmanMalloc(item_valid_weights * sizeof(*gITManagerRandomWeights.blocks), 0x2);
@@ -742,6 +801,21 @@ void itManagerSetupContainerDrops(void)
                     item_valid_weights++;
                 }
             }
+#ifdef REGION_REMIX
+            for (i = 0; i < ITREMIX_STANDARD_ITEMS_NUM; i++)
+            {
+                s32 custom_weight = itRemixStandardItemGetWeight(i);
+
+                if (custom_weight != 0)
+                {
+                    gITManagerRandomWeights.kinds[item_valid_weights] = ITREMIX_KIND_START + i;
+                    gITManagerRandomWeights.blocks[item_valid_weights] = weights_sum;
+
+                    weights_sum += custom_weight;
+                    item_valid_weights++;
+                }
+            }
+#endif
             gITManagerRandomWeights.kinds[item_valid_weights] = nITKindMBallMonsterStart;
             gITManagerRandomWeights.blocks[item_valid_weights] = weights_sum;
 

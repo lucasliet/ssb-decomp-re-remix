@@ -981,6 +981,11 @@ void scManagerRunLoop(sb32 arg)
 				gSCManagerTransferBattleState.gkind = gkind;
 				gSCManagerSceneData.gkind = gkind;
 			}
+			if (remix_debug_vs_item_rate() >= 0)
+			{
+				gSCManagerTransferBattleState.item_toggles = ~0U;
+				gSCManagerTransferBattleState.item_appearance_rate = (u8)remix_debug_vs_item_rate();
+			}
 			gSCManagerSceneData.scene_curr = nSCKindVSBattle;
 			gSCManagerSceneData.scene_prev = nSCKindPlayersVS;
 			port_log("SSB64: SSB64_VS_FKINDS override → VS battle P1=%d (human) P2=%d (CPU)\n",

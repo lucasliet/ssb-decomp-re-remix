@@ -7,28 +7,56 @@
 
 #include "itremix.h"
 
+extern const ITRemixItemDesc dITRemixBasketballItemDesc;
+extern const ITRemixItemDesc dITRemixBlueShellItemDesc;
 extern const ITRemixItemDesc dITRemixBoomerangItemDesc;
 extern const ITRemixItemDesc dITRemixClanBombItemDesc;
+extern const ITRemixItemDesc dITRemixCloakingDeviceItemDesc;
 extern const ITRemixItemDesc dITRemixCloudItemDesc;
+extern const ITRemixItemDesc dITRemixDangoItemDesc;
+extern const ITRemixItemDesc dITRemixDekuNutItemDesc;
 extern const ITRemixItemDesc dITRemixFlashbangItemDesc;
+extern const ITRemixItemDesc dITRemixFranklinBadgeItemDesc;
 extern const ITRemixItemDesc dITRemixGemItemDesc;
+extern const ITRemixItemDesc dITRemixGoldenGunItemDesc;
 extern const ITRemixItemDesc dITRemixGordoItemDesc;
+extern const ITRemixItemDesc dITRemixLightningItemDesc;
 extern const ITRemixItemDesc dITRemixMrSaturnItemDesc;
+extern const ITRemixItemDesc dITRemixPitfallItemDesc;
+extern const ITRemixItemDesc dITRemixPoisonMushroomItemDesc;
+extern const ITRemixItemDesc dITRemixPsyduckItemDesc;
+extern const ITRemixItemDesc dITRemixPwingItemDesc;
 extern const ITRemixItemDesc dITRemixShurikenItemDesc;
+extern const ITRemixItemDesc dITRemixStopwatchItemDesc;
+extern const ITRemixItemDesc dITRemixSuperMushroomItemDesc;
 extern const ITRemixItemDesc dITRemixTurnipItemDesc;
 extern const ITRemixItemDesc dITRemixWaddleDeeItemDesc;
 extern const ITRemixItemDesc dITRemixWaddleDooItemDesc;
 
 const ITRemixItemDesc *const dITRemixItemDescs[] =
 {
+    &dITRemixBasketballItemDesc,
+    &dITRemixBlueShellItemDesc,
     &dITRemixBoomerangItemDesc,
     &dITRemixClanBombItemDesc,
+    &dITRemixCloakingDeviceItemDesc,
     &dITRemixCloudItemDesc,
+    &dITRemixDangoItemDesc,
+    &dITRemixDekuNutItemDesc,
     &dITRemixFlashbangItemDesc,
+    &dITRemixFranklinBadgeItemDesc,
     &dITRemixGemItemDesc,
+    &dITRemixGoldenGunItemDesc,
     &dITRemixGordoItemDesc,
+    &dITRemixLightningItemDesc,
     &dITRemixMrSaturnItemDesc,
+    &dITRemixPitfallItemDesc,
+    &dITRemixPoisonMushroomItemDesc,
+    &dITRemixPsyduckItemDesc,
+    &dITRemixPwingItemDesc,
     &dITRemixShurikenItemDesc,
+    &dITRemixStopwatchItemDesc,
+    &dITRemixSuperMushroomItemDesc,
     &dITRemixTurnipItemDesc,
     &dITRemixWaddleDeeItemDesc,
     &dITRemixWaddleDooItemDesc,
