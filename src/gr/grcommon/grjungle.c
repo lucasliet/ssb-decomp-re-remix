@@ -1,6 +1,10 @@
 #include <gr/ground.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include <sc/scene.h>
+#include <gr/grremix/grremixids.h>
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -150,10 +154,43 @@ void grJungleMakeTaruCann(void)
     gGRCommonStruct.jungle.tarucann_rotate_step = F_CST_DTOR32(0.0F);
 }
 
+#ifdef REGION_REMIX
+/**
+ * Remix stages that reuse the Congo Jungle maker but have no taru cann map nodes
+ * (Stages.asm function table). Spawning a taru cann there dereferences missing map
+ * joints and crashes, so only the Congo Jungle family may spawn one (Hazards.asm
+ * congo_jungle_barrel_, 0x80109FBC).
+ */
+sb32 grJungleStageHasTaruCann(void)
+{
+    s32 gkind = gSCManagerBattleState->gkind;
+
+    switch (gkind)
+    {
+    case nGRRemixStage_CONGO_JUNGLE:
+    case nGRRemixStage_SMASHKETBALL:
+    case nGRRemixStage_FALLS:
+    case nGRRemixStage_CONGOJ_DL:
+    case nGRRemixStage_CONGOJ_O:
+        return TRUE;
+
+    default:
+        return FALSE;
+    }
+}
+#endif
+
 // 0x80109FB4
 GObj* grJungleMakeGround(void)
 {
+#ifdef REGION_REMIX
+    if (grJungleStageHasTaruCann())
+    {
+        grJungleMakeTaruCann();
+    }
+#else
     grJungleMakeTaruCann();
+#endif
 
     return NULL;
 }

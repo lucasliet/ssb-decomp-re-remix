@@ -1,5 +1,8 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixstage.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -30,6 +33,13 @@ GObj* (*dGRMainSetupProcMakeList[/* */])(void) =
 // 0x801056C0
 void grMainSetupMakeGround(void)
 {
+#ifdef REGION_REMIX
+    if (grRemixIsCustomKind(gSCManagerBattleState->gkind))
+    {
+        grRemixMakeGround();
+        return;
+    }
+#endif
     if (gSCManagerBattleState->gkind <= nGRKindBattleEnd)
     {
         dGRMainSetupProcMakeList[gSCManagerBattleState->gkind]();

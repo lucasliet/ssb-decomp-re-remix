@@ -2,6 +2,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "it/itremix/itremixbasketball.h"
+#include "it/itremix/itremixcloud.h"
 #endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
@@ -141,7 +142,12 @@ void itProcessProcItemMain(GObj *item_gobj)
         }
         ip->arrow_timer--;
     }
+#ifdef REGION_REMIX
+    /* Cloud.asm enable_flash (Cloud.asm 287-315): Cloud and the Bowser bomb keep their GObj flash flags. */
+    else if (!itRemixKeepsFlashFlags(ip->kind)) item_gobj->flags = GOBJ_FLAG_NONE;
+#else
     else item_gobj->flags = GOBJ_FLAG_NONE;
+#endif
 
     if (!(ip->is_hold))
     {

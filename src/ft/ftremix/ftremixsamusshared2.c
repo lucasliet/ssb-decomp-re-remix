@@ -12,6 +12,12 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftparam.h"
 #include "gm/gmdef.h"
+#include "ef/eftypes.h"
+
+/* Remix puts the original Dark Samus file 0x15D at the end of its file 6 (samusshared.asm, dsamus_grapple_anim_gfx_struct). */
+#define REMIX_DSAMUS_GRAPPLE_FILE_OFFSET 0x2970
+
+static EFDesc sFTRemixDSamusGrappleBeamDesc;
 
 /* GFXRoutine.id.* from build/remixasm/bass.log (id = counter + 0x55). */
 #define REMIX_GFX_KIRBY_MTWO_CHARGE 0x64
@@ -117,6 +123,27 @@ void ftRemixSamusSharedKirbyCopyChargeFlash(GObj *fighter_gobj)
 sb32 ftRemixSamusSharedHasGrappleBeam(s32 fkind)
 {
     return (fkind == nFTKindSamus) || (fkind == nFTKindNSamus) || ftRemixSamusSharedIsClone(fkind);
+}
+
+/* get_grapple_anim_gfx_struct (0x80101E88, efManagerSamusGrappleBeamGlowMakeEffect): Dark Samus gets a copy of the
+ * vanilla descriptor that uses its file 6 and the DObj/MObj/Anim offsets shifted by REMIX_DSAMUS_GRAPPLE_FILE_OFFSET.
+ * Its proc 0x8000DF34 is gcPlayAnimAll (same body as the vanilla proc). */
+EFDesc *ftRemixSamusSharedGrappleBeamDesc(GObj *fighter_gobj, EFDesc *vanilla_desc)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+
+    if ((fp->fkind != REMIX_ID_DSAMUS) || (fp->data->p_file_special1 == NULL) || (*fp->data->p_file_special1 == NULL))
+    {
+        return vanilla_desc;
+    }
+    sFTRemixDSamusGrappleBeamDesc = *vanilla_desc;
+    sFTRemixDSamusGrappleBeamDesc.file_head = fp->data->p_file_special1;
+    sFTRemixDSamusGrappleBeamDesc.o_dobjsetup += REMIX_DSAMUS_GRAPPLE_FILE_OFFSET;
+    sFTRemixDSamusGrappleBeamDesc.o_mobjsub += REMIX_DSAMUS_GRAPPLE_FILE_OFFSET;
+    sFTRemixDSamusGrappleBeamDesc.o_anim_joint += REMIX_DSAMUS_GRAPPLE_FILE_OFFSET;
+    sFTRemixDSamusGrappleBeamDesc.o_matanim_joint += REMIX_DSAMUS_GRAPPLE_FILE_OFFSET;
+
+    return &sFTRemixDSamusGrappleBeamDesc;
 }
 
 #endif

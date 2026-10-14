@@ -161,4 +161,40 @@ s32 ftRemixKirbyStoneHealthMax(FTStruct *fp, s32 vanilla_max);
 s32 ftRemixKirbyStoneHealthMid(FTStruct *fp, s32 vanilla_mid);
 s32 ftRemixKirbyStoneReleaseDuration(FTStruct *fp, s32 vanilla_duration);
 
+/* Samus clones, ftremixsamusshared2.c (samusshared.asm get_grapple_anim_gfx_struct): the grapple glow descriptor
+ * efManagerSamusGrappleBeamGlowMakeEffect spawns; Dark Samus gets its own file, other fighters the vanilla one */
+struct EFDesc *ftRemixSamusSharedGrappleBeamDesc(GObj *fighter_gobj, struct EFDesc *vanilla_desc);
+
+/* J Kirby grounded_script, ftremix/jkirby/ftremixjkirby.c (Kirby.asm clear_marth_flag_) */
+void ftRemixJKirbyGroundedScript(FTStruct *fp);
+
+/* Dragon King drain flash fix, ftremix/dragonking/ftremixdragonkingdrainflash.c (DragonKingSpecial.asm drain_flash_fix_):
+ * TRUE when the damage digits of fighter_gobj keep their colour instead of the white flash */
+sb32 ftRemixDragonKingDrainFlashSuppressed(GObj *fighter_gobj);
+
+/* Piano command grab and absorb, ftremixpianoshared.c (PianoSpecial.asm command_grab_action_fix_ 0x8014C8FC and
+ * absorb_behaviour_ 0x800E33AC): the action the captured fighter enters, the absorb healing and the Mad Piano bonus ammo */
+s32 ftRemixCommandGrabCaptureAction(GObj *grabber_gobj);
+s32 ftRemixAbsorbHealAmount(FTStruct *fp, s32 damage);
+void ftRemixAbsorbPianoBonusAmmo(FTStruct *fp, s32 damage);
+
+/* Piano capture_action_fix_, ftremixpianoshared.c: custom_capture_dk_interrupt of Mad Piano, keyed by the grabber */
+s32 ftRemixPianoCaptureDKInterrupt(FTStruct *grabber_fp);
+
+/* Kirby clone power action swap, ftremix/kirby/ftremixkirbyclone.c (Kirby.asm clone_power_action_swap_ 0x800E6F34),
+ * applied at the top of ftMainSetStatus */
+s32 ftRemixKirbyCloneActionSwap(GObj *fighter_gobj, s32 action_id);
+
+/* Body size, ftremix/ftremixsize.c (Size.asm phase a): per-player multiplier (1.0F by default), the top joint and ECB
+ * hook, the camera zoom factor and the value scale used for the camera offset and the ECB display */
+f32 ftRemixSizeGetMultiplier(s32 player);
+void ftRemixSizeSetMultiplier(s32 player, f32 multiplier);
+void ftRemixSizeInitFighter(FTStruct *fp);
+void ftRemixSizeApplyTopJointAndEcb(FTStruct *fp);
+f32 ftRemixSizeCameraZoomFactor(FTStruct *fp);
+f32 ftRemixSizeScaleValue(FTStruct *fp, f32 value);
+
+/* Casino Night side bumper bounce, 0x80141B88 in ftCommonWallDamageSetStatus (gr/grremix/grremixcasino.c) */
+f32 grRemixCasinoWallBounceScale(FTStruct *fp);
+
 #endif

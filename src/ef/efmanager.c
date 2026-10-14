@@ -4709,11 +4709,13 @@ GObj* efManagerKirbyVulcanJabMakeEffect(Vec3f *pos, s32 lr, f32 rotate, f32 vel,
 }
 
 // 0x80101E80
-/* REMIX-TODO(GFX): Dark Samus grapple glow (Remix 0x80101E88) uses file 6 with its own DObj/MObj/Anim offsets
- * (0x380/0x210/0x410/0x480 + 0x2970) and proc 0x8000DF34; not ported yet, see build/remixasm/notes/shared_samus2.md. */
 GObj* efManagerSamusGrappleBeamGlowMakeEffect(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+    GObj *effect_gobj = efManagerMakeEffectNoForce(ftRemixSamusSharedGrappleBeamDesc(fighter_gobj, &dEFManagerSamusGrappleBeamEffectDesc));
+#else
     GObj *effect_gobj = efManagerMakeEffectNoForce(&dEFManagerSamusGrappleBeamEffectDesc);
+#endif
     EFStruct *ep;
     DObj *dobj;
 

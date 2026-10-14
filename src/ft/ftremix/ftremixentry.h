@@ -23,6 +23,7 @@ typedef enum FTRemixEntryEffect
     nFTRemixEntryEffectYoshiEgg,
     nFTRemixEntryEffectKirbyStar,
     nFTRemixEntryEffectCaptainCar,
+    nFTRemixEntryEffectDonkeyBarrelRight,
     nFTRemixEntryEffectsNum
 
 } FTRemixEntryEffect;

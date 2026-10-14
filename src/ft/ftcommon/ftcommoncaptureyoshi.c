@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <it/item.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #include "fighter_registry.h"
@@ -114,7 +117,11 @@ void ftCommonCaptureYoshiProcCapture(GObj *fighter_gobj, GObj *capture_gobj)
     this_fp->lr = -capture_fp->lr;
 
     mpCommonSetFighterAir(this_fp);
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, ftRemixCommandGrabCaptureAction(capture_gobj), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusCaptureYoshi, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#endif
     ftMainPlayAnimEventsAll(fighter_gobj);
 
     this_fp->status_vars.common.captureyoshi.stage = 0;

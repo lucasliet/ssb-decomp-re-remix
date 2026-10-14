@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #include <if/interface.h>
 #include <sc/scene.h>
@@ -1143,25 +1144,47 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
 
             default:
                 ft_pos = fp->joints[nFTPartsJointTopN]->translate.vec.f;
+#ifdef REGION_REMIX
+                /* Size.asm adjust_camera_center_point_._2 (RAM 0x800F2A5C) */
+                ft_pos.y += ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y);
+#else
                 ft_pos.y += fp->attr->cam_offset_y;
+#endif
 
             #if defined(AVOID_UB) || defined(NON_MATCHING)
                 syVectorDiff3D(&dist, &CObjGetStruct(gGMCameraGObj)->vec.at, &ft_pos);
 
+#ifdef REGION_REMIX
+                if (ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y) < syVectorMag3D(&dist))
+#else
                 if (fp->attr->cam_offset_y < syVectorMag3D(&dist))
+#endif
                 {
                     syVectorNorm3D(&dist);
+#ifdef REGION_REMIX
+                    syVectorScale3D(&dist, ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y));
+#else
                     syVectorScale3D(&dist, fp->attr->cam_offset_y);
+#endif
                     syVectorAdd3D(&ft_pos, &dist);
                 }
             #else
                 // SUPER FAKE. I hope I can fix this in the future. ft_pos - 2 should really be dist, but we get stack issues otherwise.
                 syVectorDiff3D(&ft_pos - 2, &CObjGetStruct(gGMCameraGObj)->vec.at, &ft_pos);
 
+#ifdef REGION_REMIX
+                /* Size.asm adjust_camera_center_point_._3 and ._4 (RAM 0x800F2A80, 0x800F2A9C) */
+                if (ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y) < syVectorMag3D(&ft_pos - 2))
+#else
                 if (fp->attr->cam_offset_y < syVectorMag3D(&ft_pos - 2))
+#endif
                 {
                     syVectorNorm3D(&ft_pos - 2);
+#ifdef REGION_REMIX
+                    syVectorScale3D(&ft_pos - 2, ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y));
+#else
                     syVectorScale3D(&ft_pos - 2, fp->attr->cam_offset_y);
+#endif
                     syVectorAdd3D(&ft_pos, &ft_pos - 2);
                 }
             #endif
@@ -1341,7 +1364,12 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
             (
                 m,
                 DObjGetStruct(fighter_gobj)->translate.vec.f.x,
+#ifdef REGION_REMIX
+                /* Size.asm adjust_ecb_display_._lower_y (RAM 0x800F3004) */
+                DObjGetStruct(fighter_gobj)->translate.vec.f.y + ftRemixSizeScaleValue(fp, attr->map_coll.bottom),
+#else
                 DObjGetStruct(fighter_gobj)->translate.vec.f.y + attr->map_coll.bottom,
+#endif
                 DObjGetStruct(fighter_gobj)->translate.vec.f.z
             );
 
@@ -1349,7 +1377,12 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
 
             syMatrixAdvanceW(m, gSYTaskmanGraphicsHeap);
 
+#ifdef REGION_REMIX
+            /* Size.asm adjust_ecb_display_._center_y_and_width (RAM 0x800F3058) */
+            syMatrixSca(m, ftRemixSizeScaleValue(fp, attr->map_coll.width) / 30.0F, ftRemixSizeScaleValue(fp, attr->map_coll.center) / 30.0F, 1.0F);
+#else
             syMatrixSca(m, attr->map_coll.width / 30.0F, attr->map_coll.center / 30.0F, 1.0F);
+#endif
 
             gSPMatrix(gSYTaskmanDLHeads[0]++, m, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
             gSPDisplayList(gSYTaskmanDLHeads[0]++, dFTDisplayMainMapCollisionBottomDL);
@@ -1361,7 +1394,12 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
             (
                 m,
                 DObjGetStruct(fighter_gobj)->translate.vec.f.x,
+#ifdef REGION_REMIX
+                /* Size.asm adjust_ecb_display_._center_y (RAM 0x800F30F0) */
+                DObjGetStruct(fighter_gobj)->translate.vec.f.y + ftRemixSizeScaleValue(fp, attr->map_coll.center),
+#else
                 DObjGetStruct(fighter_gobj)->translate.vec.f.y + attr->map_coll.center,
+#endif
                 DObjGetStruct(fighter_gobj)->translate.vec.f.z
             );
 
@@ -1369,7 +1407,18 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
 
             syMatrixAdvanceW(m, gSYTaskmanGraphicsHeap);
 
+#ifdef REGION_REMIX
+            /* Size.asm adjust_ecb_display_._center_y_upper_y_and_width (RAM 0x800F3148) */
+            syMatrixSca
+            (
+                m,
+                ftRemixSizeScaleValue(fp, attr->map_coll.width) / 30.0F,
+                (ftRemixSizeScaleValue(fp, attr->map_coll.top) - ftRemixSizeScaleValue(fp, attr->map_coll.center)) / 30.0F,
+                1.0F
+            );
+#else
             syMatrixSca(m, attr->map_coll.width / 30.0F, (attr->map_coll.top - attr->map_coll.center) / 30.0F, 1.0F);
+#endif
 
             gSPMatrix(gSYTaskmanDLHeads[0]++, m, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
             gSPDisplayList(gSYTaskmanDLHeads[0]++, dFTDisplayMainMapCollisionTopDL);

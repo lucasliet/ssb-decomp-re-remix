@@ -7,6 +7,9 @@
 #include <sys/controller.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixstage.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 // Port-built CSS sprites (baked into the binary at compile time). Declared as
@@ -34,6 +37,10 @@ extern int port_enhancement_bonus_stages_enabled(void);
 
 #define nMNMapsSlotRandom	9
 #define nMNMapsSlotCount	10
+#ifdef REGION_REMIX
+#define nMNMapsRemixIconsFileID	2564 /* File.STAGE_ICONS (0xA04) */
+#define nMNMapsFileRemixIcons	6
+#endif
 #define nMNMapsRandomGKind	0xDE
 #define nMNMapsFileMasterHandIcon	5
 
@@ -45,7 +52,14 @@ extern int port_enhancement_bonus_stages_enabled(void);
 
 #define nMNMapsPageOriginal	0
 #define nMNMapsPagePort		1
+#ifdef REGION_REMIX
+/* The Remix pages are built from Stages.stage_table_normal when the screen opens (mnMapsBuildRemixPages). */
+#define nMNMapsPageCountMax	16
+#define nMNMapsPageCount	sMNMapsPageCount
+#else
+#define nMNMapsPageCountMax	2
 #define nMNMapsPageCount	2
+#endif
 
 // Foreground-slide page-transition animation. Background bitmap (stone tiles)
 // stays put; the icons GObj and the cursor slide as a unit, GBC-style.
@@ -77,6 +91,9 @@ u32 dMNMapsFileIDs[/* */] =
 	llMNCommonFontsFileID,
 	llGRWallpaperTrainingBlackFileID,
 	llMasterHandIconFileID
+#ifdef REGION_REMIX
+	, nMNMapsRemixIconsFileID
+#endif
 #else
 	&llFTEmblemSpritesFileID,
 	&llMNSelectCommonFileID,
@@ -282,6 +299,10 @@ f32 sMNMapsPreviewBaseAtY;
 // last entry being the random/page-specific terminator). nMNMapsEmptyGKind marks a
 // slot with no stage on this page — mnMapsCheckLocked treats it as locked so the
 // icon isn't drawn and the cursor skips past it.
+#ifdef REGION_REMIX
+static s32 sMNMapsPageCount = 1;
+s32 dMNMapsPageGkinds[nMNMapsPageCountMax][nMNMapsSlotCount];
+#else
 s32 dMNMapsPageGkinds[nMNMapsPageCount][nMNMapsSlotCount] =
 {
 	// Page 0 — original ROM-shipping layout (unchanged from N64 release).
@@ -297,6 +318,37 @@ s32 dMNMapsPageGkinds[nMNMapsPageCount][nMNMapsSlotCount] =
 		nMNMapsEmptyGKind, nMNMapsEmptyGKind, nMNMapsEmptyGKind, nMNMapsEmptyGKind, nMNMapsEmptyGKind,
 	},
 };
+#endif
+
+#ifdef REGION_REMIX
+/* Pages of nMNMapsSlotRandom stages in Stages.stage_table_normal order, Random in the last slot of every page. */
+static void mnMapsBuildRemixPages(void)
+{
+	s32 stages[GRREMIX_SELECT_ENTRIES_MAX];
+	s32 count = grRemixSelectGetStages(stages, GRREMIX_SELECT_ENTRIES_MAX);
+	s32 page;
+	s32 slot;
+	s32 index = 0;
+
+	sMNMapsPageCount = (count + nMNMapsSlotRandom - 1) / nMNMapsSlotRandom;
+	if (sMNMapsPageCount < 1)
+	{
+		sMNMapsPageCount = 1;
+	}
+	if (sMNMapsPageCount > nMNMapsPageCountMax)
+	{
+		sMNMapsPageCount = nMNMapsPageCountMax;
+	}
+	for (page = 0; page < sMNMapsPageCount; page++)
+	{
+		for (slot = 0; slot < nMNMapsSlotRandom; slot++)
+		{
+			dMNMapsPageGkinds[page][slot] = (index < count) ? stages[index++] : nMNMapsEmptyGKind;
+		}
+		dMNMapsPageGkinds[page][nMNMapsSlotRandom] = nMNMapsRandomGKind;
+	}
+}
+#endif
 
 static SObj *sMNMapsStageSelectTextSObj = NULL; // Tracks the cursive image
 static GObj *sMNMapsMusicSelectTextGObj = NULL; // Tracks our new text
@@ -401,6 +453,17 @@ void mnMapsAllocModelHeaps(void)
 	size_t size, max = 0;
 	s32 i;
 
+#ifdef REGION_REMIX
+	for (i = 0; i <= GRREMIX_KIND_MAX; i++)
+	{
+		size = lbRelocGetFileSize(grRemixGetGroundFileInfo(i).file_id);
+
+		if (max < size)
+		{
+			max = size;
+		}
+	}
+#else
 	for (i = 0; i < ARRAY_COUNT(dMNMapsFileInfos); i++)
 	{
 		size = lbRelocGetFileSize(dMNMapsFileInfos[i].file_id);
@@ -410,6 +473,7 @@ void mnMapsAllocModelHeaps(void)
 			max = size;
 		}
 	}
+#endif
 	sMNMapsModelHeap0 = syTaskmanMalloc(max, 0x10);
 	sMNMapsModelHeap1 = syTaskmanMalloc(max, 0x10);
 }
@@ -954,6 +1018,12 @@ void mnMapsMakeIcons(void)
 					// ROM VS-mode stage — index the legacy offsets table.
 					sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMapsFiles[2], offsets[gkind]));
 				}
+#ifdef REGION_REMIX
+				else if (grRemixGetStageIconOffset(gkind) != 0)
+				{
+					sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMapsFiles[nMNMapsFileRemixIcons], grRemixGetStageIconOffset(gkind)));
+				}
+#endif
 #ifdef PORT
 				else
 				{
@@ -996,6 +1066,48 @@ void mnMapsSetNamePosition(SObj *sobj, s32 gkind)
 #endif
 }
 
+
+#ifdef REGION_REMIX
+#define nMNMapsRemixNameCenterX	230.0F
+#define nMNMapsRemixNameY	196.0F
+
+/* Remix stages have no pre-rendered nameplate; the name is typeset with the CSS font and centered on the plate. */
+static void mnMapsMakeRemixName(GObj *gobj, s32 gkind)
+{
+	char name[GRREMIX_NAME_MAX];
+	u32 color[3] = { 0x00, 0x00, 0x00 };
+	SObj *sobj;
+	SObj *last = NULL;
+	f32 left;
+	f32 right;
+
+	grRemixGetStageName(gkind, name);
+
+	for (sobj = SObjGetStruct(gobj); sobj != NULL; sobj = SObjGetNext(sobj))
+	{
+		last = sobj;
+	}
+	mnMapsMakeString(gobj, name, 0.0F, nMNMapsRemixNameY, color);
+
+	sobj = (last != NULL) ? SObjGetNext(last) : SObjGetStruct(gobj);
+
+	if (sobj == NULL)
+	{
+		return;
+	}
+	left = sobj->pos.x;
+	right = left;
+
+	for (last = sobj; last != NULL; last = SObjGetNext(last))
+	{
+		right = last->pos.x + last->sprite.width;
+	}
+	for (; sobj != NULL; sobj = SObjGetNext(sobj))
+	{
+		sobj->pos.x += nMNMapsRemixNameCenterX - ((left + right) * 0.5F);
+	}
+}
+#endif
 
 // 0x80132738
 void mnMapsMakeName(GObj *gobj, s32 gkind)
@@ -1059,10 +1171,18 @@ void mnMapsMakeName(GObj *gobj, s32 gkind)
 	// an out-of-range gkind; leave the plate blank instead. (The old
 	// runtime-rasterized subtitle-font fallback was deleted with the baked
 	// plates — it rendered chewed, mis-kerned glyphs at fractional scales.)
+#ifdef REGION_REMIX
+	if (gkind > nGRKindBattleEnd)
+	{
+		mnMapsMakeRemixName(gobj, gkind);
+		return;
+	}
+#else
 	if (gkind > nGRKindBattleEnd)
 	{
 		return;
 	}
+#endif
 #endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMapsFiles[2], offsets[gkind]));
 	mnMapsSetNamePosition(sobj, gkind);
@@ -1298,7 +1418,11 @@ void mnMapsMakeEmblem(GObj *gobj, s32 gkind)
 		sobj->sprite.blue = 0x00;
 	}
 #ifdef PORT
-	else if ((gkind == nGRKindLast) || (gkind == nGRKindMetal) || (gkind == nGRKindZako))
+	else if ((gkind == nGRKindLast) || (gkind == nGRKindMetal) || (gkind == nGRKindZako)
+#ifdef REGION_REMIX
+	    || (gkind > nGRKindBattleEnd)
+#endif
+	)
 	{
 		// Port-introduced stages: emblem deliberately blank for now — every
 		// attempt to render either a port-derived sprite or a ROM fallback
@@ -1466,15 +1590,21 @@ void mnMapsMakeArrows(void)
 // 0x80132B84
 void mnMapsLoadMapFile(s32 gkind, void *heap)
 {
+#ifdef REGION_REMIX
+	GRFileInfo map_info = grRemixGetGroundFileInfo(gkind);
+#else
+	GRFileInfo map_info = dMNMapsFileInfos[gkind];
+#endif
+
 	sMNMapsGroundInfo = lbRelocGetFileData
 	(
 		MPGroundData*,
 		lbRelocGetForceExternHeapFile
 		(
-			dMNMapsFileInfos[gkind].file_id,
+			map_info.file_id,
 			heap
 		),
-		dMNMapsFileInfos[gkind].offset
+		map_info.offset
 	);
 #ifdef PORT
 	mpCollisionFixGroundDataLayout(sMNMapsGroundInfo);
@@ -1703,6 +1833,24 @@ GObj* mnMapsMakeLayer(s32 gkind, MPGroundData *ground_data, MPGroundDesc *ground
 #endif
 		gcPlayAnimAll(gobj);
 	}
+#ifdef REGION_REMIX
+	{
+		f32 zoom = grRemixGetPreviewZoom(gkind);
+		f32 x, y, z;
+
+		DObjGetStruct(gobj)->scale.vec.f.x = zoom;
+		DObjGetStruct(gobj)->scale.vec.f.y = zoom;
+		DObjGetStruct(gobj)->scale.vec.f.z = zoom;
+
+		if (grRemixGetPreviewPosition(gkind, &x, &y, &z) != FALSE)
+		{
+			DObjGetStruct(gobj)->translate.vec.f.x = x;
+			DObjGetStruct(gobj)->translate.vec.f.y = y;
+			DObjGetStruct(gobj)->translate.vec.f.z = z;
+		}
+	}
+	return gobj;
+#endif
 	if (gkind == nGRKindLast)
 	{
 		// 0.35F: Final Destination's worldspace model is larger than the standard stages,
@@ -2021,6 +2169,12 @@ void mnMapsSetPreviewCameraPosition(CObj *cobj, s32 gkind)
 	{
 		gkind = nGRKindCastle;
 	}
+#ifdef REGION_REMIX
+	if (gkind >= ARRAY_COUNT(positions))
+	{
+		gkind = nGRKindLast;
+	}
+#endif
 	cobj->vec.eye.x = -3000.0F;
 	cobj->vec.eye.y = 3000.0F;
 	cobj->vec.eye.z = 9000.0F;
@@ -2379,7 +2533,7 @@ void mnMapsSaveSceneData(void)
 		// Random picks across all pages — collect every unlocked, non-random,
 		// non-current gkind and pick uniformly. That way FD (and any future
 		// expansion stages on page 1+) participate.
-		s32 candidates[nMNMapsPageCount * nMNMapsSlotCount];
+		s32 candidates[nMNMapsPageCountMax * nMNMapsSlotCount];
 		s32 count = 0;
 		s32 page;
 
@@ -2432,6 +2586,9 @@ void mnMapsInitVars(void)
 #ifdef PORT
 	s32 saved_gkind;
 	s32 saved_page;
+#ifdef REGION_REMIX
+	mnMapsBuildRemixPages();
+#endif
 	port_enhancement_music_select_reset(); // reset hook for music selection
 	sMNMapsStageSelectTextSObj = NULL; // reset our text tracking pointers
 	sMNMapsMusicSelectTextGObj = NULL;

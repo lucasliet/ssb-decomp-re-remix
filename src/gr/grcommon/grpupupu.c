@@ -3,6 +3,9 @@
 #include <ef/effect.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixgating.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -413,6 +416,9 @@ void grPupupuUpdateWhispyStatus(void)
         break;
 
     case nGRPupupuWhispyWindStatusWait:
+#ifdef REGION_REMIX
+        if (grRemixHazardToggleIsOn())
+#endif
         grPupupuWhispyUpdateWait();
         break;
 

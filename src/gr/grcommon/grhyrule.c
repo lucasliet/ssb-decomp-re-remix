@@ -2,6 +2,9 @@
 #include <ft/fighter.h>
 #include <ef/effect.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixgating.h"
+#endif
 #ifdef PORT
 #include <sys/debug.h>
 extern void *func_800269C0_275C0(u16 id);
@@ -361,6 +364,9 @@ void grHyruleTwisterProcUpdate(GObj *ground_gobj)
         break;
 
     case nGRHyruleTwisterStatusWait:
+#ifdef REGION_REMIX
+        if (grRemixHazardToggleIsOn())
+#endif
         grHyruleTwisterUpdateWait();
         break;
 

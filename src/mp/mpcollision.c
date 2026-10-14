@@ -4,6 +4,9 @@
 #include <reloc_data.h>
 #include <sys/audio.h>
 #include <sys/debug.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixstage.h"
+#endif
 
 #ifdef PORT
 extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
@@ -4109,30 +4112,43 @@ void mpCollisionFixGroundDataLayout(MPGroundData *ground_data)
 void mpCollisionInitGroundData(void)
 {
     MPGeometryData *gdata;
+#ifdef REGION_REMIX
+    GRFileInfo ground_info = grRemixIsCustomKind(gSCManagerBattleState->gkind) ?
+        grRemixGetGroundFileInfo(gSCManagerBattleState->gkind) :
+        dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind];
+#else
+    GRFileInfo ground_info = dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind];
+#endif
 
     gMPCollisionGroundData = lbRelocGetFileData
     (
         MPGroundData*,
         lbRelocGetExternHeapFile
         (
-            dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].file_id,
+            ground_info.file_id,
             syTaskmanMalloc
             (
-                lbRelocGetFileSize(dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].file_id),
+                lbRelocGetFileSize(ground_info.file_id),
                 0x10
             )
         ),
-        dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].offset
+        ground_info.offset
     );
 #ifdef PORT
     port_log("[ground] InitGroundData scene=%d gkind=%d file_id=%d offset=0x%x gd=%p",
         gSCManagerSceneData.scene_curr,
         gSCManagerBattleState->gkind,
-        dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].file_id,
-        (unsigned)dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].offset,
+        (int)ground_info.file_id,
+        (unsigned)ground_info.offset,
         (void*)gMPCollisionGroundData);
 #endif
 
+#ifdef REGION_REMIX
+    if (gSCManagerSceneData.scene_curr == nSCKindVSBattle)
+    {
+        gMPCollisionGroundData->bgm_id = grRemixGetStageBGM(gSCManagerBattleState->gkind, gMPCollisionGroundData->bgm_id);
+    }
+#endif
     gMPCollisionGeometry = (MPGeometryData*)PORT_RESOLVE(gMPCollisionGroundData->map_geometry);
     gdata = gMPCollisionGeometry;
 

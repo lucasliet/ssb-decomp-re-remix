@@ -3,6 +3,9 @@
 #include <wp/weapon.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixgating.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -1144,6 +1147,9 @@ void grSectorProcUpdate(GObj *ground_gobj)
         break;
 
     case nGRSectorArwingStatusWait:
+#ifdef REGION_REMIX
+        if (grRemixHazardToggleIsOn())
+#endif
         grSectorArwingUpdateWait();
         break;
 

@@ -26,6 +26,10 @@ void ftRemixBindDescriptorHooks(s32 remix_id, struct FighterDescriptor *descript
         descriptor->ecb_override = ftRemixCrashDSPECBOverride;            /* CrashSpecial.asm dig_ecb_patch_ */
         break;
 
+    case REMIX_ID_PIANO:
+        descriptor->custom_capture_dk_interrupt = ftRemixPianoCaptureDKInterrupt; /* Piano.asm capture_action_fix_ */
+        break;
+
     default:
         break;
     }

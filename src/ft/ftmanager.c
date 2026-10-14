@@ -5,6 +5,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #ifdef PORT
 #include <string.h>
@@ -718,6 +719,11 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
     fp->damage_stat_flags = fp->stat_flags;
 
     fp->afterimage.desc_id = 0;
+
+#ifdef REGION_REMIX
+    /* Size.asm initialize_base_multiplier_table_ (RAM 0x800D7CB4); the magic hat part is not ported. */
+    ftRemixSizeInitFighter(fp);
+#endif
 
     DObjGetStruct(fighter_gobj)->translate.vec.f = desc->pos;
     DObjGetStruct(fighter_gobj)->scale.vec.f.x = DObjGetStruct(fighter_gobj)->scale.vec.f.y = DObjGetStruct(fighter_gobj)->scale.vec.f.z = attr->size;

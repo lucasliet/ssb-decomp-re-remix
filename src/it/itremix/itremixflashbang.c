@@ -547,7 +547,8 @@ static void itRemixFlashbangExplode(GObj *item_gobj)
 
     /* REMIX-TODO(GFX): the asm writes flash_array_ to the screen blend-colour command at 0x80131A40 unless Toggles.entry_flash_guard is set. */
     efManagerQuakeMakeEffect(1);
-    /* REMIX-TODO(DObj): asm 0x0054 of the first joint is set to 2 here; the DObj field is not named yet. */
+    /* asm 0x0054 of the first joint (Flashbang.asm 618-624) is the DObj flags byte. */
+    DObjGetStruct(item_gobj)->flags = 2;
     ip->attack_coll.fgm_id = ITREMIX_FLASHBANG_EXPLOSION_SETUP_FGM;
     itMainRefreshAttackColl(item_gobj);
     itRemixFlashbangSetExplosion(item_gobj);
@@ -599,8 +600,10 @@ static void itRemixFlashbangSetupState(ITStruct *ip, GObj *parent_gobj, FTStruct
     ip->player = fp->player;
     /* asm 0x02CE bit 0x80 (stage_setting_): decomp names it is_allow_pickup by the bitfield order; see the notes. */
     ip->is_allow_pickup = TRUE;
-    /* REMIX-TODO(ITStruct): asm 0x0100 is cleared to drop a Bomb character id reference; no named field. */
-    /* REMIX-TODO(ITStruct): asm 0x0158 gets bit 0x10 set; no named field. */
+    /* asm 0x0158 bit 0x10 (Flashbang.asm 127-128): the bitfield the decomp names can_rehit_shield. */
+    ip->attack_coll.can_rehit_shield = TRUE;
+    /* asm 0x0100 (Flashbang.asm 184) is the word named coll_data.cliff_id; the asm clears it. */
+    ip->coll_data.cliff_id = 0;
 
     vars->fp = fp;
     vars->p_file = fp->data->p_file_special1;

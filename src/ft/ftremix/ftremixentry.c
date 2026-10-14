@@ -178,7 +178,8 @@ static EFDesc *ftRemixEntryGetVanillaDesc(FTRemixEntryEffect effect)
     {
     case nFTRemixEntryEffectMarioPipe: return &dEFManagerMarioEntryDokanEffectDesc;
     case nFTRemixEntryEffectFoxArwing: return &dEFManagerFoxEntryArwingEffectDesc;
-    case nFTRemixEntryEffectDonkeyBarrel: return &dEFManagerDonkeyEntryTaruEffectDesc;
+    case nFTRemixEntryEffectDonkeyBarrel:
+    case nFTRemixEntryEffectDonkeyBarrelRight: return &dEFManagerDonkeyEntryTaruEffectDesc;
     case nFTRemixEntryEffectSamusPoint: return &dEFManagerSamusEntryPointEffectDesc;
     case nFTRemixEntryEffectLinkWave: return &dEFManagerLinkEntryWaveEffectDesc;
     case nFTRemixEntryEffectLinkBeam: return &dEFManagerLinkEntryBeamEffectDesc;
@@ -387,8 +388,10 @@ static void ftRemixEntryMakeFoxArwing(FTStruct *fp)
 static void ftRemixEntryMakeDonkeyBarrel(FTStruct *fp)
 {
     EFDesc saved;
+    FTRemixEntryEffect effect = ((fp->fkind == REMIX_ID_SONIC) && (fp->status_vars.common.entry.lr == +1)) ?
+                                 nFTRemixEntryEffectDonkeyBarrelRight : nFTRemixEntryEffectDonkeyBarrel;
 
-    if (ftRemixEntryBeginEffect(fp, &dEFManagerDonkeyEntryTaruEffectDesc, nFTKindDonkey, nFTRemixEntryEffectDonkeyBarrel, &saved) != FALSE)
+    if (ftRemixEntryBeginEffect(fp, &dEFManagerDonkeyEntryTaruEffectDesc, nFTKindDonkey, effect, &saved) != FALSE)
     {
         efManagerDonkeyEntryTaruMakeEffect(&fp->entry_pos);
     }

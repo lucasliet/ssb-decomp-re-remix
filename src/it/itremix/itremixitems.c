@@ -10,6 +10,8 @@
 extern const ITRemixItemDesc dITRemixBasketballItemDesc;
 extern const ITRemixItemDesc dITRemixBlueShellItemDesc;
 extern const ITRemixItemDesc dITRemixBoomerangItemDesc;
+extern const ITRemixItemDesc dITRemixCacodemonItemDesc;
+extern const ITRemixItemDesc dITRemixCarItemDesc;
 extern const ITRemixItemDesc dITRemixClanBombItemDesc;
 extern const ITRemixItemDesc dITRemixCloakingDeviceItemDesc;
 extern const ITRemixItemDesc dITRemixCloudItemDesc;
@@ -20,12 +22,14 @@ extern const ITRemixItemDesc dITRemixFranklinBadgeItemDesc;
 extern const ITRemixItemDesc dITRemixGemItemDesc;
 extern const ITRemixItemDesc dITRemixGoldenGunItemDesc;
 extern const ITRemixItemDesc dITRemixGordoItemDesc;
+extern const ITRemixItemDesc dITRemixKlapTrapItemDesc;
 extern const ITRemixItemDesc dITRemixLightningItemDesc;
 extern const ITRemixItemDesc dITRemixMrSaturnItemDesc;
 extern const ITRemixItemDesc dITRemixPitfallItemDesc;
 extern const ITRemixItemDesc dITRemixPoisonMushroomItemDesc;
 extern const ITRemixItemDesc dITRemixPsyduckItemDesc;
 extern const ITRemixItemDesc dITRemixPwingItemDesc;
+extern const ITRemixItemDesc dITRemixRobotBeeItemDesc;
 extern const ITRemixItemDesc dITRemixShurikenItemDesc;
 extern const ITRemixItemDesc dITRemixStopwatchItemDesc;
 extern const ITRemixItemDesc dITRemixSuperMushroomItemDesc;
@@ -38,6 +42,8 @@ const ITRemixItemDesc *const dITRemixItemDescs[] =
     &dITRemixBasketballItemDesc,
     &dITRemixBlueShellItemDesc,
     &dITRemixBoomerangItemDesc,
+    &dITRemixCacodemonItemDesc,
+    &dITRemixCarItemDesc,
     &dITRemixClanBombItemDesc,
     &dITRemixCloakingDeviceItemDesc,
     &dITRemixCloudItemDesc,
@@ -48,12 +54,14 @@ const ITRemixItemDesc *const dITRemixItemDescs[] =
     &dITRemixGemItemDesc,
     &dITRemixGoldenGunItemDesc,
     &dITRemixGordoItemDesc,
+    &dITRemixKlapTrapItemDesc,
     &dITRemixLightningItemDesc,
     &dITRemixMrSaturnItemDesc,
     &dITRemixPitfallItemDesc,
     &dITRemixPoisonMushroomItemDesc,
     &dITRemixPsyduckItemDesc,
     &dITRemixPwingItemDesc,
+    &dITRemixRobotBeeItemDesc,
     &dITRemixShurikenItemDesc,
     &dITRemixStopwatchItemDesc,
     &dITRemixSuperMushroomItemDesc,

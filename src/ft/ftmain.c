@@ -1936,6 +1936,9 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     *coll_translate = *topn_translate;
 
 #ifdef REGION_REMIX
+    /* Size.asm adjust_top_joint_and_ecb_ (RAM 0x800E2068) runs at this point of the vanilla routine. */
+    ftRemixSizeApplyTopJointAndEcb(fp);
+
     /* Stopwatch physics_map hitlag_check_1 (Stopwatch.asm 979-988, RAM 0x800E2088):
      * on a slow-down freeze frame the hitlag read is spoofed to 1 so the physics
      * block below is skipped and the player stays frozen. */
@@ -2547,7 +2550,12 @@ void ftMainUpdateAbsorbStatWeapon(WPStruct *wp, WPAttackColl *wp_attack_coll, FT
 
     if (!(wp_attack_coll->can_not_heal))
     {
+#ifdef REGION_REMIX
+        fp->percent_damage -= ftRemixAbsorbHealAmount(fp, damage);
+        ftRemixAbsorbPianoBonusAmmo(fp, damage);
+#else
         fp->percent_damage -= (s32)(damage * 2.0F);
+#endif
 
         if (fp->percent_damage < 0)
         {
@@ -4750,6 +4758,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 
 #ifdef REGION_REMIX
     status_id = ftRemixDededeMapKirbyInhaleStatus(fp, status_id);
+    status_id = ftRemixKirbyCloneActionSwap(fighter_gobj, status_id);
 #endif
 #ifdef PORT
     /* SR change_action_ (0x800E6F2C) — the per-status-change reset of SR

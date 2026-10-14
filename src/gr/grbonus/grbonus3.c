@@ -4,6 +4,12 @@
 #include <sc/scene.h>
 #include <reloc_data.h>
 #include <sys/debug.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixrttf.h"
+#define GRBONUS3_BUMPERS_ANIM_JOINT_OFFSET grRemixBonus3GetBumpersAnimJointOffset()
+#else
+#define GRBONUS3_BUMPERS_ANIM_JOINT_OFFSET llGRBonus3MapBumpersAnimJoint
+#endif
 
 // 0x8010B4D0
 void grBonus3InitHeaders(void)
@@ -29,9 +35,9 @@ void grBonus3MakeBumpers(void)
 
     dobjdesc = (DObjDesc*) ((uintptr_t)gGRCommonStruct.bonus3.map_head + (intptr_t)llGRBonus3MapBumpersDObjDesc);
 #ifdef PORT
-    anim_joint = (u32*) ((uintptr_t)gGRCommonStruct.bonus3.map_head + (intptr_t)llGRBonus3MapBumpersAnimJoint);
+    anim_joint = (u32*) ((uintptr_t)gGRCommonStruct.bonus3.map_head + (intptr_t)GRBONUS3_BUMPERS_ANIM_JOINT_OFFSET);
 #else
-    anim_joint = (AObjEvent32**) ((uintptr_t)gGRCommonStruct.bonus3.map_head + (intptr_t)llGRBonus3MapBumpersAnimJoint);
+    anim_joint = (AObjEvent32**) ((uintptr_t)gGRCommonStruct.bonus3.map_head + (intptr_t)GRBONUS3_BUMPERS_ANIM_JOINT_OFFSET);
 #endif
 
     anim_joint++, dobjdesc++;

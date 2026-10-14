@@ -3,6 +3,9 @@
 #include <it/item.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixgating.h"
+#endif
 #ifdef PORT
 #include <sys/debug.h>
 #endif
@@ -421,6 +424,12 @@ void grInishiePakkunSetWaitFighter(void)
 
     for (i = 0; i < ARRAY_COUNT(gGRCommonStruct.inishie.pakkun_gobj); i++)
     {
+#ifdef REGION_REMIX
+        if (gGRCommonStruct.inishie.pakkun_gobj[i] == NULL)
+        {
+            continue;
+        }
+#endif
         itPakkunCommonSetWaitFighter(gGRCommonStruct.inishie.pakkun_gobj[i]);
     }
 }
@@ -510,6 +519,9 @@ void grInishiePowerBlockProcUpdate(GObj *ground_gobj)
         break;
 
     case nGRInishiePowerBlockStatusMake:
+#ifdef REGION_REMIX
+        if (grRemixHazardToggleIsOn())
+#endif
         grInishiePowerBlockUpdateMake();
         break;
 
@@ -593,12 +605,50 @@ void grInishieInitHeaders(void)
 #endif
 }
 
+#ifdef REGION_REMIX
+/* Mushroom Kingdom clones have no scale platforms (Hazards.asm mk_clone_hazard_removal_). */
+static sb32 grInishieRemixHasScale(void)
+{
+    return grRemixIsMushroomKingdomClone(gSCManagerBattleState->gkind) == FALSE;
+}
+
+/* Piranha plants need a non-clone stage and the hazard toggle (Hazards.asm mushroom_kingdom_piranha_plants_). */
+static sb32 grInishieRemixHasPakkun(void)
+{
+    return grInishieRemixHasScale() && grRemixHazardToggleIsOn();
+}
+
+static void grInishieRemixClearPakkun(void)
+{
+    s32 i;
+
+    for (i = 0; i < ARRAY_COUNT(gGRCommonStruct.inishie.pakkun_gobj); i++)
+    {
+        gGRCommonStruct.inishie.pakkun_gobj[i] = NULL;
+    }
+}
+#endif
+
 // 0x80109C0C
 GObj* grInishieMakeGround(void)
 {
     grInishieInitHeaders();
+#ifdef REGION_REMIX
+    if (grInishieRemixHasScale())
+#endif
     grInishieMakeScale();
+#ifdef REGION_REMIX
+    if (grInishieRemixHasPakkun())
+    {
+        grInishieMakePakkun();
+    }
+    else
+    {
+        grInishieRemixClearPakkun();
+    }
+#else
     grInishieMakePakkun();
+#endif
     grInishieMakePowerBlock();
 
     return NULL;

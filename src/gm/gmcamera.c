@@ -4,6 +4,9 @@
 #include <if/interface.h>
 #include <sc/scene.h>
 #include <sys/rdp.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 #include <sys/debug.h>
 /* Enhanced-framerate frame interpolation recording hook — observational
@@ -210,6 +213,10 @@ f32 gmCameraGetPlayerNumZoomRange(s32 players_num)
 // 0x8010BB98
 f32 gmCameraCalcFighterZoomRange(FTStruct *fp, f32 camera_zoom)
 {
+#ifdef REGION_REMIX
+    /* Size.asm adjust_camera_zoom_ (RAM 0x8010BB9C) scales the zoom before the frame and range multipliers. */
+    camera_zoom *= ftRemixSizeCameraZoomFactor(fp);
+#endif
     camera_zoom *= fp->camera_zoom_frame;
     camera_zoom *= fp->camera_zoom_range;
 
@@ -302,7 +309,12 @@ void gmCameraUpdateInterests(Vec3f *vec, f32 *hz, f32 *vt)
                 cams[players_num].target_pos = fp->status_vars.common.dead.pos;
                 break;
             }
+#ifdef REGION_REMIX
+            /* Size.asm adjust_camera_center_point_._1 (RAM 0x8010BD78) */
+            cams[players_num].target_pos.y += ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y);
+#else
             cams[players_num].target_pos.y += fp->attr->cam_offset_y;
+#endif
 
             if ((gSCManagerBattleState->game_type == nSCBattleGameType1PGame) && (gSCManagerBattleState->players[fp->player].is_spgame_enemy != FALSE))
             {
@@ -715,7 +727,12 @@ void gmCameraUpdatePlayerZoom(GObj *camera_gobj)
     pos = DObjGetStruct(gGMCameraStruct.pzoom_fighter_gobj)->translate.vec.f;
     fp = ftGetStruct(gGMCameraStruct.pzoom_fighter_gobj);
 
+#ifdef REGION_REMIX
+    /* Size.asm adjust_camera_center_point_._5 (RAM 0x8010C9AC) */
+    pos.y += ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y);
+#else
     pos.y += fp->attr->cam_offset_y;
+#endif
 
     gmCameraAdjustFOV(gGMCameraStruct.pzoom_fov);
 

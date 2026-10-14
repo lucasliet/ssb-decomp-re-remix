@@ -556,7 +556,15 @@ void itBombHeiWalkInitVars(GObj *item_gobj)
     }
     itMainClearOwnerStats(item_gobj);
 
+#ifdef REGION_REMIX
+    /* Remix patch 0x8017798C (WaddleDee.asm remove_bob_bomb_walk_fgm_): minions reuse this walk init and stay silent. */
+    if (ip->kind == nITKindBombHei)
+    {
+        func_800269C0_275C0(nSYAudioFGMBombHeiFuse);
+    }
+#else
     func_800269C0_275C0(nSYAudioFGMBombHeiFuse);
+#endif
 }
 
 // 0x801779A8

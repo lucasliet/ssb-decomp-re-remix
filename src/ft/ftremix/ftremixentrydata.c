@@ -45,7 +45,8 @@ const FTRemixEntryOverride dFTRemixEntryOverrides[] =
     ENTRY_ROW(REMIX_ID_DSAMUS, nFTRemixEntryEffectSamusPoint, 6,FTREMIX_ENTRY_SAME_BASE, 0xBD0, 0x0, 0x22F0, 0x0),
     ENTRY_ROW(REMIX_ID_CRASH,  nFTRemixEntryEffectSamusPoint, 8, FTREMIX_ENTRY_SAME_BASE, 0x2310, 0x0, 0x27E8, 0x0),
 
-    /* The asm picks the right struct when lr == 1, but ftCommonAppearSetStatus has already cleared lr, so only the left one is reachable. */
+    /* DKShared.asm barrel_alternate: Sonic's Tails picks the right struct when the fighter faces right (status entry.lr == +1), the left one otherwise. */
+    ENTRY_ROW(REMIX_ID_SONIC,  nFTRemixEntryEffectDonkeyBarrelRight, 8, FTREMIX_ENTRY_SAME_BASE, 0x2A28, 0x0, 0x68C8, 0x0),
     ENTRY_ROW(REMIX_ID_SONIC,  nFTRemixEntryEffectDonkeyBarrel, 8, FTREMIX_ENTRY_SAME_BASE, 0xA5E8, 0x0, 0x112AC, 0x0),
     ENTRY_ROW(REMIX_ID_LANKY,  nFTRemixEntryEffectDonkeyBarrel, 7, FTREMIX_ENTRY_SAME_BASE, 0xF88, 0x0, 0x14E4, 0x0),
 

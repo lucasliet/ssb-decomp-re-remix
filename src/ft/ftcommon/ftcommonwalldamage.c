@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 extern f32 ftParamGetHitStun(f32);
 
@@ -36,7 +39,11 @@ void ftCommonWallDamageSetStatus(GObj *fighter_gobj, Vec3f *angle, Vec3f *pos)
 
     lbCommonAdd2D(&vel_air, &fp->physics.vel_damage_air);
     lbCommonReflect2D(&vel_air, angle);
+#ifdef REGION_REMIX
+    lbCommonScale2D(&vel_air, grRemixCasinoWallBounceScale(fp));
+#else
     lbCommonScale2D(&vel_air, 0.8F);
+#endif
 
     fp->physics.vel_damage_air = vel_air;
 

@@ -7,6 +7,9 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 
@@ -644,7 +647,11 @@ void ifCommonPlayerDamageUpdateDigits(GObj *interface_gobj)
     pos_adjust_wait = sIFCommonPlayerDamageInterface[player].pos_adjust_wait;
     flash_reset_wait = sIFCommonPlayerDamageInterface[player].flash_reset_wait;
 
+#ifdef REGION_REMIX
+    if ((flash_reset_wait != 0) && !ftRemixDragonKingDrainFlashSuppressed(gSCManagerBattleState->players[player].fighter_gobj))
+#else
     if (flash_reset_wait != 0)
+#endif
     {
         color_id = GMCOMMON_PLAYERS_MAX;
     }

@@ -44,6 +44,11 @@ void ftRemixRunGroundedScript(FTStruct *fp)
         ftRemixPeachGroundedScriptRestoreFloat(fp);
         return;
     }
+    if (fp->fkind == REMIX_ID_JKIRBY)
+    {
+        ftRemixJKirbyGroundedScript(fp);
+        return;
+    }
     if (ftRemixGroundedClearsPassiveWord(fp->fkind))
     {
         ftRemixGroundedClearPassiveWord(fp);

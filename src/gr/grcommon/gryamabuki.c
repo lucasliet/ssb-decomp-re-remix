@@ -3,6 +3,9 @@
 #include <it/item.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixgating.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -247,8 +250,13 @@ void grYamabukiGateProcUpdate(GObj *ground_gobj)
         break;
 
     case nGRYamabukiGateStatusWait:
-        grYamabukiGateUpdateWait();
-        grYamabukiGateUpdateYakumonoPos();
+#ifdef REGION_REMIX
+        if (grRemixHazardToggleIsOn())
+#endif
+        {
+            grYamabukiGateUpdateWait();
+            grYamabukiGateUpdateYakumonoPos();
+        }
         break;
 
     case nGRYamabukiGateStatusOpen:

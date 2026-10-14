@@ -2,6 +2,10 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixgating.h"
+#include "gr/grremix/grremixzebes.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -67,6 +71,24 @@ void grZebesAcidSetRandomWait(void)
                                           syUtilsRandIntRange(dGRZebesAcidAttributes[index].acid_random_max - dGRZebesAcidAttributes[index].acid_random_min);
 }
 
+#ifdef REGION_REMIX
+/* Hazards.asm alt_acid_levels_: the Remix Zebes stages overwrite the lava levels; the other stages keep the table. */
+static void grZebesRemixSetAltAcidLevels(void)
+{
+    const f32 *levels = grRemixGetAltAcidLevels(gSCManagerBattleState->gkind);
+    s32 i;
+
+    if (levels == NULL)
+    {
+        return;
+    }
+    for (i = 0; i < ARRAY_COUNT(dGRZebesAcidAttributes); i++)
+    {
+        dGRZebesAcidAttributes[i].acid_level = levels[i];
+    }
+}
+#endif
+
 // 0x801080EC
 GObj* grZebesMakeAcid(void)
 {
@@ -118,6 +140,9 @@ GObj* grZebesMakeAcid(void)
     );
     gcPlayAnimAll(map_gobj);
 
+#ifdef REGION_REMIX
+    grZebesRemixSetAltAcidLevels();
+#endif
     gGRCommonStruct.zebes.acid_status = nGRZebesAcidStatusWait;
     gGRCommonStruct.zebes.acid_level_curr = dGRZebesAcidAttributes[ARRAY_COUNT(dGRZebesAcidAttributes) - 1].acid_level;
     gGRCommonStruct.zebes.acid_attr_id = 0;
@@ -217,6 +242,9 @@ void grZebesProcUpdate(GObj *ground_gobj)
         break;
 
     case nGRZebesAcidStatusNormal:
+#ifdef REGION_REMIX
+        if (grRemixMovementToggleIsOn())
+#endif
         grZebesAcidUpdateNormal();
         break;
 
@@ -233,8 +261,18 @@ void grZebesProcUpdate(GObj *ground_gobj)
 // 0x80108448
 GObj* grZebesMakeGround(void)
 {
-    GObj *ground_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
-    GObj *acid_gobj = grZebesMakeAcid();
+    GObj *ground_gobj;
+    GObj *acid_gobj;
+
+#ifdef REGION_REMIX
+    /* REMIX-TODO(camera): Hazards.asm planet_zebes_acid_ first copies the correct camera Y (0x8013EB1C -> 0x801313FC); no decomp name yet. */
+    if (grRemixHazardToggleIsOn() == FALSE)
+    {
+        return NULL;
+    }
+#endif
+    ground_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
+    acid_gobj = grZebesMakeAcid();
 
     gcAddGObjProcess(ground_gobj, grZebesProcUpdate, nGCProcessKindFunc, 4);
     ftMainCheckAddGroundHazard(acid_gobj, grZebesAcidCheckGetDamageKind);

@@ -2,6 +2,9 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixboomerang.h"
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <ft/fighter.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
 #include <it/item.h>
@@ -622,7 +625,11 @@ static sb32 itRemixBoomerangHandleCatch(GObj *item_gobj, GObj *fighter_gobj)
     DObj *item_joint = DObjGetStruct(item_gobj);
     DObj *fighter_joint = DObjGetStruct(fighter_gobj);
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    f32 size_multiplier = 1.0F; /* REMIX-TODO(Size): Size.multiplier_table[fp->player], not ported; 1.0F is the unscaled value. */
+#ifdef REGION_REMIX
+    f32 size_multiplier = ftRemixSizeGetMultiplier(fp->player); /* Size.multiplier_table[fp->player]; REMIX-TODO(Size) resolved */
+#else
+    f32 size_multiplier = 1.0F; /* REMIX-TODO(Size): 1.0F is the unscaled value outside REGION_REMIX. */
+#endif
 
     if (!itRemixBoomerangIsInCatchRange(item_joint, fighter_joint, size_multiplier))
     {

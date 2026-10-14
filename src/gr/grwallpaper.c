@@ -1,6 +1,9 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <sc/sc1pmode/sc1pgameboss.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixids.h"
+#endif
 
 #ifdef PORT
 #include <stdbool.h>
@@ -365,6 +368,17 @@ void grWallpaperMakeDecideKind(void)
         sc1PTrainingModeLoadWallpaper();
         grWallpaperMakeStatic();
     }
+#ifdef REGION_REMIX
+    else if (gSCManagerBattleState->gkind > nGRKindBonusStageEnd)
+    {
+        /* Stages.bg_type: every Remix stage uses the common wallpaper except Remix RTTF, which has none */
+        if (gSCManagerBattleState->gkind == nGRRemixStage_REMIX_RTTF)
+        {
+            grWallpaperMakeBonus3();
+        }
+        else grWallpaperMakeCommon();
+    }
+#endif
     else if (gSCManagerBattleState->gkind >= nGRKindBonusStageStart)
     {
         grWallpaperMakeStatic();
