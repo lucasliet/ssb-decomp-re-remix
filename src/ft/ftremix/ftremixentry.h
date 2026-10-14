@@ -56,4 +56,17 @@ typedef struct FTRemixEntryCarAnim
 
 } FTRemixEntryCarAnim;
 
+/* Fox-Arwing animation: efManagerFoxEntryArwingMakeEffect reads the wing joint from the Special3 file and the body
+ * joints from the Special2 file at hard-coded offsets (wolfen_entry_2/_3 in Wolf.asm change them for Wolf). */
+typedef struct FTRemixEntryArwingAnim
+{
+    s32 fkind;
+    s32 wing_file_n;
+    intptr_t o_wing_anim;
+    s32 body_file_n;
+    intptr_t o_body_anim_r;
+    intptr_t o_body_anim_l;
+
+} FTRemixEntryArwingAnim;
+
 #endif

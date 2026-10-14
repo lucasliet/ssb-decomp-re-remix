@@ -142,6 +142,10 @@ void ftRemixEntryMakeEffect(FTStruct *fp);
  * efManagerCaptainEntryCarMakeEffect reads; the arguments hold the vanilla values on entry */
 void ftRemixEntryGetCarAnim(void **car_file, intptr_t *o_car_anim, intptr_t *o_wheel_anim_l, intptr_t *o_wheel_anim_r);
 
+/* Wolf.asm wolfen_entry_2/_3: the two files and the three animation joint offsets efManagerFoxEntryArwingMakeEffect
+ * reads; the arguments hold the vanilla values on entry */
+void ftRemixEntryGetArwingAnim(void **wing_file, intptr_t *o_wing_anim, void **body_file, intptr_t *o_body_anim_r, intptr_t *o_body_anim_l);
+
 /* Yoshi clones, ftremixyoshishared.c (yoshishared.asm): the egg and star descriptors point at the clone's own file */
 WPDesc *ftRemixYoshiEggWeaponDesc(FTStruct *fp, WPDesc *vanilla_desc);
 WPDesc *ftRemixYoshiStarWeaponDesc(FTStruct *fp, WPDesc *vanilla_desc);

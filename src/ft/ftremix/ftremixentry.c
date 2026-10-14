@@ -94,8 +94,14 @@ extern const s32 dFTRemixEntryOverridesNum;
 extern const FTRemixEntryCarAnim dFTRemixEntryCarAnims[];
 extern const s32 dFTRemixEntryCarAnimsNum;
 
+extern const FTRemixEntryArwingAnim dFTRemixEntryArwingAnims[];
+extern const s32 dFTRemixEntryArwingAnimsNum;
+
 /* Fighter whose car animation the running efManagerCaptainEntryCarMakeEffect call reads, NULL outside it. */
 static const FTStruct *sFTRemixEntryCarFighter;
+
+/* Fighter whose Arwing animation the running efManagerFoxEntryArwingMakeEffect call reads, NULL outside it. */
+static const FTStruct *sFTRemixEntryArwingFighter;
 
 static void **ftRemixEntryGetFile(const FTData *data, s32 file_n)
 {
@@ -298,6 +304,41 @@ void ftRemixEntryGetCarAnim(void **car_file, intptr_t *o_car_anim, intptr_t *o_w
     }
 }
 
+void ftRemixEntryGetArwingAnim(void **wing_file, intptr_t *o_wing_anim, void **body_file, intptr_t *o_body_anim_r, intptr_t *o_body_anim_l)
+{
+    s32 i;
+
+    if (sFTRemixEntryArwingFighter == NULL)
+    {
+        return;
+    }
+    for (i = 0; i < dFTRemixEntryArwingAnimsNum; i++)
+    {
+        const FTRemixEntryArwingAnim *row = &dFTRemixEntryArwingAnims[i];
+        void **wing;
+        void **body;
+
+        if (row->fkind != sFTRemixEntryArwingFighter->fkind)
+        {
+            continue;
+        }
+        wing = ftRemixEntryGetFile(sFTRemixEntryArwingFighter->data, row->wing_file_n);
+        body = ftRemixEntryGetFile(sFTRemixEntryArwingFighter->data, row->body_file_n);
+
+        if ((wing == NULL) || (body == NULL))
+        {
+            port_log("SSB64: ftRemixEntry: id 0x%02X Arwing animation files are not loaded, keeping the vanilla ones\n", row->fkind);
+            return;
+        }
+        *wing_file = *wing;
+        *o_wing_anim = row->o_wing_anim;
+        *body_file = *body;
+        *o_body_anim_r = row->o_body_anim_r;
+        *o_body_anim_l = row->o_body_anim_l;
+        return;
+    }
+}
+
 static void ftRemixEntryMakeLinkEffects(FTStruct *fp)
 {
     EFDesc saved_wave;
@@ -336,7 +377,9 @@ static void ftRemixEntryMakeFoxArwing(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerFoxEntryArwingEffectDesc, nFTKindFox, nFTRemixEntryEffectFoxArwing, &saved) != FALSE)
     {
+        sFTRemixEntryArwingFighter = fp;
         efManagerFoxEntryArwingMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr);
+        sFTRemixEntryArwingFighter = NULL;
     }
     ftRemixEntryEndEffect(&dEFManagerFoxEntryArwingEffectDesc, &saved);
 }

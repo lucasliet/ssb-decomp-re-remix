@@ -5861,6 +5861,15 @@ GObj* efManagerFoxEntryArwingMakeEffect(Vec3f *pos, s32 lr)
     GObj *effect_gobj;
     DObj *dobj;
     DObj *what;
+    void *wing_file = gFTDataFoxSpecial3;
+    void *body_file = gFTDataFoxSpecial2;
+    intptr_t o_wing_anim = llFoxSpecial3_2E74_AnimJoint;
+    intptr_t o_body_anim_r = llFoxSpecial2EntryArwingRAnimJoint;
+    intptr_t o_body_anim_l = llFoxSpecial2EntryArwingLAnimJoint;
+
+#ifdef REGION_REMIX
+    ftRemixEntryGetArwingAnim(&wing_file, &o_wing_anim, &body_file, &o_body_anim_r, &o_body_anim_l);
+#endif
 
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerFoxEntryArwingEffectDesc);
 
@@ -5872,13 +5881,13 @@ GObj* efManagerFoxEntryArwingMakeEffect(Vec3f *pos, s32 lr)
     what = dobj->child->child->child->sib_next->sib_next->sib_next->sib_next->sib_next->sib_next->child;
 
     gcAddXObjForDObjFixed(what, 0x2C, 0);
-    gcAddDObjAnimJoint(what, lbRelocGetFileData(AObjEvent32*, gFTDataFoxSpecial3, llFoxSpecial3_2E74_AnimJoint), 0.0F);
+    gcAddDObjAnimJoint(what, lbRelocGetFileData(AObjEvent32*, wing_file, o_wing_anim), 0.0F);
 
     if (lr == +1)
     {
-        lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, llFoxSpecial2EntryArwingRAnimJoint), 0.0F);
+        lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, body_file, o_body_anim_r), 0.0F);
     }
-    else lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, llFoxSpecial2EntryArwingLAnimJoint), 0.0F);
+    else lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, body_file, o_body_anim_l), 0.0F);
 
     gcPlayAnimAll(effect_gobj);
 

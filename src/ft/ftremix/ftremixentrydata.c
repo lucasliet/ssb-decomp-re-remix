@@ -3,6 +3,7 @@
  *
  * samusshared.asm dsamus_entry_anim_gfx_struct and crash_entry_anim_gfx_struct (get_entry_anim_gfx_struct, 0x8010347C).
  * captainshared.asm entry_anim_struct_JFALCON/_BOWSER/_CONKER (get_entry_anim_struct_, 0x801035A0).
+ * Wolf.asm entry_anim_struct_WOLF and wolfen_entry_2/_3 (Fox Arwing, 0x80103804..0x801038C4).
  * dkshared.asm sonic_entry_struct_left and lanky_entry_struct (0x80103428).
  * linkshared.asm entry_anim_struct_1_* (Link wave, get_entry_anim_struct_1 at 0x80102AE8) and
  * entry_anim_struct_2_* (Link beam, get_entry_anim_struct_2 at 0x80102B44).
@@ -39,7 +40,9 @@ const FTRemixEntryOverride dFTRemixEntryOverrides[] =
     ENTRY_ROW(REMIX_ID_BANJO,  nFTRemixEntryEffectLinkWave, 8, nFTRemixEntryEffectLinkBeam, 0x878, 0x980, 0xA54, 0xA9C),
     ENTRY_ROW(REMIX_ID_BANJO,  nFTRemixEntryEffectLinkBeam, 8, nFTRemixEntryEffectLinkWave, 0x240, 0x348, 0x378, 0x3D4),
 
-    ENTRY_ROW(REMIX_ID_DSAMUS, nFTRemixEntryEffectSamusPoint, 6, FTREMIX_ENTRY_SAME_BASE, 0xBD0, 0x0, 0x22F0, 0x0),
+    ENTRY_ROW(REMIX_ID_WOLF,   nFTRemixEntryEffectFoxArwing, 8, FTREMIX_ENTRY_SAME_BASE, 0x2610, FTREMIX_ENTRY_KEEP, FTREMIX_ENTRY_KEEP, FTREMIX_ENTRY_KEEP),
+
+    ENTRY_ROW(REMIX_ID_DSAMUS, nFTRemixEntryEffectSamusPoint, 6,FTREMIX_ENTRY_SAME_BASE, 0xBD0, 0x0, 0x22F0, 0x0),
     ENTRY_ROW(REMIX_ID_CRASH,  nFTRemixEntryEffectSamusPoint, 8, FTREMIX_ENTRY_SAME_BASE, 0x2310, 0x0, 0x27E8, 0x0),
 
     /* The asm picks the right struct when lr == 1, but ftCommonAppearSetStatus has already cleared lr, so only the left one is reachable. */
@@ -61,5 +64,12 @@ const FTRemixEntryCarAnim dFTRemixEntryCarAnims[] =
 };
 
 const s32 dFTRemixEntryCarAnimsNum = ARRAY_COUNT(dFTRemixEntryCarAnims);
+
+const FTRemixEntryArwingAnim dFTRemixEntryArwingAnims[] =
+{
+    { REMIX_ID_WOLF, 8, 0x284C, 7, 0xF74, 0xB24 }
+};
+
+const s32 dFTRemixEntryArwingAnimsNum = ARRAY_COUNT(dFTRemixEntryArwingAnims);
 
 #endif
