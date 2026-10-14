@@ -156,7 +156,12 @@ void itLinkBombExplodeWaitUpdateScale(GObj *item_gobj)
 
 	if (ip->item_vars.linkbomb.scale_int == 0)
 	{
+#ifdef REGION_REMIX
+		/* H3, linkshared.asm bomb_flash_: a clone owner's bloat scales live in its own file 1. */
+		f32 *scales = (f32*) ((uintptr_t)*ftRemixLinkSharedBombFile(ip->coll_data.cliff_id, dItLinkBombItemDesc.p_file) + (intptr_t)llLinkMainBombBloatScales);
+#else
 		f32 *scales = (f32*) ((uintptr_t)*dItLinkBombItemDesc.p_file + (intptr_t)llLinkMainBombBloatScales);
+#endif
 		s32 scale_id = (ip->item_vars.linkbomb.scale_id > ITLINKBOMB_SCALE_INDEX_REWIND) ?
 					      (ITLINKBOMB_SCALE_INDEX_MAX - ip->item_vars.linkbomb.scale_id) :
 					   								    ip->item_vars.linkbomb.scale_id;
@@ -531,7 +536,12 @@ void itLinkBombExplodeInitVars(GObj *item_gobj)
 void itLinkBombExplodeUpdateAttackEvent(GObj *item_gobj)
 {
 	ITStruct *ip = itGetStruct(item_gobj);
+#ifdef REGION_REMIX
+	/* H4, linkshared.asm bomb_explosion_: a clone owner's attack events live in its own file 1. */
+	ITAttackEvent *ev = (ITAttackEvent*) ((uintptr_t)*ftRemixLinkSharedBombFile(ip->coll_data.cliff_id, dItLinkBombItemDesc.p_file) + (intptr_t)llLinkMainBombAttackEvents);
+#else
 	ITAttackEvent *ev = itGetAttackEvent(dItLinkBombItemDesc, llLinkMainBombAttackEvents);
+#endif
 
 	if (ip->multi == ev[ip->event_id].timer)
 	{
@@ -615,9 +625,21 @@ void itLinkBombExplodeSetStatus(GObj *item_gobj)
 // 0x801865A0
 GObj *itLinkBombMakeItem(GObj *fighter_gobj, Vec3f *pos, Vec3f *vel)
 {
+#ifdef REGION_REMIX
+	/* H2, linkshared.asm create_bomb_: the descriptor is copied with the owner clone's file 1, like the
+	 * Remix per-owner bomb structs (YoungLinkDSP.item_info_array, bomb_struct_elink, bomb_struct_jlink). */
+	ITDesc remix_desc = dItLinkBombItemDesc;
+	GObj *item_gobj;
+	DObj *dobj;
+	ITStruct *ip;
+
+	remix_desc.p_file = ftRemixLinkSharedBombFile(ftGetStruct(fighter_gobj)->fkind, dItLinkBombItemDesc.p_file);
+	item_gobj = itManagerMakeItem(fighter_gobj, &remix_desc, pos, vel, ITEM_FLAG_PARENT_FIGHTER);
+#else
 	GObj *item_gobj = itManagerMakeItem(fighter_gobj, &dItLinkBombItemDesc, pos, vel, ITEM_FLAG_PARENT_FIGHTER);
 	DObj *dobj;
 	ITStruct *ip;
+#endif
 
 	if (item_gobj != NULL)
 	{

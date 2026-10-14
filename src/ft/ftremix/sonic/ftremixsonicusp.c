@@ -23,6 +23,7 @@
 #include <wp/wpmanager.h>
 
 extern void *func_800269C0_275C0(u16 id);
+extern sb32 ftRemixSonicIsClassic(s32 player);          /* classic-table reader owned by ftremixsonic.c */
 extern sb32 wpSamusBombProcMap(GObj *weapon_gobj);
 extern sb32 wpFoxBlasterProcReflector(GObj *weapon_gobj);
 
@@ -92,8 +93,10 @@ _Static_assert(sizeof(FTRemixSonicUSPSpring) <= sizeof(((WPStruct*)0)->weapon_va
 #define SONIC_USP_SPRING_GRAVITY 3.0F
 #define SONIC_USP_SPRING_ROTATION_SPEED 0.1875F        /* 0x3E400000 */
 #define SONIC_USP_SPRING_RUMBLE_LENGTH 5
-#define SONIC_USP_SPRING_FGM 0x3D7                     /* classic variant 0x3DF is REMIX-TODO(classic) */
-#define SONIC_USP_SPRING_IMAGE_COILED 1                /* classic coiled index 3 is REMIX-TODO(classic) */
+#define SONIC_USP_SPRING_FGM 0x3D7                     /* FGM.SPRING */
+#define SONIC_USP_SPRING_FGM_CLASSIC 0x3DF             /* FGM.CLASSIC_SPRING, classic Sonic's spring */
+#define SONIC_USP_SPRING_IMAGE_COILED 1                /* spring coiled image and palette */
+#define SONIC_USP_SPRING_IMAGE_COILED_CLASSIC 3        /* classic spring coiled image and palette */
 #define SONIC_USP_SPRING_JOINT 4                       /* FTStruct.joints[4] at N64 0x08F8, the body part */
 #define SONIC_USP_SPRING_TRANSFORM_TK2 0x47
 /* Remix Projectile.id.SONIC_SPRING. Beyond the vanilla nWPKind enum (ends 0x1F).
@@ -319,14 +322,47 @@ static s32 ftRemixSonicUSPSpringFoxFalcoBounce(s32 action)
     return nFTRemixSonicSpringBounceSmoke;
 }
 
-/* Ness, JNess and Lucas: psi magnet and PK thunder actions. */
-static s32 ftRemixSonicUSPSpringNessLucasBounce(s32 action)
+/* SonicUSP._psi_magnet (SonicSpecial.asm 1887-1896): clears the fighter words the Remix
+ * psi magnet overlay uses, so the glow and loop SFX stop when the bounce changes
+ * the action to JumpF. The asm clears raw offsets 0x0A20-0x0A30, the 0x018C
+ * halfword and 0x0A88; in the port those are p_loop_sfx/loop_sfx_id,
+ * colanim.cs[0] script state, the first 16 flags after motion_vars and the
+ * colanim use-flags. */
+static void ftRemixSonicUSPClearPsiMagnetOverlay(FTStruct *fp)
 {
-    /* REMIX-TODO(psi magnet): Remix clears the psi magnet overlay (FTStruct 0x0A20-0x0A88 and
-     * 0x018C) before the JumpF change, SonicSpecial.asm `_psi_magnet`. Those offsets are vanilla
-     * fields in the port, so the clear is skipped here. */
+    fp->p_loop_sfx = NULL;
+    fp->loop_sfx_id = 0;
+
+    fp->colanim.cs[0].p_script = NULL;
+    fp->colanim.cs[0].p_subroutine[0] = NULL;
+
+    fp->is_attack_active = FALSE;
+    fp->is_hitstatus_nodamage = FALSE;
+    fp->is_damage_coll_modify = FALSE;
+    fp->is_modelpart_modify = FALSE;
+    fp->is_texturepart_modify = FALSE;
+    fp->is_reflect = FALSE;
+    fp->reflect_lr = 0;
+    fp->is_absorb = FALSE;
+    fp->absorb_lr = 0;
+    fp->is_goto_attack100 = FALSE;
+    fp->is_fastfall = FALSE;
+    fp->is_magnify_show = FALSE;
+    fp->is_limit_map_bounds = FALSE;
+    fp->is_invisible = FALSE;
+
+    fp->colanim.is_use_color1 = FALSE;
+    fp->colanim.is_use_light = FALSE;
+    fp->colanim.is_use_color2 = FALSE;
+    fp->colanim.skeleton_id = 0;
+}
+
+/* Ness, JNess and Lucas: psi magnet and PK thunder actions. */
+static s32 ftRemixSonicUSPSpringNessLucasBounce(FTStruct *fp, s32 action)
+{
     if (ftRemixSonicUSPSpringActionInRange(action, nFTRemixSonicUSPNessPsiMagnetStartAir, nFTRemixSonicUSPNessPsiMagnetEndAir))
     {
+        ftRemixSonicUSPClearPsiMagnetOverlay(fp);
         return nFTRemixSonicSpringBounceChangeAction;
     }
     if (ftRemixSonicUSPSpringActionInRange(action, nFTRemixSonicUSPNessPKThunderStartAir, nFTRemixSonicUSPNessPKTAAir))
@@ -385,7 +421,7 @@ static s32 ftRemixSonicUSPSpringCharacterBounce(FTStruct *fp, s32 action)
         case nFTKindNess:
         case REMIX_ID_JNESS:
         case REMIX_ID_LUCAS:
-            return ftRemixSonicUSPSpringNessLucasBounce(action);
+            return ftRemixSonicUSPSpringNessLucasBounce(fp, action);
         case REMIX_ID_MARTH:
             return ((action == nFTRemixSonicUSPMarthDSPGA) || (action == nFTRemixSonicUSPMarthDSPGAAttack)) ?
                 nFTRemixSonicSpringBounceChangeAction : nFTRemixSonicSpringBounceSmoke;
@@ -637,12 +673,19 @@ static void ftRemixSonicUSPSpringStageSetting(GObj *fighter_gobj, Vec3f *spawn_p
     {
         wp->coll_data.floor_line_id = fp->coll_data.floor_line_id;
     }
-    /* REMIX-TODO(classic): Sonic.classic_table selects the classic spring image and FGM 0x3DF. */
-    ftRemixSonicUSPSetSpringImage(DObjGetStruct(spring_gobj)->mobj, SONIC_USP_SPRING_IMAGE_COILED);
+    if (ftRemixSonicIsClassic(fp->player))
+    {
+        /* Classic Sonic's spring: coiled image/palette 3 and FGM 0x3DF (spring_stage_setting_). */
+        ftRemixSonicUSPSetSpringImage(DObjGetStruct(spring_gobj)->mobj, SONIC_USP_SPRING_IMAGE_COILED_CLASSIC);
+    }
+    else
+    {
+        ftRemixSonicUSPSetSpringImage(DObjGetStruct(spring_gobj)->mobj, SONIC_USP_SPRING_IMAGE_COILED);
+    }
 
     sFTRemixSonicUSPSpringGObjs[fp->player] = spring_gobj;
     spring = ftRemixSonicUSPSpringOfGObj(spring_gobj);
-    spring->fgm_id = SONIC_USP_SPRING_FGM;
+    spring->fgm_id = ftRemixSonicIsClassic(fp->player) ? SONIC_USP_SPRING_FGM_CLASSIC : SONIC_USP_SPRING_FGM;
     spring->is_bounce_enabled = FALSE;
 
     func_800269C0_275C0((u16)spring->fgm_id);

@@ -43,6 +43,17 @@ _Static_assert(sizeof(ITRemixCloudVars) <= sizeof(((ITStruct*)0)->item_vars), "I
 
 extern alSoundEffect* func_800269C0_275C0(u16 sfx_id);
 
+/* Item kinds whose GObj flash flags itProcessProcItemMain must not clear.
+ * Cloud.asm enable_flash (Cloud.asm 287-315) patches the vanilla item main
+ * loop so the per-frame `item_gobj->flags = GOBJ_FLAG_NONE` is skipped for
+ * Item.Cloud (0x49) and the Bowser bomb (0x11A); both write the flags word
+ * themselves (the cloud's flash while Goemon stands on it). The itprocess.c
+ * hook is a shared-file patch, see the notes file. */
+sb32 itRemixKeepsFlashFlags(s32 kind)
+{
+    return (kind == 0x49) || (kind == 0x11A);
+}
+
 static sb32 itRemixCloudNullProcUpdate(GObj *item_gobj);
 static sb32 itRemixCloudAerialProcUpdate(GObj *item_gobj);
 static void itRemixCloudBlastZoneProc(GObj *item_gobj);

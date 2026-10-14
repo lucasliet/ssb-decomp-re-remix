@@ -2,6 +2,7 @@
 #include <it/item.h>
 #ifdef REGION_REMIX
 #include "it/itremix/itremix.h"
+#include "remix/remix_roster_data.h" /* REMIX_ID_*: a Remix id is also its port fkind */
 #endif
 #include <ft/fighter.h>
 #include <sc/scene.h>
@@ -615,10 +616,25 @@ void itMainSetGroundAllowPickup(GObj *item_gobj) // Airborne item becomes ground
     itMapSetGround(ip);
 }
 
+#ifdef REGION_REMIX
+/* H1 (notes 1F_YLINK.md): YoungLinkSpecial.asm state_change_ swaps the status table of a Young Link bomb
+ * (item kind nITKindLinkBomb, creator id stored in coll_data.cliff_id by ftRemixYoungLinkBombSetOwner) for
+ * the Bombchu table. The vanilla status ids map onto the first six Bombchu states; state 6 (moving) is
+ * entered only from the Bombchu routines themselves. */
+extern ITStatusDesc dFTRemixYoungLinkBombchuStatusDescs[];
+#endif
+
 // 0x80172EC8
 void itMainSetStatus(GObj *item_gobj, ITStatusDesc *status_desc, s32 status_id)
 {
     ITStruct *ip = itGetStruct(item_gobj);
+
+#ifdef REGION_REMIX
+    if ((ip->kind == nITKindLinkBomb) && (ip->coll_data.cliff_id == REMIX_ID_YLINK))
+    {
+        status_desc = dFTRemixYoungLinkBombchuStatusDescs;
+    }
+#endif
 
     ip->proc_update    = status_desc[status_id].proc_update;
     ip->proc_map       = status_desc[status_id].proc_map;

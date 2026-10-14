@@ -69,11 +69,9 @@ enum
 #define SONIC_DSP_GROUND_CHARGE_X_SCALE 0.5F            /* 0x3F000000 */
 #define SONIC_DSP_AIR_CHARGE_Y_SCALE 0.3125F            /* 0x3EA00000 (the asm comment says 0.31) */
 
-/* REMIX-TODO(classic): Sonic.classic_table (Remix RAM 0x80563BC0, per-port
- * is_classic) is written by Sonic.asm's save/load/reset_classic_* routines,
- * which are not ported. Until they are, it stays 0 and Spin Dash always uses
- * SPINDASH_CHARGE (0x3D8) instead of CLASSIC_SPINDASH_CHARGE (0x3DE). */
-static u8 sFTRemixSonicDSPClassicTable[MAXCONTROLLERS];
+/* Sonic.classic_table lives in ftremixsonic.c; the save/load/reset_classic_*
+ * writers are menu/1p hooks outside this directory. */
+extern sb32 ftRemixSonicIsClassic(s32 player);
 
 typedef struct FTRemixSonicDSPStatusVars
 {
@@ -273,7 +271,7 @@ static void ftRemixSonicDSPChargeAccumulate(FTStruct *fp, s32 max_charge)
     if (fp->input.pl.button_tap & (A_BUTTON | B_BUTTON))
     {
         vars->charge_level += SONIC_DSP_CHARGE_PER_PRESS;
-        ftParamPlayLoopSFX(fp, sFTRemixSonicDSPClassicTable[fp->player] ? SONIC_DSP_SFX_CHARGE_CLASSIC : SONIC_DSP_SFX_CHARGE);
+        ftParamPlayLoopSFX(fp, ftRemixSonicIsClassic(fp->player) ? SONIC_DSP_SFX_CHARGE_CLASSIC : SONIC_DSP_SFX_CHARGE);
     }
     vars->charge_level += fp->motion_vars.flags.flag1;
     fp->motion_vars.flags.flag1 = 0;

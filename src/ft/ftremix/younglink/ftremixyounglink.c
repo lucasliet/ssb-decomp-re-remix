@@ -4,8 +4,8 @@
  *
  * YoungLinkUSP.direction_ is the Up Special air interrupt. YoungLinkDSP is the
  * Bombchu item (Link's bomb cloned as item id 0x15): its state routines are
- * ported below, and dFTRemixYoungLinkBombchuStatusDescs is the state table
- * that the item hook recorded in build/remixasm/notes/1F_YLINK.md installs.
+ * ported below, and dFTRemixYoungLinkBombchuStatusDescs is the state table that the
+ * itMainSetStatus hook (notes 1F_YLINK.md H1) installs for Young Link's bombs.
  */
 
 #ifdef PORT
@@ -87,7 +87,9 @@ static void ftRemixYoungLinkBombchuBeginFalling(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
 
     itLinkBombCommonSetHitStatusNormal(item_gobj);
-    ip->item_vars.linkbomb.scale_int = 0;
+    ip->item_vars.linkbomb.drop_update_wait = 0; /* asm sh r0, 0x0352: ROM 0x352 is drop_update_wait, so the
+                                                 * dropped/falling Bombchu's ProcUpdate/ProcHit/ProcDamage run
+                                                 * immediately (U6 in the notes file misnamed it scale_int). */
     ip->pickup_wait |= BOMBCHU_PICKUP_WAIT_UNKNOWN_FLAG;
     itMainSetStatus(item_gobj, dFTRemixYoungLinkBombchuStatusDescs, BOMBCHU_STATUS_DROPPED_FALLING);
     ip->physics.vel_air.y = BOMBCHU_FALL_SPEED;
@@ -189,8 +191,9 @@ static sb32 ftRemixYoungLinkBombchuMovingProcUpdate(GObj *item_gobj)
     if (*timer == BOMBCHU_EXPLODE_WARN_TIMER)
     {
         itMainCheckSetColAnimID(item_gobj, BOMBCHU_EXPLODE_WARN_COLANIM, BOMBCHU_EXPLODE_WARN_COLANIM_LENGTH);
-        /* REMIX-TODO(ITStruct): Remix also stores 1 as a u16 at N64 0x354, past the ITFighterItemVarsLinkBomb
-         * struct, which the decomp does not declare, so this flag is not written. */
+        /* asm sh t8, 0x0354: ROM 0x354 is item_vars.linkbomb.scale_id (the vanilla bloat-scale code reads it
+         * back at 0x801859E0), so the warning also starts the inflate animation, like the vanilla bloat. */
+        ip->item_vars.linkbomb.scale_id = 1;
     }
     if ((f32)*timer < (f32)BOMBCHU_EXPLODE_WARN_TIMER)
     {
@@ -265,8 +268,8 @@ static sb32 ftRemixYoungLinkBombchuDroppedProcDamage(GObj *item_gobj)
     return FALSE;
 }
 
-/* Remix reflect_: a reflected Bombchu takes the owner's facing. REMIX-TODO(uncertain): Remix reads float f6 left by
- * itMainCommonProcReflector as the new direction; the owner's lr is assumed here (see the notes file). */
+/* Remix reflect_: a reflected Bombchu takes the owner's facing. Verified (notes U2): the vanilla reflector at
+ * 0x80173434 converts the owner's lr (0x44(v1)) to float in f6 right before its multiply, so f6 is the lr. */
 static sb32 ftRemixYoungLinkBombchuProcReflector(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
@@ -444,20 +447,23 @@ f32 ftRemixYoungLinkBoomerangSmashVel(FTStruct *fp, f32 vanilla_vel)
     return YLINK_BOOMERANG_SMASH_VEL;
 }
 
-/* H2, linkshared.asm save_character_id_: a bomb owned by Young Link records the owner id in coll_data.cliff_id,
- * which the Bombchu state-table hook (H1) reads. Other owners are left untouched. */
+/* H2, linkshared.asm save_character_id_: records the creator's character id in coll_data.cliff_id (N64 0x100,
+ * unused by item collision) for every owner; H1, H3 and H4 read it. For Young Link it also installs the blast
+ * zone routine: the port maps Remix's item+0x398 slot onto ITStruct proc_dead, the same convention
+ * itremixflashbang.c uses, and itprocess.c's blast-zone check calls it. */
 void ftRemixYoungLinkBombSetOwner(GObj *item_gobj, FTStruct *owner_fp)
 {
-    ITStruct *ip;
+    ITStruct *ip = itGetStruct(item_gobj);
 
-    if (owner_fp->fkind != REMIX_ID_YLINK)
-    {
-        return;
-    }
-    ip = itGetStruct(item_gobj);
     ip->coll_data.cliff_id = owner_fp->fkind;
-    /* REMIX-TODO(ITStruct): the Remix code also sets item+0x1D0 (FGM handle = NULL) and item+0x398 (blast zone =
-     * ftRemixYoungLinkBombchuBlastZone). Neither field is in the decomp ITStruct yet. */
+
+    if (owner_fp->fkind == REMIX_ID_YLINK)
+    {
+        ip->proc_dead = ftRemixYoungLinkBombchuBlastZone;
+    }
+    /* REMIX-TODO(ITStruct): Remix also clears its custom FGM handle slot at item+0x1D0. That slot has no decomp
+     * field (it overlays attack_coll.attack_pos), so the Bombchu rolling FGM cannot be ended early; see
+     * ftRemixYoungLinkBombchuEndFgm. */
 }
 
 /* Remix address -> port routine for every Young Link routine its action array or special tables reference. */

@@ -110,4 +110,26 @@ void ftRemixLinkSharedBoomerangWeapon(FTStruct *fp, WPDesc *desc)
     ftRemixLinkSharedSetWeaponFile(desc, ftRemixLinkSharedWeaponOwnerKind(fp), TRUE);
 }
 
+/* itLinkBombMakeItem / bomb_flash_ / bomb_explosion_ (linkshared.asm create_bomb_, 0x801865A0, hooks
+ * 0x801859DC and 0x801863B0): a Link bomb owned by a clone loads its descriptor data (attributes, bloat
+ * scales and explosion attack events) from the owner clone's file 1, selected by the owner id that
+ * ftRemixYoungLinkBombSetOwner stores in coll_data.cliff_id. Other owners keep the vanilla file. Unlike
+ * boomerang_fix_, the bomb hooks read the creator's own id, so a Kirby that copied a Link clone does not
+ * redirect the bomb. */
+void **ftRemixLinkSharedBombFile(s32 fkind, void **vanilla_file)
+{
+    FTData *data;
+
+    if (!ftRemixLinkSharedIsWeaponClone(fkind))
+    {
+        return vanilla_file;
+    }
+    data = port_fighter_data(fkind);
+    if ((data == NULL) || (data->p_file_main == NULL) || (*data->p_file_main == NULL))
+    {
+        return vanilla_file;
+    }
+    return data->p_file_main;
+}
+
 #endif

@@ -116,6 +116,7 @@ f32 ftRemixLinkSharedUpSpecialAirVelY(FTStruct *fp, f32 vanilla_vel_y);
 f32 ftRemixLinkSharedUpSpecialFallDrift(FTStruct *fp, f32 vanilla_drift);
 void ftRemixLinkSharedUpSpecialWeapon(FTStruct *fp, WPDesc *desc);
 void ftRemixLinkSharedBoomerangWeapon(FTStruct *fp, WPDesc *desc);
+void **ftRemixLinkSharedBombFile(s32 fkind, void **vanilla_file);
 
 /* DK and Captain clones, ftremixdkcaptainshared.c (dkshared.asm, captainshared.asm): the cargo, item and
  * damage checks treat JDK, Marina and NMarina as Donkey Kong; the Falcon-family clones use their own

@@ -3,6 +3,11 @@
 #include <it/item.h>
 #include <gr/ground.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixfields.h"
+#include "remix/remix_roster_data.h" /* REMIX_ID_*: a Remix id is also its port fkind */
+#endif
 #ifdef PORT
 #include "fighter_registry.h"
 #endif
@@ -6903,6 +6908,13 @@ void func_ovl3_8013877C(FTStruct *this_fp)
             switch (this_fp->fkind)
             {
             case nFTKindLink:
+#ifdef REGION_REMIX
+            /* H11, linkshared.asm cpu_pull_out_bombs_ (0x80138A04): the Link clones, Peach and Marina pull
+             * bombs like Link. Marina pulls only when her charge level (N64 0x0ADC) is not 0 or 1. */
+            case REMIX_ID_ELINK:
+            case REMIX_ID_JLINK:
+            case REMIX_ID_PEACH:
+#endif
                 if (ftComputerCheckFindTarget(this_fp) != FALSE)
                 {
                     if (com->target_dist < 1500.0F)
@@ -6911,6 +6923,31 @@ void func_ovl3_8013877C(FTStruct *this_fp)
                     }
                 }
                 break;
+
+#ifdef REGION_REMIX
+            case REMIX_ID_YLINK:
+                if (ftComputerCheckFindTarget(this_fp) != FALSE)
+                {
+                    if (com->target_dist < 1500.0F)
+                    {
+                        ftComputerSetCommandWaitShort(this_fp, nFTComputerInputStickSmashLwButtonB);
+                    }
+                }
+                break;
+
+            case REMIX_ID_MARINA:
+                if ((*ftRemixFighterWord(this_fp, 0x0ADC) != 0) && (*ftRemixFighterWord(this_fp, 0x0ADC) != 1))
+                {
+                    if (ftComputerCheckFindTarget(this_fp) != FALSE)
+                    {
+                        if (com->target_dist < 1500.0F)
+                        {
+                            ftComputerSetCommandWaitShort(this_fp, nFTComputerInputStickSmashLwButtonB);
+                        }
+                    }
+                }
+                break;
+#endif
 
             case nFTKindNess:
                 if (syUtilsRandFloat() < 0.25F)

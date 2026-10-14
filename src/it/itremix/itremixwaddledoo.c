@@ -19,6 +19,8 @@
 #include <it/itmain.h>
 #include <it/itmap.h>
 #include <wp/weapon.h>
+#include <reloc_data.h>
+#include <sys/objman.h>
 
 extern alSoundEffect* func_800269C0_275C0(u16 id);
 
@@ -43,6 +45,8 @@ extern alSoundEffect* func_800269C0_275C0(u16 id);
 #define ITREMIX_WADDLEDOO_BEAM_INITIAL_ANGLE 1.125F            /* 0x3F900000 */
 #define ITREMIX_WADDLEDOO_BEAM_ROTATION_AMOUNT 0.26171875F     /* 0x3E860000, per 2 frames */
 #define ITREMIX_WADDLEDOO_BEAM_CHILD_ANGLE_OFFSET 0.40625F     /* 0x3ED00000 */
+#define ITREMIX_WADDLEDOO_BEAM_HIT_FGM 0x16                      /* FGM.hit.ELECTRIC_S */
+#define ITREMIX_WADDLEDOO_BEAM_WPKIND 0x27                       /* Projectile.id.DEDEDE_WADDLEDOO_BEAM (8th add_projectile, after SONIC_SPRING 0x20) */
 
 /* Remix item special struct fields beyond the vanilla ITStruct union. Offsets are the N64 ones. */
 typedef struct ITRemixWaddleDooVars
@@ -92,6 +96,33 @@ static ITDesc sITRemixWaddleDooItemDesc =
 };
 
 static sb32 itRemixWaddleDooAttackProcUpdate(GObj *item_gobj);
+static sb32 itRemixWaddleDooBeamProcUpdate(GObj *weapon_gobj);
+
+/* beam_info_array (WaddleDoo.asm 801-815): the star rod's weapon data with the
+ * beam projectile id and beam_main as update proc; every collision proc is 0.
+ * o_attributes is 0x4D4, the star rod weapon attributes in the common item
+ * file (llITCommonDataStarRodWeaponAttributes), which is also what the Remix
+ * file pointer 0x8018D040 + offset 0x4D4 resolves to. */
+static WPDesc sITRemixWaddleDooBeamWeaponDesc =
+{
+    0,                                          /* render flags */
+    ITREMIX_WADDLEDOO_BEAM_WPKIND,              /* Projectile.id.DEDEDE_WADDLEDOO_BEAM */
+    &gITManagerCommonData,                      /* Remix common item file 0xFB base (asm 0x8018D040) */
+    llITCommonDataStarRodWeaponAttributes,      /* 0x4D4: star rod weapon attributes */
+    {
+        nGCMatrixKindTraRotRpyRSca,             /* asm render index 0x1C000000 */
+        nGCMatrixKindNull,
+        0
+    },
+    itRemixWaddleDooBeamProcUpdate,             /* beam_main */
+    NULL,                                       /* map */
+    NULL,                                       /* hit */
+    NULL,                                       /* shield */
+    NULL,                                       /* hop */
+    NULL,                                       /* set-off */
+    NULL,                                       /* reflector */
+    NULL                                        /* absorb */
+};
 
 /*
  * item_state_table, read by block index (the asm block labels disagree with each other).
@@ -211,14 +242,28 @@ static ITRemixWaddleDooBeamVars* itRemixWaddleDooGetBeamVars(GObj *star_gobj)
 }
 
 /**
- * Creates one beam star for Waddle Doo's laser. The vanilla routine it jumps into
- * (0x801784A8, mid itStarRodWeaponStarMakeWeapon) needs the Remix beam WPDesc
- * (beam_info_array, a file 0xFB projectile in ROM), which is not ported yet.
+ * Creates one beam star for Waddle Doo's laser. Port of create_beam_star: the
+ * asm tail-jumps into itStarRodWeaponStarMakeWeapon right at its
+ * wpManagerMakeWeapon call (0x801784A8) with the beam desc in a1, the fighter
+ * parent in a0 and WEAPON_FLAG_COLLPROJECT (lui 0x8000) in a3, then runs the
+ * star rod tail (gcAddXObjForDObjFixed 0x2E, translate = pos, z = 0) before
+ * returning to star_stage_setting, which overwrites the velocity and lifetime.
  */
 static GObj* itRemixWaddleDooCreateBeamStar(GObj *item_gobj, Vec3f *pos)
 {
-    /* REMIX-TODO(beam-weapon): create the star from beam_info_array via wpManagerMakeWeapon, parent = item_gobj */
-    return NULL;
+    GObj *star_gobj = wpManagerMakeWeapon(itGetStruct(item_gobj)->owner_gobj, &sITRemixWaddleDooBeamWeaponDesc, pos, WEAPON_FLAG_COLLPROJECT);
+    DObj *dobj;
+
+    if (star_gobj == NULL)
+    {
+        return NULL;
+    }
+    dobj = DObjGetStruct(star_gobj);
+    gcAddXObjForDObjFixed(dobj, 0x2E, 0);
+    dobj->translate.vec.f = *pos;
+    dobj->translate.vec.f.z = 0.0F;
+
+    return star_gobj;
 }
 
 /** Sets a beam star's stats and initial position. Port of the star_stage_setting setup block. */
@@ -235,14 +280,23 @@ static void itRemixWaddleDooBeamInit(GObj *star_gobj, GObj *item_gobj, Vec3f *po
     wp->owner_gobj = ip->owner_gobj;
     wp->physics.vel_air.x = 0.0F;
     wp->lr = ip->lr;
-    wp->lifetime = duration;
+    /* The delegated star rod proc (itStarRodWeaponStarProcUpdate) expires the
+     * star through weapon_vars.star.lifetime (N64 0x029C), so the duration goes
+     * there, not the WPStruct lifetime field. */
+    wp->weapon_vars.star.lifetime = duration;
     wp->attack_coll.damage = ITREMIX_WADDLEDOO_BEAM_STAR_DAMAGE;
-    wp->attack_coll.attack_state = 0;           /* REMIX-TODO(beam-hitbox): asm enables the hitbox every 2 frames in beam_main */
+    wp->attack_coll.element = nGMHitElementElectric;
+    wp->attack_coll.fgm_id = ITREMIX_WADDLEDOO_BEAM_HIT_FGM;
+    wp->attack_coll.attack_state = nGMAttackStateOff;
 
     beam->startup_timer = startup_timer;
     beam->draw_toggle = 1;
     beam->angle = angle;
     beam->parent_gobj = item_gobj;
+
+    /* star_stage_setting_ "overwrite visibility": the star spawns with its
+     * draw flag set and beam_main toggles it (see the toggle in the update). */
+    star_gobj->flags = GOBJ_FLAG_HIDDEN;
 
     dobj->translate.vec.f.x = x;
     dobj->translate.vec.f.y = y;
@@ -396,8 +450,18 @@ static sb32 itRemixWaddleDooBeamProcUpdate(GObj *weapon_gobj)
     {
         return TRUE;
     }
-    /* REMIX-TODO(beam-visibility): asm toggles the draw flag (0x007C) and hitbox every 2 frames here */
-    if ((wp->lifetime & 1) != 0)
+    /* beam_main draw/hitbox toggle (asm 688-707): when the GObj draw flag and
+     * the 0x02A8 copy (draw_toggle) match, flip the draw flag and the hitbox
+     * update interval (attack_state 3 <-> off); otherwise re-sync the copy.
+     * This blinks the star every 2 frames while it orbits the Waddle Doo. */
+    if (weapon_gobj->flags == (u32)beam->draw_toggle)
+    {
+        weapon_gobj->flags = (weapon_gobj->flags != FALSE) ? GOBJ_FLAG_NONE : GOBJ_FLAG_HIDDEN;
+        wp->attack_coll.attack_state = (wp->attack_coll.attack_state == nGMAttackStateInterpolate) ? nGMAttackStateOff : nGMAttackStateInterpolate;
+    }
+    else beam->draw_toggle = weapon_gobj->flags;
+
+    if ((wp->weapon_vars.star.lifetime & 1) != 0)
     {
         return FALSE;
     }
