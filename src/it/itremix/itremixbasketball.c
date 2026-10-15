@@ -5,7 +5,7 @@
  * Each routine names its Remix label in its doc comment. The asm keeps its state in GObj and
  * ITStruct slots that the decomp structs do not name (and that overlap vanilla fields), so the
  * state lives in one file-local struct instead. Mode globals, vanilla hooks and REMIX-TODO items
- * are listed in build/remixasm/notes/item_Basketball.md.
+ * are listed in docs/remix/notes/item_Basketball.md.
  */
 
 #ifdef PORT

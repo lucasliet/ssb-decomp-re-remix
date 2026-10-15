@@ -5707,7 +5707,7 @@ GObj* efManagerDonkeyEntryTaruMakeEffect(Vec3f *pos)
 
 // 0x80103474
 /* REMIX-TODO(GFX): Dark Samus (file 6) and Crash (file 8) entry glows need the owner fighter, which
- * this signature lacks; callers ftport.c and ftcommonentry.c have it. See build/remixasm/notes/shared_samus2.md. */
+ * this signature lacks; callers ftport.c and ftcommonentry.c have it. See docs/remix/notes/shared_samus2.md. */
 GObj* efManagerSamusEntryPointMakeEffect(Vec3f *pos)
 {
     GObj *effect_gobj;

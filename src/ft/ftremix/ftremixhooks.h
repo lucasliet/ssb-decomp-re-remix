@@ -36,7 +36,7 @@ void ftRemixMewtwoSpecialNGetShootRecoil(FTStruct *fp, f32 *recoil_base, f32 *re
 /* DededeNSP inhale_*_ / *_transition_ patches in ftkirbyspecialn.c, applied in ftMainSetStatus */
 s32 ftRemixDededeMapKirbyInhaleStatus(FTStruct *fp, s32 status_id);
 
-/* PeachFloat and Peach ledge patches, see build/remixasm/notes/49_PEACH.md */
+/* PeachFloat and Peach ledge patches, see docs/remix/notes/49_PEACH.md */
 sb32 ftRemixPeachFloatHoldsHeight(FTStruct *fp);
 sb32 ftRemixPeachJumpAerialCheckOrFloat(GObj *fighter_gobj);
 sb32 ftRemixPeachFallOverride(GObj *fighter_gobj);
@@ -49,7 +49,7 @@ void ftRemixPeachGroundedScriptRestoreFloat(FTStruct *fp);
 void ftRemixPeachCliffRestoreFloat(FTStruct *fp);
 
 /* MarinaCargo patches: shake_check_ (0x8014DFB4), jump_patch_ (0x8014DB28), air_patch_ (0x8014DACC),
- * jumpsquat_patch_ (0x8014D964), throw_f_patch_ (0x8014E5C0), see build/remixasm/notes/3F_MARINA_NSP.md */
+ * jumpsquat_patch_ (0x8014D964), throw_f_patch_ (0x8014E5C0), see docs/remix/notes/3F_MARINA_NSP.md */
 sb32 ftRemixMarinaCargoShakeCheckInterrupt(GObj *fighter_gobj);
 s32 ftRemixMarinaCargoJumpStatusId(FTStruct *fp);
 f32 ftRemixMarinaCargoAnimSpeed(FTStruct *fp);
@@ -57,7 +57,7 @@ s32 ftRemixMarinaCargoThrowFDamage(FTStruct *fp);
 void ftRemixMarinaCargoThrowFInitGemSpawned(FTStruct *fp);
 
 /* Marina absorb patches: ftMainSearchHitItem (0x800E5A10) and ftMainSearchHitWeapon (0x800E5330),
- * see build/remixasm/notes/3F_MARINA_DSP.md */
+ * see docs/remix/notes/3F_MARINA_DSP.md */
 void ftRemixMarinaDSPAbsorbItemCharge(FTStruct *fp, ITStruct *ip);
 void ftRemixMarinaDSPAbsorbProjectileCharge(FTStruct *fp, WPStruct *wp);
 

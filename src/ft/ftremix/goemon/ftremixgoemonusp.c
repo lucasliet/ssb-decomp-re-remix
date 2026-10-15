@@ -3,7 +3,7 @@
  * (.toolchain/pkgs/smashremix-src/src/Goemon/GoemonSpecial.asm, scope GoemonUSP).
  *
  * The Magic Cloud is the custom Remix item Item.Cloud (it/itremix/itremixcloud.c).
- * See build/remixasm/notes/41_GOEMON_USP.md.
+ * See docs/remix/notes/41_GOEMON_USP.md.
  */
 
 #ifdef PORT

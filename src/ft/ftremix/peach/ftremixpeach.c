@@ -4,7 +4,7 @@
  *
  * Float's timer lives in the 0x0ADC passive_vars union (no decomp field for
  * Peach, so PEACH_FLOAT_TIMER names the u32 slot). Vanilla hooks that call the
- * non-static functions below are listed in build/remixasm/notes/49_PEACH.md.
+ * non-static functions below are listed in docs/remix/notes/49_PEACH.md.
  */
 
 #ifdef PORT
@@ -24,7 +24,7 @@ extern sb32 ftMarioSpecialHiProcPass(GObj *fighter_gobj);
 extern void ftCaptainSpecialHiProcInterrupt(GObj *fighter_gobj);
 extern void *func_800269C0_275C0(u16);
 
-/* Called from vanilla hooks (see build/remixasm/notes/49_PEACH.md). */
+/* Called from vanilla hooks (see docs/remix/notes/49_PEACH.md). */
 void ftRemixPeachFloatInitial(GObj *fighter_gobj);
 sb32 ftRemixPeachJumpAerialCheckOrFloat(GObj *fighter_gobj);
 sb32 ftRemixPeachFallOverride(GObj *fighter_gobj);

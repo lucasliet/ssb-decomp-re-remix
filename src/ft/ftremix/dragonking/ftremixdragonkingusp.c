@@ -6,7 +6,7 @@
  * (moveset commands 5C0000XX / 580000XX). Air pull copies vanilla air physics (0x800D90E0)
  * with a custom gravity, a custom friction and no fast fall. The drain of the captured
  * player is ftRemixDragonKingUSPDrain. Deviations and open questions are in
- * build/remixasm/notes/47_DRAGONKING_USP.md.
+ * docs/remix/notes/47_DRAGONKING_USP.md.
  */
 
 #ifdef PORT

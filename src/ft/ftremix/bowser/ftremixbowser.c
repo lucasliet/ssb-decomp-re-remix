@@ -5,7 +5,7 @@
  * BowserNSP.main_ follows the decoded instructions of the ROM, which splice
  * vanilla Fire Flower code through OS.copy_segment. Its flame is the vanilla
  * Fire Flower flame weapon (itFFlowerWeaponFlameMakeWeapon). See
- * build/remixasm/notes/34_BOWSER.md.
+ * docs/remix/notes/34_BOWSER.md.
  */
 
 #ifdef PORT

@@ -4,7 +4,7 @@
  *
  * Waddle Doo (itremixwaddledoo.c) and Gordo reuse the routines exported in
  * itremixwaddledee.h. The owner minion slots are REMIX-TODO(Dedede); see
- * build/remixasm/notes/item_WaddleDee.md for every deviation.
+ * docs/remix/notes/item_WaddleDee.md for every deviation.
  */
 
 #ifdef PORT

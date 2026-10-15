@@ -4,7 +4,7 @@
  *
  * The moveset commands 0x580000XX and 0x5C0000XX set temp variables 2 and 1
  * (motion_vars.flags.flag1 and flag0) and the routines below read them to pick
- * a phase. Deviations and open questions are in build/remixasm/notes/44_BANJO_USP.md.
+ * a phase. Deviations and open questions are in docs/remix/notes/44_BANJO_USP.md.
  */
 
 #ifdef PORT
