@@ -8,10 +8,27 @@
 #include <port_log.h>
 #include <it/itmain.h>
 #include <sc/scene.h>
+#include <stdlib.h>
 
 #define ITREMIX_KIND_MAX 0x100
 
 static u8 sITRemixMissingLogged[ITREMIX_KIND_MAX];
+
+void itRemixLogEvent(const char *event, s32 kind)
+{
+    static s32 is_enabled = -1;
+
+    if (is_enabled < 0)
+    {
+        const char *text = getenv("SSB64_REMIX_ITEM_LOG");
+
+        is_enabled = ((text != NULL) && (text[0] != '\0') && (text[0] != '0')) ? 1 : 0;
+    }
+    if (is_enabled != 0)
+    {
+        port_log("[remix-item] %s kind=0x%X\n", event, kind);
+    }
+}
 
 sb32 itRemixIsCustomKind(s32 kind)
 {
@@ -70,6 +87,8 @@ GObj* itRemixMakeItem(GObj *parent_gobj, s32 kind, Vec3f *pos, Vec3f *vel, u32 f
     {
         return NULL;
     }
+    itRemixLogEvent("spawn", kind);
+
     return desc->proc_make(parent_gobj, pos, vel, flags);
 }
 

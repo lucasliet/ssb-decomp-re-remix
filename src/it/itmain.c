@@ -454,6 +454,7 @@ void itMainSetFighterDrop(GObj *item_gobj, Vec3f *vel, f32 throw_mul)
 
         if ((desc != NULL) && (desc->proc_dropped != NULL))
         {
+            itRemixLogEvent("drop", ip->kind);
             desc->proc_dropped(item_gobj);
         }
     }
@@ -492,6 +493,7 @@ void itMainSetFighterThrow(GObj *item_gobj, Vec3f *vel, f32 throw_mul, sb32 is_s
 
         if ((desc != NULL) && (desc->proc_thrown != NULL))
         {
+            itRemixLogEvent("throw", ip->kind);
             desc->proc_thrown(item_gobj);
         }
     }
@@ -575,6 +577,7 @@ void itMainSetFighterHold(GObj *item_gobj, GObj *fighter_gobj)
 
         if ((desc != NULL) && (desc->proc_hold != NULL))
         {
+            itRemixLogEvent("hold", ip->kind);
             desc->proc_hold(item_gobj);
         }
     }

@@ -5,6 +5,9 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixgating.h"
+#include "gr/grremix/grremixids.h"
+#include "remix/remix_ram_image.h"
+#include "remix/remix_symbols.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -599,18 +602,53 @@ void grPupupuFlowersFrontUpdateAll(void)
     }
 }
 
+#ifdef REGION_REMIX
+/* Hazards.asm:3298 inserts stages/dream_greens_offsets.bin (0x90 bytes) right before dream_greens_hardcoding_animation_1.
+ * It has the layout of the four Whispy tables below: eyes anims at 0x00, mouth anims at 0x20, mouth textures at 0x60,
+ * eyes textures at 0x78. */
+#define GRPUPUPU_DREAM_GREENS_OFFSETS (REMIX_SYM_Hazards__dream_greens_hardcoding_animation_1 - 0x90)
+#define GRPUPUPU_DREAM_GREENS_EYES_ANIMS 0x00
+#define GRPUPUPU_DREAM_GREENS_MOUTH_ANIMS 0x20
+#define GRPUPUPU_DREAM_GREENS_MOUTH_TEXTURES 0x60
+#define GRPUPUPU_DREAM_GREENS_EYES_TEXTURES 0x78
+
+static sb32 grPupupuIsDreamGreens(void)
+{
+    return gSCManagerBattleState->gkind == nGRRemixStage_DREAM_LAND_SR;
+}
+
+/* Hazards.asm dream_greens_hardcoding_animation_1-4: Dream Greens reads the Whispy offsets from its own table. */
+static intptr_t grPupupuGetWhispyOffset(const intptr_t *entry, const intptr_t *table, u32 remix_table_offset)
+{
+    u32 *word;
+
+    if (grPupupuIsDreamGreens() == FALSE)
+    {
+        return *entry;
+    }
+    word = remix_ram_image_resolve(GRPUPUPU_DREAM_GREENS_OFFSETS + remix_table_offset + (u32)((entry - table) * 4));
+
+    return (word != NULL) ? (intptr_t)*word : *entry;
+}
+
+#define GRPUPUPU_WHISPY_OFFSET(table, remix_table_offset, index) \
+    grPupupuGetWhispyOffset(&table index, (const intptr_t*)table, remix_table_offset)
+#else
+#define GRPUPUPU_WHISPY_OFFSET(table, remix_table_offset, index) (table index)
+#endif
+
 // 0x80106314
 void grPupupuUpdateGObjAnims(void)
 {
     if (gGRCommonStruct.pupupu.whispy_eyes_status != -1)
     {
-        intptr_t offset = dGRPupupuWhispyEyesAnims[gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_eyes_status][1];
+        intptr_t offset = GRPUPUPU_WHISPY_OFFSET(dGRPupupuWhispyEyesAnims, GRPUPUPU_DREAM_GREENS_EYES_ANIMS, [gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_eyes_status][1]);
 
         gcAddAnimAll
         (
             gGRCommonStruct.pupupu.map_gobj[0],
             (AObjEvent32**)
-            (dGRPupupuWhispyEyesAnims[gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_eyes_status][0] + (uintptr_t)gGRCommonStruct.pupupu.map_head),
+            (GRPUPUPU_WHISPY_OFFSET(dGRPupupuWhispyEyesAnims, GRPUPUPU_DREAM_GREENS_EYES_ANIMS, [gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_eyes_status][0]) + (uintptr_t)gGRCommonStruct.pupupu.map_head),
             (AObjEvent32***)
             ((offset != 0) ? (void*) ((uintptr_t)gGRCommonStruct.pupupu.map_head + offset) : NULL),
             0.0F
@@ -625,9 +663,9 @@ void grPupupuUpdateGObjAnims(void)
         (
             gGRCommonStruct.pupupu.map_gobj[1],
             (AObjEvent32**)
-            (dGRPupupuWhispyMouthAnims[gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_mouth_status][0] + (uintptr_t)gGRCommonStruct.pupupu.map_head),
+            (GRPUPUPU_WHISPY_OFFSET(dGRPupupuWhispyMouthAnims, GRPUPUPU_DREAM_GREENS_MOUTH_ANIMS, [gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_mouth_status][0]) + (uintptr_t)gGRCommonStruct.pupupu.map_head),
             (AObjEvent32***)
-            (dGRPupupuWhispyMouthAnims[gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_mouth_status][1] + (uintptr_t)gGRCommonStruct.pupupu.map_head),
+            (GRPUPUPU_WHISPY_OFFSET(dGRPupupuWhispyMouthAnims, GRPUPUPU_DREAM_GREENS_MOUTH_ANIMS, [gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_mouth_status][1]) + (uintptr_t)gGRCommonStruct.pupupu.map_head),
             0.0F
         );
         gcPlayAnimAll(gGRCommonStruct.pupupu.map_gobj[1]);
@@ -640,7 +678,7 @@ void grPupupuUpdateGObjAnims(void)
         (
             gGRCommonStruct.pupupu.map_gobj[2],
             (AObjEvent32**)
-            (dGRPupupuWhispyMouthTextures[gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_mouth_texture] + (uintptr_t)gGRCommonStruct.pupupu.map_head),
+            (GRPUPUPU_WHISPY_OFFSET(dGRPupupuWhispyMouthTextures, GRPUPUPU_DREAM_GREENS_MOUTH_TEXTURES, [gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_mouth_texture]) + (uintptr_t)gGRCommonStruct.pupupu.map_head),
             0.0F
         );
         gcPlayAnimAll(gGRCommonStruct.pupupu.map_gobj[2]);
@@ -653,7 +691,7 @@ void grPupupuUpdateGObjAnims(void)
         (
             gGRCommonStruct.pupupu.map_gobj[3],
             (AObjEvent32**)
-            (dGRPupupuWhispyEyesTextures[gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_eyes_texture] + (uintptr_t)gGRCommonStruct.pupupu.map_head),
+            (GRPUPUPU_WHISPY_OFFSET(dGRPupupuWhispyEyesTextures, GRPUPUPU_DREAM_GREENS_EYES_TEXTURES, [gGRCommonStruct.pupupu.lr_players][gGRCommonStruct.pupupu.whispy_eyes_texture]) + (uintptr_t)gGRCommonStruct.pupupu.map_head),
             0.0F
         );
         gcPlayAnimAll(gGRCommonStruct.pupupu.map_gobj[3]);
@@ -700,6 +738,19 @@ GObj* grPupupuMakeMapGObj(intptr_t o_dobjdesc, intptr_t o_mobjsub, void (*proc_d
 // 0x8010658C
 void grPupupuInitAll(void)
 {
+#ifdef REGION_REMIX
+    /* Hazards.asm dream_greens_hardcoding_1-4: Dream Greens keeps the Whispy, flowers and map head at its own offsets. */
+    if (grPupupuIsDreamGreens() != FALSE)
+    {
+        gGRCommonStruct.pupupu.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - 0x158);
+        gGRCommonStruct.pupupu.map_gobj[0] = grPupupuMakeMapGObj(0x158, 0x298, grDisplayLayer0PriProcDisplay, 4);
+        gGRCommonStruct.pupupu.map_gobj[1] = grPupupuMakeMapGObj(0x798, 0x960, grDisplayLayer0PriProcDisplay, 4);
+        gGRCommonStruct.pupupu.map_gobj[2] = grPupupuMakeMapGObj(0x1A20, 0x0, grDisplayLayer0PriProcDisplay, 4);
+        gGRCommonStruct.pupupu.map_gobj[3] = grPupupuMakeMapGObj(0x2190, 0x0, grDisplayLayer3PriProcDisplay, 16);
+    }
+    else
+#endif
+    {
 #ifdef PORT
     gGRCommonStruct.pupupu.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRPupupuMapMapHead);
     gGRCommonStruct.pupupu.map_gobj[0] = grPupupuMakeMapGObj(llGRPupupuMapMapHead, llGRPupupuMapWhispyEyesTransformKindsMObjSub, grDisplayLayer0PriProcDisplay, 4);
@@ -713,6 +764,7 @@ void grPupupuInitAll(void)
     gGRCommonStruct.pupupu.map_gobj[2] = grPupupuMakeMapGObj(&llGRPupupuMapFlowersBackTransformKindsDObjDesc, 0x0, grDisplayLayer0PriProcDisplay, 4);
     gGRCommonStruct.pupupu.map_gobj[3] = grPupupuMakeMapGObj(&llGRPupupuMapFlowersFrontTransformKindsDObjDesc, 0x0, grDisplayLayer3PriProcDisplay, 16);
 #endif
+    }
 
     gGRCommonStruct.pupupu.whispy_eyes_status   =
     gGRCommonStruct.pupupu.whispy_mouth_status  =

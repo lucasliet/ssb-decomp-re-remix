@@ -1,6 +1,8 @@
 #ifdef PORT
 
 #include "it/itremix/itremixlightning.h"
+#include "it/itremix/itremixsupermushroom.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include <it/item.h>
 #include <it/itcommon/ittomato.h>
 #include <ef/efmanager.h>
@@ -16,6 +18,7 @@
 #define ITREMIX_LIGHTNING_SFX_TIME 20 /* ITREMIX_LIGHTNING_TIME - zap_sfx_delay (5) */
 #define ITREMIX_LIGHTNING_SFX_FGM 0x00E8
 #define ITREMIX_LIGHTNING_SHRINK_RESET_TIME 0x01E0 /* written to every port slot before a zap */
+#define ITREMIX_LIGHTNING_SHRUNK_SIZE 0.5F /* lui t4, 0x3F00 in _zap_player */
 #define ITREMIX_LIGHTNING_SHRINK_TIME 600 /* lightning_shrink_timer, 10 seconds at 60 tics per second */
 #define ITREMIX_LIGHTNING_ROUTINE_MAX 8
 #define ITREMIX_LIGHTNING_ACTION_REVIVE1 0x007 /* Remix Action.Revive1 */
@@ -173,13 +176,13 @@ static sb32 itRemixLightningCanZap(FTStruct *owner_fp, FTStruct *fp)
     return fp->star_invincible_tics == 0;
 }
 
-/* Lightning: lightning_zap_players_ _zap_player. The Size and Super Mushroom effects are not ported */
+/* Lightning: lightning_zap_players_ _zap_player */
 static void itRemixLightningZapPlayer(FTStruct *fp)
 {
     efManagerThunderAmpMakeEffect(fp->coll_data.p_translate);
     sITRemixLightningShrinkTimers[fp->player] = ITREMIX_LIGHTNING_SHRINK_TIME;
-    /* REMIX-TODO(Size): Size.multiplier_table[fp->player] is not set to the shrunk value 0.5F. */
-    /* REMIX-TODO(SuperMushroom): an active Super Mushroom of this port is not destroyed. */
+    ftRemixSizeSetMultiplier(fp->player, ITREMIX_LIGHTNING_SHRUNK_SIZE);
+    itRemixSuperMushroomDestroyForPlayer(fp->player);
     /* REMIX-TODO(FranklinBadge): a Franklin Badge does not reflect the zap; every eligible player is zapped. */
 }
 
@@ -239,23 +242,29 @@ static void itRemixLightningRoutineProcUpdate(GObj *routine_gobj)
     routine->timer -= 1;
 }
 
-/* Lightning: shrink_timer_ per port. The Size reset at the end of the timer is not ported */
+/* Lightning: shrink_timer_ per port */
 static void itRemixLightningShrinkTick(s32 port)
 {
     if (sITRemixLightningShrinkTimers[port] == 0)
     {
         return;
     }
+    if (itRemixSuperMushroomIsActive(port) != FALSE)
+    {
+        sITRemixLightningShrinkTimers[port] = 0;
+        return;
+    }
     if (sITRemixLightningShrinkTimers[port] == 1)
     {
-        /* REMIX-TODO(Size): the asm resets Size.multiplier_table[port] here, from Size.match_state_table. */
+        /* REMIX-TODO(Size): the asm restores the size of Size.match_state_table (GIANT/TINY match modes, ROADMAP T2.4); every match is NORMAL today. */
+        ftRemixSizeSetMultiplier(port, 1.0F);
         sITRemixLightningShrinkTimers[port] = 0;
         return;
     }
     sITRemixLightningShrinkTimers[port] -= 1;
 }
 
-/* Lightning: shrink_timer_. The asm also clears timers of ports with an active Super Mushroom (REMIX-TODO(SuperMushroom)) */
+/* Lightning: shrink_timer_ */
 static void itRemixLightningShrinkProcUpdate(GObj *shrink_gobj)
 {
     s32 port;

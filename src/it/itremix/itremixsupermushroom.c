@@ -3,6 +3,7 @@
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixsupermushroom.h"
 #include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include <it/item.h>
 #include <it/itmain.h>
 #include <it/itmap.h>
@@ -90,7 +91,7 @@ typedef struct ITRemixSuperMushroomRoutine
     s32 match_size_state;           /* nITRemixSuperMushroomSize* of the player when picked up */
     s32 flash_sfx_kind;             /* asm 0x60: item id whose sfx already played this frame, 0 if none */
     sb32 is_pending_sfx;            /* asm 0x64: superseded effect still owes the sfx of its item */
-    f32 size_multiplier;            /* REMIX-TODO(Size): tracked, not applied to Size.multiplier_table */
+    f32 size_multiplier;            /* last value written to Size.multiplier_table for the player */
 } ITRemixSuperMushroomRoutine;
 
 static const u8 sITRemixSuperMushroomGrowFrames[ITREMIX_SUPERMUSHROOM_TRANSITION_STEPS] = { 11, 16, 21, 26, 30, 34, 38, 42, 45, 48, 51, 54 };
@@ -385,6 +386,13 @@ static void itRemixSuperMushroomStartTransition(ITRemixSuperMushroomRoutine *rou
     ftParamMakeRumble(routine->fp, ITREMIX_SUPERMUSHROOM_RUMBLE_ID, ITREMIX_SUPERMUSHROOM_RUMBLE_FRAMES);
 }
 
+/* SuperMushroom: writes the player's Size.multiplier_table entry. */
+static void itRemixSuperMushroomSetSize(ITRemixSuperMushroomRoutine *routine, f32 size)
+{
+    routine->size_multiplier = size;
+    ftRemixSizeSetMultiplier(routine->fp->player, size);
+}
+
 /* SuperMushroom: one transition step. Advances the state at the end and writes the size at each listed frame. */
 static void itRemixSuperMushroomApplyTransition(ITRemixSuperMushroomRoutine *routine, const ITRemixSuperMushroomTransition *transition, s32 step_timer)
 {
@@ -400,7 +408,7 @@ static void itRemixSuperMushroomApplyTransition(ITRemixSuperMushroomRoutine *rou
     {
         return;
     }
-    routine->size_multiplier = transition->sizes[routine->transition_index];
+    itRemixSuperMushroomSetSize(routine, transition->sizes[routine->transition_index]);
     routine->transition_index = (routine->transition_index + 1) % ITREMIX_SUPERMUSHROOM_TRANSITION_STEPS;
 }
 
@@ -425,7 +433,7 @@ static void itRemixSuperMushroomUpdateSize(ITRemixSuperMushroomRoutine *routine)
     {
         routine->state = nITRemixSuperMushroomStateTransition2;
     }
-    routine->size_multiplier = setup->hold_size;
+    itRemixSuperMushroomSetSize(routine, setup->hold_size);
 }
 
 /* SuperMushroom: size the player returns to when the effect ends */
@@ -445,7 +453,7 @@ static f32 itRemixSuperMushroomGetRestSize(s32 match_size_state)
 /* SuperMushroom: _revert. Ends the effect and frees the routine. */
 static void itRemixSuperMushroomRevert(ITRemixSuperMushroomRoutine *routine)
 {
-    routine->size_multiplier = itRemixSuperMushroomGetRestSize(routine->match_size_state);
+    itRemixSuperMushroomSetSize(routine, itRemixSuperMushroomGetRestSize(routine->match_size_state));
     sITRemixSuperMushroomActive[routine->fp->player] = NULL;
     itRemixSuperMushroomFreeRoutine(routine);
 }
@@ -631,6 +639,28 @@ void itRemixSuperMushroomClearStates(void)
         sITRemixSuperMushroomActive[index] = NULL;
     }
     sITRemixSuperMushroomSpawnCount = 0;
+}
+
+sb32 itRemixSuperMushroomIsActive(s32 player)
+{
+    if ((player < 0) || (player >= ITREMIX_SUPERMUSHROOM_PORTS))
+    {
+        return FALSE;
+    }
+    return sITRemixSuperMushroomActive[player] != NULL;
+}
+
+void itRemixSuperMushroomDestroyForPlayer(s32 player)
+{
+    ITRemixSuperMushroomRoutine *routine;
+
+    if (itRemixSuperMushroomIsActive(player) == FALSE)
+    {
+        return;
+    }
+    routine = sITRemixSuperMushroomActive[player];
+    sITRemixSuperMushroomActive[player] = NULL;
+    itRemixSuperMushroomFreeRoutine(routine);
 }
 
 const ITRemixItemDesc dITRemixSuperMushroomItemDesc =

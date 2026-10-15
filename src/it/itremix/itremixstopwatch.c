@@ -712,7 +712,7 @@ static ITDesc sITRemixStopwatchItemInfo =
     ITREMIX_STOPWATCH_FILE_OFFSET,          /* item footer offset */
 
     {
-        nGCMatrixKindTraRotRpyR,
+        nGCMatrixKindTraRotRpyRSca,         /* item_info_array 0x0C = 0x1C000000 */
         nGCMatrixKindNull,
         0
     },

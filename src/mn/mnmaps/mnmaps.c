@@ -2169,21 +2169,22 @@ void mnMapsSetPreviewCameraPosition(CObj *cobj, s32 gkind)
 	{
 		gkind = nGRKindCastle;
 	}
-#ifdef REGION_REMIX
-	if (gkind >= ARRAY_COUNT(positions))
-	{
-		gkind = nGRKindLast;
-	}
-#endif
 	cobj->vec.eye.x = -3000.0F;
 	cobj->vec.eye.y = 3000.0F;
 	cobj->vec.eye.z = 9000.0F;
 	cobj->vec.up.x = 0.0F;
 	cobj->vec.up.y = 1.0F;
 	cobj->vec.up.z = 0.0F;
+#ifdef REGION_REMIX
+	/* Stages.asm patch at 0x801339A4: every stage preview looks at (1600, 1600); the model offset comes from position_table. */
+	cobj->vec.at.x = 1600.0F;
+	cobj->vec.at.y = 1600.0F;
+	cobj->vec.at.z = 0.0F;
+#else
 	cobj->vec.at.x = positions[gkind].x;
 	cobj->vec.at.y = positions[gkind].y;
 	cobj->vec.at.z = positions[gkind].z;
+#endif
 #ifdef PORT
 	/* Widescreen: the 3D stage preview renders through libultraship's
 	 * AdjXForAspectRatio (clip-x compressed by (4/3)/window_aspect) while
@@ -2207,7 +2208,11 @@ void mnMapsSetPreviewCameraPosition(CObj *cobj, s32 gkind)
 	// start and ignores subsequent SetPosition writes — switching stages or
 	// re-entering the CSS after a VS match would leave every stage rendered
 	// around whatever y was loaded first.
+#ifdef REGION_REMIX
+	sMNMapsPreviewBaseAtY = 1600.0F;
+#else
 	sMNMapsPreviewBaseAtY = positions[gkind].y;
+#endif
 #endif
 }
 

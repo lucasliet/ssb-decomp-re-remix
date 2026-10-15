@@ -18,9 +18,22 @@
 #include "it/itcommon/ittomato.h"
 #include "if/ifcommon.h"
 #include "sys/utils.h"
+#include "wp/weapon.h"
+#include "ft/fighter.h"
+#include "remix/remix_ram_image.h"
+#include "remix/remix_symbols.h"
 
 #define ITREMIX_GOLDENGUN_FILE_OFFSET 0xFC0 /* asm FILE_OFFSET: item footer in the common item file */
+#define ITREMIX_GOLDENGUN_BULLET_KIND 0x26 /* Projectile.id.GOLDENGUN_BULLET (0x20 + 6) */
+#define ITREMIX_GOLDENGUN_BULLET_DAMAGE 99 /* PROJECTILE_DAMAGE */
+#define ITREMIX_GOLDENGUN_BULLET_KNOCKBACK_SCALE 45 /* KNOCKBACK_1 (0x130) */
+#define ITREMIX_GOLDENGUN_BULLET_KNOCKBACK_WEIGHT 0 /* KNOCKBACK_2 (0x134), fixed */
+#define ITREMIX_GOLDENGUN_BULLET_KNOCKBACK_BASE 130 /* KNOCKBACK_3 (0x138) */
+#define ITREMIX_GOLDENGUN_BULLET_ANGLE 7 /* KNOCKBACK_ANGLE */
+#define ITREMIX_GOLDENGUN_BULLET_FGM 52 /* ON_HIT_FGM = FGM.item.BAT */
 #define ITREMIX_GOLDENGUN_AMMO_COUNT 1 /* asm AMMO_COUNT, stored in ITStruct.multi (asm offset 0x033E) */
+
+static void itRemixGoldenGunLoadBulletFile(void);
 
 enum itRemixGoldenGunStatus
 {
@@ -102,6 +115,7 @@ GObj* itRemixGoldenGunMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fl
     {
         return NULL;
     }
+    itRemixGoldenGunLoadBulletFile();
     ip = itGetStruct(item_gobj);
     ip->multi = ITREMIX_GOLDENGUN_AMMO_COUNT;
     itRemixGoldenGunRollTilt();
@@ -123,5 +137,66 @@ const ITRemixItemDesc dITRemixGoldenGunItemDesc =
     itLGunThrownSetStatus,              /* THROW_ITEM (asm 0x801756AC, copied Ray Gun) */
     NULL                                /* PLAYER_COLLISION */
 };
+
+sb32 itRemixGoldenGunIsHeldBy(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+
+    return (fp->item_gobj != NULL) && (itGetStruct(fp->item_gobj)->kind == ITREMIX_GOLDENGUN_ID);
+}
+
+/* projectile_info, its display list, image and vertices (the Remix RAM image from projectile_info up to
+ * projectile_info_pointer), copied per spawn into the scene arena as a small file the desc reads at offset 0. */
+#define ITREMIX_GOLDENGUN_BULLET_FILE_START REMIX_SYM_Item__GoldenGun__projectile_info
+#define ITREMIX_GOLDENGUN_BULLET_FILE_SIZE (REMIX_SYM_Item__GoldenGun__projectile_info_pointer - REMIX_SYM_Item__GoldenGun__projectile_info)
+
+static void *sITRemixGoldenGunBulletFile;
+
+static WPDesc sITRemixGoldenGunBulletDesc =
+{
+    0x00,                                   /* golden_bullet_projectile_struct 0x00 */
+    ITREMIX_GOLDENGUN_BULLET_KIND,
+    &sITRemixGoldenGunBulletFile,
+    0,
+    {
+        nGCMatrixKindTraRotRpyRSca,         /* 0x1C000000 */
+        nGCMatrixKindNull,
+        0
+    },
+    itLGunWeaponAmmoProcUpdate,             /* 0x801758BC */
+    itLGunWeaponAmmoProcMap,                /* 0x80175914 */
+    NULL,                                   /* hurtbox hit: 0, the bullet goes through */
+    NULL,                                   /* shield: 0 */
+    itLGunWeaponAmmoProcHop,                /* 0x80175988 */
+    NULL,                                   /* clang: 0 */
+    itLGunWeaponAmmoProcReflector,          /* 0x80175A00 */
+    NULL                                    /* absorb: 0 */
+};
+
+/* The bullet file lives in the scene arena: a gun always spawns in the scene before its first shot. */
+static void itRemixGoldenGunLoadBulletFile(void)
+{
+    sITRemixGoldenGunBulletFile = remix_ram_image_make_file(ITREMIX_GOLDENGUN_BULLET_FILE_START, ITREMIX_GOLDENGUN_BULLET_FILE_SIZE,
+                                                            syTaskmanMalloc(ITREMIX_GOLDENGUN_BULLET_FILE_SIZE, 0x10));
+}
+
+WPDesc* itRemixGoldenGunGetBulletDesc(void)
+{
+    return &sITRemixGoldenGunBulletDesc;
+}
+
+void itRemixGoldenGunSetupBullet(GObj *weapon_gobj)
+{
+    WPStruct *wp = wpGetStruct(weapon_gobj);
+
+    itRemixLogEvent("bullet", ITREMIX_GOLDENGUN_ID);
+    wp->attack_coll.damage = ITREMIX_GOLDENGUN_BULLET_DAMAGE;
+    wp->attack_coll.element = nGMHitElementNormal;
+    wp->attack_coll.knockback_scale = ITREMIX_GOLDENGUN_BULLET_KNOCKBACK_SCALE;
+    wp->attack_coll.knockback_weight = ITREMIX_GOLDENGUN_BULLET_KNOCKBACK_WEIGHT;
+    wp->attack_coll.knockback_base = ITREMIX_GOLDENGUN_BULLET_KNOCKBACK_BASE;
+    wp->attack_coll.angle = ITREMIX_GOLDENGUN_BULLET_ANGLE;
+    wp->attack_coll.fgm_id = ITREMIX_GOLDENGUN_BULLET_FGM;
+}
 
 #endif

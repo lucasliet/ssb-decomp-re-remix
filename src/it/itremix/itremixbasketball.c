@@ -137,7 +137,19 @@ typedef struct ITRemixBasketballVars
 
 extern void* func_800269C0_275C0(u16 id);
 
-static ITRemixBasketballVars sITRemixBasketballVars;
+/* The asm keeps these fields in each ball's GObj and ITStruct (0x40..0x68, 0x1C8..0x1F4); they do not fit in
+ * ITStruct.item_vars, so each ball gets a slot of this pool, claimed at spawn (itRemixBasketballSetupVars). */
+#define ITREMIX_BASKETBALL_SLOTS 8
+
+typedef struct ITRemixBasketballSlot
+{
+    GObj *item_gobj;
+    ITRemixBasketballVars vars;
+
+} ITRemixBasketballSlot;
+
+static ITRemixBasketballSlot sITRemixBasketballSlots[ITREMIX_BASKETBALL_SLOTS];
+static s32 sITRemixBasketballNextSlot;
 
 static void itRemixBasketballSetupVars(GObj *item_gobj);
 static void itRemixBasketballSetupImage(GObj *item_gobj);
@@ -215,35 +227,52 @@ static ITStatusDesc sITRemixBasketballStatusDescs[nITRemixBasketballStatusEnumCo
     }
 };
 
-/* asm item_info_array. The transform word 0x1B000000 is kept raw: its meaning is not confirmed. */
+/* asm item_info_array */
 static ITDesc sITRemixBasketballItemDesc =
 {
     ITREMIX_BASKETBALL_KIND,
     &gITManagerCommonData,
     ITREMIX_BASKETBALL_FILE_OFFSET,
     {
-        0x1B,
-        0x00,
-        0x00
+        nGCMatrixKindTraRotRpyR,            /* item_info_array 0x0C = 0x1B000000 */
+        nGCMatrixKindNull,
+        0
     },
     nGMAttackStateOff,
+    /* item_info_array 0x14..0x30 is item_state_table state 0 (MAIN) */
+    itRemixBasketballMainProcUpdate,
+    itRemixBasketballMainProcMap,
+    itRemixBasketballCollide,
+    itRemixBasketballCollide,
+    itRemixBasketballCollide,
     NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    itMainCommonProcReflector,
+    itRemixBasketballCollideHitbox
 };
 
 /**
- * Basketball.get_vars_: returns the single basketball state.
- * Returns: pointer to the file-local state struct.
+ * State of one ball: its pool slot, or a new slot (the oldest one) the first time the ball asks.
+ * item_gobj: item object.
+ * Returns: pointer to the ball's state.
  */
-static ITRemixBasketballVars* itRemixBasketballGetVars(void)
+static ITRemixBasketballVars* itRemixBasketballGetVars(GObj *item_gobj)
 {
-    return &sITRemixBasketballVars;
+    ITRemixBasketballSlot *slot;
+    s32 i;
+
+    for (i = 0; i < ITREMIX_BASKETBALL_SLOTS; i++)
+    {
+        if (sITRemixBasketballSlots[i].item_gobj == item_gobj)
+        {
+            return &sITRemixBasketballSlots[i].vars;
+        }
+    }
+    slot = &sITRemixBasketballSlots[sITRemixBasketballNextSlot];
+    sITRemixBasketballNextSlot = (sITRemixBasketballNextSlot + 1) % ITREMIX_BASKETBALL_SLOTS;
+    slot->item_gobj = item_gobj;
+    bzero(&slot->vars, sizeof(slot->vars));
+
+    return &slot->vars;
 }
 
 /**
@@ -320,7 +349,7 @@ static void itRemixBasketballSetAerial(GObj *item_gobj)
  */
 static void itRemixBasketballSetupImage(GObj *item_gobj)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     s32 image_index = ITREMIX_BASKETBALL_IMAGE_BASKETBALL;
 
     if (vars->is_soccer)
@@ -336,7 +365,7 @@ static void itRemixBasketballSetupImage(GObj *item_gobj)
  */
 static void itRemixBasketballSetupVars(GObj *item_gobj)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
 
     vars->is_scored = FALSE;
@@ -428,7 +457,7 @@ GObj* itRemixBasketballMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 f
  */
 static void itRemixBasketballRestoreBounce(GObj *item_gobj)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
 
     vars->is_bounce_scaled = FALSE;
@@ -454,7 +483,7 @@ static void itRemixBasketballRestoreBounce(GObj *item_gobj)
 void itRemixBasketballApplyBounce(GObj *item_gobj, Vec3f *angle, f32 x_scale, f32 y_scale, f32 x_offset, f32 y_offset)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
     f32 speed = itRemixBasketballGetSpeed(ip);
 
@@ -494,7 +523,7 @@ sb32 itRemixBasketballIsFire(GObj *item_gobj)
     {
         return FALSE;
     }
-    return itRemixBasketballGetVars()->is_fire;
+    return itRemixBasketballGetVars(item_gobj)->is_fire;
 }
 
 /**
@@ -512,7 +541,7 @@ sb32 itRemixBasketballIsBounceScaled(GObj *item_gobj)
     {
         return FALSE;
     }
-    return itRemixBasketballGetVars()->is_bounce_scaled;
+    return itRemixBasketballGetVars(item_gobj)->is_bounce_scaled;
 }
 
 /**
@@ -523,7 +552,7 @@ sb32 itRemixBasketballIsBounceScaled(GObj *item_gobj)
 static void itRemixBasketballFireBegin(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_FIRE_START);
     func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_FIRE_START_2);
@@ -540,7 +569,7 @@ static void itRemixBasketballFireBegin(GObj *item_gobj)
 static void itRemixBasketballFireEndState(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_FIRE_END);
     vars->gfx_timer = ITREMIX_BASKETBALL_FIRE_END_GFX_TIMER;
@@ -556,7 +585,7 @@ static void itRemixBasketballFireEndState(GObj *item_gobj)
  */
 static void itRemixBasketballSmokeGfxStep(GObj *item_gobj)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     s32 gfx_timer = vars->gfx_timer;
 
     (void) item_gobj;
@@ -575,7 +604,7 @@ static void itRemixBasketballSmokeGfxStep(GObj *item_gobj)
 static void itRemixBasketballFireGfxStep(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     s32 gfx_timer = vars->gfx_timer;
     s32 lr = (ip->physics.vel_air.x < 0.0F) ? 1 : -1;
 
@@ -594,7 +623,7 @@ static void itRemixBasketballFireGfxStep(GObj *item_gobj)
 static void itRemixBasketballFireStateManager(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     f32 speed = itRemixBasketballGetSpeed(ip);
 
     if (vars->cooldown_timer != 0)
@@ -644,7 +673,7 @@ static void itRemixBasketballAdjustHitbox(GObj *item_gobj)
 static void itRemixBasketballAnimateImage(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     MObj *mobj = DObjGetStruct(item_gobj)->mobj;
     s32 offset = vars->is_soccer ? ITREMIX_BASKETBALL_IMAGE_SOCCER_OFFSET : 0;
     s32 image_index = mobj->texture_id_curr - offset;
@@ -669,7 +698,7 @@ static void itRemixBasketballAnimateImage(GObj *item_gobj)
 static void itRemixBasketballUpdateAnimation(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     s32 frames = (s32) (itRemixBasketballGetSpeed(ip) / ITREMIX_BASKETBALL_ANIM_SPEED_DIVISOR) + 1;
 
     vars->anim_timer -= frames;
@@ -688,7 +717,7 @@ static void itRemixBasketballUpdateAnimation(GObj *item_gobj)
 static void itRemixBasketballUpdateGroundedMovement(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     ip->physics.vel_air.y = 0.0F;
     ip->physics.vel_air.x *= ITREMIX_BASKETBALL_GROUND_FRICTION;
@@ -723,7 +752,7 @@ static void itRemixBasketballUpdateAerialMovement(GObj *item_gobj)
 static void itRemixBasketballUpdateHitboxRefresh(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     s32 i;
 
     itRemixBasketballDecayTimer(&vars->hitbox_refresh_timer);
@@ -745,7 +774,7 @@ static void itRemixBasketballUpdateHitboxRefresh(GObj *item_gobj)
 static void itRemixBasketballUpdateTimers(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     itRemixBasketballDecayTimer(&vars->owner_damage_timer);
     itRemixBasketballDecayTimer(&vars->state_timer);
@@ -769,7 +798,7 @@ static void itRemixBasketballUpdateTimers(GObj *item_gobj)
 static void itRemixBasketballUpdateInvincibility(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     if (ip->damage_coll.hitstatus != nGMHitStatusNone)
     {
@@ -794,7 +823,7 @@ static void itRemixBasketballUpdateInvincibility(GObj *item_gobj)
 static void itRemixBasketballCheckFall(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
     f32 side = (joint->translate.vec.f.x < 0.0F) ? -1.0F : 1.0F;
 
@@ -817,7 +846,7 @@ static void itRemixBasketballCheckFall(GObj *item_gobj)
 static void itRemixBasketballCheckScored(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     if (!vars->is_scored)
     {
@@ -841,7 +870,7 @@ static void itRemixBasketballCheckScored(GObj *item_gobj)
 static sb32 itRemixBasketballMainProcUpdate(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
 
     if (vars->is_bounce_scaled)
@@ -911,7 +940,7 @@ static sb32 itRemixBasketballDetectCollision(MPCollData *coll_data, GObj *item_g
 static sb32 itRemixBasketballMainProcMap(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     f32 bounce = vars->is_fire ? ITREMIX_BASKETBALL_FIRE_BOUNCE : ITREMIX_BASKETBALL_BOUNCE;
     sb32 is_collided;
 
@@ -948,7 +977,7 @@ static sb32 itRemixBasketballMainProcMap(GObj *item_gobj)
 static sb32 itRemixBasketballCollide(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     ip->physics.vel_air.x *= ITREMIX_BASKETBALL_HIT_MULTIPLIER;
     ip->physics.vel_air.y *= ITREMIX_BASKETBALL_HIT_MULTIPLIER;
@@ -997,7 +1026,7 @@ static void itRemixBasketballSetHitOwner(GObj *item_gobj)
  */
 static void itRemixBasketballAddHitPercent(ITStruct *ip)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(ip->item_gobj);
     s32 percent_total = vars->percent + ip->damage_queue;
 
     vars->percent = (percent_total < ITREMIX_BASKETBALL_PERCENT_MAX + 1) ? percent_total : ITREMIX_BASKETBALL_PERCENT_MAX;
@@ -1011,7 +1040,7 @@ static void itRemixBasketballAddHitPercent(ITStruct *ip)
  */
 static f32 itRemixBasketballGetHitKnockback(ITStruct *ip)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(ip->item_gobj);
     f32 damage = (f32) ip->damage_queue;
     f32 percent = (f32) vars->percent;
     f32 knockback = (ITREMIX_BASKETBALL_PERCENT_SCALE_A * percent) + (ITREMIX_BASKETBALL_PERCENT_SCALE_B * (percent * damage));
@@ -1035,7 +1064,7 @@ static f32 itRemixBasketballGetHitKnockback(ITStruct *ip)
 static void itRemixBasketballLaunch(GObj *item_gobj, f32 knockback)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     f32 angle = ftCommonDamageGetKnockbackAngle(ip->damage_angle, ip->ga, knockback);
     f32 vel_x = knockback * cosf(angle);
     f32 vel_y = knockback * sinf(angle);
@@ -1054,7 +1083,7 @@ static void itRemixBasketballLaunch(GObj *item_gobj, f32 knockback)
  */
 static void itRemixBasketballSetScoreable(GObj *item_gobj)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     (void) item_gobj;
     if (itRemixBasketballIsSoccer())
@@ -1072,7 +1101,7 @@ static void itRemixBasketballSetScoreable(GObj *item_gobj)
 static sb32 itRemixBasketballCollideHitbox(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     f32 knockback;
 
     itRemixBasketballSetAerial(item_gobj);
@@ -1096,7 +1125,7 @@ static sb32 itRemixBasketballCollideHitbox(GObj *item_gobj)
 static void itRemixBasketballBarrelShoot(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     grJungleTaruCannAddAnimShoot(vars->barrel_gobj);
     ip->attack_coll.attack_state = nGMAttackStateNew;
@@ -1113,7 +1142,7 @@ static void itRemixBasketballBarrelShoot(GObj *item_gobj)
 static void itRemixBasketballBarrelSetup(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
     DObj *barrel_joint = DObjGetStruct(vars->barrel_gobj);
 
@@ -1132,7 +1161,7 @@ static void itRemixBasketballBarrelSetup(GObj *item_gobj)
  */
 static sb32 itRemixBasketballBarrelProcUpdate(GObj *item_gobj)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     s32 timer = vars->state_timer;
 
     vars->state_timer += 1;
@@ -1163,7 +1192,7 @@ static sb32 itRemixBasketballBarrelProcUpdate(GObj *item_gobj)
  */
 static sb32 itRemixBasketballRespawnProcUpdate(GObj *item_gobj)
 {
-    ITRemixBasketballVars *vars = itRemixBasketballGetVars();
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     ITStruct *ip = itGetStruct(item_gobj);
     s32 timer = vars->state_timer;
 

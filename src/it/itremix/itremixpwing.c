@@ -87,7 +87,7 @@ static ITDesc sITRemixPwingItemInfo =
     ITREMIX_PWING_FILE_OFFSET,
 
     {
-        nGCMatrixKindTraRotRpyR,
+        nGCMatrixKindTraRotRpyRSca,         /* item_info_array 0x0C = 0x1C000000 */
         nGCMatrixKindNull,
         0
     },

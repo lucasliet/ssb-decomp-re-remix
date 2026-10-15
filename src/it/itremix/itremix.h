@@ -36,6 +36,12 @@ typedef struct ITRemixItemDesc
 extern const ITRemixItemDesc *const dITRemixItemDescs[];
 extern const s32 dITRemixItemDescsNum;
 
+/**
+ * Logs one Remix item event ("spawn", "hold", "consume", "touch", "drop", "throw") with the item kind to the port log
+ * when SSB64_REMIX_ITEM_LOG is set; item tests read it to confirm a pickup or an effect.
+ */
+void itRemixLogEvent(const char *event, s32 kind);
+
 /** TRUE when `kind` is a Remix custom item id. */
 sb32 itRemixIsCustomKind(s32 kind);
 

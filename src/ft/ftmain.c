@@ -2776,6 +2776,7 @@ void ftMainUpdateDamageStatItem(ITStruct *ip, ITAttackColl *it_attack_coll, s32 
                 if ((desc != NULL) && (desc->proc_touch != NULL))
                 {
                     ip->hit_normal_damage = 1;
+                    itRemixLogEvent("touch", ip->kind);
                     desc->proc_touch(fp, ip, item_gobj);
                 }
             }

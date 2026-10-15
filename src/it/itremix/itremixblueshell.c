@@ -166,7 +166,7 @@ static ITDesc sITRemixBlueShellItemInfo =
     ITREMIX_BLUESHELL_FILE_OFFSET,          /* item footer offset */
 
     {
-        nGCMatrixKindTraRotRpyR,
+        nGCMatrixKindNull,                  /* item_info_array 0x0C = 0: the spawn adds the red shell XObjs itself */
         nGCMatrixKindNull,
         0
     },

@@ -130,6 +130,7 @@ void ftCommonLightGetProcDamage(GObj *fighter_gobj)
 
                     if ((desc != NULL) && (desc->proc_consume != NULL))
                     {
+                        itRemixLogEvent("consume", ip->kind);
                         desc->proc_consume(fp, item_gobj);
                     }
                 }

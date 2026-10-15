@@ -582,6 +582,12 @@ void itManagerAppearActorProcUpdate(GObj *item_gobj)
             kind = itMainGetWeightedItemKind(&gITManagerAppearActor.weights);
 
             mpCollisionGetMapObjPositionID(gITManagerAppearActor.mapobjs[syUtilsRandIntRange(gITManagerAppearActor.mapobjs_num)], &pos);
+#ifdef REGION_REMIX
+            if ((remix_debug_force_item_at_p1() != 0) && (gSCManagerBattleState->players[0].fighter_gobj != NULL))
+            {
+                pos = DObjGetStruct(gSCManagerBattleState->players[0].fighter_gobj)->translate.vec.f;
+            }
+#endif
 
             vel.x = vel.y = vel.z = 0.0F;
 

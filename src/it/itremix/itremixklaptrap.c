@@ -59,8 +59,8 @@ static ITDesc sITRemixKlapTrapDesc =
     &sITRemixKlapTrapStageFile,
     ITREMIX_KLAPTRAP_FILE_OFFSET,
     {
-        nGCMatrixKindTraRotRpyR, /* REMIX-TODO(verify): asm word 0x0C = 0x12300000 is not mapped to a transform kind */
-        nGCMatrixKindNull,
+        nGCMatrixKindTra,                   /* item_info_array 0x0C = 0x12300000: Tra, secondary 0x30 */
+        0x30,
         0
     },
     nGMAttackStateOff,

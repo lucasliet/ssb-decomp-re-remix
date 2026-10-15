@@ -2,6 +2,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "it/itremix/itremixgoldengun.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -350,7 +353,13 @@ sb32 itLGunWeaponAmmoProcReflector(GObj *weapon_gobj)
 // 0x80175A60
 GObj* itLGunWeaponAmmoMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
 {
+#ifdef REGION_REMIX
+    /* GoldenGun.asm projectile_struct_fix (0x80175A6C) and projectile_properties_fix (0x80175A8C) */
+    sb32 is_golden = itRemixGoldenGunIsHeldBy(fighter_gobj);
+    GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, (is_golden != FALSE) ? itRemixGoldenGunGetBulletDesc() : &dITLGunAmmoWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dITLGunAmmoWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     WPStruct *wp;
 
     if (weapon_gobj == NULL)
@@ -358,6 +367,12 @@ GObj* itLGunWeaponAmmoMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
         return NULL;
     }
     wp = wpGetStruct(weapon_gobj);
+#ifdef REGION_REMIX
+    if (is_golden != FALSE)
+    {
+        itRemixGoldenGunSetupBullet(weapon_gobj);
+    }
+#endif
 
     wp->physics.vel_air.x = wp->lr * ITLGUN_AMMO_VEL_X;
 

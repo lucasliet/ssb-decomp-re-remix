@@ -37,6 +37,12 @@ void itRemixSuperMushroomProcTouch(FTStruct *fp, ITStruct *ip, GObj *item_gobj);
  * the scene-change hook (see notes, Vanilla patches). */
 void itRemixSuperMushroomClearStates(void);
 
+/* TRUE while a mushroom effect of either kind runs on the player (asm player_shrooms[port] != 0). */
+sb32 itRemixSuperMushroomIsActive(s32 player);
+
+/* Destroys the player's mushroom effect routine without restoring its size (Lightning _zap_player). */
+void itRemixSuperMushroomDestroyForPlayer(s32 player);
+
 extern const ITRemixItemDesc dITRemixSuperMushroomItemDesc;
 
 #endif
