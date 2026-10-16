@@ -4,6 +4,7 @@
 #include <sc/scene.h>
 #include <reloc_data.h>
 #ifdef REGION_REMIX
+#include "gr/grremix/grremixdreamland.h"
 #include "gr/grremix/grremixgating.h"
 #include "gr/grremix/grremixids.h"
 #include "remix/remix_ram_image.h"
@@ -223,7 +224,11 @@ void grPupupuWhispySetWindPush(void)
             {
                 dist_x = ((pos_x < GRPUPUPU_WHISPY_POS_X) ? -(pos_x - GRPUPUPU_WHISPY_POS_X) : (pos_x - GRPUPUPU_WHISPY_POS_X));
 
+#ifdef REGION_REMIX
+                push.x = grRemixDreamLandWindSpeedMax() - (dist_x * grRemixDreamLandWindDistDecay());
+#else
                 push.x = GRPUPUPU_WHISPY_WIND_VEL_BASE - (dist_x * GRPUPUPU_WHISPY_WIND_DIST_DECAY);
+#endif
 
                 if (push.x > 0.0F)
                 {
@@ -382,6 +387,9 @@ void grPupupuWhispyUpdateStop(void)
     if (gGRCommonStruct.pupupu.map_gobj[1]->anim_frame <= 0.0F)
     {
         gGRCommonStruct.pupupu.whispy_wind_wait = syUtilsRandIntRange(GRPUPUPU_WHISPY_WAIT_DURATION_RANDOM) + GRPUPUPU_WHISPY_WAIT_DURATION_BASE;
+#ifdef REGION_REMIX
+        gGRCommonStruct.pupupu.whispy_wind_wait = grRemixDreamLandWhispyStopWait(gGRCommonStruct.pupupu.whispy_wind_wait);
+#endif
         gGRCommonStruct.pupupu.whispy_status = nGRPupupuWhispyWindStatusWait;
     }
 }
@@ -776,6 +784,9 @@ void grPupupuInitAll(void)
     gGRCommonStruct.pupupu.lr_players           = 1;
 
     gGRCommonStruct.pupupu.whispy_wind_wait     = syUtilsRandIntRange(GRPUPUPU_WHISPY_WAIT_DURATION_RANDOM) + GRPUPUPU_WHISPY_WAIT_DURATION_BASE;
+#ifdef REGION_REMIX
+    gGRCommonStruct.pupupu.whispy_wind_wait     = grRemixDreamLandWhispyInitialWait(gGRCommonStruct.pupupu.whispy_wind_wait);
+#endif
     gGRCommonStruct.pupupu.whispy_blink_wait    = syUtilsRandIntRange(GRPUPUPU_WHISPY_BLINK_WAIT_RANDOM)    + GRPUPUPU_WHISPY_BLINK_WAIT_BASE;
 
     gGRCommonStruct.pupupu.flowers_back_status  =

@@ -19,6 +19,7 @@
 #define GRREMIX_PIRATE_CANNON_HEADER_HITBOX_FILE 0x00AC /* map header pointer to the cannonball hitbox file */
 #define GRREMIX_PIRATE_CANNON_HITBOX_TRACKS 0x0008 /* hitbox file word holding the animation track table pointer */
 #define GRREMIX_PIRATE_CANNON_JOINT_DESC 0x07A8 /* cannon file offset of the joint descriptors (hard coded in the asm) */
+#define GRREMIX_PIRATE_CANNON_MODEL 0x0970 /* cannon file offset of the model and textures (asm 0x8000F8F4, gcAddMObjAll) */
 #define GRREMIX_PIRATE_CANNON_ANIM_JOINTS 0x0BB4 /* cannon file offset of the joint animation tracks */
 #define GRREMIX_PIRATE_CANNON_ANIM_MATERIALS 0x0BF0 /* cannon file offset of the material animation tracks */
 #define GRREMIX_PIRATE_CANNON_WATER_Y -600.0F
@@ -295,9 +296,9 @@ static void grRemixPirateCannonMakeObject(void *cannon_file)
 
     cannon_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(cannon_gobj, grDisplayLayer0PriProcDisplay, 4, GOBJ_PRIORITY_DEFAULT, ~0);
-    /* REMIX-TODO(cannon model): the asm also sets up the model and textures at cannon file 0x0970 (gcSetupCustomDObjsWithMObj). */
     grModelSetupGroundDObjs(cannon_gobj, (DObjDesc*)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_JOINT_DESC),
                             NULL, sGRRemixPirateCannonTransformKinds);
+    gcAddMObjAll(cannon_gobj, (MObjSub***)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_MODEL));
     gcAddAnimAll(cannon_gobj, (AObjEvent32**)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_ANIM_JOINTS),
                  (AObjEvent32***)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_ANIM_MATERIALS), 0.0F);
     gcAddGObjProcess(cannon_gobj, gcPlayAnimAll, nGCProcessKindFunc, 5);
@@ -311,7 +312,6 @@ static void grRemixPirateCannonMakeObject(void *cannon_file)
 
 /**
  * Creates the Pirate Land cannon and the water. Runs only when hazards are on (asm: Toggles.entry_hazard_mode).
- * REMIX-TODO(match-state): the asm also skips the cannon during training mode and before the timer starts.
  */
 void grRemixPirateMakeGround(void)
 {

@@ -26,6 +26,9 @@ _Static_assert(sizeof(ITRemixCacodemonVars) <= sizeof(((ITStruct *) 0)->item_var
 /** Sets the Cacodemon file top: the base its item attributes and display lists are read from. */
 void itRemixCacodemonSetFileTop(void *file_top);
 
+/** Starts the joint and material animation tracks of a freshly spawned Cacodemon (asm 0x8000BD1C and 0x8000BD54). */
+void itRemixCacodemonStartAnimation(GObj *item_gobj);
+
 /** SPAWN_ITEM of the Cacodemon (cacodemon_stage_setting_). */
 GObj* itRemixCacodemonMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags);
 

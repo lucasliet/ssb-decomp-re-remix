@@ -16,6 +16,7 @@ extern void port_dump_backtrace(void);
 #include "it/itremix/itremixbasketball.h"
 #include "it/itremix/itremixfranklinbadge.h"
 #include "it/itremix/itremixstopwatch.h"
+#include "gr/grremix/grremixbowserbombs.h"
 #endif
 #include <sys/controller.h>
 
@@ -2832,6 +2833,9 @@ void ftMainUpdateDamageStatItem(ITStruct *ip, ITAttackColl *it_attack_coll, s32 
 
                 sFTMainHitLogID++;
             }
+#ifdef REGION_REMIX
+            grRemixBowserBombsTrackHitObject(fp->player, item_gobj);
+#endif
             ftParamUpdatePlayerBattleStats(ip->player, fp->player, damage);
             ftParamUpdateStaleQueue(ip->player, fp->player, it_attack_coll->motion_attack_id, it_attack_coll->motion_count);
         }

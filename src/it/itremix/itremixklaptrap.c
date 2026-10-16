@@ -9,10 +9,12 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixklaptrap.h"
+#include "gr/grremix/grremixhazards.h"
 #include "it/itmain.h"
 #include "it/itmanager.h"
 #include "it/itground/itpakkun.h"
 #include "sys/obj.h"
+#include "sys/objanim.h"
 #include "sys/utils.h"
 
 #define ITREMIX_KLAPTRAP_FILE_OFFSET 0xE0 /* asm FILE_OFFSET: item footer in the Japes stage file */
@@ -26,6 +28,9 @@
 #define ITREMIX_KLAPTRAP_HITBOX_FGM 0x105 /* asm heavy slash sound */
 #define ITREMIX_KLAPTRAP_HITBOX_KNOCKBACK 0x100 /* asm bkb and kbs */
 #define ITREMIX_KLAPTRAP_ATTACK_STATE_FRESH 1 /* ITAttackColl.attack_state: fresh hitbox */
+#define ITREMIX_KLAPTRAP_ANIM_JOINT_OFFSET 0x0908 /* asm animation track 1, relative to the Japes file */
+#define ITREMIX_KLAPTRAP_ANIM_MATERIAL_OFFSET 0x0E20 /* asm animation track 2 (materials) */
+#define ITREMIX_KLAPTRAP_CAMERA_TAG_HIDDEN 0 /* asm GObj 0x38: no camera tag matches, nothing is drawn */
 
 typedef struct ITRemixKlapTrapVars
 {
@@ -44,8 +49,11 @@ _Static_assert(sizeof(ITRemixKlapTrapVars) <= sizeof(((ITStruct*)0)->item_vars),
 
 static void *sITRemixKlapTrapStageFile;
 static ITRemixKlapTrapRespawnState sITRemixKlapTrapRespawn;
+static u32 sITRemixKlapTrapVisibleCameraTag;
 
 static sb32 itRemixKlapTrapProcUpdate(GObj *item_gobj);
+static void itRemixKlapTrapStartAnimation(GObj *item_gobj);
+static void itRemixKlapTrapSetVisible(GObj *item_gobj, sb32 is_visible);
 static ITRemixKlapTrapVars* itRemixKlapTrapGetVars(ITStruct *ip);
 static void itRemixKlapTrapArmHitbox(GObj *item_gobj);
 static sb32 itRemixKlapTrapShouldSpawn(s32 timer_before);
@@ -77,7 +85,6 @@ static ITDesc sITRemixKlapTrapDesc =
 /**
  * KlapTrap main (asm klaptrap_main_): re-arms the hitbox after a spawn, then counts
  * frames and rolls for a respawn once the wait has passed.
- * REMIX-TODO(vanilla 0x8000BD1C, 0x8000BD54): the two animation track setups on spawn are not ported.
  */
 static sb32 itRemixKlapTrapProcUpdate(GObj *item_gobj)
 {
@@ -97,7 +104,28 @@ static sb32 itRemixKlapTrapProcUpdate(GObj *item_gobj)
 
     sITRemixKlapTrapRespawn.timer = 0;
     sITRemixKlapTrapRespawn.is_hitbox_armed = TRUE;
+    itRemixLogEvent("klaptrap-spawn", ITREMIX_KLAPTRAP_ID);
+    itRemixKlapTrapStartAnimation(item_gobj);
     return FALSE;
+}
+
+/** Restarts the joint and material animation tracks of the KlapTrap (asm 0x8000BD1C and 0x8000BD54). */
+static void itRemixKlapTrapStartAnimation(GObj *item_gobj)
+{
+    DObj *dobj = DObjGetStruct(item_gobj);
+    u8 *file = (u8*) grRemixHazardsItemFileTop(sITRemixKlapTrapStageFile);
+
+    gcAddDObjAnimJoint(dobj, (AObjEvent32*) (file + ITREMIX_KLAPTRAP_ANIM_JOINT_OFFSET), 0.0F);
+    if (dobj->mobj != NULL)
+    {
+        gcAddMObjMatAnimJoint(dobj->mobj, (AObjEvent32*) (file + ITREMIX_KLAPTRAP_ANIM_MATERIAL_OFFSET), 0.0F);
+    }
+}
+
+/** Shows or hides the item by the GObj camera tag (asm word 0x38 of the object). */
+static void itRemixKlapTrapSetVisible(GObj *item_gobj, sb32 is_visible)
+{
+    item_gobj->camera_tag = (is_visible != FALSE) ? sITRemixKlapTrapVisibleCameraTag : ITREMIX_KLAPTRAP_CAMERA_TAG_HIDDEN;
 }
 
 /** Roll of the respawn: a hit on the 1-in-160 roll, or the forced spawn once the timer reaches 600. */
@@ -124,7 +152,7 @@ static void itRemixKlapTrapArmHitbox(GObj *item_gobj)
     sITRemixKlapTrapRespawn.is_hitbox_armed = FALSE;
     ip = itGetStruct(item_gobj);
     ip->attack_coll.attack_state = ITREMIX_KLAPTRAP_ATTACK_STATE_FRESH;
-    /* REMIX-TODO(GObj 0x38 visibility): asm 'sw at, 0x0038(s0)' makes the item visible again */
+    itRemixKlapTrapSetVisible(item_gobj, TRUE);
 }
 
 /** Returns the KlapTrap vars stored in the item's special union (asm item_vars at 0x350). */
@@ -188,7 +216,8 @@ GObj* itRemixKlapTrapMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fla
     ip = itGetStruct(item_gobj);
     joint = DObjGetStruct(item_gobj);
 
-    /* REMIX-TODO(GObj 0x38 hidden at spawn): asm 'sw r0, 0x0038(v0)' */
+    sITRemixKlapTrapVisibleCameraTag = item_gobj->camera_tag;
+    itRemixKlapTrapSetVisible(item_gobj, FALSE);
     /* REMIX-TODO(ITStruct 0x33E, 0x158 bit 0x10, 0x2D3 bit 0x08): raw flags of the Remix item, fields not named yet */
     /* REMIX-TODO(ITStruct 0x398 blast zone slot): asm stores itRemixKlapTrapBlastZone here, not wired */
     itRemixKlapTrapSetupVars(ip, pos);

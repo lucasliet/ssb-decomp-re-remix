@@ -8,6 +8,7 @@
 #include <port_log.h>
 #include <it/itmain.h>
 #include <sc/scene.h>
+#include <sc/scmanager.h>
 #include <stdlib.h>
 
 #define ITREMIX_KIND_MAX 0x100
@@ -26,7 +27,7 @@ void itRemixLogEvent(const char *event, s32 kind)
     }
     if (is_enabled != 0)
     {
-        port_log("[remix-item] %s kind=0x%X\n", event, kind);
+        port_log("[remix-item] %s kind=0x%X t=%u\n", event, kind, (u32)gSCManagerBattleState->time_passed);
     }
 }
 

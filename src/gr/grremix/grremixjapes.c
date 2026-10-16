@@ -31,7 +31,6 @@ static sb32 sGRRemixJapesUnderWater[GRREMIX_JAPES_PLAYERS_NUM];
 
 static void grRemixJapesRushingWaterProcUpdate(GObj *water_gobj);
 static void grRemixJapesRushingWaterCheckFighter(GObj *fighter_gobj);
-static sb32 grRemixJapesCanPlaySplash(void);
 static f32 grRemixJapesWaterPull(f32 pos_x);
 
 /**
@@ -54,7 +53,6 @@ void grRemixJapesMakeGround(void)
     gcAddGObjProcess(water_gobj, grRemixJapesRushingWaterProcUpdate, nGCProcessKindFunc, 4);
 
     itRemixKlapTrapSetStageFile((void*) ((uintptr_t) gMPCollisionGroundData - GRREMIX_JAPES_STAGE_HEADER_OFFSET));
-    /* REMIX-TODO(verify stage header base): asm loads the header from 0x80131300 - 0x14; unverified on the map data layout */
     /* asm passes the object id 0x3F5 as the parent of the KlapTrap; it has no owner, so NULL is passed */
     itManagerMakeItemSetupCommon(NULL, ITREMIX_KLAPTRAP_ID, &pos, &vel, TRUE);
 }
@@ -89,7 +87,7 @@ static void grRemixJapesRushingWaterCheckFighter(GObj *fighter_gobj)
     if (!*is_under_water)
     {
         *is_under_water = TRUE;
-        if (grRemixJapesCanPlaySplash())
+        if (grRemixHazardsMatchHasStarted())
         {
             func_800269C0_275C0(GRREMIX_JAPES_SPLASH_FGM);
         }
@@ -103,16 +101,6 @@ static void grRemixJapesRushingWaterCheckFighter(GObj *fighter_gobj)
         return;
     }
     pos->x -= grRemixJapesWaterPull(pos->x);
-}
-
-/** The splash plays in training mode, or in a match once the match clock has started (asm intro check). */
-static sb32 grRemixJapesCanPlaySplash(void)
-{
-    if (gSCManagerSceneData.scene_curr == nSCKind1PTrainingMode)
-    {
-        return TRUE;
-    }
-    return gSCManagerBattleState->time_passed != 0;
 }
 
 /** Leftward push of the current, speed minus a term proportional to the distance from the base. */

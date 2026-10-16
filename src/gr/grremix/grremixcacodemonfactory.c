@@ -14,12 +14,14 @@
 #include <sys/obj.h>
 #include <sys/utils.h>
 #include "gr/grremix/grremixcacodemonfactory.h"
+#include "it/itremix/itremix.h"
 #include "it/itremix/itremixcacodemon.h"
 
 #define GRREMIX_CACODEMON_START_FRAME 1500 /* asm 0x05DC: no spawn roll before this match frame */
 #define GRREMIX_CACODEMON_ROLL_RANGE 1500 /* asm: random integer in [0, 1500) per frame */
 #define GRREMIX_CACODEMON_ROLL_HIT 80 /* asm 0x50: the roll value that spawns a Cacodemon */
 #define GRREMIX_CACODEMON_FORCE_FRAME 3000 /* asm 0x0BB8: the Cacodemon always spawns on this frame */
+#define GRREMIX_CACODEMON_DIRECTION_RANGE 2 /* asm draws the direction twice and keeps the second draw */
 
 typedef struct GRRemixCacodemonFactoryVars
 {
@@ -56,6 +58,7 @@ static void grRemixCacodemonFactorySpawn(void)
 {
     Vec3f pos = { 0.0F, 0.0F, 0.0F };
     Vec3f vel = { 0.0F, 0.0F, 0.0F };
+    GObj *cacodemon_gobj;
 
     if (sGRRemixCacodemonFactory.is_spawn_prevented)
     {
@@ -63,9 +66,14 @@ static void grRemixCacodemonFactorySpawn(void)
     }
     sGRRemixCacodemonFactory.timer = 0;
     sGRRemixCacodemonFactory.is_spawn_prevented = TRUE;
-    itManagerMakeItemSetupCommon(NULL, ITREMIX_CACODEMON_KIND, &pos, &vel, ITEM_FLAG_PARENT_GROUND);
-    /* REMIX-TODO(anim): asm sets up the two Cacodemon animation tracks for the direction (0x8000BD1C, 0x8000BD54). */
-    sGRRemixCacodemonFactory.timer = syUtilsRandIntRange(2);
+    cacodemon_gobj = itManagerMakeItemSetupCommon(NULL, ITREMIX_CACODEMON_KIND, &pos, &vel, ITEM_FLAG_PARENT_GROUND);
+    syUtilsRandIntRange(GRREMIX_CACODEMON_DIRECTION_RANGE);
+    sGRRemixCacodemonFactory.timer = syUtilsRandIntRange(GRREMIX_CACODEMON_DIRECTION_RANGE);
+    if (cacodemon_gobj != NULL)
+    {
+        itRemixLogEvent("cacodemon-spawn", ITREMIX_CACODEMON_KIND);
+        itRemixCacodemonStartAnimation(cacodemon_gobj);
+    }
 }
 
 /** cacodemon_factory_ (process): counts the match frames and spawns a Cacodemon on a roll or the forced frame. */

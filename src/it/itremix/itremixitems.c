@@ -10,6 +10,7 @@
 extern const ITRemixItemDesc dITRemixBasketballItemDesc;
 extern const ITRemixItemDesc dITRemixBlueShellItemDesc;
 extern const ITRemixItemDesc dITRemixBoomerangItemDesc;
+extern const ITRemixItemDesc dITRemixBulletBillItemDesc;
 extern const ITRemixItemDesc dITRemixCacodemonItemDesc;
 extern const ITRemixItemDesc dITRemixCarItemDesc;
 extern const ITRemixItemDesc dITRemixClanBombItemDesc;
@@ -30,6 +31,7 @@ extern const ITRemixItemDesc dITRemixPoisonMushroomItemDesc;
 extern const ITRemixItemDesc dITRemixPsyduckItemDesc;
 extern const ITRemixItemDesc dITRemixPwingItemDesc;
 extern const ITRemixItemDesc dITRemixRobotBeeItemDesc;
+extern const ITRemixItemDesc dITRemixScuttleMinionItemDesc;
 extern const ITRemixItemDesc dITRemixShurikenItemDesc;
 extern const ITRemixItemDesc dITRemixStopwatchItemDesc;
 extern const ITRemixItemDesc dITRemixSuperMushroomItemDesc;
@@ -42,6 +44,7 @@ const ITRemixItemDesc *const dITRemixItemDescs[] =
     &dITRemixBasketballItemDesc,
     &dITRemixBlueShellItemDesc,
     &dITRemixBoomerangItemDesc,
+    &dITRemixBulletBillItemDesc,
     &dITRemixCacodemonItemDesc,
     &dITRemixCarItemDesc,
     &dITRemixClanBombItemDesc,
@@ -62,6 +65,7 @@ const ITRemixItemDesc *const dITRemixItemDescs[] =
     &dITRemixPsyduckItemDesc,
     &dITRemixPwingItemDesc,
     &dITRemixRobotBeeItemDesc,
+    &dITRemixScuttleMinionItemDesc,
     &dITRemixShurikenItemDesc,
     &dITRemixStopwatchItemDesc,
     &dITRemixSuperMushroomItemDesc,

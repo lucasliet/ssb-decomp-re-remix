@@ -2,6 +2,7 @@
 #include <ft/fighter.h>
 #include <gr/ground.h>
 #include <reloc_data.h>
+#include "gr/grremix/grremixhardcoding.h"
 
 // // // // // // // // // // // //
 //                               //
@@ -180,8 +181,8 @@ sb32 itPakkunWaitProcUpdate(GObj *item_gobj)
             DObj *dobj = DObjGetStruct(item_gobj);
 
 #ifdef PORT
-            gcAddDObjAnimJoint(dobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, llGRInishieMapPakkunAppearAnimJoint), 0.0F);
-            gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, llGRInishieMapPakkunAppearMatAnimJoint), 0.0F);
+            gcAddDObjAnimJoint(dobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, GRREMIX_MK_OFFSET(llGRInishieMapPakkunAppearAnimJoint, 0xBC8)), 0.0F);
+            gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, GRREMIX_MK_OFFSET(llGRInishieMapPakkunAppearMatAnimJoint, 0xBEC)), 0.0F);
 #else
             gcAddDObjAnimJoint(dobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, &llGRInishieMapPakkunAppearAnimJoint), 0.0F);
             gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, &llGRInishieMapPakkunAppearMatAnimJoint), 0.0F);
@@ -291,7 +292,7 @@ sb32 itPakkunAppearProcDamage(GObj *item_gobj)
         dobj->anim_wait = AOBJ_ANIM_NULL;
 
 #ifdef PORT
-        gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, llGRInishieMapPakkunDamagedMatAnimJoint), 0.0F);
+        gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, GRREMIX_MK_OFFSET(llGRInishieMapPakkunDamagedMatAnimJoint, 0xCE4)), 0.0F);
 #else
         gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, gGRCommonStruct.inishie.map_head, &llGRInishieMapPakkunDamagedMatAnimJoint), 0.0F);
 #endif

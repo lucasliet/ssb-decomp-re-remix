@@ -5,10 +5,12 @@
 #ifdef PORT
 
 #include "grremixwater.h"
+#include "grremixhazards.h"
 #include <gr/ground.h>
 #include <ft/fighter.h>
 #include <ef/efmanager.h>
 #include "remix/remix_roster_data.h"
+#include <port_log.h>
 
 #define GRREMIX_WATER_PORTS_NUM 4
 #define GRREMIX_WATER_SPLASH_FGM 0x3D1
@@ -45,6 +47,7 @@ static void grRemixWaterMakeSplash(f32 pos_x)
     efManagerDamageSpawnSparksMakeEffect(&splash_pos, 1);
     efManagerDamageSpawnSparksMakeEffect(&splash_pos, -1);
     func_800269C0_275C0(GRREMIX_WATER_SPLASH_FGM);
+    port_log("[remix-stage] water splash x=%.0f y=%.0f\n", splash_pos.x, splash_pos.y);
 }
 
 /**
@@ -93,6 +96,10 @@ static void grRemixWaterUpdateFighter(GObj *fighter_gobj)
     {
         return;
     }
+    if (!grRemixHazardsMatchHasStarted())
+    {
+        return;
+    }
 
     pos = fp->coll_data.p_translate;
     if (pos->y > sGRRemixWaterY)
@@ -110,9 +117,6 @@ static void grRemixWaterUpdateFighter(GObj *fighter_gobj)
 
 /**
  * Process of the water object, one call per frame.
- * REMIX-TODO(match-state): the asm skips every fighter in training mode and before the
- * match timer starts (Global.current_screen, Global.match_info). Those globals have no
- * named port accessor yet, so the water also acts during the intro.
  */
 static void grRemixWaterProcUpdate(GObj *water_gobj)
 {

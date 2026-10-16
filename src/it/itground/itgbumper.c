@@ -2,6 +2,9 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixpeachbumper.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -110,11 +113,15 @@ GObj* itGBumperMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 
         dobj->mobj->palette_id = 0;
 
+#ifdef REGION_REMIX
+        grRemixPeachBumperSetupHitbox(item_gobj);
+#else
         if (gSCManagerBattleState->gkind == nGRKindCastle)
         {
             ip->attack_coll.knockback_weight = ITBUMPER_CASTLE_KNOCKBACK;
             ip->attack_coll.angle = ITBUMPER_CASTLE_ANGLE;
         }
+#endif
     }
     return item_gobj;
 }

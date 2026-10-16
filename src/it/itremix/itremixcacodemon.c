@@ -9,6 +9,7 @@
 #ifdef PORT
 
 #include "it/itremix/itremix.h"
+#include "sys/objanim.h"
 #include "it/itremix/itremixcacodemon.h"
 #include "it/itmain.h"
 #include "it/itmanager.h"
@@ -25,6 +26,8 @@
 #define ITREMIX_CACODEMON_HITBOX_SIZE 125.0F
 #define ITREMIX_CACODEMON_KB_SCALE 0x25
 #define ITREMIX_CACODEMON_KB_BASE 0x50
+#define ITREMIX_CACODEMON_ANIM_JOINT_OFFSET 0x0918 /* asm cacodemon_factory_: joint track, the same for both directions */
+#define ITREMIX_CACODEMON_ANIM_MATERIAL_OFFSET 0x10C4 /* asm cacodemon_factory_: material track */
 #define ITREMIX_CACODEMON_DL_LEFT 0x6C8 /* Cacodemon file offset of the facing-left display list */
 #define ITREMIX_CACODEMON_DL_RIGHT 0x3058 /* Cacodemon file offset of the facing-right display list */
 #define ITREMIX_CACODEMON_LOOP_START 0x3C /* spawn_timer value that starts the attack loop */
@@ -129,6 +132,18 @@ static sb32 itRemixCacodemonProcDead(GObj *item_gobj)
 void itRemixCacodemonSetFileTop(void *file_top)
 {
     sITRemixCacodemonFileTop = file_top;
+}
+
+void itRemixCacodemonStartAnimation(GObj *item_gobj)
+{
+    DObj *dobj = DObjGetStruct(item_gobj);
+    u8 *file = (u8*) sITRemixCacodemonFileTop;
+
+    gcAddDObjAnimJoint(dobj, (AObjEvent32*) (file + ITREMIX_CACODEMON_ANIM_JOINT_OFFSET), 0.0F);
+    if (dobj->mobj != NULL)
+    {
+        gcAddMObjMatAnimJoint(dobj->mobj, (AObjEvent32*) (file + ITREMIX_CACODEMON_ANIM_MATERIAL_OFFSET), 0.0F);
+    }
 }
 
 /** Hitbox part of cacodemon_stage_setting_: damage, angle, size, sound and knockback. */

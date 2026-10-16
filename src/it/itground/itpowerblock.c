@@ -1,6 +1,7 @@
 #include <it/item.h>
 #include <gr/ground.h>
 #include <reloc_data.h>
+#include "gr/grremix/grremixhardcoding.h"
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -113,7 +114,7 @@ sb32 itPowerBlockWaitProcDamage(GObj *item_gobj)
     ip->damage_coll.hitstatus = nGMHitStatusNone;
 
 #ifdef PORT
-    gcAddDObjAnimJoint(DObjGetStruct(item_gobj), itGetPData(ip, llGRInishieMapPowerBlockDataStart, llGRInishieMapPowerBlockAnimJoint), 0.0F);
+    gcAddDObjAnimJoint(DObjGetStruct(item_gobj), itGetPData(ip, GRREMIX_MK_OFFSET(llGRInishieMapPowerBlockDataStart, 0xF80), GRREMIX_MK_OFFSET(llGRInishieMapPowerBlockAnimJoint, 0x1060)), 0.0F);
 #else
     gcAddDObjAnimJoint(DObjGetStruct(item_gobj), itGetPData(ip, &llGRInishieMapPowerBlockDataStart, &llGRInishieMapPowerBlockAnimJoint), 0.0F);
 #endif

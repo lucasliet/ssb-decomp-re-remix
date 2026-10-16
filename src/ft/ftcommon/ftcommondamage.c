@@ -4,6 +4,9 @@
 #endif
 #include <it/item.h>
 #ifdef PORT
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixbowserbombs.h"
+#endif
 #include <if/ifscreenflash.h>
 #endif
 
@@ -498,6 +501,9 @@ s32 damage_index, s32 element, s32 damage_player_num, sb32 is_rumble, sb32 is_fo
     f32 angle_diff;
     s32 unused3;
 
+#ifdef REGION_REMIX
+    hitstun_tics = grRemixBowserBombsHitstunTics(this_fp, hitstun_tics);
+#endif
     this_fp->status_vars.common.damage.hitstun_tics = hitstun_tics;
 
     if (this_fp->status_vars.common.damage.hitstun_tics == 0)

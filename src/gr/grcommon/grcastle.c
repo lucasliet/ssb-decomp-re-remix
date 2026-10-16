@@ -4,6 +4,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixgating.h"
+#include "gr/grremix/grremixbowserbombs.h"
 #endif
 
 // // // // // // // // // // // //
@@ -73,7 +74,10 @@ void grCastleInitAll(void)
 GObj* grCastleMakeGround(void)
 {
 #ifdef REGION_REMIX
-    /* REMIX-TODO(items): Bowser's Stadium RTTF bombs (Hazards.asm peach_bumper_ _bowser_stadium) are not spawned. */
+    if (grRemixBowserBombsIsStage() && grRemixHazardToggleIsOn())
+    {
+        grRemixBowserBombsStart();
+    }
     if (grRemixStageHasPeachBumper(gSCManagerBattleState->gkind) && grRemixHazardToggleIsOn())
 #endif
     grCastleInitAll();

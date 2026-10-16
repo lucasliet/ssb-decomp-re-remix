@@ -17,6 +17,7 @@ extern void *func_800269C0_275C0(u16 id);
 #define GRREMIX_RAINBOW_STAGE_OFFSET_CHOMP_FILE 0x0080
 #define GRREMIX_RAINBOW_STAGE_OFFSET_HITBOX_FILE 0x00AC
 #define GRREMIX_RAINBOW_CHOMP_OFFSET_DOBJDESC 0x17F0
+#define GRREMIX_RAINBOW_CHOMP_OFFSET_MODEL 0x19E8 /* asm: model and texture setup passed to 0x8000F8F4 (gcAddMObjAll) */
 #define GRREMIX_RAINBOW_SCHEDULE_GATE 0x05DC
 #define GRREMIX_RAINBOW_TIMER_RESET 0x35E8
 #define GRREMIX_RAINBOW_SPAWN_CHANCE 810
@@ -78,8 +79,8 @@ static void grRemixRainbowChompCreate(void)
     chomp_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
     sRainbow.chomp_gobj = chomp_gobj;
 
-    /* REMIX-TODO(stage object init): the model/texture setup at chomp file + 0x19E8 (vanilla 0x8000F8F4) is not applied yet. */
     gcSetupCustomDObjs(chomp_gobj, (DObjDesc *) ((uintptr_t) sRainbow.chomp_file + GRREMIX_RAINBOW_CHOMP_OFFSET_DOBJDESC), NULL, nGCMatrixKindTraRotRpyRSca, nGCMatrixKindNull, nGCMatrixKindNull);
+    gcAddMObjAll(chomp_gobj, (MObjSub ***) ((uintptr_t) sRainbow.chomp_file + GRREMIX_RAINBOW_CHOMP_OFFSET_MODEL));
     gcAddGObjProcess(chomp_gobj, grRemixRainbowChompProcUpdate, nGCProcessKindFunc, 5);
 }
 
@@ -126,11 +127,13 @@ static void grRemixRainbowSfxProcUpdate(GObj *sfx_gobj)
     grRemixRainbowSfxPlayAt(timer);
 }
 
-/** Plays the chomp's animation from the stage file; only the first animation struct is applied (see the REMIX-TODO). */
+/** Plays the chomp's joint and material animation from the stage file (asm 0x8000BED8 then 0x8000DF34). */
 static void grRemixRainbowChompAnimate(GObj *chomp_gobj, const GRRemixRainbowScene *scene)
 {
-    /* REMIX-TODO(vanilla 0x8000BED8, 0x8000DF34): the second animation struct (anim_offset_end) and the part-2 call have no decomp entry; the first struct plays alone. */
-    gcAddAnimJointAll(chomp_gobj, (AObjEvent32 **) ((uintptr_t) sRainbow.chomp_file + scene->anim_offset_start), 0.0F);
+    gcAddAnimAll(chomp_gobj,
+                 (AObjEvent32 **) ((uintptr_t) sRainbow.chomp_file + scene->anim_offset_start),
+                 (AObjEvent32 ***) ((uintptr_t) sRainbow.chomp_file + scene->anim_offset_end),
+                 0.0F);
     gcPlayAnimAll(chomp_gobj);
 }
 

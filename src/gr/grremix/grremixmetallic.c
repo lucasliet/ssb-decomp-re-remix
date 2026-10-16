@@ -7,12 +7,14 @@
 
 #include "grremixmetallic.h"
 #include "grremixhazards.h"
+#include "it/itremix/itremix.h"
 #include "it/itremix/itremixrobotbee.h"
 #include "ft/fighter.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "it/itmanager.h"
 #include "mp/map.h"
 #include "sc/scene.h"
+#include "sys/objanim.h"
 #include "sys/objman.h"
 #include "sys/utils.h"
 
@@ -28,6 +30,9 @@
 #define GRREMIX_METALLIC_PORT_COUNT 4
 #define GRREMIX_METALLIC_TRAINING_SCENE nSCKind1PTrainingMode /* asm bee_factory_: Global.current_screen == 0x36 */
 #define GRREMIX_METALLIC_BEE_FACING_RANGE 2
+#define GRREMIX_METALLIC_BEE_TRACK_RIGHT 0x0908       /* asm bee_factory_: joint track of facing 1, relative to the stage file */
+#define GRREMIX_METALLIC_BEE_TRACK_LEFT 0x3598        /* asm bee_factory_: joint track of facing 0 */
+#define GRREMIX_METALLIC_BEE_TRACK_MATERIAL 0x09B4    /* asm bee_factory_: material track */
 
 static void *sGRRemixMetallicStageHeader;
 static void *sGRRemixMetallicLaserFile;
@@ -170,19 +175,38 @@ static sb32 grRemixMetallicBeeRollSpawn(u32 timer)
     return timer == GRREMIX_METALLIC_SPAWN_TIME_FORCED;
 }
 
+/** Starts the joint and material animation tracks of the bee for its facing (asm 0x8000BD1C and 0x8000BD54). */
+static void grRemixMetallicStartBeeAnimation(GObj *bee_gobj)
+{
+    DObj *dobj = DObjGetStruct(bee_gobj);
+    u8 *file = (u8 *)grRemixHazardsItemFileTop(sGRRemixMetallicStageHeader);
+    s32 joint_track = (sGRRemixMetallicBeeFacing != 0) ? GRREMIX_METALLIC_BEE_TRACK_RIGHT : GRREMIX_METALLIC_BEE_TRACK_LEFT;
+
+    gcAddDObjAnimJoint(dobj, (AObjEvent32 *)(file + joint_track), 0.0F);
+    if (dobj->mobj != NULL)
+    {
+        gcAddMObjMatAnimJoint(dobj->mobj, (AObjEvent32 *)(file + GRREMIX_METALLIC_BEE_TRACK_MATERIAL), 0.0F);
+    }
+}
+
 /**
  * Spawns the Robot Bee at the stage origin and draws its facing. The asm draws the facing twice and keeps
  * the second draw; the first draw is kept here too so the random sequence matches.
- * REMIX-TODO(animation): the asm sets Robot Bee animation tracks 1 and 2 (0x8000BD1C, 0x8000BD54) from the facing; not ported.
  */
 static void grRemixMetallicSpawnBee(void)
 {
     Vec3f pos = { 0.0F, 0.0F, 0.0F };
     Vec3f vel = { 0.0F, 0.0F, 0.0F };
+    GObj *bee_gobj;
 
-    itManagerMakeItemSetupCommon(NULL, ITREMIX_ROBOTBEE_KIND, &pos, &vel, 0);
+    bee_gobj = itManagerMakeItemSetupCommon(NULL, ITREMIX_ROBOTBEE_KIND, &pos, &vel, 0);
     syUtilsRandIntRange(GRREMIX_METALLIC_BEE_FACING_RANGE);
     sGRRemixMetallicBeeFacing = syUtilsRandIntRange(GRREMIX_METALLIC_BEE_FACING_RANGE);
+    if (bee_gobj != NULL)
+    {
+        itRemixLogEvent("robotbee-spawn", ITREMIX_ROBOTBEE_KIND);
+        grRemixMetallicStartBeeAnimation(bee_gobj);
+    }
 }
 
 /**

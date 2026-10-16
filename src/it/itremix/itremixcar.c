@@ -100,6 +100,10 @@ static sb32 itRemixCarMainProcUpdate(GObj *item_gobj)
     {
         return FALSE;
     }
+    if (sITRemixCarState.honk_timer == 1)
+    {
+        itRemixLogEvent("car-tick-start", ITREMIX_CAR_KIND);
+    }
     timer = sITRemixCarState.honk_timer;
     sITRemixCarState.honk_timer = timer + 1;
     if (sITRemixCarState.is_honked)
@@ -173,6 +177,7 @@ static void itRemixCarHonkedTick(GObj *item_gobj, s32 timer)
 /** Car.main_ honk: plays the honk and restarts the timer. */
 static void itRemixCarHonk(void)
 {
+    itRemixLogEvent("car-honk", ITREMIX_CAR_KIND);
     func_800269C0_275C0(ITREMIX_CAR_HONK_FGM);
     sITRemixCarState.is_honked = TRUE;
     sITRemixCarState.honk_timer = 0;
@@ -187,6 +192,7 @@ static void itRemixCarDrive(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
 
+    itRemixLogEvent("car-drive", ITREMIX_CAR_KIND);
     sITRemixCarState.honk_timer = 0;
     ip->attack_coll.attack_state = 1;
     ip->attack_coll.can_setoff = FALSE;

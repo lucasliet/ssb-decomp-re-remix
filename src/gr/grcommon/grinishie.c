@@ -6,6 +6,7 @@
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixgating.h"
 #endif
+#include "gr/grremix/grremixhardcoding.h"
 #ifdef PORT
 #include <sys/debug.h>
 #endif
@@ -264,8 +265,8 @@ void grInishieScaleUpdateStep(void)
         gGRCommonStruct.inishie.splat_status = nGRInishieScaleStatusRetract;
 
 #ifdef PORT
-        gcAddDObjAnimJoint(gGRCommonStruct.inishie.scale[0].platform_dobj, (AObjEvent32*) ((intptr_t)llGRInishieMapScaleRetractAnimJoint + (uintptr_t)gGRCommonStruct.inishie.map_head), 0.0F);
-        gcAddDObjAnimJoint(gGRCommonStruct.inishie.scale[1].platform_dobj, (AObjEvent32*) ((intptr_t)llGRInishieMapScaleRetractAnimJoint + (uintptr_t)gGRCommonStruct.inishie.map_head), 0.0F);
+        gcAddDObjAnimJoint(gGRCommonStruct.inishie.scale[0].platform_dobj, (AObjEvent32*) (GRREMIX_MK_OFFSET(llGRInishieMapScaleRetractAnimJoint, 0x968) + (uintptr_t)gGRCommonStruct.inishie.map_head), 0.0F);
+        gcAddDObjAnimJoint(gGRCommonStruct.inishie.scale[1].platform_dobj, (AObjEvent32*) (GRREMIX_MK_OFFSET(llGRInishieMapScaleRetractAnimJoint, 0x968) + (uintptr_t)gGRCommonStruct.inishie.map_head), 0.0F);
 #else
         gcAddDObjAnimJoint(gGRCommonStruct.inishie.scale[0].platform_dobj, (AObjEvent32*) ((intptr_t)&llGRInishieMapScaleRetractAnimJoint + (uintptr_t)gGRCommonStruct.inishie.map_head), 0.0F);
         gcAddDObjAnimJoint(gGRCommonStruct.inishie.scale[1].platform_dobj, (AObjEvent32*) ((intptr_t)&llGRInishieMapScaleRetractAnimJoint + (uintptr_t)gGRCommonStruct.inishie.map_head), 0.0F);
@@ -368,7 +369,7 @@ void grInishieMakeScale(void)
 
     gcAddGObjDisplay(ground_gobj, gcDrawDObjTreeForGObj, 6, GOBJ_PRIORITY_DEFAULT, ~0);
 #ifdef PORT
-    grModelSetupGroundDObjs(ground_gobj, (DObjDesc*) ((uintptr_t)map_head + (intptr_t)llGRInishieMapScaleDObjDesc), map_dobjs, dGRInishieScaleTransformKinds);
+    grModelSetupGroundDObjs(ground_gobj, (DObjDesc*) ((uintptr_t)map_head + GRREMIX_MK_OFFSET(llGRInishieMapScaleDObjDesc, 0x628)), map_dobjs, dGRInishieScaleTransformKinds);
 #else
     grModelSetupGroundDObjs(ground_gobj, (DObjDesc*) ((uintptr_t)map_head + (intptr_t)&llGRInishieMapScaleDObjDesc), map_dobjs, dGRInishieScaleTransformKinds);
 #endif
@@ -385,7 +386,7 @@ void grInishieMakeScale(void)
         gcAddGObjDisplay(ground_gobj, gcDrawDObjDLHead0, 6, GOBJ_PRIORITY_DEFAULT, ~0);
 
 #ifdef PORT
-        platform_dobj = gcAddDObjForGObj(ground_gobj, (void*) ((uintptr_t)map_head + (intptr_t)llGRInishieMapMapHead));
+        platform_dobj = gcAddDObjForGObj(ground_gobj, (void*) ((uintptr_t)map_head + GRREMIX_MK_OFFSET(llGRInishieMapMapHead, 0x830)));
 #else
         platform_dobj = gcAddDObjForGObj(ground_gobj, (void*) ((uintptr_t)map_head + (intptr_t)&llGRInishieMapMapHead));
 #endif
@@ -597,7 +598,7 @@ sb32 grInishiePowerBlockCheckGetDamageKind(GObj *item_gobj, GObj *fighter_gobj, 
 void grInishieInitHeaders(void)
 {
 #ifdef PORT
-    gGRCommonStruct.inishie.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRInishieMapMapHead);
+    gGRCommonStruct.inishie.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - GRREMIX_MK_OFFSET(llGRInishieMapMapHead, 0x830));
     gGRCommonStruct.inishie.item_head = (void*) ((uintptr_t)gMPCollisionGroundData - (intptr_t)llGRInishieMapMapHeader);
 #else
     gGRCommonStruct.inishie.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)&llGRInishieMapMapHead);

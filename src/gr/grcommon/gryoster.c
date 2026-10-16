@@ -1,6 +1,9 @@
 #include <gr/ground.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixyoshiclouds.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -233,8 +236,12 @@ void grYosterInitAll(void)
 #else
             (DObjDesc*) ((intptr_t)&llGRYosterMapMapHead + (uintptr_t)map_head), 
 #endif
-            NULL, 
+            NULL,
+#ifdef REGION_REMIX
+            grRemixYosterCloudMatrixKind(),
+#else
             nGCMatrixKindTra,    // Make this nGCMatrixKindTraRotRpyRSca to see cloud scale animation
+#endif
             nGCMatrixKindNull, 
             nGCMatrixKindNull
         );
@@ -292,6 +299,9 @@ GObj* grYosterMakeGround(void)
 {
     GObj *ground_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
 
+#ifdef REGION_REMIX
+    grRemixYosterDisableCloudClipping();
+#endif
     grYosterInitAll();
     gcAddGObjProcess(ground_gobj, grYosterProcUpdate, nGCProcessKindFunc, 4);
 

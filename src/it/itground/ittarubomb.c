@@ -1,6 +1,9 @@
 #include <it/item.h>
 #include <gr/ground.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixbowserbombs.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -213,6 +216,13 @@ sb32 itTaruBombFallProcUpdate(GObj *item_gobj)
 // 0x80184DC4
 sb32 itTaruBombCommonProcHit(GObj *item_gobj)
 {
+#ifdef REGION_REMIX
+    if (grRemixBowserBombsExplodeOnHit(item_gobj))
+    {
+        itTaruBombExplodeMakeEffectGotoSetStatus(item_gobj);
+        return FALSE;
+    }
+#endif
     func_800269C0_275C0(nSYAudioFGMTaruBombHit);
     itTaruBombContainerSmashMakeEffect(&DObjGetStruct(item_gobj)->translate.vec.f);
     itTaruBombExplodeMakeEffectGotoSetStatus(item_gobj);
@@ -285,7 +295,11 @@ sb32 itTaruBombFallProcMap(GObj *item_gobj)
 
             itMainSetSpinVelLR(item_gobj);
         }
+#ifdef REGION_REMIX
+        func_800269C0_275C0(grRemixBowserBombsMapFgm(nSYAudioFGMTaruBombMap));
+#else
         func_800269C0_275C0(nSYAudioFGMTaruBombMap);
+#endif
         itMainClearOwnerStats(item_gobj);
     }
     return FALSE;

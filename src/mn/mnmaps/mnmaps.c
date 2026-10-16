@@ -3,6 +3,8 @@
 #include <gr/ground.h>
 // #include <gm/gmsound.h> // temporary, until this finds a proper place (included from fighter.h)
 #include <sc/scene.h>
+#include <stdlib.h>
+#include <port_log.h>
 #include <sys/video.h>
 #include <sys/controller.h>
 #include <sys/rdp.h>
@@ -346,6 +348,11 @@ static void mnMapsBuildRemixPages(void)
 			dMNMapsPageGkinds[page][slot] = (index < count) ? stages[index++] : nMNMapsEmptyGKind;
 		}
 		dMNMapsPageGkinds[page][nMNMapsSlotRandom] = nMNMapsRandomGKind;
+	}
+	port_log("[mnmaps] remix stage pages: %d stages in %d pages\n", count, sMNMapsPageCount);
+	for (index = 0; index < count; index++)
+	{
+		port_log("[mnmaps] stage select entry %d gkind %d\n", index, stages[index]);
 	}
 }
 #endif
@@ -1667,7 +1674,12 @@ GObj* mnMapsMakePreviewWallpaper(s32 gkind)
 	else
 	{
 		// If not Random, check if Training Mode
+#ifdef REGION_REMIX
+		/* The training wallpaper tables only cover the vanilla and port stages; custom Remix stages use their own preview wallpaper. */
+		if ((sMNMapsIsTrainingMode == TRUE) && (gkind < ARRAY_COUNT(dMNMapsTrainingModeWallpaperIDs)))
+#else
 		if (sMNMapsIsTrainingMode == TRUE)
+#endif
 		{
 			/* PORT: hoist the #ifdef-PORT conditional values out of the
 			 * lbRelocGetFileData macro argument list. MSVC's preprocessor
@@ -2649,6 +2661,27 @@ void mnMapsInitVars(void)
 		sMNMapsCursorSlot = mnMapsGetSlot(gSCManagerSceneData.maps_vsmode_gkind);
 		break;
 	}
+#ifdef PORT
+	{
+		/* Smoke-test harness: SSB64_MAPS_START_GKIND opens the stage select on that stage (decimal gkind). */
+		const char *start_gkind = getenv("SSB64_MAPS_START_GKIND");
+
+		if ((start_gkind != NULL) && (start_gkind[0] != '\0'))
+		{
+			s32 value = 0;
+
+			while ((*start_gkind >= '0') && (*start_gkind <= '9'))
+			{
+				value = (value * 10) + (*start_gkind++ - '0');
+			}
+			if (mnMapsGetPageForGkind(value) >= 0)
+			{
+				sMNMapsCursorPage = mnMapsGetPageForGkind(value);
+				sMNMapsCursorSlot = mnMapsGetSlot(value);
+			}
+		}
+	}
+#endif
 	sMNMapsUnlockedMask = gSCManagerBackupData.unlock_mask;
 	if (mnMapsCheckLocked(mnMapsGetGroundKind(sMNMapsCursorSlot)) != FALSE)
 	{

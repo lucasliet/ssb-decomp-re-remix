@@ -9,9 +9,10 @@
 #include <wp/weapon.h>
 #include <ef/efmanager.h>
 #include <gr/ground.h>
+#include <port_log.h>
 
 #define GRREMIX_PIRATE_CANNONBALL_KIND 0x28 /* Projectile.id.PIRATELAND_CANNONBALL, marina/ftremixmarinadsp.c */
-#define GRREMIX_PIRATE_CANNONBALL_LIFETIME 999 /* properties duration; REMIX-TODO(animation end) below */
+#define GRREMIX_PIRATE_CANNONBALL_LIFETIME 999 /* properties duration; the animation end explodes it first */
 #define GRREMIX_PIRATE_CANNONBALL_SMOKE_INTERVAL 9
 #define GRREMIX_PIRATE_CANNONBALL_EXPLOSION_TIMER 15
 #define GRREMIX_PIRATE_CANNONBALL_DAMAGE 25
@@ -132,6 +133,7 @@ static void grRemixPirateCannonballExplode(GObj *weapon_gobj)
     wp->attack_coll.knockback_base = GRREMIX_PIRATE_CANNONBALL_KB_BASE;
     wp->attack_coll.fgm_id = GRREMIX_PIRATE_CANNONBALL_HIT_FGM;
 
+    port_log("[remix-stage] pirate cannonball explode x=%.0f y=%.0f frame=%.1f\n", pos->x, pos->y, weapon_gobj->anim_frame);
     efManagerSparkleWhiteMultiExplodeMakeEffect(pos);
     func_800269C0_275C0(GRREMIX_PIRATE_CANNONBALL_EXPLODE_FGM);
     efManagerQuakeMakeEffect(GRREMIX_PIRATE_CANNONBALL_SHAKE_SEVERITY);
@@ -141,9 +143,8 @@ static void grRemixPirateCannonballExplode(GObj *weapon_gobj)
 }
 
 /**
- * Per-frame process of the cannonball: flies, explodes, then expires. Returns TRUE to destroy the weapon.
- * REMIX-TODO(animation end): the asm explodes when the cannonball model animation ends (gobj frame 0x78). The
- * animation length is not read yet, so the explosion comes when the flight lifetime runs out.
+ * Per-frame process of the cannonball: flies, explodes when its model animation ends (asm reads the GObj frame at
+ * 0x78), then expires. The lifetime only guards against an animation that never ends. Returns TRUE to destroy the weapon.
  */
 static sb32 grRemixPirateCannonballProcUpdate(GObj *weapon_gobj)
 {
@@ -158,7 +159,7 @@ static sb32 grRemixPirateCannonballProcUpdate(GObj *weapon_gobj)
         sGRRemixPirateCannonball.is_first_frame = FALSE;
         return FALSE;
     }
-    if (wpMainDecLifeCheckExpire(wp))
+    if ((weapon_gobj->anim_frame <= 0.0F) || wpMainDecLifeCheckExpire(wp))
     {
         grRemixPirateCannonballExplode(weapon_gobj);
         return FALSE;

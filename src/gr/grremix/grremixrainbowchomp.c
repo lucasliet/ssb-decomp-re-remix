@@ -22,17 +22,12 @@ static sb32 grRemixRainbowChompProcConnect(GObj *wp_gobj)
     return FALSE;
 }
 
-/** Copies the chomp's top joint position to the hitbox: REMIX-TODO(weapon DObj) applies only when the weapon has a DObj. */
+/** Copies the chomp's top joint position to the hitbox weapon (wpManagerMakeWeapon always creates its DObj). */
 static void grRemixRainbowChompSyncPosition(GObj *wp_gobj)
 {
     DObj *wp_dobj = DObjGetStruct(wp_gobj);
     DObj *chomp_dobj = DObjGetStruct(grRemixRainbowGetChompGObj());
 
-    if (wp_dobj == NULL)
-    {
-        /* REMIX-TODO(weapon DObj): the hitbox weapon is spawned without a DObj, so its position is not synced to the chomp. */
-        return;
-    }
     wp_dobj->translate.vec.f = chomp_dobj->translate.vec.f;
 }
 
@@ -55,13 +50,14 @@ static sb32 grRemixRainbowChompProcUpdate(GObj *wp_gobj)
     return FALSE;
 }
 
-/* REMIX-TODO(weapon flags): the asm projectile word 0x1C000000 (offset 0x10) is not mapped to flags or transform types. */
+/* The asm projectile word 0x1C000000 (offset 0x10) is the transform kind nGCMatrixKindTraRotRpyRSca. */
 static WPDesc sRainbowChompDesc =
 {
     .flags = 0,
     .kind = GRREMIX_RAINBOW_CHOMP_KIND,
     .p_weapon = NULL,
     .o_attributes = 0,
+    .transform_types = { nGCMatrixKindTraRotRpyRSca, nGCMatrixKindNull, 0 },
     .proc_update = grRemixRainbowChompProcUpdate,
     .proc_map = NULL,
     .proc_hit = grRemixRainbowChompProcConnect,

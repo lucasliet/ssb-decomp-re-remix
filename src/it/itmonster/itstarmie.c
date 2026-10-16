@@ -291,6 +291,10 @@ void itStarmieNFollowInitVars(GObj *item_gobj)
 #endif
     s32 players = 0;
 
+#ifdef PORT
+    victim_gobj = NULL;
+#endif
+
     while (fighter_gobj != NULL)
     {
         FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -322,6 +326,17 @@ void itStarmieNFollowInitVars(GObj *item_gobj)
 
         continue;
     }
+#ifdef PORT
+    /* The N64 build reads an uninitialized victim_gobj when no opponent is left; see docs/bugs/starmie_no_victim_2026-10-15.md */
+    if (victim_gobj == NULL)
+    {
+        victim_gobj = ip->owner_gobj;
+    }
+    if (victim_gobj == NULL)
+    {
+        return;
+    }
+#endif
     itStarmieNFollowFindFollowPlayerLR(item_gobj, victim_gobj);
 
     if (ip->kind == nITKindStarmie)

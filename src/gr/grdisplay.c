@@ -1,4 +1,7 @@
 #include <gr/ground.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixyoshiclouds.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -218,7 +221,14 @@ GObj* grDisplayMakeGeometryLayer(MPGroundDesc *gr_desc, s32 gr_desc_id, DObj **d
 #else
         gcAddAnimAll(ground_gobj, gr_desc->anim_joints, gr_desc->p_matanim_joints, 0.0F);
 #endif
+#ifdef REGION_REMIX
+        if (grRemixPlatformMovementIsOn())
+        {
+            gcAddGObjProcess(ground_gobj, dGRDisplayDescs[gr_desc_id].proc_update, nGCProcessKindFunc, 4);
+        }
+#else
         gcAddGObjProcess(ground_gobj, dGRDisplayDescs[gr_desc_id].proc_update, nGCProcessKindFunc, 4);
+#endif
         gcPlayAnimAll(ground_gobj);
     }
     else if (gr_desc_id == 1)
