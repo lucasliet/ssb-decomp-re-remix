@@ -30,6 +30,7 @@
 #include "it/itremix/itremixwaddledee.h"
 #include "it/itremix/itremixwaddledoo.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremix.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -261,7 +262,7 @@ GObj* itRemixWaddleDeeSpawnMinion(GObj *parent_gobj, const ITDesc *item_desc, Ve
     ITDesc spawn_desc = *item_desc;
     GObj *item_gobj;
 
-    spawn_desc.p_file = fp->data->p_file_special1;
+    spawn_desc.p_file = ftRemixPowerData(fp)->p_file_special1;
     item_gobj = itManagerMakeItem(parent_gobj, &spawn_desc, pos, vel, FALSE);
     if (item_gobj == NULL)
     {

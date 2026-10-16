@@ -14,6 +14,7 @@
 #include <reloc_data.h>
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixshuriken.h"
+#include "ft/ftremix/ftremix.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -182,7 +183,7 @@ GObj* itRemixShurikenMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fla
     ITStruct *ip;
     Vec3f translate;
 
-    item_desc.p_file = fp->data->p_file_special3;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special3;
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, vel, flags);
     if (item_gobj == NULL)
     {

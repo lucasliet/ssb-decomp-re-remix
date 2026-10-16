@@ -284,7 +284,7 @@ static sb32 ftRemixMewtwoShadowBallProcHop(GObj *weapon_gobj)
 /*
  * Shadow Ball weapon descriptor (Remix projectile struct, MewtwoNSP.projectile_struct).
  * p_weapon points at the fighter's file, so ftRemixMewtwoShadowBallMakeWeapon
- * copies it and sets fp->data->p_file_special3 per spawn.
+ * copies it and sets ftRemixPowerData(fp)->p_file_special3 per spawn.
  */
 static const WPDesc dFTRemixMewtwoShadowBallWeaponDesc =
 {
@@ -319,7 +319,7 @@ static GObj *ftRemixMewtwoShadowBallMakeWeapon(GObj *fighter_gobj, Vec3f *pos, s
     MewtwoShadowBallVars *sb;
     f32 scale;
 
-    desc.p_weapon = fp->data->p_file_special3;
+    desc.p_weapon = ftRemixPowerData(fp)->p_file_special3;
 
     weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &desc, pos, WEAPON_FLAG_PARENT_FIGHTER);
 

@@ -25,6 +25,7 @@
 #include <sc/scsubsys/scsubsys.h>
 
 #include <stdlib.h>
+#include <string.h>
 #include <port_log.h>
 #include "fighter_registry.h"
 #include "remix/remix_synth_ft.h"
@@ -388,6 +389,38 @@ void port_fighter_synth_ft_destroy(struct FTData *ft)
     free(owned->mainmotion);
     free(owned->submotion);
     free(owned);
+}
+
+int port_fighter_extend_mainmotion(int fkind, uint32_t vanilla_count, const PortSynthMotion *rows, uint32_t count)
+{
+    FTData *data = port_fighter_data(fkind);
+    FTMotionDesc *grown;
+    FTMotionDesc *added;
+
+    if ((data == NULL) || (data->mainmotion == NULL) || (count <= vanilla_count))
+    {
+        return 0;
+    }
+    grown = malloc(count * sizeof(FTMotionDesc));
+
+    if (grown == NULL)
+    {
+        return 0;
+    }
+    added = ftPortCopyMotionArray(&rows[vanilla_count], count - vanilla_count, NULL);
+
+    if (added == NULL)
+    {
+        free(grown);
+        return 0;
+    }
+    memcpy(grown, data->mainmotion, vanilla_count * sizeof(FTMotionDesc));
+    memcpy(&grown[vanilla_count], added, (count - vanilla_count) * sizeof(FTMotionDesc));
+    free(added);
+
+    data->mainmotion = (FTMotionDescArray *)grown;
+    data->mainmotion_array_count = (s32)count;
+    return 1;
 }
 
 int port_fighter_set_attributes_offset(int fkind, uint32_t o_attributes)

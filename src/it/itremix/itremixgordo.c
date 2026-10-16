@@ -22,6 +22,7 @@
 #include <it/itmanager.h>
 #include <it/itmap.h>
 #include <mp/mpcommon.h>
+#include "ft/ftremix/ftremix.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -326,7 +327,7 @@ GObj* itRemixGordoMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
     ITStruct *ip;
     ITRemixGordoVars *vars;
 
-    item_desc.p_file = fp->data->p_file_special1;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special1;
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, vel, 0);
     if (item_gobj == NULL)
     {

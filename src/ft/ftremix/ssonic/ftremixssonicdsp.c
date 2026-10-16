@@ -94,7 +94,7 @@ static GObj *ftRemixSSonicEmeraldInit(GObj *fighter_gobj)
     GObj *effect_gobj;
     EFStruct *ep;
 
-    sFTRemixSSonicEmeraldDesc.file_head = fp->data->p_file_special2;
+    sFTRemixSSonicEmeraldDesc.file_head = ftRemixPowerData(fp)->p_file_special2;
     effect_gobj = efManagerMakeEffectForce(&sFTRemixSSonicEmeraldDesc);
     if (effect_gobj == NULL)
     {

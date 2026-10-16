@@ -58,7 +58,7 @@ static void ftRemixSlippyNSPFillLaserDesc(WPDesc *laser_desc, FTStruct *fp)
 {
     laser_desc->flags = 0;
     laser_desc->kind = nWPKindBlaster;
-    laser_desc->p_weapon = fp->data->p_file_special1;
+    laser_desc->p_weapon = ftRemixPowerData(fp)->p_file_special1;
     laser_desc->o_attributes = 0;
     laser_desc->transform_types.tk1 = nGCMatrixKindTraRotRpyRSca;
     laser_desc->transform_types.tk2 = nGCMatrixKindNull;

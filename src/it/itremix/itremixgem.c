@@ -22,6 +22,7 @@
 #include "ef/efmanager.h"
 #include "sys/objman.h"
 #include "sys/utils.h"
+#include "ft/ftremix/ftremix.h"
 
 #define ITREMIX_GEM_ID 0x42
 #define ITREMIX_GEM_FILE_OFFSET 0x40 /* asm FILE_OFFSET: item footer in the owner's item file */
@@ -335,7 +336,7 @@ GObj* itRemixGemMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
     }
     fp = ftGetStruct(parent_gobj);
     item_desc = sITRemixGemDesc;
-    item_desc.p_file = fp->data->p_file_special3;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special3;
 
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, vel, flags);
     if (item_gobj == NULL)

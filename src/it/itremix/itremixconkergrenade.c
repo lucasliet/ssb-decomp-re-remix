@@ -26,6 +26,7 @@
 #include <ef/efmanager.h>
 #include <sys/objman.h>
 #include <sys/utils.h>
+#include "ft/ftremix/ftremix.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -81,7 +82,7 @@ enum itRemixConkerGrenadeStatus
 /* Remix item fields beyond the vanilla ITStruct union. Offsets are the Remix asm ones. */
 typedef struct ITRemixConkerGrenadeVars
 {
-    void **p_file;                  /* Conker file 7 (fp->data->p_file_special2); explosion attack events are read from it */
+    void **p_file;                  /* Conker file 7 (ftRemixPowerData(fp)->p_file_special2); explosion attack events are read from it */
     FTStruct *fp;                   /* 0x01C4: owner fighter struct; its active grenade slot is cleared when the grenade ends */
     s32 unk_0x354;                  /* 0x0354: written as 4 at spawn; meaning unknown */
     f32 max_speed;                  /* 0x01C8: speed cap; set to the knockback when hit */
@@ -595,7 +596,7 @@ static void itRemixConkerGrenadeSetupState(ITStruct *ip, GObj *parent_gobj, FTSt
     ip->team = fp->team;
     ip->player = fp->player;
     vars->fp = fp;
-    vars->p_file = fp->data->p_file_special2;
+    vars->p_file = ftRemixPowerData(fp)->p_file_special2;
 
     ip->attack_coll.can_rehit_shield = TRUE;
     ip->attack_coll.attack_state = ITREMIX_CONKER_GRENADE_HITBOX_ON;
@@ -623,7 +624,7 @@ GObj *itRemixConkerGrenadeMakeItem(GObj *parent_gobj, Vec3f *pos, s32 power)
     Vec3f vel = { 0.0F, 0.0F, 0.0F };
     GObj *item_gobj;
 
-    item_desc.p_file = fp->data->p_file_special2;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special2;
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, &vel, FALSE);
     if (item_gobj == NULL)
     {

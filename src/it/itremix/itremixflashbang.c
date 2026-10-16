@@ -27,6 +27,7 @@
 #include <mp/mpdef.h>
 #include <mp/mpprocess.h>
 #include <sys/utils.h>
+#include "ft/ftremix/ftremix.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -608,7 +609,7 @@ static void itRemixFlashbangSetupState(ITStruct *ip, GObj *parent_gobj, FTStruct
     ip->coll_data.cliff_id = 0;
 
     vars->fp = fp;
-    vars->p_file = fp->data->p_file_special1;
+    vars->p_file = ftRemixPowerData(fp)->p_file_special1;
     vars->unk_0x354 = 4;
     vars->max_speed = ITREMIX_FLASHBANG_MAX_SPEED;
     vars->rotation_direction = 0.0F;
@@ -651,7 +652,7 @@ GObj *itRemixFlashbangMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fl
     GObj *item_gobj;
 
     (void)flags;
-    item_desc.p_file = fp->data->p_file_special1;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special1;
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, vel, FALSE);
     if (item_gobj == NULL)
     {

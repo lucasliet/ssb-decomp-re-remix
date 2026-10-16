@@ -192,7 +192,7 @@ static void ftRemixWolfSpecialNFillBlasterDesc(WPDesc *blaster_desc, FTStruct *f
 {
     blaster_desc->flags = 0;
     blaster_desc->kind = WOLF_BLASTER_KIND;
-    blaster_desc->p_weapon = fp->data->p_file_special1;
+    blaster_desc->p_weapon = ftRemixPowerData(fp)->p_file_special1;
     blaster_desc->o_attributes = 0;
     blaster_desc->transform_types.tk1 = nGCMatrixKindTra;
     blaster_desc->transform_types.tk2 = WOLF_BLASTER_TRANSFORM_TK2;

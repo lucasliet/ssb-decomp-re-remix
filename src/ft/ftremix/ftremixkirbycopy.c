@@ -11,6 +11,8 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include <string.h>
 #include <ft/fighter.h>
+#include "fighter_registry.h"
+#include "ft/ftremix/ftremix.h"
 #include "remix/remix_ram_image.h"
 #include "remix/remix_roster_data.h"
 #include "remix/remix_symbols.h"
@@ -39,6 +41,19 @@ static void ftRemixKirbyCopyLoadRow(s32 row)
     copy->copy_modelpart_id = (s16)(ids & 0xFFFF);
     memcpy(&copy->effect_scale, &scale_bits, sizeof(f32));
     copy->star_damage = (s32)ftRemixKirbyCopyReadWord(addr + 8);
+}
+
+FTData *ftRemixPowerData(FTStruct *fp)
+{
+    FTData *power_data;
+
+    if (((fp->fkind != nFTKindKirby) && (fp->fkind != REMIX_ID_JKIRBY)) || (fp->passive_vars.kirby.copy_id < nFTKindEnumCount))
+    {
+        return fp->data;
+    }
+    power_data = port_fighter_data(fp->passive_vars.kirby.copy_id);
+
+    return (power_data != NULL) ? power_data : fp->data;
 }
 
 FTKirbyCopy* ftRemixKirbyGetCopyTable(void)

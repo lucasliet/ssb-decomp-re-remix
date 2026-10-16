@@ -4,7 +4,7 @@
  * and the Ryo coin toss projectile they launch.
  *
  * The Ryo weapon descriptors are built at run time because their file pointer is the fighter's
- * special file (fp->data->p_file_special1), so they cannot be static const tables.
+ * special file (ftRemixPowerData(fp)->p_file_special1), so they cannot be static const tables.
  */
 
 #ifdef PORT
@@ -395,7 +395,7 @@ static void ftRemixGoemonFillDescBase(WPDesc *desc, FTStruct *fp, intptr_t o_att
 {
     desc->flags = 0;
     desc->kind = GOEMON_RYO_PROJECTILE_ID;
-    desc->p_weapon = fp->data->p_file_special1;
+    desc->p_weapon = ftRemixPowerData(fp)->p_file_special1;
     desc->o_attributes = o_attributes;
     desc->transform_types.tk1 = nGCMatrixKindTra;
     desc->transform_types.tk2 = transform_tk2;

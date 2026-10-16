@@ -204,7 +204,7 @@ static void ftRemixConkerNSPFillNutDesc(WPDesc *nut_desc, FTStruct *fp)
 {
     nut_desc->flags = 0;
     nut_desc->kind = CONKER_NUT_PROJECTILE_ID;
-    nut_desc->p_weapon = fp->data->p_file_special1;
+    nut_desc->p_weapon = ftRemixPowerData(fp)->p_file_special1;
     nut_desc->o_attributes = 0;
     nut_desc->transform_types.tk1 = nGCMatrixKindTra;
     nut_desc->transform_types.tk2 = CONKER_NUT_TRANSFORM_TK2;

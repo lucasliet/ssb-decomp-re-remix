@@ -615,7 +615,7 @@ static void ftRemixSonicUSPSpringFillDesc(WPDesc *spring_desc, FTStruct *fp)
 {
     spring_desc->flags = 0;
     spring_desc->kind = SONIC_USP_SPRING_WPKIND;
-    spring_desc->p_weapon = fp->data->p_file_special1;
+    spring_desc->p_weapon = ftRemixPowerData(fp)->p_file_special1;
     spring_desc->o_attributes = 0;
     spring_desc->transform_types.tk1 = nGCMatrixKindTra;
     spring_desc->transform_types.tk2 = SONIC_USP_SPRING_TRANSFORM_TK2;

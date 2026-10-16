@@ -54,6 +54,20 @@ struct FighterDescriptor;
  */
 s32 ftRemixBindSpecials(s32 remix_id, s32 parent_fkind, s32 parent_action_count, struct FighterDescriptor *descriptor);
 
+/**
+ * Grows Kirby's vanilla specials with the copy abilities' actions of Remix's Kirby action array.
+ * Returns the number of routine slots that did not resolve to a port routine.
+ */
+s32 ftRemixBindKirbyActions(struct FighterDescriptor *descriptor);
+
+struct FTData;
+
+/**
+ * The FTData whose special files `fp`'s moves read: Remix addresses a character's files through global pointers
+ * (Character.X_file_n_ptr), so Kirby wearing a copied power reads the copied fighter's files, not Kirby's.
+ */
+struct FTData *ftRemixPowerData(struct FTStruct *fp);
+
 /** Port implementation for Remix routine `addr`, or NULL when it has none. */
 FTRemixProcFn ftRemixFindProc(u32 addr);
 

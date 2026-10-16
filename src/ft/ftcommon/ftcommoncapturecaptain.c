@@ -2,6 +2,9 @@
 #include <it/item.h>
 #include <reloc_data.h>
 #include "fighter_registry.h"
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // 0x8014D0F0
 void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gobj, Vec3f *pos)
@@ -16,7 +19,9 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
 #else
     Vec2h *offset_add = lbRelocGetFileData(Vec2h*, gFTDataCaptainMainMotion, &llCaptainMainMotionSpecialHiVec2h);
 #endif
-#ifdef PORT
+#ifdef REGION_REMIX
+    s32 offset_row = ftRemixFalconDiveOffsetRow(capture_fp->fkind);
+#elif defined(PORT)
     s32 offset_row = port_fighter_parent_fkind(capture_fp->fkind);
 #else
     s32 offset_row = capture_fp->fkind;

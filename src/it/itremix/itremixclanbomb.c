@@ -12,6 +12,7 @@
 #include "it/itcommon/itbombhei.h"
 #include "it/itcommon/ittomato.h"
 #include <ef/efmanager.h>
+#include "ft/ftremix/ftremix.h"
 
 #define ITREMIX_CLANBOMB_ID 0x45
 #define ITREMIX_CLANBOMB_FILE_OFFSET 0x130
@@ -112,7 +113,7 @@ GObj* itRemixClanBombMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fla
     ITStruct *ip;
     Vec3f translate;
 
-    desc.p_file = fp->data->p_file_special3;
+    desc.p_file = ftRemixPowerData(fp)->p_file_special3;
 
     item_gobj = itManagerMakeItem(parent_gobj, &desc, pos, vel, flags);
 

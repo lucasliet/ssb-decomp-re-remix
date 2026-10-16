@@ -7,6 +7,7 @@
 #include <gm/gmcollision.h>
 #include <gm/gmdef.h>
 #include <sys/objman.h>
+#include "ft/ftremix/ftremix.h"
 
 #define ITREMIX_CLOUD_TOTAL_TIMER 30
 #define ITREMIX_CLOUD_TIME_UNTIL_FADE 8
@@ -133,7 +134,7 @@ GObj* itRemixCloudMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
     FTStruct *fp = ftGetStruct(parent_gobj);
     GObj *item_gobj;
 
-    item_desc.p_file = fp->data->p_file_special2;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special2;
     /* The asm passes 0 as the fifth argument, so the `flags` argument is not forwarded. */
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, vel, 0);
     if (item_gobj == NULL)

@@ -89,6 +89,8 @@ extern void ftPurinSpecialAirLwSetStatus(GObj *);
 extern void ftKirbyCopyPurinSpecialAirNProcPhysics(GObj *);
 extern void ftKirbyCopyPurinSpecialNProcMap(GObj *);
 extern void ftKirbyCopyPurinSpecialAirNProcMap(GObj *);
+extern void ftKirbyCopyPurinSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyPurinSpecialAirNSetStatus(GObj *);
 extern void ftPikachuSpecialNProcMap(GObj *);
 extern void ftPikachuSpecialAirNProcMap(GObj *);
 extern void ftPikachuSpecialNSetStatus(GObj *);
@@ -132,6 +134,8 @@ extern void ftPikachuSpecialHiEndProcMap(GObj *);
 extern void ftPikachuSpecialAirHiEndProcMap(GObj *);
 extern void ftKirbyCopyPikachuSpecialNProcMap(GObj *);
 extern void ftKirbyCopyPikachuSpecialAirNProcMap(GObj *);
+extern void ftKirbyCopyPikachuSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyPikachuSpecialAirNSetStatus(GObj *);
 extern void ftNessSpecialNProcMap(GObj *);
 extern void ftNessSpecialAirNProcMap(GObj *);
 extern void ftNessSpecialNSetStatus(GObj *);
@@ -180,6 +184,8 @@ extern void ftNessSpecialLwEndProcMap(GObj *);
 extern void ftNessSpecialAirLwEndProcMap(GObj *);
 extern void ftKirbyCopyNessSpecialNProcMap(GObj *);
 extern void ftKirbyCopyNessSpecialAirNProcMap(GObj *);
+extern void ftKirbyCopyNessSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyNessSpecialAirNSetStatus(GObj *);
 extern void ftMarioSpecialNProcUpdate(GObj *);
 extern void ftMarioSpecialNProcMap(GObj *);
 extern void ftMarioSpecialAirNProcMap(GObj *);
@@ -202,8 +208,12 @@ extern void ftMarioSpecialAirLwSetStatus(GObj *);
 extern void ftKirbyCopyMarioSpecialNProcUpdate(GObj *);
 extern void ftKirbyCopyMarioSpecialNProcMap(GObj *);
 extern void ftKirbyCopyMarioSpecialAirNProcMap(GObj *);
+extern void ftKirbyCopyMarioSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyMarioSpecialAirNSetStatus(GObj *);
 extern void ftKirbyCopyFoxSpecialNProcUpdate(GObj *);
 extern void ftKirbyCopyFoxSpecialNProcInterrupt(GObj *);
+extern void ftKirbyCopyFoxSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyFoxSpecialAirNSetStatus(GObj *);
 extern void ftKirbyCopySamusSpecialNStartProcUpdate(GObj *);
 extern void ftKirbyCopySamusSpecialNStartProcInterrupt(GObj *);
 extern void ftKirbyCopySamusSpecialNStartProcMap(GObj *);
@@ -214,6 +224,8 @@ extern void ftKirbyCopySamusSpecialNLoopProcMap(GObj *);
 extern void ftKirbyCopySamusSpecialNEndProcUpdate(GObj *);
 extern void ftKirbyCopySamusSpecialNEndProcMap(GObj *);
 extern void ftKirbyCopySamusSpecialAirNEndProcMap(GObj *);
+extern void ftKirbyCopySamusSpecialNStartSetStatus(GObj *);
+extern void ftKirbyCopySamusSpecialAirNStartSetStatus(GObj *);
 extern void ftKirbyCopyDonkeySpecialNStartProcUpdate(GObj *);
 extern void ftKirbyCopyDonkeySpecialAirNStartProcUpdate(GObj *);
 extern void ftKirbyCopyDonkeySpecialNStartProcInterrupt(GObj *);
@@ -225,6 +237,8 @@ extern void ftKirbyCopyDonkeySpecialNLoopProcMap(GObj *);
 extern void ftKirbyCopyDonkeySpecialAirNLoopProcMap(GObj *);
 extern void ftKirbyCopyDonkeySpecialNEndProcUpdate(GObj *);
 extern void ftKirbyCopyDonkeySpecialAirNEndProcMap(GObj *);
+extern void ftKirbyCopyDonkeySpecialNStartSetStatus(GObj *);
+extern void ftKirbyCopyDonkeySpecialAirNStartSetStatus(GObj *);
 extern void ftDonkeySpecialNStartProcUpdate(GObj *);
 extern void ftDonkeySpecialAirNStartProcUpdate(GObj *);
 extern void ftDonkeySpecialNStartProcInterrupt(GObj *);
@@ -347,6 +361,8 @@ extern void ftKirbyCopyYoshiSpecialNCatchProcMap(GObj *);
 extern void ftKirbyCopyYoshiSpecialAirNCatchProcMap(GObj *);
 extern void ftKirbyCopyYoshiSpecialNReleaseProcMap(GObj *);
 extern void ftKirbyCopyYoshiSpecialAirNReleaseProcMap(GObj *);
+extern void ftKirbyCopyYoshiSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyYoshiSpecialAirNSetStatus(GObj *);
 extern void ftCaptainSpecialNProcPhysics(GObj *);
 extern void ftCaptainSpecialAirNProcPhysics(GObj *);
 extern void ftCaptainSpecialNProcMap(GObj *);
@@ -375,6 +391,8 @@ extern void ftKirbyCopyCaptainSpecialNProcPhysics(GObj *);
 extern void ftKirbyCopyCaptainSpecialAirNProcPhysics(GObj *);
 extern void ftKirbyCopyCaptainSpecialNProcMap(GObj *);
 extern void ftKirbyCopyCaptainSpecialAirNProcMap(GObj *);
+extern void ftKirbyCopyCaptainSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyCaptainSpecialAirNSetStatus(GObj *);
 extern void ftKirbySpecialHiProcUpdate(GObj *);
 extern void ftKirbySpecialHiLandingProcUpdate(GObj *);
 extern void ftKirbySpecialHiProcPhysics(GObj *);
@@ -433,6 +451,8 @@ extern void ftKirbySpecialAirNThrowProcMap(GObj *);
 extern void ftKirbySpecialAirNWaitProcMap(GObj *);
 extern void ftKirbySpecialAirNTurnProcMap(GObj *);
 extern void ftKirbySpecialAirNCopyProcMap(GObj *);
+extern void ftKirbySpecialNStartSetStatus(GObj *);
+extern void ftKirbySpecialAirNStartSetStatus(GObj *);
 extern void ftLinkSpecialNProcUpdate(GObj *);
 extern void ftLinkSpecialAirNProcUpdate(GObj *);
 extern void ftLinkSpecialNProcMap(GObj *);
@@ -463,6 +483,8 @@ extern void ftKirbyCopyLinkSpecialNProcMap(GObj *);
 extern void ftKirbyCopyLinkSpecialNEmptyProcMap(GObj *);
 extern void ftKirbyCopyLinkSpecialAirNProcMap(GObj *);
 extern void ftKirbyCopyLinkSpecialAirNEmptyProcMap(GObj *);
+extern void ftKirbyCopyLinkSpecialNSetStatus(GObj *);
+extern void ftKirbyCopyLinkSpecialAirNSetStatus(GObj *);
 
 /* Sorted by address for ftRemixFindProc. Non-void routines are used as procs
  * by Remix (the N64 ignores the return value), hence the casts. */
@@ -552,6 +574,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x801518ECu, ftKirbyCopyPurinSpecialAirNProcPhysics },
     { 0x801519F0u, ftKirbyCopyPurinSpecialNProcMap },
     { 0x80151A14u, ftKirbyCopyPurinSpecialAirNProcMap },
+    { 0x80151AC4u, ftKirbyCopyPurinSpecialNSetStatus },
+    { 0x80151B04u, ftKirbyCopyPurinSpecialAirNSetStatus },
     { 0x80151C14u, ftPikachuSpecialNProcMap },
     { 0x80151C38u, ftPikachuSpecialAirNProcMap },
     { 0x80151D24u, ftPikachuSpecialNSetStatus },
@@ -595,6 +619,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x801534E0u, ftPikachuSpecialAirHiEndProcMap },
     { 0x801537B8u, ftKirbyCopyPikachuSpecialNProcMap },
     { 0x801537DCu, ftKirbyCopyPikachuSpecialAirNProcMap },
+    { 0x801538C8u, ftKirbyCopyPikachuSpecialNSetStatus },
+    { 0x80153908u, ftKirbyCopyPikachuSpecialAirNSetStatus },
     { 0x80153AC0u, ftNessSpecialNProcMap },
     { 0x80153AE4u, ftNessSpecialAirNProcMap },
     { 0x80153BD0u, ftNessSpecialNSetStatus },
@@ -643,6 +669,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x80155A18u, ftNessSpecialAirLwEndProcMap },
     { 0x80155CACu, ftKirbyCopyNessSpecialNProcMap },
     { 0x80155CD0u, ftKirbyCopyNessSpecialAirNProcMap },
+    { 0x80155DBCu, ftKirbyCopyNessSpecialNSetStatus },
+    { 0x80155DFCu, ftKirbyCopyNessSpecialAirNSetStatus },
     { 0x80155E40u, ftMarioSpecialNProcUpdate },
     { 0x80155F04u, ftMarioSpecialNProcMap },
     { 0x80155F28u, ftMarioSpecialAirNProcMap },
@@ -665,8 +693,12 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x801569B0u, ftKirbyCopyMarioSpecialNProcUpdate },
     { 0x80156A74u, ftKirbyCopyMarioSpecialNProcMap },
     { 0x80156A98u, ftKirbyCopyMarioSpecialAirNProcMap },
+    { 0x80156BD0u, ftKirbyCopyMarioSpecialNSetStatus },
+    { 0x80156C38u, ftKirbyCopyMarioSpecialAirNSetStatus },
     { 0x80156CB0u, ftKirbyCopyFoxSpecialNProcUpdate },
     { 0x80156D38u, ftKirbyCopyFoxSpecialNProcInterrupt },
+    { 0x80156DD8u, ftKirbyCopyFoxSpecialNSetStatus },
+    { 0x80156E18u, ftKirbyCopyFoxSpecialAirNSetStatus },
     { 0x80156F54u, ftKirbyCopySamusSpecialNStartProcUpdate },
     { 0x80156FCCu, ftKirbyCopySamusSpecialNStartProcInterrupt },
     { 0x80157004u, ftKirbyCopySamusSpecialNStartProcMap },
@@ -677,6 +709,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x80157314u, ftKirbyCopySamusSpecialNEndProcUpdate },
     { 0x801574D0u, ftKirbyCopySamusSpecialNEndProcMap },
     { 0x801574F4u, ftKirbyCopySamusSpecialAirNEndProcMap },
+    { 0x801576CCu, ftKirbyCopySamusSpecialNStartSetStatus },
+    { 0x80157744u, ftKirbyCopySamusSpecialAirNStartSetStatus },
     { 0x801577ACu, ftKirbyCopyDonkeySpecialNStartProcUpdate },
     { 0x801577D0u, ftKirbyCopyDonkeySpecialAirNStartProcUpdate },
     { 0x801577F4u, ftKirbyCopyDonkeySpecialNStartProcInterrupt },
@@ -688,6 +722,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x80157AB0u, ftKirbyCopyDonkeySpecialAirNLoopProcMap },
     { 0x80157C28u, ftKirbyCopyDonkeySpecialNEndProcUpdate },
     { 0x80157D18u, ftKirbyCopyDonkeySpecialAirNEndProcMap },
+    { 0x80157EACu, ftKirbyCopyDonkeySpecialNStartSetStatus },
+    { 0x80157F04u, ftKirbyCopyDonkeySpecialAirNStartSetStatus },
     { 0x8015AF1Cu, ftDonkeySpecialNStartProcUpdate },
     { 0x8015AF40u, ftDonkeySpecialAirNStartProcUpdate },
     { 0x8015AF64u, ftDonkeySpecialNStartProcInterrupt },
@@ -810,6 +846,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x8015F380u, ftKirbyCopyYoshiSpecialAirNCatchProcMap },
     { 0x8015F3A4u, ftKirbyCopyYoshiSpecialNReleaseProcMap },
     { 0x8015F3C8u, ftKirbyCopyYoshiSpecialAirNReleaseProcMap },
+    { 0x8015F5B0u, ftKirbyCopyYoshiSpecialNSetStatus },
+    { 0x8015F60Cu, ftKirbyCopyYoshiSpecialAirNSetStatus },
     { 0x8015F8ECu, ftCaptainSpecialNProcPhysics },
     { 0x8015F914u, ftCaptainSpecialAirNProcPhysics },
     { 0x8015FAF8u, ftCaptainSpecialNProcMap },
@@ -838,6 +876,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x80160934u, ftKirbyCopyCaptainSpecialAirNProcPhysics },
     { 0x80160ACCu, ftKirbyCopyCaptainSpecialNProcMap },
     { 0x80160AF0u, ftKirbyCopyCaptainSpecialAirNProcMap },
+    { 0x80160B30u, ftKirbyCopyCaptainSpecialNSetStatus },
+    { 0x80160B70u, ftKirbyCopyCaptainSpecialAirNSetStatus },
     { 0x80160D1Cu, ftKirbySpecialHiProcUpdate },
     { 0x80160D40u, ftKirbySpecialHiLandingProcUpdate },
     { 0x80160DF0u, ftKirbySpecialHiProcPhysics },
@@ -896,6 +936,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x8016296Cu, ftKirbySpecialAirNWaitProcMap },
     { 0x80162990u, ftKirbySpecialAirNTurnProcMap },
     { 0x801629B4u, ftKirbySpecialAirNCopyProcMap },
+    { 0x80163154u, ftKirbySpecialNStartSetStatus },
+    { 0x801633A0u, ftKirbySpecialAirNStartSetStatus },
     { 0x80163770u, ftLinkSpecialNProcUpdate },
     { 0x80163798u, ftLinkSpecialAirNProcUpdate },
     { 0x801637C0u, ftLinkSpecialNProcMap },
@@ -926,6 +968,8 @@ const FTRemixProc dFTRemixVanillaProcs[] =
     { 0x80164764u, ftKirbyCopyLinkSpecialNEmptyProcMap },
     { 0x80164788u, ftKirbyCopyLinkSpecialAirNProcMap },
     { 0x801647ACu, ftKirbyCopyLinkSpecialAirNEmptyProcMap },
+    { 0x80164940u, ftKirbyCopyLinkSpecialNSetStatus },
+    { 0x801649C0u, ftKirbyCopyLinkSpecialAirNSetStatus },
 };
 
 const s32 dFTRemixVanillaProcsNum = ARRAY_COUNT(dFTRemixVanillaProcs);

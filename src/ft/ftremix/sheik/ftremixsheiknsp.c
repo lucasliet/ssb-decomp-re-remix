@@ -500,7 +500,7 @@ static void ftRemixSheikNeedleStageSetting(GObj *fighter_gobj, Vec3f *spawn_pos)
     sb32 is_aerial = (fp->ga == nMPKineticsAir);
 
     func_800269C0_275C0(SHEIK_NSP_FGM_NEEDLE);
-    sFTRemixSheikNeedleDesc.p_weapon = fp->data->p_file_special1;
+    sFTRemixSheikNeedleDesc.p_weapon = ftRemixPowerData(fp)->p_file_special1;
     sFTRemixSheikNeedleDesc.o_attributes = sFTRemixSheikNeedleProps.o_attributes;
     needle_gobj = wpManagerMakeWeapon(fighter_gobj, &sFTRemixSheikNeedleDesc, spawn_pos, WEAPON_FLAG_COLLPROJECT);
     if (needle_gobj == NULL)

@@ -127,6 +127,7 @@ void **ftRemixLinkSharedBombFile(s32 fkind, void **vanilla_file);
  * kick and punch files and the Falcon hand bone */
 sb32 ftRemixDKSharedIsCargoClone(s32 fkind);
 sb32 ftRemixCaptainSharedUsesFalconHandBone(s32 fkind);
+s32 ftRemixFalconDiveOffsetRow(s32 fkind);
 EFDesc* ftRemixCaptainSharedKickDesc(FTStruct *fp, EFDesc *vanilla_desc);
 EFDesc* ftRemixCaptainSharedPunchDesc(FTStruct *fp, EFDesc *vanilla_desc);
 
@@ -304,6 +305,14 @@ sb32 ftRemixLeftoverItemSkipsDespawn(GObj *item_gobj);
 
 /* Kirby copy table of every Remix fighter (ftremixkirbycopy.c), a drop-in for the FTKirbyCopy table of the Kirby file */
 FTKirbyCopy* ftRemixKirbyGetCopyTable(void);
+
+/* Kirby power flags (ftremixkirbypower.c, KirbyHats.asm): magic hat, power loss on hit or taunt */
+void ftRemixKirbyPowerSetTauntLosesPower(s32 player, sb32 taunt_loses_power);
+void ftRemixKirbyPowerReset(void);
+void ftRemixKirbyPowerStolen(FTStruct *fp);
+s32 ftRemixKirbyStolenPowerID(FTStruct *victim_fp, s32 copy_id);
+void ftRemixKirbyUpdateMagicHat(FTStruct *fp, s32 copy_id);
+sb32 ftRemixKirbyLoseCopyPrevented(FTStruct *fp);
 
 /* Kirby hats (ftremixkirbyhats.c): the model part of hat modelpart_id on the hat joint, extended past hat 0xE */
 FTModelPart* ftRemixKirbyHatModelPart(FTStruct *fp, s32 joint_id, s32 modelpart_id, FTModelPartDesc *desc, s32 detail_index);

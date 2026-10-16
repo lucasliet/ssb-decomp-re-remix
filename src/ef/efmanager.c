@@ -6040,7 +6040,7 @@ void efManagerCaptureKirbyStarProcUpdate(GObj *effect_gobj)
 
     if (ep->effect_vars.capture_kirby_star.effect_timer % EFCOMMON_CAPTUREKIRBYSTAR_SPARK_TIMER_MOD)
     {
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
         f32 effect_scale = copy[port_fighter_parent_fkind(fp->fkind)].effect_scale;
 #else
         f32 effect_scale = copy[fp->fkind].effect_scale;
@@ -6109,7 +6109,7 @@ GObj* efManagerCaptureKirbyStarMakeEffect(GObj *fighter_gobj)
 
     dobj->child->user_data.p = ftGetStruct(fighter_gobj)->joints[nFTPartsJointTopN];
 
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
     dobj->child->scale.vec.f.x = dobj->child->scale.vec.f.y =
         copy[port_fighter_parent_fkind(ftGetStruct(fighter_gobj)->fkind)].effect_scale;
 #else

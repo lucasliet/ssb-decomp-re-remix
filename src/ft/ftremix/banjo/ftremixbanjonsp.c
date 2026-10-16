@@ -370,7 +370,7 @@ static void ftRemixBanjoNSPFillEggDesc(WPDesc *egg_desc, FTStruct *fp, sb32 (*pr
 {
     egg_desc->flags = 0;
     egg_desc->kind = BANJO_EGG_PROJECTILE_ID;
-    egg_desc->p_weapon = fp->data->p_file_special4;
+    egg_desc->p_weapon = ftRemixPowerData(fp)->p_file_special4;
     egg_desc->o_attributes = 0;
     egg_desc->transform_types.tk1 = nGCMatrixKindTra;
     egg_desc->transform_types.tk2 = BANJO_EGG_TRANSFORM_TK2;

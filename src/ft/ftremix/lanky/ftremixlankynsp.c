@@ -123,7 +123,7 @@ static void ftRemixLankyNSPFillGrapeDesc(WPDesc *grape_desc, FTStruct *fp)
 {
     grape_desc->flags = 0;
     grape_desc->kind = LANKY_NUT_PROJECTILE_ID;
-    grape_desc->p_weapon = fp->data->p_file_special1;
+    grape_desc->p_weapon = ftRemixPowerData(fp)->p_file_special1;
     grape_desc->o_attributes = 0;
     grape_desc->transform_types.tk1 = nGCMatrixKindTra;
     grape_desc->transform_types.tk2 = LANKY_GRAPE_TRANSFORM_TK2;

@@ -93,6 +93,15 @@ void ftKirbySpecialNSetStatusSelect(GObj *fighter_gobj)
      * -- Kirby performs the synth's REAL spin, never the parent's special. */
     if (fp->passive_vars.kirby.copy_id >= nFTKindEnumCount)
     {
+#ifdef REGION_REMIX
+        PortFTSpecialEnterFn copy_handler = port_fighter_kirby_copy_handler(fp->passive_vars.kirby.copy_id, FALSE);
+
+        if (copy_handler != NULL)
+        {
+            copy_handler(fighter_gobj);
+            return;
+        }
+#endif
         PortFTSpecialEnterFn h =
             port_fighter_special_handler(fp->passive_vars.kirby.copy_id, PORT_FIGHTER_SPECIAL_N);
         if (h != NULL)

@@ -16,6 +16,7 @@
 #include <mp/mpprocess.h>
 #include <sc/scene.h>
 #include <if/ifcommon.h>
+#include "ft/ftremix/ftremix.h"
 
 #define ITREMIX_BOOMERANG_KIND 0x44
 #define ITREMIX_BOOMERANG_FILE_OFFSET 0xE0 /* Boomerang.asm FILE_OFFSET: item footer in file 0xFB */
@@ -269,7 +270,7 @@ GObj* itRemixBoomerangMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fl
     Vec3f translate;
     ITStruct *ip;
 
-    item_desc.p_file = fp->data->p_file_special3;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special3;
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, vel, flags);
     if (item_gobj == NULL)
     {

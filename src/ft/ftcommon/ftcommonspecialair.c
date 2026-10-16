@@ -157,6 +157,15 @@ void ftKirbySpecialAirNSetStatusSelect(GObj *fighter_gobj)
      * neutral-B (Crash -> CrashNSP.air_initial_); run it directly on Kirby. */
     if (fp->passive_vars.kirby.copy_id >= nFTKindEnumCount)
     {
+#ifdef REGION_REMIX
+        PortFTSpecialEnterFn copy_handler = port_fighter_kirby_copy_handler(fp->passive_vars.kirby.copy_id, TRUE);
+
+        if (copy_handler != NULL)
+        {
+            copy_handler(fighter_gobj);
+            return;
+        }
+#endif
         PortFTSpecialEnterFn h =
             port_fighter_special_handler(fp->passive_vars.kirby.copy_id, PORT_FIGHTER_SPECIAL_AIR_N);
         if (h != NULL)

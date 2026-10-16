@@ -12,6 +12,7 @@
 #include <it/itvisuals.h>
 #include <if/ifcommon.h>
 #include <sys/utils.h>
+#include "ft/ftremix/ftremix.h"
 
 #define TURNIP_KB_GROWTH 60
 #define TURNIP_BASE_KNOCKBACK 25
@@ -236,7 +237,7 @@ GObj* itRemixTurnipMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags
     Vec3f translate;
     ITStruct *ip;
 
-    item_desc.p_file = fp->data->p_file_special2;
+    item_desc.p_file = ftRemixPowerData(fp)->p_file_special2;
     item_gobj = itManagerMakeItem(parent_gobj, &item_desc, pos, vel, flags);
     if (item_gobj == NULL)
     {

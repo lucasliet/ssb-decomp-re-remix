@@ -329,6 +329,9 @@ void ftCommonThrownCommonStarUpdatePhysics(GObj *fighter_gobj, f32 decelerate)
                 ) && (fp->status_vars.common.capturekirby.is_kirby != FALSE))
             {
                 ftKirbySpecialNInitPassiveVars(fp);
+#ifdef REGION_REMIX
+                ftRemixKirbyPowerStolen(fp);
+#endif
 
                 fp->passive_vars.kirby.copy_id = nFTKindKirby;
 

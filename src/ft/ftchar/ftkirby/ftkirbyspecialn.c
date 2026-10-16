@@ -154,6 +154,7 @@ void ftKirbySpecialNCopyInitCopyVars(GObj *fighter_gobj)
             copy_id = fp->status_vars.kirby.specialn.copy_id;
             fp->passive_vars.kirby.copy_id = copy_id;
 #ifdef REGION_REMIX
+            ftRemixKirbyUpdateMagicHat(fp, copy_id);
             ftRemixKirbyCopyAmmo(fp);
 #endif
 
@@ -230,10 +231,14 @@ void ftKirbySpecialNCatchProcUpdate(GObj *fighter_gobj)
 #endif
         )
         {
+#ifdef REGION_REMIX
+            kirby_fp->status_vars.kirby.specialn.copy_id = ftRemixKirbyStolenPowerID(victim_fp, victim_fp->passive_vars.kirby.copy_id);
+#else
             kirby_fp->status_vars.kirby.specialn.copy_id = victim_fp->passive_vars.kirby.copy_id;
+#endif
             victim_fp->status_vars.common.capturekirby.is_kirby = TRUE;
         }
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
         else kirby_fp->status_vars.kirby.specialn.copy_id = copy[port_fighter_parent_fkind(victim_fp->fkind)].copy_id;
 #else
         else kirby_fp->status_vars.kirby.specialn.copy_id = copy[victim_fp->fkind].copy_id;
@@ -993,6 +998,12 @@ void ftKirbySpecialNLoseCopy(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixKirbyLoseCopyPrevented(fp) != FALSE)
+    {
+        return;
+    }
+#endif
     ftKirbySpecialNInitPassiveVars(fp);
     efManagerLoseKirbyStarMakeEffect(fighter_gobj);
     func_800269C0_275C0(nSYAudioFGMKirbySpecialNLoseCopy);
