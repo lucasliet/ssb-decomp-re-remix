@@ -85,6 +85,8 @@
 #define ITREMIX_BASKETBALL_FIGHTER_GOBJ_ID 0x3E8 /* asm object type check for a player owner */
 #define ITREMIX_BASKETBALL_NO_COMBO_OWNER 4
 #define ITREMIX_BASKETBALL_HIT_COLANIM 5
+#define ITREMIX_BASKETBALL_FIRE_COLANIM 0x84 /* GFXRoutine.id.BALL_FIRE: 0x55 + position 47 in add_gfx_routine order */
+#define ITREMIX_BASKETBALL_SMOKE_COLANIM 0x85 /* GFXRoutine.id.BALL_SMOKE: 0x55 + position 48 */
 #define ITREMIX_BASKETBALL_RENDER_ROUTINE 0x2E
 #define ITREMIX_BASKETBALL_FGM_BOUNCE 0x42E
 #define ITREMIX_BASKETBALL_FGM_FIRE_BOUNCE 0x42F
@@ -546,7 +548,6 @@ sb32 itRemixBasketballIsBounceScaled(GObj *item_gobj)
 
 /**
  * Basketball.fire_begin_: the ball turns into fire at speed 120.
- * REMIX-TODO(GFXRoutine.id.BALL_FIRE): the fire colour animation is skipped.
  * item_gobj: item object.
  */
 static void itRemixBasketballFireBegin(GObj *item_gobj)
@@ -556,6 +557,7 @@ static void itRemixBasketballFireBegin(GObj *item_gobj)
 
     func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_FIRE_START);
     func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_FIRE_START_2);
+    itMainCheckSetColAnimID(item_gobj, ITREMIX_BASKETBALL_FIRE_COLANIM, 0);
     vars->gfx_timer = 0;
     ip->attack_coll.attack_state = nGMAttackStateNew;
     vars->is_fire = TRUE;
@@ -563,7 +565,6 @@ static void itRemixBasketballFireBegin(GObj *item_gobj)
 
 /**
  * Basketball.fire_end_: the fire goes out at speed 50. Starts the smoke timer.
- * REMIX-TODO(GFXRoutine.id.BALL_SMOKE): the smoke colour animation is skipped.
  * item_gobj: item object.
  */
 static void itRemixBasketballFireEndState(GObj *item_gobj)
@@ -572,6 +573,7 @@ static void itRemixBasketballFireEndState(GObj *item_gobj)
     ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_FIRE_END);
+    itMainCheckSetColAnimID(item_gobj, ITREMIX_BASKETBALL_SMOKE_COLANIM, 0);
     vars->gfx_timer = ITREMIX_BASKETBALL_FIRE_END_GFX_TIMER;
     ip->attack_coll.attack_state = nGMAttackStateOff;
     vars->percent = (s32) ((f32) vars->percent * ITREMIX_BASKETBALL_FIRE_END_PERCENT_SCALE);

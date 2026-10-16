@@ -10,6 +10,7 @@
 
 #ifdef PORT
 
+#include "ft/ftremix/ftremixenvcolor.h"
 #include "ft/ftremix/ftremix.h"
 #include "ft/ftremix/ftremixfields.h"
 #include "ft/ftremix/ftremixhooks.h"
@@ -64,6 +65,7 @@ static s32 ftRemixSSonicUSPStickMagnitude(FTStruct *fp)
 static void ftRemixSSonicUSPEndInvisibility(FTStruct *fp)
 {
     fp->is_invisible = (fp->motion_vars.flags.flag2 != 0);
+    ftRemixEnvColorSetMoveset(fp->player, (fp->motion_vars.flags.flag2 != 0) ? 0xFFFFFF00 : 0);
 }
 
 /* Clears temp variables 1-3 (motion_vars.flags 0-2). */
@@ -78,7 +80,7 @@ static void ftRemixSSonicUSPResetTempVars(FTStruct *fp)
 static void ftRemixSSonicUSPHideIntangible(FTStruct *fp)
 {
     fp->is_invisible = TRUE;
-    /* REMIX-TODO(CharEnvColor): skipped the moveset_table[port] = 0xFFFFFF00 write; is_invisible is what the port honours. */
+    ftRemixEnvColorSetMoveset(fp->player, 0xFFFFFF00);
     /* N64 0x05BB is the low byte of the big-endian hitstatus word at 0x05B8, so this matches `sb 0x0003, 0x05BB`. */
     fp->hitstatus = nGMHitStatusIntangible;
 }

@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include "ft/ftremix/ftremixhooks.h"
 
 // // // // // // // // // // // //
 //                               //
@@ -31,7 +32,11 @@ void ftCommonRunSetStatus(GObj *fighter_gobj)
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusRun, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
 
+#ifdef REGION_REMIX
+    fp->physics.vel_ground.x = ftRemixSizeRunSpeed(fp, fp->attr->run_speed);
+#else
     fp->physics.vel_ground.x = fp->attr->run_speed;
+#endif
 }
 
 // 0x8013EF2C

@@ -5,6 +5,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixgating.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #include "gr/grremix/grremixhardcoding.h"
 #ifdef PORT
@@ -107,7 +108,11 @@ f32 grInishieScaleGetPressure(s32 line_id)
         {
             if ((fp->coll_data.floor_line_id != -2) && (mpCollisionSetDObjNoID(fp->coll_data.floor_line_id) == line_id))
             {
+#ifdef REGION_REMIX
+                f32 weight = (1.0F - ftRemixSizeWeight(fp, fp->attr->weight)) + 1.4F; /* Size.asm adjust_player_weight_8 (0x80108DE8) */
+#else
                 f32 weight = (1.0F - fp->attr->weight) + 1.4F;
+#endif
 
                 if (gGRCommonStruct.inishie.players_tt[fp->player] != 0)
                 {

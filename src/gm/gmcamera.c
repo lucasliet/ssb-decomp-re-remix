@@ -1228,7 +1228,11 @@ GObj* gmCameraMakeDefaultCamera(u8 tk1, u8 tk2, void (*proc)(GObj*))
         break;
 
     default:
+#ifdef REGION_REMIX
+        gGMCameraStruct.status_curr = grRemixCameraDefaultStatus(gSCManagerBattleState->gkind);
+#else
         gGMCameraStruct.status_curr = nGMCameraStatusDefault;
+#endif
         // No break? Doesn't match otherwise :brainshock:
     }
     gGMCameraStruct.status_default = gGMCameraStruct.status_prev = gGMCameraStruct.status_curr;

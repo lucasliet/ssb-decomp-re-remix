@@ -886,6 +886,16 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
                 }
             }
 #endif
+#ifdef REGION_REMIX
+            if (fp->fkind == nFTKindKirby)
+            {
+                FTKirbyCopy *remix_copy = ftRemixKirbyGetCopyTable();
+                s32 remix_copy_id = fp->passive_vars.kirby.copy_id;
+
+                ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, remix_copy[((remix_copy_id >= 0) && (remix_copy_id < 97)) ? remix_copy_id : nFTKindKirby].copy_modelpart_id);
+            }
+            break;
+#endif
             if (fp->fkind == nFTKindKirby)
             {
 #ifdef PORT
@@ -998,6 +1008,9 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     fp->figatree_heap = desc->figatree_heap;
     fp->team = desc->team;
     fp->player = desc->player;
+#ifdef REGION_REMIX
+    ftRemixKnockbackRandomizeAngles(fp); /* Knockback.asm randomize_angles_ (0x800D8008) */
+#endif
     fp->stock_count = desc->stock_count;
 
     if (fp->pkind != nFTPlayerKindDemo)

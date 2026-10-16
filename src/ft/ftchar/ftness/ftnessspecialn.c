@@ -15,6 +15,8 @@
 // // // // // // // // // // // //
 
 // 0x80153950
+/* REMIX-TODO(Size): Size.asm ness.nsp.adjust_pkfire_position_ (0x801539B4) scales the PK Fire spawn offset by the owner
+ * multiplier. The asm register flow was not checked against a disassembly (no baserom), so it is not applied. */
 void ftNessSpecialNProcAccessory(GObj *fighter_gobj) // PK Fire setup
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);

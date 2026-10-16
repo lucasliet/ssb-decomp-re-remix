@@ -55,6 +55,9 @@ void ftPhysicsClampGroundVel(FTStruct *fp, f32 clamp)
 // 0x800D8978
 void ftPhysicsSetGroundVelFriction(FTStruct *fp, f32 friction)
 {
+#ifdef REGION_REMIX
+    friction = ftRemixSizeDashDecel(fp, friction);
+#endif
     if (fp->physics.vel_ground.x < 0.0F)
     {
         fp->physics.vel_ground.x += friction;
@@ -96,7 +99,13 @@ void ftPhysicsApplyClampGroundVelStickRange(FTStruct *fp, s32 stick_x_min, f32 v
 // 0x800D8A70
 void ftPhysicsSetGroundVelAbsStickRange(FTStruct *fp, f32 vel, f32 friction)
 {
+#ifdef REGION_REMIX
+    f32 v = ABS(fp->input.pl.stick_range.x) * ftRemixSizeWalkingSpeed(fp, vel);
+
+    friction = ftRemixSizeBrakeForce(fp, friction);
+#else
     f32 v = ABS(fp->input.pl.stick_range.x) * vel;
+#endif
 
     if (fp->physics.vel_ground.x < v)
     {
@@ -164,7 +173,11 @@ void ftPhysicsApplyGroundVelFriction(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
 
+#ifdef REGION_REMIX
+    ftPhysicsSetGroundVelFriction(fp, grRemixSurfaceFriction(fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK) * attr->traction);
+#else
     ftPhysicsSetGroundVelFriction(fp, dMPCollisionMaterialFrictions[fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK] * attr->traction);
+#endif
     ftPhysicsSetGroundVelTransferAir(fighter_gobj);
 }
 

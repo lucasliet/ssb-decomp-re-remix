@@ -11,6 +11,7 @@
 
 #ifdef PORT
 
+#include "ft/ftremix/ftremixenvcolor.h"
 #include "ft/ftremix/ftremix.h"
 #include "remix/remix_symbols.h"
 #include <ft/fighter.h>
@@ -56,6 +57,7 @@ static s32 ftRemixMewtwoUSPStickMagnitude(FTStruct *fp)
 static void ftRemixMewtwoUSPEndInvisibility(FTStruct *fp)
 {
     fp->is_invisible = (fp->motion_vars.flags.flag2 != 0);
+    ftRemixEnvColorSetMoveset(fp->player, (fp->motion_vars.flags.flag2 != 0) ? 0xFFFFFF00 : 0);
 }
 
 /* Clears the teleport's temp variables 1-3 (motion_vars.flags 0-2). */
@@ -70,7 +72,7 @@ static void ftRemixMewtwoUSPResetTempVars(FTStruct *fp)
 static void ftRemixMewtwoUSPHideIntangible(FTStruct *fp)
 {
     fp->is_invisible = TRUE;
-    /* REMIX-TODO(CharEnvColor): skipped the moveset_table[port] = 0xFFFFFF00 write; is_invisible is what the port honours. */
+    ftRemixEnvColorSetMoveset(fp->player, 0xFFFFFF00);
     fp->hitstatus = nGMHitStatusIntangible;
 }
 

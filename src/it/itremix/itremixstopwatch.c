@@ -3,11 +3,13 @@
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixstopwatch.h"
 #include "remix/remix_roster_data.h"
+#include "gm/gmremixcolscripts.h"
 #include <it/item.h>
 #include <it/itcommon/ittomato.h>
 #include <if/ifcommon.h>
 #include <ft/fighter.h>
 #include <ft/ftmain.h>
+#include <ft/ftparam.h>
 #include <wp/weapon.h>
 #include <wp/wpprocess.h>
 #include <sc/scmanager.h>
@@ -39,6 +41,9 @@ extern void *func_800269C0_275C0(u16 id);
 
 #define ITREMIX_STOPWATCH_SPEED_SLOW 0
 #define ITREMIX_STOPWATCH_SPEED_FAST 1
+
+#define ITREMIX_STOPWATCH_COLANIM_SLOWED 0x86 /* asm GFX_ROUTINE, GFXRoutine.asm add_gfx_routine(STOPWATCH_SLOWED) */
+#define ITREMIX_STOPWATCH_COLANIM_FASTED 0x87 /* asm GFX_ROUTINE_FAST, GFXRoutine.asm add_gfx_routine(STOPWATCH_FASTED) */
 
 /* Action ids below 4 are the KO and death states; the asm treats them as "just died". */
 #define ITREMIX_STOPWATCH_DEATH_STATUS_LIMIT 4
@@ -237,7 +242,8 @@ static void itRemixStopwatchApplySpeedUp(FTStruct *fp)
 
     itRemixStopwatchSetTimer(fp, &sITRemixStopwatchFastFrames[index * 2], ITREMIX_STOPWATCH_SPEEDUP_DURATION, ITREMIX_STOPWATCH_SPEED_FAST);
     sITRemixStopwatchIsPlayerAffected = TRUE;
-    /* REMIX-TODO(GFX): the STOPWATCH_FASTED gfx routine and its GFXRoutine.port_override entry are not set */
+    gmRemixColScriptsSetOverride(fp->player, ITREMIX_STOPWATCH_COLANIM_FASTED);
+    ftParamCheckSetFighterColAnimID(fp->fighter_gobj, ITREMIX_STOPWATCH_COLANIM_FASTED, 0);
 }
 
 /* Stopwatch: the slow branch of clock_out_. A slow frame pair picked at random, for a 9 second timer. */
@@ -247,7 +253,8 @@ static void itRemixStopwatchApplySlowdown(FTStruct *fp)
 
     itRemixStopwatchSetTimer(fp, &sITRemixStopwatchSlowFrames[index * 2], ITREMIX_STOPWATCH_SLOWDOWN_DURATION, ITREMIX_STOPWATCH_SPEED_SLOW);
     sITRemixStopwatchIsPlayerAffected = TRUE;
-    /* REMIX-TODO(GFX): the STOPWATCH_SLOWED gfx routine and its GFXRoutine.port_override entry are not set */
+    gmRemixColScriptsSetOverride(fp->player, ITREMIX_STOPWATCH_COLANIM_SLOWED);
+    ftParamCheckSetFighterColAnimID(fp->fighter_gobj, ITREMIX_STOPWATCH_COLANIM_SLOWED, 0);
 }
 
 /* Stopwatch: clock_out_ per-player rules. Owner speed-up, team mates, then everyone else. */
@@ -356,6 +363,19 @@ static void itRemixStopwatchSpawnEndCircle(FTStruct *fp)
     efManagerSetOffMakeEffect(&pos, size);
 }
 
+/* Stopwatch: _remove_gfx_routine. Restores the default GFX routine when the player's override is a Stopwatch routine. */
+static void itRemixStopwatchRemoveGfx(FTStruct *fp)
+{
+    s32 colanim_id = gmRemixColScriptsGetOverride(fp->player);
+
+    if (colanim_id != ITREMIX_STOPWATCH_COLANIM_SLOWED && colanim_id != ITREMIX_STOPWATCH_COLANIM_FASTED)
+    {
+        return;
+    }
+    gmRemixColScriptsSetOverride(fp->player, 0);
+    ftParamResetStatUpdateColAnim(fp->fighter_gobj);
+}
+
 /* Stopwatch: _timer_exhausted. Clears the player's timer, then plays the end cue and circle for living players. */
 static void itRemixStopwatchExpire(FTStruct *fp, ITRemixStopwatchTimer *timer)
 {
@@ -363,7 +383,7 @@ static void itRemixStopwatchExpire(FTStruct *fp, ITRemixStopwatchTimer *timer)
     timer->active_frames = 0;
     timer->total_frames = 0;
     timer->speed_type = ITREMIX_STOPWATCH_SPEED_SLOW;
-    /* REMIX-TODO(GFX): the default GFX routine is not restored (ftParamResetStatUpdateColAnim) when the player's GFX override is a Stopwatch routine */
+    itRemixStopwatchRemoveGfx(fp);
     if (itRemixStopwatchIsJustDied(fp))
     {
         return;

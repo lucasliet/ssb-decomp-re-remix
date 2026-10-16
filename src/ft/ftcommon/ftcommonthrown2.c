@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -183,7 +186,11 @@ void ftCommonThrownReleaseThrownUpdateStats(GObj *fighter_gobj, s32 lr, s32 scri
     ft_throw = capture_fp->throw_desc;
 #endif
 
+#ifdef REGION_REMIX
+    knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, ftRemixSizeWeight(this_fp, this_fp->attr->weight), capture_fp->handicap, this_fp->handicap); /* Size.asm adjust_player_weight_5 (0x8014B084) */
+#else
     knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, this_fp->attr->weight, capture_fp->handicap, this_fp->handicap);
+#endif
 
     knockback_final = knockback_calc - knockback_resist;
 
@@ -205,7 +212,11 @@ void ftCommonThrownReleaseThrownUpdateStats(GObj *fighter_gobj, s32 lr, s32 scri
     {
         this_fp->proc_status = ftCommonThrownProcStatus;
     }
+#ifdef REGION_REMIX
+    ftCommonDamageInitDamageVars(fighter_gobj, ft_throw->status_id, damage, knockback_final, ftRemixKnockbackAngle(this_fp, ft_throw->angle), lr, 1, ft_throw->element, capture_fp->player_num, TRUE, TRUE, TRUE); /* Knockback.asm get_angle_throw_ (0x8014B16C) */
+#else
     ftCommonDamageInitDamageVars(fighter_gobj, ft_throw->status_id, damage, knockback_final, ft_throw->angle, lr, 1, ft_throw->element, capture_fp->player_num, TRUE, TRUE, TRUE);
+#endif
     ftParamUpdate1PGameDamageStats(this_fp, capture_fp->player, nFTHitLogObjectFighter, capture_fp->fkind, capture_fp->stat_flags.halfword, capture_fp->stat_count);
 
     if (damage != 0)
@@ -285,7 +296,11 @@ void ftCommonThrownSetStatusDamageRelease(GObj *fighter_gobj)
     ft_throw = &capture_fp->throw_desc[1];
 #endif
 
+#ifdef REGION_REMIX
+    knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, ftRemixSizeWeight(this_fp, this_fp->attr->weight), capture_fp->handicap, this_fp->handicap); /* Size.asm adjust_player_weight_6 (0x8014B3F0) */
+#else
     knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, this_fp->attr->weight, capture_fp->handicap, this_fp->handicap);
+#endif
 
     knockback_final = knockback_calc - knockback_resist;
 

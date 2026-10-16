@@ -378,9 +378,12 @@ static void ftRemixEntryMakeFoxArwing(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerFoxEntryArwingEffectDesc, nFTKindFox, nFTRemixEntryEffectFoxArwing, &saved) != FALSE)
     {
+        GObj *arwing_gobj;
+
         sFTRemixEntryArwingFighter = fp;
-        efManagerFoxEntryArwingMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr);
+        arwing_gobj = efManagerFoxEntryArwingMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr);
         sFTRemixEntryArwingFighter = NULL;
+        ftRemixSizeEntryArwingBind(arwing_gobj, fp->fighter_gobj);
     }
     ftRemixEntryEndEffect(&dEFManagerFoxEntryArwingEffectDesc, &saved);
 }
@@ -415,7 +418,7 @@ static void ftRemixEntryMakeYoshiEgg(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerYoshiEntryEggEffectDesc, nFTKindYoshi, nFTRemixEntryEffectYoshiEgg, &saved) != FALSE)
     {
-        efManagerYoshiEntryEggMakeEffect(&fp->entry_pos);
+        ftRemixSizeScaleEntryEgg(efManagerYoshiEntryEggMakeEffect(&fp->entry_pos), fp);
     }
     ftRemixEntryEndEffect(&dEFManagerYoshiEntryEggEffectDesc, &saved);
 }
@@ -449,6 +452,9 @@ static void ftRemixEntryMakeCaptainCar(FTStruct *fp)
 }
 
 /* Entry hook of every synth fighter: runs the entry script the Remix tables give its id. */
+/* REMIX-TODO(Size): Size.asm entry gfx_ scope not ported. The top joint z offset and scale of the effects built by
+ * efManagerMarioEntryDokan, DonkeyEntryTaru, SamusEntryPoint, LinkEntryWave, LinkEntryBeam, KirbyEntryStar and CaptainEntryCar
+ * (0x80103768, 0x8010345C, 0x801034B8, 0x80102B28, 0x80102B84, 0x80102C10, 0x80103670) keep their vanilla scale. */
 void ftRemixEntryMakeEffect(FTStruct *fp)
 {
     if (fp->fkind >= ARRAY_COUNT(dFTRemixEntryScripts))

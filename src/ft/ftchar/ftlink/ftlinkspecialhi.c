@@ -155,15 +155,20 @@ void ftLinkSpecialHiMakeWeapon(GObj *fighter_gobj, sb32 is_skip_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     GObj *spin_attack_gobj;
+    GObj *effect_gobj;
     Vec3f pos;
 
     if ((fp->motion_vars.flags.flag0 != 0) && (fp->status_vars.link.specialhi.spin_attack_gobj == NULL))
     {
         fp->motion_vars.flags.flag0 = 0;
 
-        if (efManagerLinkSpinAttackMakeEffect(fighter_gobj) != NULL)
+        effect_gobj = efManagerLinkSpinAttackMakeEffect(fighter_gobj);
+        if (effect_gobj != NULL)
         {
             fp->is_effect_attach = TRUE;
+#ifdef REGION_REMIX
+            ftRemixSizeScaleLinkEffect(fp, effect_gobj);
+#endif
         }
         if (is_skip_gobj == FALSE)
         {
@@ -179,6 +184,9 @@ void ftLinkSpecialHiMakeWeapon(GObj *fighter_gobj, sb32 is_skip_gobj)
                 s32 i;
 
                 wp->attack_coll.attack_state = nGMAttackStateOff;
+#ifdef REGION_REMIX
+                ftRemixSizeScaleLinkWeapon(fp, fp->status_vars.link.specialhi.spin_attack_gobj);
+#endif
 
                 for (i = 0; i < WPSPINATTACK_EXTEND_POS_COUNT; i++)
                 {

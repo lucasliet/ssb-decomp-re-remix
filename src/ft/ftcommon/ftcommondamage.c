@@ -369,6 +369,12 @@ sb32 ftCommonDamageCheckElementSetColAnim(GObj *fighter_gobj, s32 element, s32 d
 {
     sb32 is_set_colanim;
 
+#ifdef REGION_REMIX
+    if (ftRemixDamageIsNewType(element))
+    {
+        return ftRemixDamageSetColAnim(fighter_gobj, element, damage_level);
+    }
+#endif
     switch (element)
     {
     case nGMHitElementFire:

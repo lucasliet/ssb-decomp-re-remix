@@ -3,6 +3,9 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -102,7 +105,11 @@ void ftCommonTwisterShootFighter(GObj *fighter_gobj)
 
     DObjGetStruct(fighter_gobj)->translate.vec.f.z = 0.0F;
 
+#ifdef REGION_REMIX
+    knockback = ftParamGetCommonKnockback(fp->percent_damage, tornado->damage, tornado->damage, tornado->knockback_weight, tornado->knockback_scale, tornado->knockback_base, ftRemixSizeWeight(fp, fp->attr->weight), 9, fp->handicap); /* Size.asm adjust_player_weight_4 (0x80143D30) */
+#else
     knockback = ftParamGetCommonKnockback(fp->percent_damage, tornado->damage, tornado->damage, tornado->knockback_weight, tornado->knockback_scale, tornado->knockback_base, fp->attr->weight, 9, fp->handicap);
+#endif
 
     if (ftParamGetBestHitStatusAll(fighter_gobj) != nGMHitStatusNormal)
     {

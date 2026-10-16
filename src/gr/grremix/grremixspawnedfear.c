@@ -15,6 +15,7 @@
 #include "gr/grremix/grremixhazards.h"
 #include "gr/grremix/grremixspawnedfear.h"
 #include "gr/grremix/grremixthunderball.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include "it/itremix/itremixcacodemon.h"
 #include "sys/objdef.h"
 #include "sys/objman.h"
@@ -27,18 +28,16 @@
 #define GRREMIX_SPAWNED_FEAR_DOOM_ACID_CLIP 0x23 /* asm: clipping id of the doom acid surface, the byte at FTStruct 0xF7 */
 #define GRREMIX_SPAWNED_FEAR_KILL_PERCENT 666 /* asm: percent at which a grounded fighter on the acid is KO'd */
 
-typedef struct GRRemixSpawnedFearVars
-{
-    u16 acid_timer; /* asm 0x801313F8: incremented every frame, read by the poison code */
-} GRRemixSpawnedFearVars;
+/* asm: Hazards.asm ACID_DURATION, ACID_DAMAGE and the poison type 0 (doom acid) */
+#define GRREMIX_SPAWNED_FEAR_POISON_DURATION 60
+#define GRREMIX_SPAWNED_FEAR_POISON_DAMAGE 3
+#define GRREMIX_SPAWNED_FEAR_POISON_TYPE 0
 
-static GRRemixSpawnedFearVars sGRRemixSpawnedFear;
-
-/** Poison part of spawned_fear_acid_main_: a 60 frame doom acid poison of 3 damage per frame. */
+/** Poison part of spawned_fear_acid_main_: refreshes the doom acid poison; the damage and GFX run in ftremixpoison.c. */
 static void grRemixSpawnedFearPoison(FTStruct *fp)
 {
-    /* REMIX-TODO(GFX): asm sets the player's GFX routine to GFXRoutine.DOOM_ACID while poisoned. */
-    /* REMIX-TODO(Poison): asm writes Poison.poisoned_players[fp->player] = { 60 frames, 3 damage, type 0 }; no port yet. */
+    /* REMIX-TODO(GFX): asm sets the player's colanim pointer to DOOM_ACID right away when it is 0 (Hazards.asm 0x0A28); the port applies it on the next poison tick. */
+    ftRemixPoisonSet(fp->player, GRREMIX_SPAWNED_FEAR_POISON_DURATION, GRREMIX_SPAWNED_FEAR_POISON_DAMAGE, GRREMIX_SPAWNED_FEAR_POISON_TYPE);
 }
 
 /** KO part of spawned_fear_acid_main_: the Remix overlay state is cleared and the fighter is KO'd. */
@@ -78,7 +77,7 @@ static void grRemixSpawnedFearAcidProcUpdate(GObj *routine_gobj)
 {
     GObj *fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
 
-    sGRRemixSpawnedFear.acid_timer++;
+    ftRemixPoisonAdvanceTimer();
     while (fighter_gobj != NULL)
     {
         grRemixSpawnedFearCheckFighter(fighter_gobj);
@@ -114,7 +113,6 @@ void grRemixSpawnedFearSetup(void)
     {
         return;
     }
-    sGRRemixSpawnedFear.acid_timer = 0;
     grRemixSpawnedFearMakeAcidRoutine();
     grRemixSpawnedFearSetupFiles();
     grRemixCacodemonFactoryMake();

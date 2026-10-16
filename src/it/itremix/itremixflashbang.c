@@ -11,6 +11,7 @@
 
 #include "it/itremix/itremixflashbang.h"
 #include "it/itremix/itremix.h"
+#include "it/itremix/itremixscreenflash.h"
 #include <math.h>
 #include <ft/fighter.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
@@ -545,7 +546,8 @@ static void itRemixFlashbangExplode(GObj *item_gobj)
     ip->damage_coll.hitstatus = nGMHitStatusNone;
     itMainClearOwnerStats(item_gobj);
 
-    /* REMIX-TODO(GFX): the asm writes flash_array_ to the screen blend-colour command at 0x80131A40 unless Toggles.entry_flash_guard is set. */
+    /* Flashbang.asm _check_flash: the screen flash is drawn in place of the explosion gfx. */
+    itRemixScreenFlashFlashbang();
     efManagerQuakeMakeEffect(1);
     /* asm 0x0054 of the first joint (Flashbang.asm 618-624) is the DObj flags byte. */
     DObjGetStruct(item_gobj)->flags = 2;

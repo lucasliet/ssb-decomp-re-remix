@@ -1,3 +1,6 @@
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixreflect.h"
+#endif
 #include <string.h>
 #include <it/item.h>
 #ifdef REGION_REMIX
@@ -903,6 +906,14 @@ sb32 itMainCommonProcReflector(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
     FTStruct *fp = ftGetStruct(ip->owner_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixReflectInvertsDirection(fp) != FALSE)
+    {
+        ip->physics.vel_air.x = -ip->physics.vel_air.x;
+
+        return FALSE;
+    }
+#endif
     if ((ip->physics.vel_air.x * fp->lr) < 0.0F)
     {
         ip->physics.vel_air.x = -ip->physics.vel_air.x;

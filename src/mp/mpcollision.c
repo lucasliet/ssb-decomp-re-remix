@@ -6,6 +6,7 @@
 #include <sys/debug.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 
 #ifdef PORT
@@ -4448,6 +4449,12 @@ void mpCollisionGetMapObjIDsKind(s32 mapobj_kind, s32 *mapobjs)
 // 0x800FC894
 void mpCollisionGetMapObjPositionID(s32 mapobj_kind, Vec3f *pos)
 {
+#ifdef REGION_REMIX
+    if (grRemixSpawnRespawnPointOverride(pos))
+    {
+        return;
+    }
+#endif
     pos->x = gMPCollisionMapObjs->mapobjs[mapobj_kind].pos.x;
     pos->y = gMPCollisionMapObjs->mapobjs[mapobj_kind].pos.y;
     pos->z = 0.0F;

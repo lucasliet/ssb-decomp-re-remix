@@ -1,5 +1,6 @@
 #include <ef/effect.h>
 #include <gm/gmsound.h>
+#include <ft/ftcommondata.h>
 
 #ifdef PORT
 extern unsigned int portRelocRegisterPointer(void *ptr);
@@ -1185,7 +1186,11 @@ u32 dGMColScriptsScreenFlashDamageIce[/* */] =
 };
 
 // 0x8012DBD0
+#ifdef REGION_REMIX
+GMColDesc dGMColScriptsDescs[GMCOLSCRIPTS_REMIX_DESCS_MAX] =
+#else
 GMColDesc dGMColScriptsDescs[/* */] =
+#endif
 {
 	{ NULL, 			    					 	  	  0, FALSE },
 	{ dGMColScriptsFighterComPlayer,    		 	  	  1, FALSE },
@@ -1278,7 +1283,11 @@ GMColDesc dGMColScriptsDescs[/* */] =
 };
 
 #ifdef PORT
+#ifdef REGION_REMIX
+s32 dGMColScriptsDescsNum = GMCOLSCRIPTS_REMIX_VANILLA_NUM;
+#else
 const s32 dGMColScriptsDescsNum = ARRAY_COUNT(dGMColScriptsDescs);
+#endif
 
 typedef struct GMColScriptLink
 {

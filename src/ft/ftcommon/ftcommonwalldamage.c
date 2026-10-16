@@ -32,7 +32,11 @@ void ftCommonWallDamageSetStatus(GObj *fighter_gobj, Vec3f *angle, Vec3f *pos)
     Vec3f vel_air;
     f32 knockback;
 
+#ifdef REGION_REMIX
+    ftRemixSizeAttachGroundGfx(efManagerImpactWaveMakeEffect(pos, SYVECTOR_AXIS_Z, syUtilsArcTan2(-angle->x, angle->y)), fighter_gobj);
+#else
     efManagerImpactWaveMakeEffect(pos, SYVECTOR_AXIS_Z, syUtilsArcTan2(-angle->x, angle->y));
+#endif
     efManagerQuakeMakeEffect(2);
 
     vel_air = fp->physics.vel_air;

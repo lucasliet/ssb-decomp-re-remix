@@ -17,6 +17,8 @@
 #include "if/ifcommon.h"
 #include "ef/efmanager.h"
 #include "ft/fighter.h"
+#include "ft/ftparam.h"
+#include "gm/gmremixcolscripts.h"
 #include "sys/objman.h"
 #include "remix/remix_roster_data.h"
 
@@ -34,6 +36,7 @@
 #define ITREMIX_PWING_FGM_JUMP_LOW 0x55B
 #define ITREMIX_PWING_FGM_END 0x55A
 #define ITREMIX_PWING_PROCESS_PRI 4 /* the port has no render order; Remix used Render group 1, order 0x8000 */
+#define ITREMIX_PWING_COLANIM 0x7A /* asm GFX_ROUTINE, GFXRoutine.asm add_gfx_routine(PWING) */
 
 enum itRemixPwingJumpState
 {
@@ -333,7 +336,8 @@ static void itRemixPwingApplyJump(FTStruct *fp, ITRemixPwingPlayer *slot)
 /** Starts a Pwing for the fighter, or the Pwing's process is already running and its timer is refreshed. */
 static void itRemixPwingStart(FTStruct *fp, ITRemixPwingPlayer *slot)
 {
-    /* REMIX-TODO(GFXRoutine): asm sets the Pwing glow gfx routine 0x7A as the player's override (GFXRoutine.port_override) */
+    gmRemixColScriptsSetOverride(fp->player, ITREMIX_PWING_COLANIM);
+    ftParamCheckSetFighterColAnimID(fp->fighter_gobj, ITREMIX_PWING_COLANIM, 0);
     slot->fighter_gobj = fp->fighter_gobj;
     slot->process = gcAddGObjProcess(fp->fighter_gobj, itRemixPwingProcUpdate, nGCProcessKindFunc, ITREMIX_PWING_PROCESS_PRI);
     slot->timer = ITREMIX_PWING_DURATION;
@@ -365,7 +369,11 @@ static void itRemixPwingDestroy(FTStruct *fp, ITRemixPwingPlayer *slot)
     }
     func_800269C0_275C0(ITREMIX_PWING_FGM_END);
     slot->jump_state = nITRemixPwingJumpNone;
-    /* REMIX-TODO(GFXRoutine): asm removes the Pwing gfx override and calls ftParamResetStatUpdateColAnim (0x800E98D4) when it is set */
+    if (gmRemixColScriptsGetOverride(fp->player) == ITREMIX_PWING_COLANIM)
+    {
+        gmRemixColScriptsSetOverride(fp->player, 0);
+        ftParamResetStatUpdateColAnim(fp->fighter_gobj);
+    }
     itRemixPwingWhiteCircleGfx(fp);
     gcEndGObjProcess(slot->process);
     slot->process = NULL;

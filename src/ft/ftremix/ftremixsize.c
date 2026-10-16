@@ -127,4 +127,13 @@ f32 ftRemixSizeScaleValue(FTStruct *fp, f32 value)
     return value * ftRemixSizeGetMultiplier(fp->player);
 }
 
+/**
+ * Size.asm attribute scaling: x = 1 + coefficient * (size - 1). The coefficients are the Size.asm constants
+ * (walking_speed_multiplier ... weight_multiplier), see the FTREMIX_SIZE_COEF_* defines in ftremixhooks.h.
+ */
+f32 ftRemixSizeAttrMultiplier(s32 player, f32 coefficient)
+{
+    return 1.0F + (coefficient * (ftRemixSizeGetMultiplier(player) - 1.0F));
+}
+
 #endif

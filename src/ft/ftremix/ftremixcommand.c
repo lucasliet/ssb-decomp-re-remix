@@ -5,6 +5,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include "ft/ftremix/ftremixenvcolor.h"
 #include "ftremixcommand.h"
 
 #include <sys/utils.h>
@@ -295,6 +296,7 @@ static s32 ftRemixCommandRun(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *m
 
     case nFTRemixCommandEnvColor:
         sFTRemixCommandEnvColors[fp->player] = script[1];
+        ftRemixEnvColorSetMoveset(fp->player, script[1]);
         return 8;
 
     case nFTRemixCommandSwitchDirection:
@@ -343,6 +345,7 @@ void ftRemixCommandResetStatus(FTStruct *fp)
     }
     sFTRemixCommandTranslationMultipliers[fp->player] = 1.0F;
     sFTRemixCommandEnvColors[fp->player] = 0;
+    ftRemixEnvColorSetMoveset(fp->player, 0);
 }
 
 void ftRemixCommandResetAttack(s32 player, s32 attack_id)

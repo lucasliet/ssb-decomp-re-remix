@@ -2,6 +2,7 @@
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixenvcolor.h"
 #endif
 #include <if/interface.h>
 #include <sc/scene.h>
@@ -1275,6 +1276,12 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
         u32 sr_env_color;
         CALL_EVENT(FighterEnvColorQueryEvent, fp->player, 0u);
         sr_env_color = FighterEnvColorQueryEvent_.rgba;
+#ifdef REGION_REMIX
+        if (sr_env_color == 0u)
+        {
+            sr_env_color = ftRemixEnvColorGetOverride(fp->player);
+        }
+#endif
         if (sr_env_color != 0u)
         {
             gDPSetEnvColor

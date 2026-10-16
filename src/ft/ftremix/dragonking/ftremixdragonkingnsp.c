@@ -11,6 +11,9 @@
 
 #include "ft/ftremix/ftremix.h"
 #include "ft/ftremix/ftremixfields.h"
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include "remix/remix_symbols.h"
 #include <ef/efmanager.h>
 #include <ef/effect.h>
@@ -129,6 +132,21 @@ static void ftRemixDragonKingNSPDestroyBallOnHit(GObj *fighter_gobj)
     ftRemixDragonKingNSPDestroyBall(ball_gobj);
 }
 
+/* Size.asm dragonking.nsp render_routine_: the ball scale is the base scale (Kirby copies use the smaller one)
+ * times the owner size multiplier. The multiplier is 1.0F without a size source, so the base scale is kept. */
+static void ftRemixDragonKingNSPApplyBallScale(FTStruct *fp, GObj *ball_gobj)
+{
+    DObj *model_joint = DObjGetStruct(ball_gobj)->child;
+    f32 scale = (ftRemixDragonKingNSPIsKirbyCopy(fp) != FALSE) ? DRAGONKING_NSP_BALL_SCALE_KIRBY : DRAGONKING_NSP_BALL_SCALE;
+
+#ifdef REGION_REMIX
+    scale *= ftRemixSizeGetMultiplier(fp->player);
+#endif
+    model_joint->scale.vec.f.x = scale;
+    model_joint->scale.vec.f.y = scale;
+    model_joint->scale.vec.f.z = scale;
+}
+
 /* Ball effect update (the desc proc): vanilla func_ovl2_801017E8 plus the
  * augment_ball_update_routine_ patch. The ball follows the hand every frame and freezes
  * (no anim, no timer) during hitlag; when the timer set by dragon_ball_ runs out the effect
@@ -144,6 +162,7 @@ static void ftRemixDragonKingNSPBallProcUpdate(GObj *ball_gobj)
     }
     ftRemixDragonKingNSPSetBallPosition(fp, ball_gobj);
     gcPlayAnimAll(ball_gobj);
+    ftRemixDragonKingNSPApplyBallScale(fp, ball_gobj);
 
     if (ep->effect_vars.unknown1.efvars_unk1_0x0 == 0)
     {
@@ -162,8 +181,7 @@ static EFDesc sFTRemixDragonKingNSPBallGfxDesc =
     .transform_types1 = { 0x28, 0x1A, 0x00 },
     .transform_types2 = { 0x1C, 0x00, 0x00 },
     .proc_update = ftRemixDragonKingNSPBallProcUpdate,
-    .proc_display = gcDrawDObjTreeForGObj,  /* REMIX-TODO(Size): the Size.asm dragonking.nsp
-                                             * render_routine_ scale wrapper is not applied. */
+    .proc_display = gcDrawDObjTreeForGObj,
     .o_dobjsetup = 0x800,
     .o_mobjsub = 0x640,
     .o_anim_joint = 0x890,
@@ -171,16 +189,13 @@ static EFDesc sFTRemixDragonKingNSPBallGfxDesc =
 };
 
 /* DragonKingNSP.dragon_ball_ (called by main_): spawns the lightning ball effect, scales it
- * (REMIX-TODO(Size): the Size.multiplier_table factor is not applied, multiplier 1.0F),
- * attaches it to the right hand, saves it in the player struct word 0x0B20 and arms the
+ * at the base scale times the owner size multiplier, attaches it to the right hand, saves it in the player struct word 0x0B20 and arms the
  * on-hit destroy hook (0x09EC = proc_damage). The spawn request (temp variable 1) is consumed
  * either way, as the asm does. */
 static void ftRemixDragonKingNSPDragonBall(FTStruct *fp)
 {
     GObj *ball_gobj;
     EFStruct *ep;
-    DObj *model_joint;
-    f32 scale;
 
     if (fp->motion_vars.flags.flag0 != 1)
     {
@@ -200,11 +215,7 @@ static void ftRemixDragonKingNSPDragonBall(FTStruct *fp)
      * fighter_gobj slot); the update and destroy routines read it back. */
     ep->fighter_gobj = (GObj *)fp;
 
-    scale = (ftRemixDragonKingNSPIsKirbyCopy(fp) != FALSE) ? DRAGONKING_NSP_BALL_SCALE_KIRBY : DRAGONKING_NSP_BALL_SCALE;
-    model_joint = DObjGetStruct(ball_gobj)->child;
-    model_joint->scale.vec.f.x = scale;
-    model_joint->scale.vec.f.y = scale;
-    model_joint->scale.vec.f.z = scale;
+    ftRemixDragonKingNSPApplyBallScale(fp, ball_gobj);
 
     ftRemixDragonKingNSPVars(fp)->ball_gobj = ball_gobj;
     fp->proc_damage = ftRemixDragonKingNSPDestroyBallOnHit;

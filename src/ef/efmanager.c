@@ -230,7 +230,11 @@ EFDesc dEFManagerImpactWaveEffectDesc =
         0x00                                // ???
     },
 
+#ifdef REGION_REMIX
+    ftRemixSizeGroundGfxProcUpdate,      // Proc Update
+#else
     efManagerImpactWaveProcUpdate,       // Proc Update
+#endif
     efManagerImpactWaveProcDisplay,      // Proc Render
 
     llEFCommonEffects1ImpactWaveDObjDesc,    // DObj Setup attributes offset (?)
@@ -820,7 +824,11 @@ EFDesc dEFManagerCaptainFalconPunchEffectDesc =
     },
 
     efManagerNoEjectProcUpdate,                     // Proc Update
+#ifdef REGION_REMIX
+    ftRemixSizeFalconPunchProcDisplay,                 // Proc Render
+#else
     lbCommonDObjScaleXProcDisplay,                     // Proc Render
+#endif
 
     llCaptainSpecial3FalconPunchDObjDesc,               // DObj Setup attributes offset (?)
     llCaptainSpecial3FalconPunchMObjSub,                 // MObjSub offset
@@ -4253,6 +4261,10 @@ void efManagerYoshiShieldProcDisplay(GObj *effect_gobj)
     gDPPipeSync(gSYTaskmanDLHeads[1]++);
     gDPSetEnvColor(gSYTaskmanDLHeads[1]++, color[0], color[1], color[2], 0x00);
 
+#ifdef REGION_REMIX
+    ftRemixSizeScaleYoshiShield(effect_gobj, fp);
+#endif
+
     gcDrawDObjDLHead1(effect_gobj);
 
     efDisplayCLDProcDisplay(effect_gobj);
@@ -4289,6 +4301,8 @@ GObj* efManagerYoshiShieldMakeEffect(GObj *fighter_gobj)
 }
 
 // 0x80101408
+/* REMIX-TODO(Size): Size.asm pikachu.adjust_gfx_size_ (0x8010146C) sets this DSP connect gfx x/y scale to the owner
+ * multiplier. It needs the player struct, which this function does not take, so it is not applied. */
 LBParticle* efManagerThunderAmpMakeEffect(Vec3f *pos)
 {
     LBParticle *pc = lbParticleMakeScriptID(gEFManagerParticleBankID, 0x74);
@@ -5055,6 +5069,8 @@ GObj* efManagerKirbyCutterTrailMakeEffect(GObj *fighter_gobj)
 }
 
 // 0x801025D8
+/* REMIX-TODO(Size): Size.asm ness.dsp (0x8010260C) replaces the update with a wrapper that scales the animated joints
+ * every frame. The port has no per-frame hook for this descriptor, so the scale is not applied. */
 GObj* efManagerNessPsychicMagnetMakeEffect(GObj *fighter_gobj)
 {
     GObj *effect_gobj;
@@ -5211,6 +5227,8 @@ GObj* efManagerNessPKReflectTrailMakeEffect(GObj *weapon_gobj)
 }
 
 // 0x801029F8
+/* REMIX-TODO(Size): Size.asm ness.usp (0x80102A3C) replaces the update with a wrapper that scales the animated joints
+ * every frame. The port has no per-frame hook for this descriptor, so the scale is not applied. */
 GObj* efManagerNessPKThunderWaveMakeEffect(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -5706,8 +5724,9 @@ GObj* efManagerDonkeyEntryTaruMakeEffect(Vec3f *pos)
 }
 
 // 0x80103474
-/* REMIX-TODO(GFX): Dark Samus (file 6) and Crash (file 8) entry glows need the owner fighter, which
- * this signature lacks; callers ftport.c and ftcommonentry.c have it. See docs/remix/notes/shared_samus2.md. */
+/* Dark Samus (file 6) and Crash (file 8) entry glows get their owner file from ftRemixEntryBeginEffect
+ * (ftremixentry.c, rows in ftremixentrydata.c, samusshared.asm get_entry_anim_gfx_struct). Remix fighters reach
+ * this maker through ftRemixEntryMakeEffect, so the signature needs no fighter. Resolved, see shared_samus2.md. */
 GObj* efManagerSamusEntryPointMakeEffect(Vec3f *pos)
 {
     GObj *effect_gobj;
@@ -5848,6 +5867,10 @@ void efManagerFoxEntryArwingProcUpdate(GObj *effect_gobj)
     DObj *dobj = DObjGetStruct(effect_gobj)->child;
 
     gcPlayAnimAll(effect_gobj);
+
+#ifdef REGION_REMIX
+    ftRemixSizeEntryArwingUpdate(effect_gobj);
+#endif
 
     if (dobj->anim_frame <= 0.0F)
     {
@@ -6003,7 +6026,11 @@ void efManagerCaptureKirbyStarProcUpdate(GObj *effect_gobj)
     fp = ftGetStruct(ep->fighter_gobj);
     topn_dobj = DObjGetStruct(effect_gobj);
 
+    #ifdef REGION_REMIX
+    copy = ftRemixKirbyGetCopyTable();
+#else
     copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
+#endif
 
     child_dobj = topn_dobj->child;
 
@@ -6050,7 +6077,11 @@ GObj* efManagerCaptureKirbyStarMakeEffect(GObj *fighter_gobj)
     DObj *dobj;
     FTKirbyCopy *copy;
 
+    #ifdef REGION_REMIX
+    copy = ftRemixKirbyGetCopyTable();
+#else
     copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
+#endif
 
     dEFManagerCaptureKirbyStarEffectDesc.file_head = &addr;
 
@@ -6183,6 +6214,9 @@ GObj* efManagerRebirthHaloMakeEffect(GObj *fighter_gobj, f32 scale)
     EFStruct *ep;
     DObj *dobj, *child;
 
+#ifdef REGION_REMIX
+    scale = ftRemixSizeScaleValue(ftGetStruct(fighter_gobj), scale);
+#endif
     effect_gobj = efManagerMakeEffectForce(&dEFManagerRebirthHaloEffectDesc);
 
     if (effect_gobj == NULL)
@@ -6292,8 +6326,12 @@ void efManagerKirbyInhaleWindProcUpdate(GObj *effect_gobj)
 
     xf->translate = DObjGetStruct(ep->fighter_gobj)->translate.vec.f;
 
+#ifdef REGION_REMIX
+    ftRemixSizeKirbySuckTransform(xf, ep->fighter_gobj);
+#else
     xf->translate.x += ftGetStruct(ep->fighter_gobj)->lr * 800.0F;
     xf->translate.y += 230.0F;
+#endif
 }
 
 // 0x801042B4

@@ -113,8 +113,6 @@ void ftRemixSamusSharedKirbyCopyChargeFlash(GObj *fighter_gobj)
     {
         return;
     }
-    /* REMIX-TODO(GFXRoutine): ftParamCheckSetColAnimID rejects ids >= dGMColScriptsDescsNum
-     * (ftparam.c), so this colour anim is a no-op until the Remix GFX routine table is ported. */
     ftParamCheckSetFighterColAnimID(fighter_gobj, gfx_id, 0);
 }
 

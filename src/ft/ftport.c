@@ -29,6 +29,9 @@
 #include "fighter_registry.h"
 #include "remix/remix_synth_ft.h"
 #include "remix/remix_ram_image.h"
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include "bridge/lbreloc_figatree.h"
 #include "ft/ftremix/ftremix.h"
 
@@ -105,7 +108,11 @@ void ftPortVanillaEntryMakeEffect(FTStruct *fp)
         break;
 
     case nFTKindYoshi:
+#ifdef REGION_REMIX
+        ftRemixSizeScaleEntryEgg(efManagerYoshiEntryEggMakeEffect(&fp->entry_pos), fp);
+#else
         efManagerYoshiEntryEggMakeEffect(&fp->entry_pos);
+#endif
         break;
 
     case nFTKindKirby:

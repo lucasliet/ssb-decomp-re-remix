@@ -7,11 +7,16 @@
 #include <sys/objman.h>
 #include <sys/objdef.h>
 #include <ft/fighter.h>
+#include "ft/ftremix/ftremixenvcolor.h"
+#include <math.h>
 
 #define ITREMIX_CLOAKINGDEVICE_KIND 0x2D
 #define ITREMIX_CLOAKINGDEVICE_FILE_OFFSET 0x0D40
 #define ITREMIX_CLOAKINGDEVICE_PORTS 4
 #define ITREMIX_CLOAKINGDEVICE_DECLOAK_FRAMES 600
+#define ITREMIX_CLOAKINGDEVICE_TRANSITION_FRAMES 32
+#define ITREMIX_CLOAKINGDEVICE_OPACITY_PER_FRAME 8
+#define ITREMIX_CLOAKINGDEVICE_SPEED_ONLY_FRAMES 4 /* asm: the speed term is added from the 4th frame on */
 #define ITREMIX_CLOAKINGDEVICE_FGM_CLOAK 0x0529
 #define ITREMIX_CLOAKINGDEVICE_FGM_DECLOAK 0x052A
 
@@ -60,9 +65,62 @@ GObj* itRemixCloakingDeviceMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u
     return itManagerMakeItem(parent_gobj, &sITRemixCloakingDeviceItemInfo, pos, vel, flags);
 }
 
-/* CloakingDevice: handle_active_cloaking_device_. Runs every frame while a cloak is active.
- * REMIX-TODO(CharEnvColor): the asm fades the env color override over 32 frames and flickers near the end.
- * The port has only a binary is_invisible, so the cloaked fighter is fully hidden. */
+/* Opacity byte of the cloak at this frame (asm handle_active_cloaking_device_): it fades out over the transition,
+ * grows back with the fighter's speed and flickers on a few of the final frames. */
+static u32 itRemixCloakingDeviceGetOpacity(FTStruct *fp, s32 timer)
+{
+    s32 frame = (timer < ITREMIX_CLOAKINGDEVICE_TRANSITION_FRAMES) ? timer : ITREMIX_CLOAKINGDEVICE_TRANSITION_FRAMES;
+    s32 opacity = -(frame * ITREMIX_CLOAKINGDEVICE_OPACITY_PER_FRAME);
+
+    if (timer >= ITREMIX_CLOAKINGDEVICE_SPEED_ONLY_FRAMES)
+    {
+        f32 speed = sqrtf((fp->physics.vel_air.x * fp->physics.vel_air.x) + (fp->physics.vel_air.y * fp->physics.vel_air.y));
+
+        opacity += (s32)speed;
+        if (opacity >= 0)
+        {
+            opacity = -1;
+        }
+        switch (ITREMIX_CLOAKINGDEVICE_DECLOAK_FRAMES - timer)
+        {
+        case 30:
+            opacity += 0x48;
+            break;
+        case 22:
+            opacity += 0x18;
+            break;
+        case 18:
+            opacity += 0x68;
+            break;
+        case 9:
+            opacity += 0x78;
+            break;
+        case 5:
+            opacity += 0x58;
+            break;
+        }
+    }
+    return (u32)opacity & 0xFF;
+}
+
+/* CloakingDevice: writes the env colour override of the port for this opacity (asm _set_env_color). */
+static void itRemixCloakingDeviceSetEnvColor(FTStruct *fp, u32 opacity)
+{
+    FTRemixEnvColorState state = ftRemixEnvColorGetState(fp->player);
+    u32 rgba = opacity;
+
+    if ((state == nFTRemixEnvColorStateNormal) || (state == nFTRemixEnvColorStateCloaked))
+    {
+        rgba |= 0xFFFFFF00;
+    }
+    else if (rgba == 0)
+    {
+        rgba = 1;
+    }
+    ftRemixEnvColorSetOverride(fp->player, rgba);
+}
+
+/* CloakingDevice: handle_active_cloaking_device_. Runs every frame while a cloak is active. */
 static void itRemixCloakingDeviceProcUpdate(GObj *routine_gobj)
 {
     FTStruct *fp = (FTStruct*) routine_gobj->user_data.p;
@@ -71,14 +129,14 @@ static void itRemixCloakingDeviceProcUpdate(GObj *routine_gobj)
     state->timer += 1;
     if ((state->timer >= ITREMIX_CLOAKINGDEVICE_DECLOAK_FRAMES) || (fp->status_id <= nFTCommonStatusDeadUpFall))
     {
-        fp->is_invisible = FALSE;
+        ftRemixEnvColorRestoreState(fp->player);
         state->is_active = FALSE;
         state->timer = 0;
         gcEjectGObj(routine_gobj);
         func_800269C0_275C0(ITREMIX_CLOAKINGDEVICE_FGM_DECLOAK);
         return;
     }
-    fp->is_invisible = TRUE;
+    itRemixCloakingDeviceSetEnvColor(fp, itRemixCloakingDeviceGetOpacity(fp, state->timer));
 }
 
 /* CloakingDevice: starts the cloak from a zero timer. A second pickup while cloaked only restarts the timer. */
@@ -115,6 +173,7 @@ void itRemixCloakingDeviceClearStates(void)
     {
         sITRemixCloakingDeviceStates[port].is_active = FALSE;
         sITRemixCloakingDeviceStates[port].timer = 0;
+        ftRemixEnvColorRestoreState(port);
     }
 }
 

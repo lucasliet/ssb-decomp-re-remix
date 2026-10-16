@@ -132,7 +132,11 @@ void ftKirbySpecialNCopyInitCopyVars(GObj *fighter_gobj)
     s16 copy_id;
     FTStruct *fp = ftGetStruct(fighter_gobj);
 #ifdef PORT
+    #ifdef REGION_REMIX
+    FTKirbyCopy *copy = ftRemixKirbyGetCopyTable();
+#else
     FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
+#endif
 #else
     FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, &llKirbyMainMotionSpecialNFTKirbyCopy);
 #endif
@@ -198,7 +202,11 @@ void ftKirbySpecialNCatchProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *kirby_fp = ftGetStruct(fighter_gobj);
 #ifdef PORT
+    #ifdef REGION_REMIX
+    FTKirbyCopy *copy = ftRemixKirbyGetCopyTable();
+#else
     FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
+#endif
 #else
     FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, &llKirbyMainMotionSpecialNFTKirbyCopy);
 #endif

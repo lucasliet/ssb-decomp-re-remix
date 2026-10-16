@@ -3,6 +3,9 @@
 #include <it/item.h>
 #include <gr/ground.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixreflect.h"
+#endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
 extern void port_dump_backtrace(void);
@@ -213,6 +216,9 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         {
             attack_id = ftMotionEventCast(ms, FTMotionEventMakeAttack1)->attack_id;
             attack_coll = &fp->attack_colls[attack_id];
+#ifdef REGION_REMIX
+            ftRemixCommandResetAttack(fp->player, attack_id);
+#endif
 #ifdef PORT
             /* create_hitbox_ (0x800DF1F0): notify mods so per-hitbox
              * override slots (SR direction/FGM state in CE) are cleared and
@@ -253,7 +259,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
 
             ftMotionEventAdvance(ms, FTMotionEventMakeAttack1);
 
+#ifdef REGION_REMIX
+            attack_coll->size = ftRemixSizeScaleHitboxSize(fp, ftMotionEventCast(ms, FTMotionEventMakeAttack2)->size) * 0.5F;
+#else
             attack_coll->size = ftMotionEventCast(ms, FTMotionEventMakeAttack2)->size * 0.5F;
+#endif
             attack_coll->offset.x = ftMotionEventCast(ms, FTMotionEventMakeAttack2)->off_x;
 
             ftMotionEventAdvance(ms, FTMotionEventMakeAttack2);
@@ -263,7 +273,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
 
             ftMotionEventAdvance(ms, FTMotionEventMakeAttack3);
 
+#ifdef REGION_REMIX
+            attack_coll->angle = ftRemixKnockbackAngle(fp, ftMotionEventCast(ms, FTMotionEventMakeAttack4)->angle); /* Knockback.asm get_angle_hitbox_ (0x800DF424) */
+#else
             attack_coll->angle = ftMotionEventCast(ms, FTMotionEventMakeAttack4)->angle;
+#endif
             attack_coll->knockback_scale = ftMotionEventCast(ms, FTMotionEventMakeAttack4)->knockback_scale;
             attack_coll->knockback_weight = ftMotionEventCast(ms, FTMotionEventMakeAttack4)->knockback_weight;
 
@@ -312,7 +326,12 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         {
             attack_id = ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->attack_id;
 
+#ifdef REGION_REMIX
+            /* REMIX-TODO(ChargeSmash): Size.asm fix_damage_ charged smash block (asm lines 477-527) is not ported. */
+            fp->attack_colls[attack_id].damage = ftRemixSizeScaleDamage(fp, ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->damage);
+#else
             fp->attack_colls[attack_id].damage = ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->damage;
+#endif
 
             ftMotionEventAdvance(ms, FTMotionEventSetAttackCollDamage);
 
@@ -324,7 +343,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
     case nFTMotionEventSetAttackCollSize:
         attack_id = ftMotionEventCast(ms, FTMotionEventSetAttackCollSize)->attack_id;
 
+#ifdef REGION_REMIX
+        fp->attack_colls[attack_id].size = ftRemixSizeScaleHitboxSize(fp, ftMotionEventCast(ms, FTMotionEventSetAttackCollSize)->size) * 0.5F;
+#else
         fp->attack_colls[attack_id].size = ftMotionEventCast(ms, FTMotionEventSetAttackCollSize)->size * 0.5F;
+#endif
 
         ftMotionEventAdvance(ms, FTMotionEventSetAttackCollSize);
         break;
@@ -1650,6 +1673,12 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
             ftParamResetStatUpdateColAnim(fighter_gobj);
         }
     }
+#ifdef REGION_REMIX
+    else
+    {
+        ftRemixPoisonUpdate(fighter_gobj);
+    }
+#endif
     if ((this_fp->item_gobj != NULL) && (this_fp->status_id != nFTCommonStatusLightGet) && (itGetStruct(this_fp->item_gobj)->kind == nITKindHammer))
     {
         ftHammerUpdateStats(fighter_gobj);
@@ -1982,7 +2011,11 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
                 {
                     fp->physics.vel_damage_ground = fp->physics.vel_damage_air.x;
                 }
+#ifdef REGION_REMIX
+                ftMainUpdateVelDamageGround(fp, grRemixSurfaceFriction(fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK) * fp->attr->traction * 0.25F);
+#else
                 ftMainUpdateVelDamageGround(fp, dMPCollisionMaterialFrictions[fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK] * fp->attr->traction * 0.25F);
+#endif
 
                 vel_damage_air->x = (floor_angle->y * fp->physics.vel_damage_ground);
                 vel_damage_air->y = (-floor_angle->x * fp->physics.vel_damage_ground);
@@ -2010,7 +2043,14 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
 
     if ((fp->coll_data.pos_prev.y >= gMPCollisionGroundData->alt_warning) && (topn_translate->y < gMPCollisionGroundData->alt_warning) && (fp->fkind != nFTKindBoss))
     {
+#ifdef REGION_REMIX
+        if (!grRemixBlastZoneSkipsBottomSfx())
+        {
+            func_800269C0_275C0(nSYAudioFGMAltitudeWarn);
+        }
+#else
         func_800269C0_275C0(nSYAudioFGMAltitudeWarn);
+#endif
     }
     if (fp->public_knockback != 0)
     {
@@ -2956,9 +2996,13 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
                 this_fp->damage_queue, ft_attack_coll->damage, 
                 ft_attack_coll->knockback_weight, 
                 ft_attack_coll->knockback_scale, 
-                ft_attack_coll->knockback_base, 
-                attr->weight, 
-                attacker_fp->handicap, 
+                ft_attack_coll->knockback_base,
+#ifdef REGION_REMIX
+                ftRemixSizeWeight(this_fp, attr->weight), /* Size.asm adjust_player_weight_1 (0x800E3F88) */
+#else
+                attr->weight,
+#endif
+                attacker_fp->handicap,
                 this_fp->handicap
             );
 
@@ -2970,6 +3014,14 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
                 efManagerDamageFireMakeEffect(&pos, ft_attack_coll->damage);
                 break;
 
+#ifdef REGION_REMIX
+            case FTREMIX_DAMAGE_SHADOW:
+                ftRemixDamageMakeShadowEffect(&pos, ft_attack_coll->damage);
+                break;
+
+            case FTREMIX_DAMAGE_STUN:
+            case FTREMIX_DAMAGE_FLASHBANG:
+#endif
             case nGMHitElementElectric:
                 efManagerDamageElectricMakeEffect(&pos, ft_attack_coll->damage);
                 break;
@@ -3013,7 +3065,11 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
             wp = wpGetStruct(hitlog->attacker_gobj);
             damage = wpMainGetStaledDamage(wp);
 
+#ifdef REGION_REMIX
+            knockback_temp = ftParamGetCommonKnockback(this_fp->percent_damage, this_fp->damage_queue, damage, wp_attack_coll->knockback_weight, wp_attack_coll->knockback_scale, wp_attack_coll->knockback_base, ftRemixSizeWeight(this_fp, attr->weight), wp->handicap, this_fp->handicap); /* Size.asm adjust_player_weight_2 (0x800E4120) */
+#else
             knockback_temp = ftParamGetCommonKnockback(this_fp->percent_damage, this_fp->damage_queue, damage, wp_attack_coll->knockback_weight, wp_attack_coll->knockback_scale, wp_attack_coll->knockback_base, attr->weight, wp->handicap, this_fp->handicap);
+#endif
 
             if (wp->is_hitlag_victim)
             {
@@ -3050,7 +3106,11 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
 
             damage = itMainGetDamageOutput(ip);
 
+#ifdef REGION_REMIX
+            knockback_temp = ftParamGetCommonKnockback(this_fp->percent_damage, this_fp->damage_queue, damage, it_attack_coll->knockback_weight, it_attack_coll->knockback_scale, it_attack_coll->knockback_base, ftRemixSizeWeight(this_fp, attr->weight), ip->handicap, this_fp->handicap); /* Size.asm adjust_player_weight_3 (0x800E4244) */
+#else
             knockback_temp = ftParamGetCommonKnockback(this_fp->percent_damage, this_fp->damage_queue, damage, it_attack_coll->knockback_weight, it_attack_coll->knockback_scale, it_attack_coll->knockback_base, attr->weight, ip->handicap, this_fp->handicap);
+#endif
 
             if (ip->is_hitlag_victim)
             {
@@ -3116,6 +3176,9 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
 
         this_fp->damage_lr = (DObjGetStruct(fighter_gobj)->translate.vec.f.x < DObjGetStruct(attacker_gobj)->translate.vec.f.x) ? +1 : -1;
 
+#ifdef REGION_REMIX
+        ftRemixCommandApplyDamageDirection(this_fp, attacker_fp, ft_attack_coll);
+#endif
 #ifdef PORT
         /* apply_direction_ (0x800E446C): a listener (CE) that keeps per-hitbox
          * direction overrides derives the hitbox id from the attacker's
@@ -3603,7 +3666,11 @@ void ftMainSearchHitWeapon(GObj *fighter_gobj)
                     }
                     if (l != 0)
                     {
+#ifdef REGION_REMIX
+                        if ((fp->is_reflect) && (ftRemixReflectCanReflectWeapon(fp, wp)))
+#else
                         if ((fp->is_reflect) && (wp_attack_coll->can_reflect))
+#endif
                         {
                             for (i = 0; i < wp_attack_coll->attack_count; i++)
                             {
@@ -4046,7 +4113,11 @@ void ftMainSearchFighterCatch(GObj *this_gobj)
                 }
                 if ((damage_coll->hitstatus != nGMHitStatusIntangible) && (damage_coll->hitstatus != nGMHitStatusInvincible))
                 {
+#ifdef REGION_REMIX
+                    if ((damage_coll->is_grabbable != FALSE) && (ftRemixForceGrabImmunity(other_fp) == FALSE) && (gmCollisionCheckFighterAttackDamageCollide(attack_coll, damage_coll) != FALSE)) /* Hitbox.asm force_grab_immunity_ (0x800E6064) */
+#else
                     if ((damage_coll->is_grabbable != FALSE) && (gmCollisionCheckFighterAttackDamageCollide(attack_coll, damage_coll) != FALSE))
+#endif
                     {
                         ftMainUpdateCatchStatFighter(this_fp, attack_coll, other_fp, this_gobj, other_gobj);
 
@@ -4107,6 +4178,7 @@ void ftMainProcParams(GObj *fighter_gobj)
     s32 damage;
     s32 status_id;
     f32 knockback_resist;
+    f32 passive_resist;
     sb32 is_shieldbreak;
     u32 hitlag_tics;
     sb32 is_knockback_paused;
@@ -4151,9 +4223,14 @@ void ftMainProcParams(GObj *fighter_gobj)
         {
             fp->damage_kind = nFTDamageKindColAnim;
         }
-        if (fp->knockback_resist_status < fp->knockback_resist_passive)
+#ifdef REGION_REMIX
+        passive_resist = ftRemixSizePassiveArmor(fp, fp->knockback_resist_passive);
+#else
+        passive_resist = fp->knockback_resist_passive;
+#endif
+        if (fp->knockback_resist_status < passive_resist)
         {
-            knockback_resist = fp->knockback_resist_passive;
+            knockback_resist = passive_resist;
         }
         else knockback_resist = fp->knockback_resist_status;
 
@@ -4256,6 +4333,13 @@ void ftMainProcParams(GObj *fighter_gobj)
     }
     else if (fp->reflect_lr != 0)
     {
+#ifdef REGION_REMIX
+        if (ftRemixReflectIsCustom(fp))
+        {
+            ftRemixReflectRunCustom(fighter_gobj);
+        }
+        else
+#endif
         switch (fp->special_coll->kind)
         {
         case nFTSpecialCollKindFoxReflector:
@@ -4922,6 +5006,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     fp->coll_data.ignore_line_id = -1;
 
     fp->is_item_show = TRUE;
+#ifdef REGION_REMIX
+    ftRemixPianoExtraPartVisibility(fp);
+#endif
     fp->is_cliff_hold = FALSE;
 
     ftParamSetCaptureImmuneMask(fp, FTCATCHKIND_MASK_NONE);
@@ -4934,7 +5021,11 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     {
         fp->camera_mode = nFTCameraModeDefault;
     }
+#ifdef REGION_REMIX
+    fp->camera_zoom_range = grRemixCameraAdjustZoomRange();
+#else
     fp->camera_zoom_range = 1.0F;
+#endif
 
     if (!(flags & FTSTATUS_PRESERVE_PLAYERTAG))
     {

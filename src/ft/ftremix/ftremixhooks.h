@@ -61,6 +61,10 @@ void ftRemixMarinaCargoThrowFInitGemSpawned(FTStruct *fp);
 void ftRemixMarinaDSPAbsorbItemCharge(FTStruct *fp, ITStruct *ip);
 void ftRemixMarinaDSPAbsorbProjectileCharge(FTStruct *fp, WPStruct *wp);
 
+/* Reflect.custom_reflect_table routines (ftremixreflect.c): MarinaDSP.absorb_initial_ and DededeNSP.absorb_initial_ */
+void ftRemixMarinaDSPAbsorbInitial(GObj *fighter_gobj);
+void ftRemixDededeNSPAbsorbInitial(GObj *fighter_gobj);
+
 /* YoungLink, ftremixyounglink.c: each helper returns or does nothing unless the owner is Young Link */
 f32 ftRemixYoungLinkUpSpecialAirVelY(FTStruct *fp, f32 vanilla_vel_y);
 f32 ftRemixYoungLinkUpSpecialLandingLag(FTStruct *fp, f32 vanilla_lag);
@@ -194,7 +198,115 @@ void ftRemixSizeApplyTopJointAndEcb(FTStruct *fp);
 f32 ftRemixSizeCameraZoomFactor(FTStruct *fp);
 f32 ftRemixSizeScaleValue(FTStruct *fp, f32 value);
 
+/* Size phase (b): 1 + coefficient * (size - 1) for the attribute coefficients of Size.asm */
+f32 ftRemixSizeAttrMultiplier(s32 player, f32 coefficient);
+#define FTREMIX_SIZE_COEF_WALKING_SPEED 0.45F
+#define FTREMIX_SIZE_COEF_BRAKE_FORCE -0.04712F
+#define FTREMIX_SIZE_COEF_DASHING_SPEED 0.4F
+#define FTREMIX_SIZE_COEF_DASH_DECEL 0.45172F
+#define FTREMIX_SIZE_COEF_RUNNING_SPEED 0.36664F
+#define FTREMIX_SIZE_COEF_JUMPING_HEIGHT 0.3234F
+#define FTREMIX_SIZE_COEF_BASE_JUMPING_HEIGHT 0.0727F
+#define FTREMIX_SIZE_COEF_SECOND_JUMPING_HEIGHT 0.0395604F
+#define FTREMIX_SIZE_COEF_WEIGHT -0.24F
+
 /* Casino Night side bumper bounce, 0x80141B88 in ftCommonWallDamageSetStatus (gr/grremix/grremixcasino.c) */
 f32 grRemixCasinoWallBounceScale(FTStruct *fp);
+
+/* Size phase (b) weight, ftremix/ftremixsizeweight.c (Size.asm adjust_player_weight_1..8): the attribute weight
+ * a knockback formula reads, scaled by the size of the fighter */
+f32 ftRemixSizeWeight(FTStruct *fp, f32 vanilla_weight);
+
+/* Size phase (b) movement, ftremix/ftremixsizemove.c (Size.asm adjust_player_*_ and adjust_jumping_height_multiplier_*):
+ * walk, brake, dash, run, jump squat and jump height values scaled by the size of the fighter */
+f32 ftRemixSizeWalkingSpeed(FTStruct *fp, f32 vanilla_speed);
+f32 ftRemixSizeBrakeForce(FTStruct *fp, f32 vanilla_force);
+f32 ftRemixSizeDashDecel(FTStruct *fp, f32 vanilla_decel);
+f32 ftRemixSizeInitialDashSpeed(FTStruct *fp, f32 vanilla_speed);
+f32 ftRemixSizeRunSpeed(FTStruct *fp, f32 vanilla_speed);
+f32 ftRemixSizeJumpSquatLength(FTStruct *fp, f32 vanilla_length);
+f32 ftRemixSizeJumpHeightMul(FTStruct *fp, f32 vanilla_mul);
+f32 ftRemixSizeJumpHeightBase(FTStruct *fp, f32 vanilla_base);
+f32 ftRemixSizeAerialJumpHeight(FTStruct *fp, f32 vanilla_height);
+
+/* Size phase (c) effects, ftremix/ftremixsizefx2.c (Size.asm link.adjust_usp_projectile_size_ and adjust_usp_gfx_size_):
+ * the Up Special weapon and effect scaled by the owner multiplier, set at spawn */
+void ftRemixSizeScaleLinkWeapon(FTStruct *fp, GObj *weapon_gobj);
+void ftRemixSizeScaleLinkEffect(FTStruct *fp, GObj *effect_gobj);
+
+/* Size phase (b) hitbox and damage, ftremix/ftremixsizebody.c (Size.asm fix_size_, fix_damage_, passive_armor_):
+ * the hitbox size, the hitbox damage and the passive knockback resist scaled by the size of the fighter */
+s32 ftRemixSizeScaleHitboxSize(FTStruct *fp, s32 size);
+s32 ftRemixSizeScaleDamage(FTStruct *fp, s32 damage);
+f32 ftRemixSizePassiveArmor(FTStruct *fp, f32 passive_resist);
+
+/* Size phase (c) entry, ftremix/ftremixsizeentry.c (Size.asm entry animation_ and arwing update_routine_): the entry
+ * animation translation scaled before ftCommonAppearProcPhysics reads it, and the Arwing entry wing scaled per frame */
+void ftRemixSizeEntryAnimationScale(FTStruct *fp);
+void ftRemixSizeEntryArwingBind(GObj *effect_gobj, GObj *fighter_gobj);
+void ftRemixSizeEntryArwingUpdate(GObj *effect_gobj);
+
+/* Size phase (c): effect GFX scaled by the owner size, ftremix/ftremixsizefx.c (Size.asm yoshi_egg, ground_gfx,
+ * kirby nsp suck, falcon punch). The Yoshi shield is 1.5F in Remix, times the owner multiplier. */
+#define FTREMIX_SIZE_YOSHI_SHIELD_SCALE 1.5F
+void ftRemixSizeScaleYoshiShield(GObj *effect_gobj, FTStruct *fp);
+void ftRemixSizeScaleEntryEgg(GObj *egg_gobj, FTStruct *fp);
+void ftRemixSizeAttachGroundGfx(GObj *effect_gobj, GObj *fighter_gobj);
+void ftRemixSizeGroundGfxProcUpdate(GObj *effect_gobj);
+void ftRemixSizeKirbySuckTransform(LBTransform *xf, GObj *fighter_gobj);
+void ftRemixSizeFalconPunchProcDisplay(GObj *effect_gobj);
+
+/* Knockback.asm (knockback angle randomizer), ftremixknockback.c: randomize_angles_ (ftManagerMakeFighter),
+ * get_angle_hitbox_ (ftMainParseMotionEvent) and get_angle_throw_ (ftCommonThrownReleaseThrownUpdateStats) */
+void ftRemixKnockbackRandomizeAngles(FTStruct *fp);
+s32 ftRemixKnockbackAngle(FTStruct *fp, s32 vanilla_angle);
+
+/* Hitbox.asm force_grab_immunity_ (0x800E6064), ftremixhitbox.c: TRUE when the victim is not grabbable */
+sb32 ftRemixForceGrabImmunity(FTStruct *fp);
+
+/* Surface.asm get_friction_ (0x800D8BDC, 0x800E21DC), gr/grremix/grremixsurface.c: ground friction of a material id */
+f32 grRemixSurfaceFriction(u32 material);
+
+/* Blastzone.asm skip_bottom_blast_sfx (0x800E234C), gr/grremix/grremixblastzone.c: TRUE when the bottom altitude sound is skipped */
+sb32 grRemixBlastZoneSkipsBottomSfx(void);
+
+/* Camera.asm override_camera_type_ (0x8010DAA4), gr/grremix/grremixcamera.c: camera routine of the default branch */
+s32 grRemixCameraDefaultStatus(s32 gkind);
+
+/* Camera.asm camera_adjust_ (0x800E7270), gr/grremix/grremixcamera.c: camera zoom range set by ftMainSetStatus */
+f32 grRemixCameraAdjustZoomRange(void);
+
+/* Spawn.asm load_respawn_point_ (0x800FC8B0), gr/grremix/grremixspawn.c: TRUE when the respawn position was overridden */
+sb32 grRemixSpawnRespawnPointOverride(Vec3f *pos);
+
+/* Damage.asm damage types 7..0xC (add_damage_type), ftremix/ftremixdamage.c: the ids the on-hit jump tables route here */
+#define FTREMIX_DAMAGE_SHADOW 0x7
+#define FTREMIX_DAMAGE_STUN 0x8
+#define FTREMIX_DAMAGE_LASER 0x9
+#define FTREMIX_DAMAGE_DEKU_STUN 0xA
+#define FTREMIX_DAMAGE_BURY 0xB
+#define FTREMIX_DAMAGE_FLASHBANG 0xC
+sb32 ftRemixDamageIsNewType(s32 element);
+sb32 ftRemixDamageSetColAnim(GObj *fighter_gobj, s32 element, s32 damage_level);
+void ftRemixDamageMakeShadowEffect(Vec3f *pos, s32 damage);
+
+/* Poison.asm poison_hook and the acid writes, ftremix/ftremixpoison.c (called from ftMainProcUpdateInterrupt) */
+void ftRemixPoisonUpdate(GObj *fighter_gobj);
+void ftRemixPoisonSet(s32 port, s32 duration, s32 damage, s32 type);
+void ftRemixPoisonAdvanceTimer(void);
+void ftRemixPoisonClear(void);
+
+/* F7 leftovers, ftremix/ftremixleftovers.c: Piano extra_part_visibility_ (ftMainSetStatus) and Marina
+ * prevent_item_despawn_ (itMapCheckDestroyDropped, it/itmap.c) */
+void ftRemixPianoExtraPartVisibility(FTStruct *fp);
+sb32 ftRemixLeftoverItemSkipsDespawn(GObj *item_gobj);
+
+
+/* Kirby copy table of every Remix fighter (ftremixkirbycopy.c), a drop-in for the FTKirbyCopy table of the Kirby file */
+FTKirbyCopy* ftRemixKirbyGetCopyTable(void);
+
+/* Kirby hats (ftremixkirbyhats.c): the model part of hat modelpart_id on the hat joint, extended past hat 0xE */
+FTModelPart* ftRemixKirbyHatModelPart(FTStruct *fp, s32 joint_id, s32 modelpart_id, FTModelPartDesc *desc, s32 detail_index);
+void ftRemixKirbyHatsClearCache(void);
 
 #endif

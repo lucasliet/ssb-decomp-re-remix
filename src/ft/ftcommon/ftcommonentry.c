@@ -2,6 +2,7 @@
 #include <gr/ground.h>
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -162,6 +163,10 @@ void ftCommonAppearProcPhysics(GObj *fighter_gobj)
     if (topn_joint == NULL || transn_joint == NULL) {
         return;
     }
+#endif
+
+#ifdef REGION_REMIX
+    ftRemixSizeEntryAnimationScale(fp);
 #endif
 
     topn_joint->translate.vec.f.y = fp->entry_pos.y + transn_joint->translate.vec.f.y;

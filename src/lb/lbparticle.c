@@ -1,3 +1,6 @@
+#ifdef REGION_REMIX
+#include "lb/lbremixgfx.h"
+#endif
 #include <string.h>
 #include <lb/library.h>
 #include <sys/matrix.h>
@@ -271,6 +274,9 @@ void lbParticleSetupBankID(s32 bank_id, LBScriptDesc *script_desc, LBTextureDesc
 		}
 #endif
 	}
+#ifdef REGION_REMIX
+	lbRemixGfxExtendBank(bank_id);
+#endif
 }
 
 // 0x800CE418
@@ -500,7 +506,11 @@ LBParticle* lbParticleMakeParam
 // 0x800CE870
 LBParticle* lbParticleMakeCommon(s32 bank_id, s32 script_id)
 {
+#ifdef REGION_REMIX
+	LBParticle *pc = lbParticleMakeChildScriptID(NULL, bank_id, lbRemixGfxTakeScriptOverride(script_id));
+#else
 	LBParticle *pc = lbParticleMakeChildScriptID(NULL, bank_id, script_id);
+#endif
 
 	if (pc != NULL)
 	{
@@ -560,7 +570,11 @@ LBParticle* lbParticleMakePosVel(s32 bank_id, s32 script_id, f32 pos_x, f32 pos_
 // 0x800CE9E8
 LBParticle* lbParticleMakeScriptID(s32 bank_id, s32 script_id)
 {
+#ifdef REGION_REMIX
+	return lbParticleMakeChildScriptID(NULL, bank_id, lbRemixGfxTakeScriptOverride(script_id));
+#else
 	return lbParticleMakeChildScriptID(NULL, bank_id, script_id);
+#endif
 }
 
 // 0x800CEA14

@@ -27,9 +27,13 @@
 #include <wp/wpsamus/wpsamuschargeshot.h>
 #include <wp/wpmap.h>
 #include <sys/utils.h>
+#include <lb/lbremixgfx.h>
 
 #define MTWO_SHADOW_BALL_CHARGE_COLANIM 0x58 /* Mewtwo's charge gfx id (hard coded in MewtwoSpecial.asm) */
 #define MTWO_KIRBY_SHADOW_BALL_CHARGE_COLANIM 0x64 /* Kirby's copy charge gfx id (hard coded in kirby_charge_main_) */
+#define MTWO_GFX_BLUE_EXPLOSION 0x5C /* Remix GFX ids, src/GFX.asm */
+#define MTWO_GFX_BLUE_BOMB_EXPLOSION 0x5D
+#define MTWO_GFX_DARK_CROSS 0x6C
 #define MTWO_SHADOW_BALL_FREQUENCY 3.0F
 #define MTWO_SHADOW_BALL_AMPLITUDE 100.0F
 #define MTWO_SHADOW_BALL_RAD_PER_TIC 0.10471976F /* 0x3DD67750 = 2*pi/60 */
@@ -220,15 +224,18 @@ static void ftRemixMewtwoShadowBallExplode(GObj *weapon_gobj, s32 charge_level)
 {
     Vec3f *pos = &DObjGetStruct(weapon_gobj)->translate.vec.f;
 
-    /* REMIX-TODO(GFX): Remix sets GFX.current_gfx_id (0x5C, or 0x5D at full charge) before these effects; the decomp effect functions do not take it. */
     if (charge_level == FTSAMUS_CHARGE_MAX)
     {
+        lbRemixGfxSetNextEffect(MTWO_GFX_BLUE_BOMB_EXPLOSION);
         efManagerSparkleWhiteMultiExplodeMakeEffect(pos);
+        lbRemixGfxClearOverride();
         efManagerQuakeMakeEffect(1);
         func_800269C0_275C0(1);
         return;
     }
+    lbRemixGfxSetNextEffect(MTWO_GFX_BLUE_EXPLOSION);
     efManagerSparkleWhiteMakeEffect(pos);
+    lbRemixGfxClearOverride();
     efManagerQuakeMakeEffect(0);
     func_800269C0_275C0(0);
 }
@@ -256,8 +263,9 @@ static sb32 ftRemixMewtwoShadowBallProcHit(GObj *weapon_gobj)
 {
     WPStruct *wp = wpGetStruct(weapon_gobj);
 
-    /* REMIX-TODO(GFX): Remix sets GFX.current_gfx_id to 0x6C (dark cross) before this effect. */
+    lbRemixGfxSetNextEffect(MTWO_GFX_DARK_CROSS);
     efManagerDamageFireMakeEffect(&DObjGetStruct(weapon_gobj)->translate.vec.f, wp->attack_coll.damage);
+    lbRemixGfxClearOverride();
     func_800269C0_275C0(0x3C);
 
     return TRUE;

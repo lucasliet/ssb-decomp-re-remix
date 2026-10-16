@@ -1,3 +1,6 @@
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixreflect.h"
+#endif
 #include <wp/weapon.h>
 #include <it/item.h>
 #include <ft/fighter.h>
@@ -519,6 +522,24 @@ next_check:
             }
         }
     }
+#ifdef REGION_REMIX
+    if (wp->reflect_gobj != NULL)
+    {
+        switch (ftRemixReflectWeapon(weapon_gobj))
+        {
+        case nFTRemixReflectDestroy:
+            wpMainDestroyWeapon(weapon_gobj);
+            return;
+
+        case nFTRemixReflectHandled:
+            wp->reflect_gobj = NULL;
+            break;
+
+        default:
+            break;
+        }
+    }
+#endif
     if (wp->reflect_gobj != NULL)
     {
         FTStruct *fp;

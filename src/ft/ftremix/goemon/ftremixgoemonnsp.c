@@ -14,6 +14,7 @@
 #include <ef/efmanager.h>
 #include <ft/ftanimend.h>
 #include <ft/ftmain.h>
+#include <ft/ftparam.h>
 #include <ft/ftphysics.h>
 #include <gm/gmcollision.h>
 #include <mp/mpcommon.h>
@@ -59,6 +60,7 @@ enum
 #define GOEMON_NSP_SFX_CHARGE_2 65
 #define GOEMON_NSP_SFX_FIRE 27
 #define GOEMON_NSP_SFX_EXPLODE 0
+#define GOEMON_NSP_CHARGE_GFX_ROUTINE 0x73       /* GFXRoutine.id.GOEMON_CHARGE, GFXRoutine.asm add_gfx_routine #31 */
 #define GOEMON_NSP_JOINT_RIGHT_HAND 16           /* FTStruct.joints[16] at N64 0x0928 (part 0xC) */
 #define GOEMON_NSP_SPAWN_Y_OFFSET 30.0F          /* 0x41F00000 */
 #define GOEMON_NSP_WALK_MULTIPLIER 0.25F         /* 0x3E800000 */
@@ -493,12 +495,12 @@ static GObj *ftRemixGoemonRyoStageSetting(GObj *fighter_gobj, Vec3f *spawn_pos)
 }
 
 /* ground_wait_main_ and air_wait_main_ start the charge: FGM 28 and 65, and the GOEMON_CHARGE GFX. */
-static void ftRemixGoemonNSPStartCharge(FTRemixGoemonChargeVars *charge)
+static void ftRemixGoemonNSPStartCharge(GObj *fighter_gobj, FTRemixGoemonChargeVars *charge)
 {
     charge->charge_flag = TRUE;
     func_800269C0_275C0(GOEMON_NSP_SFX_CHARGE_1);
     func_800269C0_275C0(GOEMON_NSP_SFX_CHARGE_2);
-    /* REMIX-TODO(GFXRoutine): GOEMON_CHARGE (GFXRoutine id 0x73) glow is not begun. */
+    ftParamCheckSetFighterColAnimID(fighter_gobj, GOEMON_NSP_CHARGE_GFX_ROUTINE, 0);
 }
 
 /* GoemonNSP.end_main_ spawn path: the Ryo starts at the right hand joint, raised by a fixed offset. */
@@ -595,7 +597,7 @@ static void ftRemixGoemonNSPWaitProcUpdate(GObj *fighter_gobj, void (*proc_end)(
 
     if (charge->charge_timer == GOEMON_NSP_CHARGE_TIME)
     {
-        ftRemixGoemonNSPStartCharge(charge);
+        ftRemixGoemonNSPStartCharge(fighter_gobj, charge);
     }
     charge->charge_timer++;
     if (fp->input.pl.button_hold & B_BUTTON)

@@ -3,6 +3,9 @@
 #include <reloc_data.h>
 #include "fighter_registry.h"
 #ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
+#ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #endif
 
@@ -439,7 +442,11 @@ void ftCommonThrownCommonStarProcMap(GObj *fighter_gobj)
             fp->motion_vars.flags.flag1 = 0;
         }
         efManagerQuakeMakeEffect(2);
+#ifdef REGION_REMIX
+        ftRemixSizeAttachGroundGfx(efManagerImpactWaveMakeEffect(&pos, SYVECTOR_AXIS_Z, syUtilsArcTan2(-angle->x, angle->y)), fighter_gobj);
+#else
         efManagerImpactWaveMakeEffect(&pos, SYVECTOR_AXIS_Z, syUtilsArcTan2(-angle->x, angle->y));
+#endif
     }
 }
 
@@ -484,7 +491,11 @@ void ftCommonThrownKirbyStarSetStatus(GObj *fighter_gobj)
     s32 i;
     FTStruct *fp = ftGetStruct(fighter_gobj);
 #ifdef PORT
+    #ifdef REGION_REMIX
+    FTKirbyCopy *copy = ftRemixKirbyGetCopyTable();
+#else
     FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
+#endif
 #else
     FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, &llKirbyMainMotionSpecialNFTKirbyCopy);
 #endif

@@ -99,9 +99,22 @@ void wpMainApplyGravityClampTVel(WPStruct *wp, f32 gravity, f32 terminal_velocit
     }
 }
 
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixreflect.h"
+#define WP_REMIX_SONIC_SPRING_KIND 0x20 /* Projectile.id.SONIC_SPRING keeps the vanilla facing rule */
+#endif
+
 // 0x801680EC
 void wpMainReflectorSetLR(WPStruct *wp, FTStruct *fp) // Invert direction on reflect
 {
+#ifdef REGION_REMIX
+    if ((wp->kind != WP_REMIX_SONIC_SPRING_KIND) && (ftRemixReflectInvertsDirection(fp) != FALSE))
+    {
+        wp->physics.vel_air.x = -wp->physics.vel_air.x;
+
+        return;
+    }
+#endif
     if ((wp->physics.vel_air.x * fp->lr) < 0.0F)
     {
         wp->physics.vel_air.x = -wp->physics.vel_air.x;

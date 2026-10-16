@@ -99,7 +99,11 @@ void ftCommonJumpSetStatus(GObj *fighter_gobj)
         }
         break;
     }
+#ifdef REGION_REMIX
+    fp->physics.vel_air.y = (vel_y * ftRemixSizeJumpHeightMul(fp, attr->jump_height_mul)) + ftRemixSizeJumpHeightBase(fp, attr->jump_height_base);
+#else
     fp->physics.vel_air.y = (vel_y * attr->jump_height_mul) + attr->jump_height_base;
+#endif
     fp->physics.vel_air.x = vel_x * attr->jump_vel_x;
 
     fp->tap_stick_y = FTINPUT_STICKBUFFER_TICS_MAX;

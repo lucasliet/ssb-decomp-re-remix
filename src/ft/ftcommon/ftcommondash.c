@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include "ft/ftremix/ftremixhooks.h"
 
 // // // // // // // // // // // //
 //                               //
@@ -116,7 +117,11 @@ void ftCommonDashSetStatus(GObj *fighter_gobj, u32 flag)
     ftMainSetStatus(fighter_gobj, nFTCommonStatusDash, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 
+#ifdef REGION_REMIX
+    fp->physics.vel_ground.x = ftRemixSizeInitialDashSpeed(fp, fp->attr->dash_speed);
+#else
     fp->physics.vel_ground.x = fp->attr->dash_speed;
+#endif
     fp->tap_stick_x = FTINPUT_STICKBUFFER_TICS_MAX;
     fp->motion_vars.flags.flag1 = flag;
 }

@@ -1,3 +1,7 @@
+#ifdef REGION_REMIX
+#include "lb/lbremixgfx.h"
+#include "gm/gmremixcolscripts.h"
+#endif
 #include <ef/effect.h>
 
 
@@ -111,4 +115,8 @@ void efDisplayInitAll(void)
         &lEFCommonParticleTextureBankHi
 #endif
     );
+#ifdef REGION_REMIX
+    gmRemixColScriptsClearOverrides();
+    lbRemixGfxDebugStart();
+#endif
 }

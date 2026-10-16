@@ -1,3 +1,6 @@
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixreflect.h"
+#endif
 #include <it/item.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
@@ -1104,6 +1107,13 @@ next_check:
             }
         }
     }
+#ifdef REGION_REMIX
+    if ((ip->reflect_gobj != NULL) && (ftRemixReflectItem(item_gobj) == nFTRemixReflectDestroy))
+    {
+        itMainDestroyItem(item_gobj);
+        return;
+    }
+#endif
     if (ip->reflect_gobj != NULL)
     {
         FTStruct *fp;

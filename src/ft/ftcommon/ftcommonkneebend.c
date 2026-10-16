@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include "ft/ftremix/ftremixhooks.h"
 
 #ifdef PORT
 #include <enhancements/enhancements.h>
@@ -27,7 +28,11 @@ void ftCommonKneeBendProcUpdate(GObj *fighter_gobj)
     {
         fp->status_vars.common.kneebend.is_shorthop = TRUE;
     }
-    if (attr->kneebend_anim_length <= fp->status_vars.common.kneebend.anim_frame) 
+#ifdef REGION_REMIX
+    if (ftRemixSizeJumpSquatLength(fp, attr->kneebend_anim_length) <= fp->status_vars.common.kneebend.anim_frame)
+#else
+    if (attr->kneebend_anim_length <= fp->status_vars.common.kneebend.anim_frame)
+#endif 
     {
         ftCommonJumpSetStatus(fighter_gobj);
     }

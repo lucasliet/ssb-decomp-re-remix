@@ -123,6 +123,9 @@ static void itRemixCloudSetFlashFlag(GObj *item_gobj, s32 timer)
     item_gobj->flags = (timer & 2) >> 1;
 }
 
+/* REMIX-TODO(Size): Size.asm item scope not ported. apply_size_to_animation_ (0x8003DE5C jump table, cloud joint scale) needs
+ * the animation command interpreter, and render_routine_ (ECB scale of the cloud from its holder, wraps 0x80171F4C) needs the
+ * item render wiring. The cloud keeps its vanilla scale and ECB at every size until both are ported. */
 /* Cloud.asm stage_setting_: the spawn routine, called with Item.Cloud's desc from the Remix dispatcher. */
 GObj* itRemixCloudMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {

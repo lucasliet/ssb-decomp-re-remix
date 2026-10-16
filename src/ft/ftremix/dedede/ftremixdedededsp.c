@@ -4,7 +4,7 @@
  *
  * The minion (Waddle Dee, Waddle Doo or Gordo) is a Remix custom item in
  * it/itremix/. This file keeps the held and field minion slots. The
- * max-charge spark is REMIX-TODO(GFXRoutine). Details: docs/remix/notes/40_DEDEDE_DSP.md.
+ * max-charge spark starts GFXRoutine DEDEDE_CHARGE. Details: docs/remix/notes/40_DEDEDE_DSP.md.
  */
 
 #ifdef PORT
@@ -21,6 +21,7 @@
 #include <ft/ftanimend.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
 #include <ft/ftmain.h>
+#include <ft/ftparam.h>
 #include <ft/ftphysics.h>
 #include <it/item.h>
 #include <it/itmain.h>
@@ -43,6 +44,7 @@ enum
 #define DEDEDE_DSP_OFF_SHOOT_TIMER 0x0B28
 
 #define DEDEDE_DSP_CHARGE_MAX 2
+#define DEDEDE_DSP_CHARGE_GFX_ROUTINE 0x74       /* GFXRoutine.id.DEDEDE_CHARGE, GFXRoutine.asm add_gfx_routine #32 */
 #define DEDEDE_DSP_MINION_RUMMAGE_TIME 12
 #define DEDEDE_DSP_FIRST_PULL 6
 #define DEDEDE_DSP_FIRST_STOW 32
@@ -365,10 +367,16 @@ static void ftRemixDededeDSPChargeCheckEnd(GObj *fighter_gobj)
     ftRemixDededeDSPDestroyMinion(fp);
 }
 
-/* Adds one charge level. Reaching max plays GFXRoutine.id.DEDEDE_CHARGE (REMIX-TODO(GFXRoutine): the white spark). */
-static void ftRemixDededeDSPAddCharge(FTStruct *fp)
+/* Adds one charge level. Reaching max starts GFXRoutine DEDEDE_CHARGE (the white spark on the hand). */
+static void ftRemixDededeDSPAddCharge(GObj *fighter_gobj, FTStruct *fp)
 {
-    *ftRemixDededeDSPWord(fp, DEDEDE_DSP_OFF_CHARGE_LEVEL) += 1;
+    s32 *level = ftRemixDededeDSPWord(fp, DEDEDE_DSP_OFF_CHARGE_LEVEL);
+
+    *level += 1;
+    if (*level == DEDEDE_DSP_CHARGE_MAX)
+    {
+        ftParamCheckSetFighterColAnimID(fighter_gobj, DEDEDE_DSP_CHARGE_GFX_ROUTINE, 0);
+    }
 }
 
 /* DededeDSP.charge_main_: attaches, stows or charges the minion on the frames set by the timer. */
@@ -391,7 +399,7 @@ static void ftRemixDededeDSPChargeProcUpdate(GObj *fighter_gobj)
             return;
         case DEDEDE_DSP_FIRST_CHARGE:
         case DEDEDE_DSP_SECOND_CHARGE:
-            ftRemixDededeDSPAddCharge(fp);
+            ftRemixDededeDSPAddCharge(fighter_gobj, fp);
             return;
         default:
             break;

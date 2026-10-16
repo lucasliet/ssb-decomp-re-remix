@@ -9,6 +9,9 @@
 
 #ifdef PORT
 
+#include <gm/gmcollision.h>
+#include <lb/library.h>
+#include <ef/efmanager.h>
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixfranklinbadge.h"
 #include "it/itremix/itremixsupermushroom.h"
@@ -16,10 +19,14 @@
 #include "it/itcommon/ittomato.h"
 #include "if/ifcommon.h"
 #include "sys/objman.h"
+#include "ft/ftparam.h"
+#include "gm/gmremixcolscripts.h"
 #include "PR/os.h"
 
 #define ITREMIX_FRANKLIN_KIND 0x33
+#define ITREMIX_FRANKLIN_BADGE_COLANIM 0x70 /* GFXRoutine.id.FRANKLIN_BADGE, asm GFX_ROUTINE(0x70) */
 #define ITREMIX_FRANKLIN_FILE_OFFSET 0xF20 /* asm FILE_OFFSET: item footer in file 0xFB */
+#define ITREMIX_FRANKLIN_TORSO_JOINT 6 /* FTStruct.joints[6] at N64 0x0900, the torso part of reflect_gfx_ */
 #define ITREMIX_FRANKLIN_TRANSFORM_KIND 0x1C /* asm item_info_array word 0x0C; the matrix kind has no port name */
 #define ITREMIX_FRANKLIN_DURATION (24 * 60) /* asm BADGE_DURATION: 24 seconds at 60 frames per second */
 #define ITREMIX_FRANKLIN_IDLE_ACTION 0x0A /* Action.Idle (Action.asm); a lower status id means the player is dead */
@@ -85,9 +92,22 @@ static sb32 itRemixFranklinBadgeIsAlive(FTStruct *fp)
 }
 
 /**
+ * Restores the player's default colour animation when the badge owns the override.
+ * The asm runs this on every destroy, dead or alive (vanilla 0x800E98D4 is ftParamResetStatUpdateColAnim).
+ */
+static void itRemixFranklinBadgeRestoreColAnim(FTStruct *fp)
+{
+    if (gmRemixColScriptsGetOverride(fp->player) != ITREMIX_FRANKLIN_BADGE_COLANIM)
+    {
+        return;
+    }
+    gmRemixColScriptsSetOverride(fp->player, 0);
+    ftParamResetStatUpdateColAnim(fp->fighter_gobj);
+}
+
+/**
  * handle_active_franklin_badge_ (destroy path). Frees the player's slot and clears
- * the reflect flag, unless the player is dead. REMIX-TODO(GFX): the asm also
- * restores the player's default gfx routine here (vanilla 0x800E98D4); not ported.
+ * the reflect flag, unless the player is dead. Then restores the default colour animation.
  */
 static void itRemixFranklinBadgeEnd(FTStruct *fp, ITRemixFranklinBadgeState *state)
 {
@@ -96,6 +116,7 @@ static void itRemixFranklinBadgeEnd(FTStruct *fp, ITRemixFranklinBadgeState *sta
     {
         fp->is_reflect = FALSE;
     }
+    itRemixFranklinBadgeRestoreColAnim(fp);
 }
 
 /**
@@ -143,7 +164,7 @@ static void itRemixFranklinBadgeRegisterProcess(FTStruct *fp, ITRemixFranklinBad
 
 /**
  * pickup_franklin_badge, first badge for this player. Starts the countdown and writes
- * the reflect hitbox. REMIX-TODO(GFX): the badge gfx routine override is not ported.
+ * the reflect hitbox, and sets the badge colour animation as the player's override.
  */
 static void itRemixFranklinBadgeActivate(FTStruct *fp, ITRemixFranklinBadgeState *state)
 {
@@ -151,6 +172,8 @@ static void itRemixFranklinBadgeActivate(FTStruct *fp, ITRemixFranklinBadgeState
     state->timer = ITREMIX_FRANKLIN_DURATION;
     fp->special_coll = &sITRemixFranklinBadgeReflectColl;
     itRemixFranklinBadgeRegisterProcess(fp, state);
+    gmRemixColScriptsSetOverride(fp->player, ITREMIX_FRANKLIN_BADGE_COLANIM);
+    ftParamCheckSetFighterColAnimID(fp->fighter_gobj, ITREMIX_FRANKLIN_BADGE_COLANIM, 0);
 }
 
 /**

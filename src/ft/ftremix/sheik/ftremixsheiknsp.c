@@ -349,9 +349,9 @@ static void ftRemixSheikNSPChargeProcUpdate(GObj *fighter_gobj)
         ftParamCheckSetFighterColAnimID(fighter_gobj, SHEIK_NSP_CHARGE_GFX_ROUTINE, 0);
         mpCommonSetFighterWaitOrFall(fighter_gobj);
     }
-    /* REMIX-TODO(GFXRoutine.SHEIK_CHARGE): Remix writes the charge level into the
-     * spark GFX struct (offset 0x2A4 of its user_data) through the GObj stored at
-     * FTStruct 0x0B20. That GFX routine is not ported, so the write is skipped. */
+    /* REMIX-TODO(GFXRoutine.SHEIK_CHARGE): SheikSpecial.asm 1221-1225 writes the charge level to
+     * user_data+0x2A4 of the spark GObj stored at FTStruct 0x0B20 on every charge tick. The port has
+     * no spark GObj (colour animations carry no per-fighter data), so only the start at max is wired. */
 }
 
 /* SheikNSP.ground_charge_interrupt_ */

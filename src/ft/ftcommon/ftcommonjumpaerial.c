@@ -172,7 +172,13 @@ void ftCommonJumpAerialSetStatus(GObj *fighter_gobj, s32 input_source)
         stick_range_x = fp->input.pl.stick_range.x;
         break;
     } 
+#ifdef REGION_REMIX
+    fp->physics.vel_air.y = (((stick_range_y * ftRemixSizeJumpHeightMul(fp, attr->jump_height_mul)) +
+                              ftRemixSizeJumpHeightBase(fp, attr->jump_height_base)) *
+                             ftRemixSizeAerialJumpHeight(fp, attr->jumpaerial_height));
+#else
     fp->physics.vel_air.y = (((stick_range_y * attr->jump_height_mul) + attr->jump_height_base) * attr->jumpaerial_height);
+#endif
 
     if ((fp->fkind == nFTKindNess) || (fp->fkind == nFTKindNNess))
     {
@@ -243,7 +249,13 @@ void ftCommonJumpAerialMultiSetStatus(GObj *fighter_gobj, s32 input_source)
 
     if (fp->jumps_used == 1)
     {
+#ifdef REGION_REMIX
+        fp->physics.vel_air.y = (((stick_range_y * ftRemixSizeJumpHeightMul(fp, attr->jump_height_mul)) +
+                                  ftRemixSizeJumpHeightBase(fp, attr->jump_height_base)) *
+                                 ftRemixSizeAerialJumpHeight(fp, attr->jumpaerial_height));
+#else
         fp->physics.vel_air.y = (((stick_range_y * attr->jump_height_mul) + attr->jump_height_base) * attr->jumpaerial_height);
+#endif
 
         fp->tap_stick_y = FTINPUT_STICKBUFFER_TICS_MAX;
     }

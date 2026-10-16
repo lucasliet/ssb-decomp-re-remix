@@ -3,6 +3,7 @@
 #include "remix/remix_debug.h"
 #ifdef REGION_REMIX
 #include "it/itremix/itremixspawn.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #ifdef PORT
 extern char *getenv(const char *name);
@@ -16,6 +17,9 @@ extern void port_coroutine_yield(void);
 #include <mv/movie.h>
 #include <mn/menu.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <db/debug.h>
 #include <sys/debug.h>
 #include <sys/dma.h>
@@ -963,7 +967,7 @@ void scManagerRunLoop(sb32 arg)
 			gSCManagerTransferBattleState.players[0].pkind = nFTPlayerKindMan;
 			gSCManagerTransferBattleState.players[0].fkind = remix_debug_vs_fkind(0);
 			gSCManagerTransferBattleState.players[0].costume = 0;
-			gSCManagerTransferBattleState.players[1].pkind = nFTPlayerKindCom;
+			gSCManagerTransferBattleState.players[1].pkind = (getenv("SSB64_VS_P2_HUMAN") != NULL) ? nFTPlayerKindMan : nFTPlayerKindCom;
 			gSCManagerTransferBattleState.players[1].fkind = remix_debug_vs_fkind(1);
 			gSCManagerTransferBattleState.players[1].costume = 0;
 			gSCManagerTransferBattleState.players[1].level = 1;
@@ -1136,6 +1140,7 @@ void scManagerRunLoop(sb32 arg)
 		 * size timers, stopwatch speed). Reset it at the same boundary so
 		 * no effect leaks into CSS / the next match. */
 		itRemixClearActiveItems();
+		ftRemixKirbyHatsClearCache();
 #endif
 		switch (gSCManagerSceneData.scene_curr)
 		{

@@ -12,6 +12,7 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixdekunut.h"
+#include "it/itremix/itremixscreenflash.h"
 #include "it/itmain.h"
 #include "it/itmap.h"
 #include "it/itmanager.h"
@@ -302,7 +303,8 @@ static void itRemixDekuNutExplode(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
 
     itBombHeiCommonSetHitStatusNone(item_gobj);
-    /* REMIX-TODO(GFX): asm writes the screen flash blend command (flash_array_) to RAM 0x80131A40 unless Toggles.entry_flash_guard is on. Skipped. */
+    /* DekuNut.asm _check_flash: the screen flash is drawn before the shake. */
+    itRemixScreenFlashDekuNut();
     efManagerQuakeMakeEffect(ITREMIX_DEKUNUT_SHAKE_SEVERITY);
     /* REMIX-TODO(unverified): asm stores 2 at DObj 0x54 here (hurtbox sound or state byte, not identified). Skipped. */
     ip->attack_coll.fgm_id = ITREMIX_DEKUNUT_HURTBOX_FGM;

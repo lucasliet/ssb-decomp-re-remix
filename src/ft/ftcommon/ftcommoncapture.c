@@ -173,7 +173,11 @@ void ftCommonCaptureShoulderedSetStatus(GObj *fighter_gobj)
     }
     if (damage != 0)
     {
+#ifdef REGION_REMIX
+        ftCommonDamageUpdateDamageColAnim(fighter_gobj, ftParamGetCommonKnockback(this_fp->percent_damage, damage, damage, 0, 100, 0, ftRemixSizeWeight(this_fp, this_fp->attr->weight), capture_fp->handicap, this_fp->handicap), 0); /* Size.asm adjust_player_weight_7 (0x8014E60C) */
+#else
         ftCommonDamageUpdateDamageColAnim(fighter_gobj, ftParamGetCommonKnockback(this_fp->percent_damage, damage, damage, 0, 100, 0, this_fp->attr->weight, capture_fp->handicap, this_fp->handicap), 0);
+#endif
         ftParamUpdateDamage(this_fp, damage);
         ftParamUpdatePlayerBattleStats(capture_fp->player, this_fp->player, damage);
         ftParamUpdateStaleQueue(capture_fp->player, this_fp->player, capture_fp->motion_attack_id, capture_fp->motion_count);

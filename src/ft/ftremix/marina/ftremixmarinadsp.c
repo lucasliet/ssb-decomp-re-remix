@@ -93,8 +93,7 @@ typedef struct FTRemixMarinaDSPTransition
 
 /* Remix's absorb_struct (MarinaDSP.absorb_struct, 0x8056A1F0). Its first two
  * halfwords (index 1, custom reflect type 3) are packed into kind, the same
- * 32-bit slot FTSpecialColl uses. REMIX-TODO(Reflect): the custom reflect routine
- * that reads this hitbox is not ported. */
+ * 32-bit slot FTSpecialColl uses; ftremixreflect.c reads it. */
 static FTSpecialColl sFTRemixMarinaDSPAbsorbColl =
 {
     (0x0001 << 16) | 0x0003,
@@ -281,6 +280,12 @@ static void ftRemixMarinaDSPAbsorbSetStatus(GObj *fighter_gobj)
     fp->motion_vars.flags.flag1 = 0;
     fp->is_reflect = TRUE;
     ftRemixMarinaDSPAddCharge(fp, vars->add_charge);
+}
+
+/* MarinaDSP.absorb_initial_ (custom reflect routine 1), called by the reflect dispatch. */
+void ftRemixMarinaDSPAbsorbInitial(GObj *fighter_gobj)
+{
+    ftRemixMarinaDSPAbsorbSetStatus(fighter_gobj);
 }
 
 /* pull_initial_ (ground and aerial): pulls, or fails when there is no charge. */

@@ -1,3 +1,7 @@
+#ifdef REGION_REMIX
+#include "lb/lbremixgfx.h"
+#include "gm/gmremixcolscripts.h"
+#endif
 #include <string.h>
 #include <ft/fighter.h>
 #include <it/item.h>
@@ -894,7 +898,11 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
             {
                 if (FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart) != NULL)
                 {
+                    #ifdef REGION_REMIX
+                    modelpart = ftRemixKirbyHatModelPart(fp, joint_id, modelpart_id, FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart), fp->detail_curr - nFTPartsDetailStart);
+#else
                     modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart)->modelparts[modelpart_id][fp->detail_curr - nFTPartsDetailStart];
+#endif
 
                     joint->dl = FTMODELPART_GET_DL(modelpart);
 
@@ -1008,7 +1016,11 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
 
                     if (FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i) != NULL)
                     {
-                        modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i)->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
+                        #ifdef REGION_REMIX
+                    modelpart = ftRemixKirbyHatModelPart(fp, i + nFTPartsJointCommonStart, modelpart_status->modelpart_id_curr, FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i), fp->detail_curr - nFTPartsDetailStart);
+#else
+                    modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i)->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
+#endif
 
                         joint->dl = FTMODELPART_GET_DL(modelpart);
 
@@ -1167,7 +1179,11 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
             {
                 if (FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i) != NULL)
                 {
+                    #ifdef REGION_REMIX
+                    modelpart = ftRemixKirbyHatModelPart(fp, i + nFTPartsJointCommonStart, modelpart_status->modelpart_id_curr, FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i), fp->detail_curr - nFTPartsDetailStart);
+#else
                     modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i)->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
+#endif
 
                     lbCommonAddMObjForFighterPartsDObj(joint, FTMODELPART_GET_MOBJSUBS(modelpart), FTMODELPART_GET_COSTUME_MATANIM_JOINTS(modelpart), FTMODELPART_GET_MAIN_MATANIM_JOINTS(modelpart), costume);
                 }
@@ -1385,6 +1401,12 @@ sb32 ftParamCheckSetColAnimID(GMColAnim *colanim, s32 colanim_id, s32 length)
     /* Smash Remix motion scripts request its extended gfx routines (ids
      * >= 0x56, GFXRoutine.asm), which live in its own table; skip them
      * instead of reading past the vanilla one. */
+#ifdef REGION_REMIX
+    if (colanim_id >= GMCOLSCRIPTS_REMIX_VANILLA_NUM)
+    {
+        gmRemixColScriptsEnsureLoaded();
+    }
+#endif
     if ((colanim_id < 0) || (colanim_id >= dGMColScriptsDescsNum))
     {
         return FALSE;
@@ -1526,6 +1548,12 @@ void ftParamResetStatUpdateColAnim(GObj *fighter_gobj)
     {
         ftParamCheckSetFighterColAnimID(fighter_gobj, nGMColAnimFighterHammer, 0);
     }
+#ifdef REGION_REMIX
+    if (gmRemixColScriptsGetOverride(fp->player) != 0)
+    {
+        ftParamCheckSetFighterColAnimID(fighter_gobj, gmRemixColScriptsGetOverride(fp->player), 0);
+    }
+#endif
 }
 
 // 0x800E9AF4
@@ -2055,6 +2083,21 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
 
     effect = NULL;
 
+#ifdef REGION_REMIX
+    if (lbRemixGfxIsNewEffect(effect_id))
+    {
+        s32 base_effect_id = lbRemixGfxPrepareEffect(effect_id);
+
+        if (base_effect_id < 0)
+        {
+            return NULL;
+        }
+        effect = ftParamMakeEffect(fighter_gobj, base_effect_id, joint_id, effect_pos, effect_scatter, lr, is_scale_pos, arg7);
+        lbRemixGfxClearOverride();
+
+        return effect;
+    }
+#endif
     switch (effect_id)
     {
     case nEFKindChargeSparkle:
@@ -2251,6 +2294,9 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
             effect = efManagerImpactWaveMakeEffect(&pos, 4, syUtilsArcTan2(-fp->coll_data.floor_angle.x, fp->coll_data.floor_angle.y));
         }
         else effect = efManagerImpactAirWaveMakeEffect(&pos, 4);
+#ifdef REGION_REMIX
+        ftRemixSizeAttachGroundGfx(effect, fighter_gobj);
+#endif
         break;
 
     case nEFKindStarRodSpark:

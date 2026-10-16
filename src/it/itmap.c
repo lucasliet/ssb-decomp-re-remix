@@ -2,6 +2,7 @@
 #include <sc/scene.h>
 #ifdef REGION_REMIX
 #include "it/itremix/itremixbasketball.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -323,7 +324,11 @@ sb32 itMapCheckDestroyDropped(GObj *item_gobj, f32 common_rebound, f32 ground_re
 
         ip->times_landed++;
 
+#ifdef REGION_REMIX
+        if ((ip->times_landed == ITEM_LANDING_DESPAWN_CHECK) && (ftRemixLeftoverItemSkipsDespawn(item_gobj) == FALSE))
+#else
         if (ip->times_landed == ITEM_LANDING_DESPAWN_CHECK)
+#endif
         {
             if
             (

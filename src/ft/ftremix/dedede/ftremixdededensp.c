@@ -56,6 +56,7 @@ enum
 #define DEDEDE_NSP_SPAT_DECELERATION 10.0F              /* 0x41200000 */
 #define DEDEDE_NSP_SPIT_JOINT 16                        /* FTStruct.joints[16] at N64 0x0928 */
 #define DEDEDE_NSP_SPIT_CAPTURE_IMMUNE_MASK 0x3F        /* asm literal 0x3F */
+#define DEDEDE_NSP_ABSORB_FLAGS 0x0006                  /* asm absorb_initial_ argument 4 */
 #define DEDEDE_NSP_SPIT_FLAGS (FTSTATUS_PRESERVE_TEXTUREPART | FTSTATUS_PRESERVE_MODELPART | FTSTATUS_PRESERVE_EFFECT) /* 0xA4 */
 #define DEDEDE_NSP_LOOP_FLAGS (FTSTATUS_PRESERVE_LOOPSFX | FTSTATUS_PRESERVE_MODELPART | FTSTATUS_PRESERVE_EFFECT)     /* 0x824 */
 #define DEDEDE_NSP_INHALE_FLAGS (FTSTATUS_PRESERVE_HIT | FTSTATUS_PRESERVE_RUMBLE | FTSTATUS_PRESERVE_LOOPSFX | FTSTATUS_PRESERVE_MODELPART | FTSTATUS_PRESERVE_EFFECT) /* 0x4825 */
@@ -67,6 +68,8 @@ static const f32 sFTRemixDededeNSPWalkSpeed[] =
     1.0F,
     1.0F
 };
+
+static void ftRemixDededeNSPAbsorbSetup(FTStruct *fp);
 
 /* Dedede's status id, or Kirby's when the fighter is Kirby wearing the Dedede hat. */
 static s32 ftRemixDededeNSPStatus(FTStruct *fp, s32 dedede_status, s32 kirby_status)
@@ -115,8 +118,7 @@ static void ftRemixDededeNSPLoopInitial(GObj *fighter_gobj, s32 dedede_status, s
 
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, DEDEDE_NSP_LOOP_FLAGS);
     ftKirbySpecialNGotoSetCatchParams(fighter_gobj);
-    /* REMIX-TODO(Reflect): absorb_setup_ is not called. It sets the reflect bit at FTStruct 0x18C and points 0x850 at
-     * the absorb_struct data (DededeNSP.absorb_struct), which needs the reflect subsystem. */
+    ftRemixDededeNSPAbsorbSetup(ftGetStruct(fighter_gobj));
     ftMainPlayAnimEventsAll(fighter_gobj);
 }
 
@@ -153,7 +155,7 @@ static void ftRemixDededeNSPInhaleLoopSetStatus(GObj *fighter_gobj, s32 dedede_s
 
     ftMainSetStatus(fighter_gobj, status_id, fighter_gobj->anim_frame, 1.0F, DEDEDE_NSP_INHALE_FLAGS);
     ftKirbySpecialNSetCatchParams(fp);
-    /* REMIX-TODO(Reflect): absorb_setup_ is not called (see ftRemixDededeNSPLoopInitial). */
+    ftRemixDededeNSPAbsorbSetup(fp);
 }
 
 /* DededeNSP.inhale_loop_ground_to_air_initial_ */
@@ -279,6 +281,36 @@ static void ftRemixDededeNSPSpitTransition(GObj *fighter_gobj, s32 dedede_status
     ftMainPlayAnimEventsAll(fighter_gobj);
 }
 
+/* DededeNSP.absorb_initial_ (custom reflect routine 2): spits at once after eating a projectile, on the kinetic state of the fighter. */
+void ftRemixDededeNSPAbsorbInitial(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    s32 status_id = (fp->ga == nMPKineticsAir) ?
+        ftRemixDededeNSPStatus(fp, nFTRemixDededeStatusNSPSpitAir, nFTRemixDededeKirbyStatusNSPSpitAir) :
+        ftRemixDededeNSPStatus(fp, nFTRemixDededeStatusNSPSpitGround, nFTRemixDededeKirbyStatusNSPSpitGround);
+
+    ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, DEDEDE_NSP_ABSORB_FLAGS);
+    ftParamSetCaptureImmuneMask(fp, FTCATCHKIND_MASK_ALL);
+    ftMainPlayAnimEventsAll(fighter_gobj);
+}
+
+/* DededeNSP.absorb_struct: custom reflect id 2 (index into Reflect.custom_reflect_table), reflect type CUSTOM (3). */
+static FTSpecialColl sFTRemixDededeNSPAbsorbColl =
+{
+    (0x0002 << 16) | 0x0003,
+    0,
+    { 0.0F, 318.0F, 250.0F },
+    { 480.0F, 330.0F, 330.0F },
+    0x18000000
+};
+
+/* DededeNSP.absorb_setup_: enables the reflect bit and points the reflect hitbox at the absorb range. */
+static void ftRemixDededeNSPAbsorbSetup(FTStruct *fp)
+{
+    fp->is_reflect = TRUE;
+    fp->special_coll = &sFTRemixDededeNSPAbsorbColl;
+}
+
 /* DededeNSP.ground_spit_transition_ */
 static void ftRemixDededeNSPGroundSpitTransition(GObj *fighter_gobj)
 {
@@ -352,9 +384,8 @@ static void ftRemixDededeNSPSpitShootCheck(GObj *fighter_gobj)
         ftRemixDededeNSPSpitPlayer(fighter_gobj, fp);
         return;
     }
-    /* REMIX-TODO(Reflect): the asm first looks up last_reflected_object_table[player] and, when it holds an absorbed
-     * projectile, calls unsuspend_projectile_ to shoot that projectile instead of a star. The table is written only by
-     * suspend_projectile_, which is not ported, so this always spits a star. */
+    /* The asm also unsuspends a projectile stored in last_reflected_object_table here, but Reflect.asm keeps the suspend call
+     * commented out ("not suspending projectiles"), so the table stays empty and a star is always spat. */
     gmCollisionGetFighterPartsWorldPosition(fp->joints[DEDEDE_NSP_SPIT_JOINT], &spit_pos);
     /* The asm leaves the is_smash argument (a2) unset, so FALSE is an uncertain choice. */
     itStarRodWeaponStarMakeWeapon(fighter_gobj, &spit_pos, FALSE);

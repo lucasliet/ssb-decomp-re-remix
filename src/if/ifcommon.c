@@ -2023,7 +2023,11 @@ void ifCommonPlayerTagProcDisplay(GObj *interface_gobj)
         {
             pos = fp->joints[nFTPartsJointTopN]->translate.vec.f;
 
+#ifdef REGION_REMIX
+            pos.y += ftRemixSizeScaleValue(fp, fp->attr->camera_zoom_base);
+#else
             pos.y += fp->attr->camera_zoom_base;
+#endif
 
             func_ovl2_800EB924(CObjGetStruct(gGMCameraGObj), gGMCameraMatrix, &pos, &x, &y);
 
