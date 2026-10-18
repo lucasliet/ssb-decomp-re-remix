@@ -993,6 +993,16 @@ void scManagerRunLoop(sb32 arg)
 				gSCManagerTransferBattleState.item_toggles = ~0U;
 				gSCManagerTransferBattleState.item_appearance_rate = (u8)remix_debug_vs_item_rate();
 			}
+			{
+				const char *stocks_env = getenv("SSB64_VS_STOCKS");
+
+				if (stocks_env != NULL)
+				{
+					gSCManagerTransferBattleState.game_type = nSCBattleGameTypeRoyal;
+					gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
+					gSCManagerTransferBattleState.stocks = (u8)(atoi(stocks_env) - 1);
+				}
+			}
 			gSCManagerSceneData.scene_curr = nSCKindVSBattle;
 			gSCManagerSceneData.scene_prev = nSCKindPlayersVS;
 			port_log("SSB64: SSB64_VS_FKINDS override → VS battle P1=%d (human) P2=%d (CPU)\n",

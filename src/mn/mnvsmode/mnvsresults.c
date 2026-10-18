@@ -15,6 +15,10 @@ extern void* func_800269C0_275C0(u16);
 extern float port_widescreen_clip_x_scale(void);
 #include "fighter_registry.h"
 #endif
+#ifdef REGION_REMIX
+extern s32 mnRemixResultsGetWinBGM(s32 fkind);
+extern void port_log(const char *fmt, ...);
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -3287,7 +3291,17 @@ void mnVSResultsUpdateAutoHandicap(void)
 // 0x80138714
 void mnVSResultsPlayWinBGM(void)
 {
-	switch (mnVSResultsGetFighterKind(mnVSResultsGetWinPlayer()))
+#ifdef REGION_REMIX
+	s32 remix_bgm = mnRemixResultsGetWinBGM(mnVSResultsGetFighterKind(mnVSResultsGetWinPlayer()));
+
+	if (remix_bgm >= 0)
+	{
+		port_log("SSB64: results win BGM fkind=%d bgm=%d\n", mnVSResultsGetFighterKind(mnVSResultsGetWinPlayer()), remix_bgm);
+		syAudioPlayBGM(0, remix_bgm);
+		return;
+	}
+#endif
+	switch (port_fighter_parent_fkind(mnVSResultsGetFighterKind(mnVSResultsGetWinPlayer())))
 	{
 	case nFTKindMario:
 	case nFTKindLuigi:
@@ -3490,6 +3504,15 @@ void mnVSResultsFuncStart(void)
 	{
 		ftManagerSetupFilesAllKind(i);
 	}
+#ifdef REGION_REMIX
+	for (i = 0; i < ARRAY_COUNT(gSCManagerTransferBattleState.players); i++)
+	{
+		if (gSCManagerTransferBattleState.players[i].pkind != nFTPlayerKindNot)
+		{
+			ftManagerSetupFilesAllKind(gSCManagerTransferBattleState.players[i].fkind);
+		}
+	}
+#endif
 	for (i = 0; i < ARRAY_COUNT(sMNVSResultsFigatreeHeaps); i++)
 	{
 		sMNVSResultsFigatreeHeaps[i] = syTaskmanMalloc(gFTManagerFigatreeHeapSize, 0x10);

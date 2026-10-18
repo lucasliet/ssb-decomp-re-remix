@@ -9,6 +9,8 @@
 #include "audio/mixer.h"
 #include <stddef.h>
 #include <assert.h>
+#include <stdlib.h>
+extern void port_log(const char *fmt, ...);
 #endif
 
 #include <n_audio/n_libaudio.h>
@@ -5323,6 +5325,18 @@ ALWhatever8009EDD0_siz34* func_80026A10_27610(u16 id)
 {
   g_port_current_is_voice = (id >= 0x135) ? 1 : 0; // LUS: Tag the thread!
 
+  {
+    static int sFgmLogAll = -1;
+
+    if (sFgmLogAll < 0)
+    {
+      sFgmLogAll = (getenv("SSB64_AUDIO_FGM_LOG") != NULL) ? 1 : 0;
+    }
+    if (sFgmLogAll != 0)
+    {
+      port_log("[fgm] play id=%u table=%u\n", (unsigned)id, (unsigned)D_8009EDD0_406D0.fgm_ucode_count);
+    }
+  }
   if (id >= D_8009EDD0_406D0.fgm_ucode_count)
   {
     return NULL;
