@@ -7,6 +7,14 @@
 #include <sys/controller.h>
 #include <reloc_data.h>
 #include <sys/audio.h>
+#ifdef REGION_REMIX
+/* midi.asm midi_count (375 songs) and FGM.asm new_sound_test_count (850 voices) */
+#define MNSOUNDTEST_REMIX_MUSIC_COUNT 375
+#define MNSOUNDTEST_REMIX_VOICE_EXTRA 850
+#define MNSOUNDTEST_REMIX_BROWSE_STEP 50
+extern u32 mnRemixSoundTestMusicID(s32 select);
+extern u32 mnRemixSoundTestVoiceID(s32 select);
+#endif
 extern void func_800266A0_272A0(void);
 
 extern void* func_800269C0_275C0(u16);
@@ -795,6 +803,21 @@ void mnSoundTestUpdateOptionColors(void)
     }
 }
 
+
+#ifdef REGION_REMIX
+#define MNSOUNDTEST_MUSIC_COUNT MNSOUNDTEST_REMIX_MUSIC_COUNT
+#define MNSOUNDTEST_VOICE_COUNT (ARRAY_COUNT(dMNSoundTestVoiceIDs) + MNSOUNDTEST_REMIX_VOICE_EXTRA)
+#define MNSOUNDTEST_MUSIC_ID(select) mnRemixSoundTestMusicID(select)
+#define MNSOUNDTEST_VOICE_ID(select) mnRemixSoundTestVoiceID(select)
+#define MNSOUNDTEST_NUMBER_DIGITS 4
+#else
+#define MNSOUNDTEST_MUSIC_COUNT ARRAY_COUNT(dMNSoundTestMusicIDs)
+#define MNSOUNDTEST_VOICE_COUNT ARRAY_COUNT(dMNSoundTestVoiceIDs)
+#define MNSOUNDTEST_MUSIC_ID(select) dMNSoundTestMusicIDs[select]
+#define MNSOUNDTEST_VOICE_ID(select) dMNSoundTestVoiceIDs[select]
+#define MNSOUNDTEST_NUMBER_DIGITS nMNSoundTestOptionEnumCount
+#endif
+
 // 0x80131B80
 void mnSoundTestUpdateControllerInputs(void)
 {
@@ -868,14 +891,18 @@ void mnSoundTestUpdateControllerInputs(void)
     {
         mnSoundTestSetOptionChangeWaitN(is_button, stick_range, 16);
 
+#ifdef REGION_REMIX
+        sMNSoundTestOptionSelectID[sMNSoundTestOption] -= (scSubsysControllerGetPlayerHoldButtons(L_TRIG) != FALSE) ? MNSOUNDTEST_REMIX_BROWSE_STEP : 1;
+#else
         sMNSoundTestOptionSelectID[sMNSoundTestOption]--;
+#endif
 
         switch (sMNSoundTestOption)
         {
         case nMNSoundTestOptionMusic:
             if (sMNSoundTestOptionSelectID[sMNSoundTestOption] < 0)
             {
-                sMNSoundTestOptionSelectID[sMNSoundTestOption] = (ARRAY_COUNT(dMNSoundTestMusicIDs) - 1);
+                sMNSoundTestOptionSelectID[sMNSoundTestOption] = (MNSOUNDTEST_MUSIC_COUNT - 1);
             }
             if (sMNSoundTestOptionSelectID[sMNSoundTestOption] == 0)
             {
@@ -897,7 +924,7 @@ void mnSoundTestUpdateControllerInputs(void)
         case nMNSoundTestOptionVoice:
             if (sMNSoundTestOptionSelectID[sMNSoundTestOption] < 0)
             {
-                sMNSoundTestOptionSelectID[sMNSoundTestOption] = (ARRAY_COUNT(dMNSoundTestVoiceIDs) - 1);
+                sMNSoundTestOptionSelectID[sMNSoundTestOption] = (MNSOUNDTEST_VOICE_COUNT - 1);
             }
             if (sMNSoundTestOptionSelectID[sMNSoundTestOption] == 0)
             {
@@ -919,16 +946,20 @@ void mnSoundTestUpdateControllerInputs(void)
     {
         mnSoundTestSetOptionChangeWaitP(is_button, stick_range, 16);
 
+#ifdef REGION_REMIX
+        sMNSoundTestOptionSelectID[sMNSoundTestOption] += (scSubsysControllerGetPlayerHoldButtons(R_TRIG) != FALSE) ? MNSOUNDTEST_REMIX_BROWSE_STEP : 1;
+#else
         sMNSoundTestOptionSelectID[sMNSoundTestOption]++;
+#endif
 
         switch (sMNSoundTestOption)
         {
         case nMNSoundTestOptionMusic:
-            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] > (ARRAY_COUNT(dMNSoundTestMusicIDs) - 1))
+            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] > (MNSOUNDTEST_MUSIC_COUNT - 1))
             {
                 sMNSoundTestOptionSelectID[sMNSoundTestOption] = 0;
             }
-            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] == (ARRAY_COUNT(dMNSoundTestMusicIDs) - 1))
+            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] == (MNSOUNDTEST_MUSIC_COUNT - 1))
             {
                 sMNSoundTestOptionChangeWait += 20;
             }
@@ -946,11 +977,11 @@ void mnSoundTestUpdateControllerInputs(void)
             break;
 
         case nMNSoundTestOptionVoice:
-            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] > (ARRAY_COUNT(dMNSoundTestVoiceIDs) - 1))
+            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] > (MNSOUNDTEST_VOICE_COUNT - 1))
             {
                 sMNSoundTestOptionSelectID[sMNSoundTestOption] = 0;
             }
-            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] == (ARRAY_COUNT(dMNSoundTestVoiceIDs) - 1))
+            if (sMNSoundTestOptionSelectID[sMNSoundTestOption] == (MNSOUNDTEST_VOICE_COUNT - 1))
             {
                 sMNSoundTestOptionChangeWait += 20;
             }
@@ -991,7 +1022,7 @@ void mnSoundTestUpdateFunctions(void)
                 sMNSoundTestFadeOutWait = -1;
             }
             syAudioStopBGMAll();
-            syAudioPlayBGM(0, dMNSoundTestMusicIDs[sMNSoundTestOptionSelectID[nMNSoundTestOptionMusic]]);
+            syAudioPlayBGM(0, MNSOUNDTEST_MUSIC_ID(sMNSoundTestOptionSelectID[nMNSoundTestOptionMusic]));
             break;
 
         case nMNSoundTestOptionSound:
@@ -1001,7 +1032,7 @@ void mnSoundTestUpdateFunctions(void)
 
         case nMNSoundTestOptionVoice:
             func_800266A0_272A0();
-            func_800269C0_275C0(dMNSoundTestVoiceIDs[sMNSoundTestOptionSelectID[nMNSoundTestOptionVoice]]);
+            func_800269C0_275C0(MNSOUNDTEST_VOICE_ID(sMNSoundTestOptionSelectID[nMNSoundTestOptionVoice]));
             break;
         }
     }
@@ -1463,7 +1494,7 @@ void mnSoundTestMakeNumberSObj(GObj *gobj)
 {
     s32 i;
 
-    for (i = 0; i < nMNSoundTestOptionEnumCount; i++)
+    for (i = 0; i < MNSOUNDTEST_NUMBER_DIGITS; i++)
     {
         SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNSoundTestFiles[1], dMNSoundTestDigitSpriteOffsets[0]));
 

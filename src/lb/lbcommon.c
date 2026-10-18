@@ -5,6 +5,10 @@
 #include <sys/objanim.h>
 #include <sc/scmanager.h>
 #include <sys/debug.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixids.h"
+#include <sc/sctypes.h>
+#endif
 extern void func_800267F4_273F4(void *arg0);
 
 #ifdef PORT
@@ -766,6 +770,14 @@ alSoundEffect* lbCommonMakePositionFGM(u16 fgm, f32 pos)
          * > ROM-byte matching when the ROM bytes encode an outright
          * bug), we deviate from ROM-matching here. */
         balance = 64 + balance;
+#ifdef REGION_REMIX
+        /* Stereo.asm fix_sfx_pan_: the Sector Z Remix platform sits at the far right, so its hit sounds are centered
+         * (the Home-Run Contest case belongs to the 1P modes, ROADMAP T6.2). */
+        if (gSCManagerBattleState->gkind == nGRRemixStage_SECTOR_Z_REMIX)
+        {
+            balance = 64;
+        }
+#endif
 #else
         balance = 64 - balance;
 #endif
