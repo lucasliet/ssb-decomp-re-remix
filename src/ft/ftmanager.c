@@ -1021,7 +1021,11 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     {
         gSCManagerBattleState->players[fp->player].stock_count = desc->stock_count;
     }
+#ifdef REGION_REMIX
+    fp->detail_curr = fp->detail_base = ftRemixModelDisplayDetail(desc->detail);
+#else
     fp->detail_curr = fp->detail_base = desc->detail;
+#endif
 
     fp->costume = desc->costume;
     fp->shade = desc->shade;

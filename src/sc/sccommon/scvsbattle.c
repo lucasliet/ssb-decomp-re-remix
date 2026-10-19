@@ -1,5 +1,9 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "gm/gmremixspawnsetup.h"
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixgameend.h"
 #endif
 #include <ft/fighter.h>
 #ifdef PORT
@@ -130,6 +134,11 @@ void port_comp_ruleset_get_spawn(s32 player, Vec3f* pos)
 
 	// 1. Default Behavior (Vanilla map lookup)
 	mpCollisionGetPlayerMapObjPosition(player, pos);
+
+#ifdef REGION_REMIX
+	gmRemixNeutralSpawnApply(player, pos);
+	return;
+#endif
 
 	if (!port_enhancement_neutral_spawns()) return;
 
@@ -716,6 +725,9 @@ void scVSBattleStartScene(void)
 	syNetReplayFinishVSSession();
 	syNetPeerStopVSSession();
 	gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
+#if defined(PORT) && defined(REGION_REMIX)
+	gSCManagerSceneData.scene_curr = gmRemixGameEndSelectScene();
+#else
 	gSCManagerSceneData.scene_curr = nSCKindVSResults;
 
 	// skip results (if enabled)
@@ -727,4 +739,5 @@ void scVSBattleStartScene(void)
 			gSCManagerSceneData.scene_curr = nSCKindPlayersVS;
 		}
 	}
+#endif
 }

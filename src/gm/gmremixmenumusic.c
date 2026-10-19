@@ -1,0 +1,194 @@
+/**
+ * gmremixmenumusic.c - Menu Music toggle of the Remix settings (BGM.asm alt_menu_music_, Toggles.asm entry_menu_music).
+ *
+ * Not ported: RANDOM ALL (BGM.random_music_ without the Random Music gate), the GameBoy easter egg when no stage track is
+ * on, the "do not restart the track already playing" check (BGM.safe_id), and the menu tracks with no port id yet
+ * (BOMBERMAN 64 and SONIC R use assembly-time MIDI ids). Those fall back to default_bgm.
+ */
+
+#if defined(PORT) && defined(REGION_REMIX)
+
+#include "gm/gmremixmenumusic.h"
+#include "gm/gmremixtoggle.h"
+#include <sys/audio.h>
+#include <sys/utils.h>
+
+/* Toggles.asm menu_music values, in the order of string_table_menu_music. */
+#define GMREMIX_MENU_MUSIC_DEFAULT 0
+#define GMREMIX_MENU_MUSIC_64 1
+#define GMREMIX_MENU_MUSIC_MELEE 2
+#define GMREMIX_MENU_MUSIC_MENU2 3
+#define GMREMIX_MENU_MUSIC_BRAWL 4
+#define GMREMIX_MENU_MUSIC_GOLDENEYE 5
+#define GMREMIX_MENU_MUSIC_MARIOTENNIS 6
+#define GMREMIX_MENU_MUSIC_FILESELECT_SM64 7
+#define GMREMIX_MENU_MUSIC_BLASTCORPS 8
+#define GMREMIX_MENU_MUSIC_DKR 9
+#define GMREMIX_MENU_MUSIC_MK64 10
+#define GMREMIX_MENU_MUSIC_SBK 11
+#define GMREMIX_MENU_MUSIC_MARIOPARTY 12
+#define GMREMIX_MENU_MUSIC_MARIOARTIST 13
+#define GMREMIX_MENU_MUSIC_PERFECTDARK 14
+#define GMREMIX_MENU_MUSIC_CTR 15
+#define GMREMIX_MENU_MUSIC_K64 16
+#define GMREMIX_MENU_MUSIC_BOMBERMAN 17
+#define GMREMIX_MENU_MUSIC_SONIC_R 18
+#define GMREMIX_MENU_MUSIC_RANDOM 19
+#define GMREMIX_MENU_MUSIC_RANDOM_CLASSICS 20
+#define GMREMIX_MENU_MUSIC_RANDOM_ALL 21
+#define GMREMIX_MENU_MUSIC_OFF 22
+
+/* Remix BGM ids of the menu tracks (BGM.asm menu.MAIN_*). */
+#define GMREMIX_BGM_MAIN_MELEE 71
+#define GMREMIX_BGM_MAIN_BRAWL 108
+#define GMREMIX_BGM_MAIN_MENU2 224
+#define GMREMIX_BGM_MAIN_GOLDENEYE 231
+#define GMREMIX_BGM_MAIN_MARIOTENNIS 248
+#define GMREMIX_BGM_MAIN_FILESELECT_SM64 259
+#define GMREMIX_BGM_MAIN_BLASTCORPS 262
+#define GMREMIX_BGM_MAIN_DKR 280
+#define GMREMIX_BGM_MAIN_MK64 283
+#define GMREMIX_BGM_MAIN_SBK 296
+#define GMREMIX_BGM_MAIN_MARIOARTIST 307
+#define GMREMIX_BGM_MAIN_MARIOPARTY 309
+#define GMREMIX_BGM_MAIN_PERFECTDARK 312
+#define GMREMIX_BGM_MAIN_CTR 319
+#define GMREMIX_BGM_MAIN_K64 338
+
+/* Values 2 to 16 play the track listed here, in value order. */
+static const u32 sMenuMusicTrackBGM[] =
+{
+    GMREMIX_BGM_MAIN_MELEE,
+    GMREMIX_BGM_MAIN_MENU2,
+    GMREMIX_BGM_MAIN_BRAWL,
+    GMREMIX_BGM_MAIN_GOLDENEYE,
+    GMREMIX_BGM_MAIN_MARIOTENNIS,
+    GMREMIX_BGM_MAIN_FILESELECT_SM64,
+    GMREMIX_BGM_MAIN_BLASTCORPS,
+    GMREMIX_BGM_MAIN_DKR,
+    GMREMIX_BGM_MAIN_MK64,
+    GMREMIX_BGM_MAIN_SBK,
+    GMREMIX_BGM_MAIN_MARIOPARTY,
+    GMREMIX_BGM_MAIN_MARIOARTIST,
+    GMREMIX_BGM_MAIN_PERFECTDARK,
+    GMREMIX_BGM_MAIN_CTR,
+    GMREMIX_BGM_MAIN_K64,
+};
+
+/* Title screen chance roll out of 100, BGM.asm CHANCE_64 / CHANCE_MELEE / CHANCE_MENU2 / CHANCE_BRAWL. */
+#define GMREMIX_MENU_MUSIC_CHANCE_ROLL 100
+#define GMREMIX_MENU_MUSIC_CHANCE_64 85
+#define GMREMIX_MENU_MUSIC_CHANCE_MELEE 5
+#define GMREMIX_MENU_MUSIC_CHANCE_MENU2 5
+
+/**
+ * Picks the title screen track of a DEFAULT Menu Music roll.
+ *
+ * @param default_bgm BGM id kept when the roll lands on the 64 track.
+ * @return The BGM id to play.
+ */
+static u32 gmRemixMenuMusicTitleRoll(u32 default_bgm)
+{
+    s32 roll = syUtilsRandIntRange(GMREMIX_MENU_MUSIC_CHANCE_ROLL);
+
+    if (roll < GMREMIX_MENU_MUSIC_CHANCE_64)
+    {
+        return default_bgm;
+    }
+    if (roll < GMREMIX_MENU_MUSIC_CHANCE_64 + GMREMIX_MENU_MUSIC_CHANCE_MELEE)
+    {
+        return GMREMIX_BGM_MAIN_MELEE;
+    }
+    if (roll < GMREMIX_MENU_MUSIC_CHANCE_64 + GMREMIX_MENU_MUSIC_CHANCE_MELEE + GMREMIX_MENU_MUSIC_CHANCE_MENU2)
+    {
+        return GMREMIX_BGM_MAIN_MENU2;
+    }
+    return GMREMIX_BGM_MAIN_BRAWL;
+}
+
+/**
+ * Returns the BGM id of a fixed menu track value (2 to 16).
+ *
+ * @param value Menu Music value, 2 to 16.
+ * @param default_bgm BGM id kept when the value has no port id (17 and 18, REMIX-TODO(MIDI ids)).
+ * @return The BGM id to play.
+ */
+static u32 gmRemixMenuMusicTrackOf(s32 value, u32 default_bgm)
+{
+    if ((value < GMREMIX_MENU_MUSIC_MELEE) || (value > GMREMIX_MENU_MUSIC_K64))
+    {
+        return default_bgm;
+    }
+    return sMenuMusicTrackBGM[value - GMREMIX_MENU_MUSIC_MELEE];
+}
+
+/**
+ * Picks a menu track for RANDOM (any track 1 to 18) or RANDOM CLASSICS (tracks 5 to 18, the 64, MELEE, MENU 2 and BRAWL
+ * tracks are excluded as in BGM.asm).
+ *
+ * @param value GMREMIX_MENU_MUSIC_RANDOM or GMREMIX_MENU_MUSIC_RANDOM_CLASSICS.
+ * @param default_bgm BGM id kept when the random value has no port id.
+ * @return The BGM id to play.
+ */
+static u32 gmRemixMenuMusicRandomTrack(s32 value, u32 default_bgm)
+{
+    s32 random_value;
+
+    if (value == GMREMIX_MENU_MUSIC_RANDOM)
+    {
+        random_value = 1 + syUtilsRandIntRange(GMREMIX_MENU_MUSIC_SONIC_R);
+    }
+    else
+    {
+        random_value = 5 + syUtilsRandIntRange(GMREMIX_MENU_MUSIC_SONIC_R - 4);
+    }
+    if (random_value == GMREMIX_MENU_MUSIC_64)
+    {
+        return default_bgm;
+    }
+    return gmRemixMenuMusicTrackOf(random_value, default_bgm);
+}
+
+/**
+ * Chooses the menu BGM id for the current Menu Music value.
+ *
+ * @param default_bgm BGM id of the vanilla screen.
+ * @param from_title_screen TRUE on the title screen call.
+ * @return The BGM id to play, or -1 when the Menu Music value is OFF and the BGM must stop.
+ */
+static s32 gmRemixMenuMusicChoose(u32 default_bgm, sb32 from_title_screen)
+{
+    s32 value = gmRemixToggle(menu_music);
+
+    if (value == GMREMIX_MENU_MUSIC_OFF)
+    {
+        return -1;
+    }
+    if (value == GMREMIX_MENU_MUSIC_DEFAULT)
+    {
+        return from_title_screen ? gmRemixMenuMusicTitleRoll(default_bgm) : default_bgm;
+    }
+    if ((value == GMREMIX_MENU_MUSIC_RANDOM) || (value == GMREMIX_MENU_MUSIC_RANDOM_CLASSICS))
+    {
+        return gmRemixMenuMusicRandomTrack(value, default_bgm);
+    }
+    if (value == GMREMIX_MENU_MUSIC_RANDOM_ALL)
+    {
+        return default_bgm;
+    }
+    return gmRemixMenuMusicTrackOf(value, default_bgm);
+}
+
+void gmRemixMenuMusicPlay(u32 default_bgm, sb32 from_title_screen)
+{
+    s32 bgm = gmRemixMenuMusicChoose(default_bgm, from_title_screen);
+
+    if (bgm < 0)
+    {
+        syAudioStopBGMAll();
+        return;
+    }
+    syAudioPlayBGM(0, bgm);
+}
+
+#endif

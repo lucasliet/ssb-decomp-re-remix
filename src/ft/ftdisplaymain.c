@@ -1119,6 +1119,10 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
     fp = ftGetStruct(fighter_gobj);
     attr = fp->attr;
 
+#ifdef REGION_REMIX
+    ftRemixHitboxDisplayApply(fp);
+#endif
+
 #ifdef PORT
     fp->display_mode = port_enhancement_hitbox_display_override(fp->display_mode);
 #endif

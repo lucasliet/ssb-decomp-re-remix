@@ -1113,6 +1113,10 @@ void ftParamSetModelPartDetailAll(GObj *fighter_gobj, u8 detail)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 i;
 
+#ifdef REGION_REMIX
+    detail = ftRemixModelDisplayDetail(detail);
+#endif
+
     if (detail != fp->detail_curr)
     {
         fp->detail_curr = detail;

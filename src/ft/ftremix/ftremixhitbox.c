@@ -19,7 +19,8 @@
  * grabbable while SinglePlayerModes.singleplayer_mode_flag == REMIX_1P_ID (4). The Remix 1P mode flag is not
  * ported yet, so the Giga Bowser branch is skipped. It stays FALSE until that flag exists.
  *
- * REMIX-TODO(hitbox display): these Hitbox.asm patches are not ported. They are debug display code, and
+ * REMIX-TODO(hitbox display): these Hitbox.asm patches are not ported. The fighter part of hitbox_mode_ and the
+ * Model Display of Costumes.asm are in ftremixhitboxdisplay.c. The rest is debug display code, and
  * the display-list builders they edit are not ported yet. Default Remix toggles (Special Model Display and
  * Advanced Hurtbox Display, both FALSE) make most of them no-ops, except the display state writes.
  *   projectile_ (0x80167538), grab_immunity_and_armor_frames_ (0x800F279C, Advanced Hurtbox),

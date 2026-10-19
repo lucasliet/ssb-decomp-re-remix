@@ -6,6 +6,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include <it/item.h>
 #ifdef REGION_REMIX
 #include "it/itremix/itremixspawn.h"
+#include "if/ifremixhud.h"
 #endif
 #include <gr/ground.h>
 #include <if/interface.h>
@@ -313,7 +314,14 @@ void sc1PTrainingModeCheckLeaveMenu(void)
 
 	if (gSYControllerDevices[player].button_tap & (B_BUTTON | START_BUTTON))
 	{
+#ifdef REGION_REMIX
+		if (ifRemixHudDisabledAll() == FALSE)
+		{
+			ifCommonInterfaceSetGObjFlagsAll(GOBJ_FLAG_NONE);
+		}
+#else
 		ifCommonInterfaceSetGObjFlagsAll(GOBJ_FLAG_NONE);
+#endif
 		sc1PTrainingModeSetMenuGObjFlags(GOBJ_FLAG_HIDDEN);
 
 		gSCManagerBattleState->game_status = nSCBattleGameStatusGo;
@@ -2040,6 +2048,12 @@ void sc1PTrainingModeFuncStart(void)
 	ifCommonPlayerStockInitInterface();
 	sc1PTrainingModeMakeStatDisplayAll();
 	sc1PTrainingModeMakeMenuAll();
+#ifdef REGION_REMIX
+	if (ifRemixHudDisabledAll())
+	{
+		ifCommonInterfaceSetGObjFlagsAll(GOBJ_FLAG_HIDDEN);
+	}
+#endif
 	sc1PTrainingModeSetPlayDefaultBGM();
 	func_800266A0_272A0();
 	func_800269C0_275C0(nSYAudioVoicePublicExcited);

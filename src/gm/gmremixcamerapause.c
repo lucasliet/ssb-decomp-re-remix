@@ -6,8 +6,8 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixhooks.h"
-#include "gm/gmremixtoggle.h"
 #include "if/ifcommon.h"
+#include "if/ifremixhud.h"
 #include "lb/lbcommon.h"
 #include "sys/objman.h"
 #include "sys/objtypes.h"
@@ -15,14 +15,6 @@
 /* Camera.asm unpause_camera_ destroys the Remix pause legend objects of the common link groups 0xF and 0x10 */
 #define GM_REMIX_CAMERA_LEGEND_LINK_FIRST 0x0F
 #define GM_REMIX_CAMERA_LEGEND_LINK_SECOND 0x10
-
-#define GM_REMIX_CAMERA_DISABLE_HUD_ALL 0x0002
-
-/** TRUE when the Disable HUD toggle is All. */
-static sb32 gmRemixCameraHudDisabledAll(void)
-{
-    return (gmRemixToggle(disable_hud) & GM_REMIX_CAMERA_DISABLE_HUD_ALL) != 0;
-}
 
 /** Destroys the objects of one common link group, if it has any. */
 static void gmRemixCameraEjectLegendLink(s32 link_id)
@@ -39,7 +31,7 @@ static void gmRemixCameraEjectLegendLink(s32 link_id)
  */
 sb32 gmRemixCameraHudHiddenOnGo(void)
 {
-    if (gmRemixCameraHudDisabledAll() == FALSE)
+    if (ifRemixHudDisabledAll() == FALSE)
     {
         return FALSE;
     }
@@ -58,7 +50,7 @@ sb32 gmRemixCameraRestorePauseHud(void)
     gmRemixCameraEjectLegendLink(GM_REMIX_CAMERA_LEGEND_LINK_FIRST);
     gmRemixCameraEjectLegendLink(GM_REMIX_CAMERA_LEGEND_LINK_SECOND);
 
-    if ((gmRemixCameraHudDisabledAll() == FALSE) && (gmRemixCameraIsScene() == FALSE))
+    if ((ifRemixHudDisabledAll() == FALSE) && (gmRemixCameraIsScene() == FALSE))
     {
         return TRUE;
     }

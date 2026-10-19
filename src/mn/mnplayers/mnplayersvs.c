@@ -18,6 +18,8 @@ extern float port_widescreen_clip_x_scale(void);
 #endif
 #ifdef REGION_REMIX
 #include "remix/remix_css_data.h"
+#include "gm/gmremixmenumusic.h"
+#include "gm/gmremixspawnsetup.h"
 #endif
 
 
@@ -5576,6 +5578,10 @@ void mnPlayersVSInitVars(void)
 	}
 #endif
 
+#ifdef REGION_REMIX
+	gmRemixDefaultCPULevelSetup();
+#endif
+
 	sMNPlayersVSIsResetPlayers = gSCManagerTransferBattleState.is_reset_players;
 	sMNPlayersVSGameRuleGObj = NULL;
 	sMNPlayersVSGameModeGObj = NULL;
@@ -5709,7 +5715,11 @@ void mnPlayersVSFuncStart(void)
 
 	if (gSCManagerSceneData.scene_prev != nSCKindMaps)
 	{
+#ifdef REGION_REMIX
+		gmRemixMenuMusicPlay(nSYAudioBGMBattleSelect, FALSE);
+#else
 		syAudioPlayBGM(0, nSYAudioBGMBattleSelect);
+#endif
 	}
 	/* Classic Co-op reuses the VS character-select overlay, but it is still
 	 * the single-player flow. Keep the normal 1P announcer prompt instead of

@@ -531,4 +531,9 @@ void ftRemixSpecialZoomWallpaperHide(void);
  * RAM 0x801317F4 gBattlePlacement of SpecialZoom.asm) */
 s32 ifRemixBattlePlace(void);
 
+/* Special Model Display and Model Display, ft/ftremix/ftremixhitboxdisplay.c (Hitbox.asm hitbox_mode_, Costumes.asm
+ * force_hi_lo_poly_): the forced poly detail of a fighter, and the fighter display mode from the Special Model toggle */
+u8 ftRemixModelDisplayDetail(u8 detail);
+void ftRemixHitboxDisplayApply(FTStruct *fp);
+
 #endif

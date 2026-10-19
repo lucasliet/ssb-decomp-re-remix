@@ -19,6 +19,9 @@ extern float port_widescreen_clip_x_scale(void);
 extern s32 mnRemixResultsGetWinBGM(s32 fkind);
 extern void port_log(const char *fmt, ...);
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixgameend.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -2521,7 +2524,11 @@ void mnVSResultsMakeLabel(void)
 			offsets[mnVSResultsCheckTeamBattle()]
 		),
 		nGCProcessKindFunc,
+#if defined(PORT) && defined(REGION_REMIX)
+		procs[gmRemixGameEndResultsDrawKind(sMNVSResultsKind)],
+#else
 		procs[sMNVSResultsKind],
+#endif
 		1
 	);
 	SObjGetStruct(gobj)->pos.x = 32.0F;
