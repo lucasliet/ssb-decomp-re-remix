@@ -1,5 +1,6 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
@@ -2382,6 +2383,7 @@ void sc1PGameFuncStart(void)
     sc1PGameSetupFiles();
 #ifdef REGION_REMIX
     ifRemixComboMeterSetup();
+    ifRemixAnnouncerSetup();
 #endif
 
 #ifndef PORT

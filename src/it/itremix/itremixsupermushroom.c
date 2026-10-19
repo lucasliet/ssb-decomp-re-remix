@@ -584,7 +584,7 @@ static void itRemixSuperMushroomProcUpdate(GObj *routine_gobj)
     itRemixSuperMushroomAdvance(routine);
 }
 
-/* SuperMushroom: fills a new routine from the pickup. REMIX-TODO(Size): the asm reads the match size state from Size.match_state_table; the port has no Size, so NORMAL is used. */
+/* SuperMushroom: fills a new routine from the pickup, with the match size state of the player (Size.match_state_table) */
 static void itRemixSuperMushroomInitRoutine(ITRemixSuperMushroomRoutine *routine, FTStruct *fp, s32 kind)
 {
     routine->fp = fp;
@@ -592,7 +592,7 @@ static void itRemixSuperMushroomInitRoutine(ITRemixSuperMushroomRoutine *routine
     routine->timer = 0;
     routine->transition_index = 0;
     routine->state = nITRemixSuperMushroomStateTransition1;
-    routine->match_size_state = nITRemixSuperMushroomSizeNormal;
+    routine->match_size_state = ftRemixSizeGetMatchState(fp->player);
     routine->flash_sfx_kind = 0;
     routine->is_pending_sfx = FALSE;
     routine->size_multiplier = ITREMIX_SUPERMUSHROOM_SIZE_NORMAL;

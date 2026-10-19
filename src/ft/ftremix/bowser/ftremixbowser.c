@@ -430,7 +430,6 @@ static void ftRemixBowserNSPMakeFlame(GObj *fighter_gobj, Vec3f *flame_pos, Vec3
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    /* REMIX-TODO(PokemonAnnouncer): flamethrower_announcement_ is skipped, not ported. */
     flame_pos->x += (f32) fp->lr * BOWSER_NSP_FLAME_SPAWN_X_OFFSET;
     flame_pos->y += BOWSER_NSP_FLAME_SPAWN_Y_OFFSET;
     itFFlowerWeaponFlameMakeWeapon(fighter_gobj, flame_pos, flame_vel);

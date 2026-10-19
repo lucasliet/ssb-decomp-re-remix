@@ -12,6 +12,7 @@
 #include "ft/ftremix/ftremix.h"
 #include "ft/ftremix/ftremixfields.h"
 #include "remix/remix_symbols.h"
+#include <if/ifremixannouncer.h>
 #include <ft/ftchar/ftmario/ftmario.h>
 
 #define MARTH_USP_BEGIN 1
@@ -564,7 +565,12 @@ static void ftRemixMarthDSPAirInitial(GObj *fighter_gobj)
  * (PokemonAnnouncer.counter_announcement_) is not ported. */
 static void ftRemixMarthDSPStartAttack(GObj *fighter_gobj, s32 status_id)
 {
-    /* REMIX-TODO(PokemonAnnouncer): counter_announcement_ voice line is skipped */
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallCounter);
+    }
+#endif
     ftRemixMarthSetStatusWithAnim(fighter_gobj, status_id);
 }
 

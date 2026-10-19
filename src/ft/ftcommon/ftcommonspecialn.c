@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
 #include "fighter_registry.h"
@@ -142,6 +145,12 @@ sb32 ftCommonSpecialNCheckInterruptCommon(GObj *fighter_gobj)
 #endif
     if ((fp->input.pl.button_tap & fp->input.button_mask_b) && (attr->is_have_specialn))
     {
+#ifdef REGION_REMIX
+        if (ifRemixAnnouncerIsActive() && (syUtilsRandIntRange(20) == 0))
+        {
+            ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallAttack);
+        }
+#endif
         if ((fp->input.pl.stick_range.y < FTCOMMON_SPECIALHI_STICK_RANGE_MIN) && (fp->input.pl.stick_range.y > FTCOMMON_SPECIALLW_STICK_RANGE_MIN))
         {
 #ifdef PORT

@@ -6,6 +6,8 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "it/itremix/itremixbasketball.h"
 #include "it/itremix/itremixcloud.h"
+#include "gr/grremix/grremixids.h"
+#include <sc/scmanager.h>
 #endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
@@ -196,6 +198,22 @@ void itProcessProcItemMain(GObj *item_gobj)
                 return;
             }
         }
+#ifdef REGION_REMIX
+        /* Surface.asm item_apply_conveyor_surface (0x8016F8E4): the push is cleared in the air, a conveyor sets it on the ground (not on Saffron City). */
+        if (ip->ga != nMPKineticsGround)
+        {
+            ip->coll_data.vel_push.x = 0.0F;
+        }
+        else if (gSCManagerBattleState->gkind != nGRRemixStage_SAFFRON_CITY)
+        {
+            f32 conveyor_speed;
+
+            if (grRemixSurfaceConveyorPush(ip->coll_data.floor_flags & MAP_VERTEX_MAT_MASK, &conveyor_speed))
+            {
+                ip->coll_data.vel_push.x = conveyor_speed;
+            }
+        }
+#endif
         if (ip->proc_map != NULL)
         {
             ip->coll_data.mask_prev = ip->coll_data.mask_curr;

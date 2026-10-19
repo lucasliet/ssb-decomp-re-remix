@@ -8,14 +8,29 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "if/ifremixcombometer.h"
+#include "if/ifremixannouncer.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
 #define IFREMIX_COMBO_DEFAULT_FRAME_BUFFER 30
 #define IFREMIX_COMBO_MAX_FRAME_BONUS 150
 #define IFREMIX_COMBO_INCREDIBLE_HITS 20
+#define IFREMIX_COMBO_ANNOUNCER_HITS 10
 #define IFREMIX_COMBO_FGM_INCREDIBLE 466
 #define IFREMIX_COMBO_ATTRIBUTION_NONE (-1)
+
+/** Plays the Pokemon combo clip once, when the combo count reaches 10 hits (asm pokemon_combo_). */
+static void ifRemixComboHitsAnnounceTenHits(IFRemixComboMeter *meter, s32 hit_count)
+{
+    if ((hit_count != IFREMIX_COMBO_ANNOUNCER_HITS) || (meter->combo_count == hit_count))
+    {
+        return;
+    }
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallCombo);
+    }
+}
 
 /** Keeps the highest combo of the attacker against the victim, the asm counts the hits since the attribution started. */
 static void ifRemixComboHitsRecordHighest(IFRemixComboMeter *meters, s32 attacker, s32 victim, s32 hit_count)
@@ -64,7 +79,7 @@ static void ifRemixComboHitsUpdateInCombo(IFRemixComboMeter *meters, s32 victim,
     s32 attacker = meter->fp->damage_player;
 
     ifRemixComboHitsRefillFrames(meter, hit_count);
-    /* REMIX-TODO(PokemonAnnouncer): pokemon_combo_ call of draw_hit_count_ is skipped. */
+    ifRemixComboHitsAnnounceTenHits(meter, hit_count);
 
     if ((hit_count == IFREMIX_COMBO_INCREDIBLE_HITS) && (meter->combo_count != hit_count))
     {

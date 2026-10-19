@@ -2,6 +2,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include <if/ifremixannouncer.h>
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -430,6 +433,13 @@ GObj* itLizardonWeaponFlameMakeWeapon(GObj *item_gobj, Vec3f *pos, Vec3f *vel)
 {
     GObj *weapon_gobj = wpManagerMakeWeapon(item_gobj, &dITLizardonWeaponFlameWeaponDesc, pos, WEAPON_FLAG_PARENT_ITEM);
     WPStruct *ip;
+
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallFlamethrower);
+    }
+#endif
 
     if (weapon_gobj == NULL)
     {

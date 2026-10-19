@@ -4,6 +4,7 @@
 #include <it/itmain.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -62,6 +63,12 @@ void ftCommonDeadUpdateScore(FTStruct *this_fp)
     if (gIFCommonPlayerInterface.player_pos_x == NULL)
     {
         return;
+    }
+#endif
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayKO(this_fp);
     }
 #endif
     ifCommonPlayerDamageStartBreakAnim(this_fp);

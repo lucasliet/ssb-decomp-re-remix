@@ -18,6 +18,7 @@ extern void port_dump_backtrace(void);
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"
 #include "it/itremix/itremixfranklinbadge.h"
+#include "if/ifremixannouncer.h"
 #include "it/itremix/itremixstopwatch.h"
 #include "gr/grremix/grremixbowserbombs.h"
 #endif
@@ -2079,6 +2080,14 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     {
 #ifdef REGION_REMIX
         ftRemixRageSmokeEffect(fp); /* Rage.asm gen_gfx (0x800E23D0) */
+        {
+            f32 conveyor_speed;
+
+            if ((fp->ga == nMPKineticsGround) && grRemixSurfaceConveyorPush(fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK, &conveyor_speed))
+            {
+                fp->coll_data.vel_push.x = conveyor_speed;
+            }
+        }
 #endif
         fp->coll_data.mask_prev = fp->coll_data.mask_curr;
         fp->coll_data.mask_curr = 0;
@@ -2212,6 +2221,10 @@ void ftMainSetHitInteractStats(FTStruct *fp, u32 attack_group_id, GObj *victim_g
     if (itRemixBasketballIsFire(victim_gobj) != FALSE)
     {
         fp->hitlag_mul = 2.0F;
+    }
+    if ((attack_type == nGMHitTypeAttack) && ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallClang);
     }
 #endif
 
@@ -2608,6 +2621,12 @@ void ftMainUpdateAbsorbStatWeapon(WPStruct *wp, WPAttackColl *wp_attack_coll, FT
 
     fp->absorb_lr = (DObjGetStruct(fighter_gobj)->translate.vec.f.x < DObjGetStruct(wp->weapon_gobj)->translate.vec.f.x) ? +1 : -1;
 
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallRecovery);
+    }
+#endif
     if (!(wp_attack_coll->can_not_heal))
     {
 #ifdef REGION_REMIX

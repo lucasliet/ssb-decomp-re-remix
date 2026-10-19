@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 
 // // // // // // // // // // // //
@@ -37,6 +38,12 @@ void ftCommonFuraFuraSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 breakout_wait;
 
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallStun);
+    }
+#endif
     ftMainSetStatus(fighter_gobj, nFTCommonStatusFuraFura, 0.0F, 1.0F, (FTSTATUS_PRESERVE_TEXTUREPART | FTSTATUS_PRESERVE_MODELPART));
 
     fp->shield_health = (fp->fkind == nFTKindYoshi) ? 30 : 30;

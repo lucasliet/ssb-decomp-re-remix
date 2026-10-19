@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
+#include "if/ifremixannouncer.h"
 #endif
 
 // // // // // // // // // // // //
@@ -25,6 +26,12 @@ void ftCommonAppealSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallTaunt);
+    }
+#endif
     if ((fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby)
 #ifdef REGION_REMIX
         || (fp->fkind == REMIX_ID_JKIRBY) /* kirby_taunt_fix_1 */

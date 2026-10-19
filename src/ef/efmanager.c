@@ -6,6 +6,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -4861,6 +4862,13 @@ GObj* efManagerPurinSingMakeEffect(GObj *fighter_gobj)
     GObj *effect_gobj;
     DObj *dobj, *sibling_dobj;
     EFStruct *ep;
+
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallSing);
+    }
+#endif
 
     effect_gobj = efManagerMakeEffectForce(&dEFManagerPurinSingEffectDesc);
 

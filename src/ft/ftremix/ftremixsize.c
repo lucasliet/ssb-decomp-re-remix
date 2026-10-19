@@ -14,12 +14,18 @@
 #include <ft/fighter.h>
 #include <gm/gmdef.h>
 #include <port_log.h>
+#include <sc/scene.h>
+#include <sc/scmanager.h>
+#include <stdlib.h>
 
 /* Size.asm multiplier_table: current size multiplier of each player. */
 static f32 sFTRemixSizeMultiplier[GMCOMMON_PLAYERS_MAX] = { 1.0F, 1.0F, 1.0F, 1.0F };
 
 /* Size.asm base_multiplier_table: the body size of each player, the value its top joint is scaled from. */
 static f32 sFTRemixSizeBaseMultiplier[GMCOMMON_PLAYERS_MAX] = { 1.0F, 1.0F, 1.0F, 1.0F };
+
+/* Size.asm match_state_table: GIANT or TINY forces the body size through the whole match. */
+static s32 sFTRemixSizeMatchState[GMCOMMON_PLAYERS_MAX];
 
 /** TRUE when player is a valid index into the per-player tables, logs the offending value otherwise. */
 static sb32 ftRemixSizePlayerIsValid(s32 player)
@@ -52,9 +58,76 @@ void ftRemixSizeSetMultiplier(s32 player, f32 multiplier)
     sFTRemixSizeMultiplier[player] = multiplier;
 }
 
+/** Match size state (FTREMIX_SIZE_STATE_*) of player, NORMAL for an invalid index. */
+s32 ftRemixSizeGetMatchState(s32 player)
+{
+    if (!ftRemixSizePlayerIsValid(player))
+    {
+        return FTREMIX_SIZE_STATE_NORMAL;
+    }
+    return sFTRemixSizeMatchState[player];
+}
+
+/** Sets the match size state of player (the CSS size menu writes it). Ignored for an invalid index or state. */
+void ftRemixSizeSetMatchState(s32 player, s32 state)
+{
+    if (!ftRemixSizePlayerIsValid(player))
+    {
+        return;
+    }
+    if ((state < FTREMIX_SIZE_STATE_NORMAL) || (state > FTREMIX_SIZE_STATE_TINY))
+    {
+        port_log("ftRemixSize: match state %d is outside 0..%d\n", state, FTREMIX_SIZE_STATE_TINY);
+        return;
+    }
+    sFTRemixSizeMatchState[player] = state;
+}
+
+/** Multiplier of the match size state of player: 2.25F GIANT, 0.5F TINY, 1.0F NORMAL. */
+f32 ftRemixSizeGetModeMultiplier(s32 player)
+{
+    switch (ftRemixSizeGetMatchState(player))
+    {
+        case FTREMIX_SIZE_STATE_GIANT:
+            return FTREMIX_SIZE_GIANT_MULTIPLIER;
+
+        case FTREMIX_SIZE_STATE_TINY:
+            return FTREMIX_SIZE_TINY_MULTIPLIER;
+
+        default:
+            return 1.0F;
+    }
+}
+
 /**
- * Records the body size of a new fighter and resets its multiplier to 1.0F.
- * Called from ftManagerInitFighter, where Size.asm initialize_base_multiplier_table_ runs.
+ * SSB64_REMIX_SIZE_STATE="g,t,n,n": match size state per port (n normal, g giant, t tiny), a stand-in for the CSS size
+ * menu. Read once, on the first fighter of the run.
+ */
+static void ftRemixSizeReadEnvStates(void)
+{
+    static sb32 is_read = FALSE;
+    const char *text = getenv("SSB64_REMIX_SIZE_STATE");
+    s32 player = 0;
+
+    if (is_read)
+    {
+        return;
+    }
+    is_read = TRUE;
+    for (; (text != NULL) && (*text != '\0') && (player < GMCOMMON_PLAYERS_MAX); text++)
+    {
+        if (*text == ',')
+        {
+            continue;
+        }
+        sFTRemixSizeMatchState[player++] = (*text == 'g') ? FTREMIX_SIZE_STATE_GIANT : (*text == 't') ? FTREMIX_SIZE_STATE_TINY : FTREMIX_SIZE_STATE_NORMAL;
+    }
+}
+
+/**
+ * Records the body size of a new fighter and sets its multiplier: 1.0F, or the size of its match state outside the
+ * How to Play and Auto-Demo screens (Size.asm initialize_base_multiplier_table_).
+ * Called from ftManagerInitFighter.
  */
 void ftRemixSizeInitFighter(FTStruct *fp)
 {
@@ -62,8 +135,15 @@ void ftRemixSizeInitFighter(FTStruct *fp)
     {
         return;
     }
+    ftRemixSizeReadEnvStates();
     sFTRemixSizeBaseMultiplier[fp->player] = fp->attr->size;
     sFTRemixSizeMultiplier[fp->player] = 1.0F;
+
+    if ((gSCManagerSceneData.scene_curr == nSCKindExplain) || (gSCManagerSceneData.scene_curr == nSCKindAutoDemo))
+    {
+        return;
+    }
+    sFTRemixSizeMultiplier[fp->player] = ftRemixSizeGetModeMultiplier(fp->player);
 }
 
 /** Scales the top joint by base size times multiplier. */

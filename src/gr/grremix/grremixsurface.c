@@ -6,9 +6,15 @@
 
 #include <ssb_types.h>
 #include <mp/map.h>
+#include <sc/sctypes.h>
+#include <sc/scmanager.h>
+#include "gr/grremix/grremixhazards.h"
+#include "gr/grremix/grremixids.h"
 
 #define GRREMIX_SURFACE_VANILLA_COUNT 16
 #define GRREMIX_SURFACE_FRICTION_DEFAULT 4.0F
+#define GRREMIX_SURFACE_CONVEYOR_FIRST 0x1F
+#define GRREMIX_SURFACE_CONVEYOR_LAST 0x22
 
 /* Surface.asm add_surface friction values, in the order of the new surface ids 0x10..0x24. */
 static const f32 sGRRemixSurfaceFrictions[] =
@@ -36,6 +42,9 @@ static const f32 sGRRemixSurfaceFrictions[] =
     4.0F, /* 0x24 bounce */
 };
 
+/* Surface.asm conveyor_speed in the order of the materials 0x1F..0x22: RTTF right, RTTF left, Time Twister right and left. */
+static const f32 sGRRemixSurfaceConveyorSpeeds[] = { 20.5F, -24.0F, 20.0F, -20.0F };
+
 /**
  * Ground friction of a material id. Ids 0x00..0x0F read the vanilla table, 0x10..0x24 the Remix surfaces;
  * any other id gets the default friction instead of reading past the tables.
@@ -53,6 +62,24 @@ f32 grRemixSurfaceFriction(u32 material)
         return GRREMIX_SURFACE_FRICTION_DEFAULT;
     }
     return sGRRemixSurfaceFrictions[remix_index];
+}
+
+/**
+ * Surface.asm fighter/item_apply_conveyor_surface: horizontal push of the conveyor material under a grounded object, written
+ * to speed. Returns FALSE for any other material, and off Road to the Final Frontier while Hazard Mode turns movement off.
+ */
+sb32 grRemixSurfaceConveyorPush(u32 material, f32 *speed)
+{
+    if ((material < GRREMIX_SURFACE_CONVEYOR_FIRST) || (material > GRREMIX_SURFACE_CONVEYOR_LAST))
+    {
+        return FALSE;
+    }
+    if ((gSCManagerBattleState->gkind != nGRRemixStage_REMIX_RTTF) && (grRemixMovementIsOn() == FALSE))
+    {
+        return FALSE;
+    }
+    *speed = sGRRemixSurfaceConveyorSpeeds[material - GRREMIX_SURFACE_CONVEYOR_FIRST];
+    return TRUE;
 }
 
 #endif

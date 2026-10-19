@@ -15,6 +15,9 @@
 #include "ft/ftremix/ftremixfields.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_symbols.h"
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #include <ft/fighter.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
 #include <ft/ftmain.h>
@@ -221,7 +224,12 @@ static void ftRemixSSonicUSPMoveSetStatus(GObj *fighter_gobj)
     sb32 is_grounded_at_start = (fp->ga == nMPKineticsGround);
     s32 stick_magnitude;
 
-    /* REMIX-TODO(PokemonAnnouncer): skipped teleport_announcement_ (announcer line or FGM fallback). */
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallTeleport);
+    }
+#endif
     if (ABS(fp->input.pl.stick_range.x) >= SSONIC_USP_MIN_STICK_MAGNITUDE)
     {
         ftParamSetStickLR(fp);

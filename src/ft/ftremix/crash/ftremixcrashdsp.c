@@ -11,6 +11,9 @@
 
 #include "ft/ftremix/ftremix.h"
 #include "remix/remix_symbols.h"
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #include <ef/efmanager.h>
 #include <ft/ftchar/ftkirby/ftkirbyfunctions.h>
 #include <ft/ftmain.h>
@@ -290,7 +293,12 @@ static void ftRemixCrashDSPBeginInitial(GObj *fighter_gobj)
     dig_gfx = ftRemixCrashDSPCreateDigGfx(fighter_gobj);
     if (dig_gfx != NULL)
     {
-        /* REMIX-TODO(PokemonAnnouncer): PokemonAnnouncer.burrow_announcement_ is skipped. */
+#ifdef REGION_REMIX
+        if (ifRemixAnnouncerIsActive())
+        {
+            ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallBurrow);
+        }
+#endif
         ftRemixCrashDSPSetupDigGfx(fp, dig_gfx);
         ftRemixCrashDSPVars(fp)->dig_gfx = dig_gfx;
     }
@@ -350,7 +358,12 @@ static void ftRemixCrashDSPEndInitial(GObj *fighter_gobj, sb32 is_slide_off)
     GObj *dig_gfx = ftRemixCrashDSPVars(fp)->dig_gfx;
     DObj *root;
 
-    /* REMIX-TODO(PokemonAnnouncer): PokemonAnnouncer.dig_announcement_ is skipped. */
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallDig);
+    }
+#endif
     ftRemixCrashDSPSetStatus(fighter_gobj, nFTRemixCrashStatusDSPEnd, 0.0F);
     if (dig_gfx != NULL)
     {

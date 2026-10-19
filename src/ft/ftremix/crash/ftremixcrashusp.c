@@ -12,6 +12,9 @@
 
 #include "ft/ftremix/ftremix.h"
 #include "remix/remix_symbols.h"
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #include "ft/ftmain.h"
 #include "ft/ftphysics.h"
 #include "mp/mpcommon.h"
@@ -111,7 +114,12 @@ static void ftRemixCrashUSPProcUpdate(GObj *fighter_gobj)
     /* Take mid-air jumps away at this point. */
     mpCommonSetFighterAir(fp);
     fp->jumps_used = fp->attr->jumps_max;
-    /* REMIX-TODO(PokemonAnnouncer): PokemonAnnouncer.body_slam_announcement_ is skipped. */
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallBodySlam);
+    }
+#endif
 }
 
 /* CrashUSP.change_direction_ */

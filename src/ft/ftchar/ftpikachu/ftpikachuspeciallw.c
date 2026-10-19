@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #include <wp/weapon.h>
 // // // // // // // // // // // //
 //                               //
@@ -107,6 +110,12 @@ void ftPikachuSpecialLwStartInitStatusVars(GObj *fighter_gobj)
 // 0x80151FBC
 void ftPikachuSpecialLwStartSetStatus(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallThunder);
+    }
+#endif
     ftMainSetStatus(fighter_gobj, nFTPikachuStatusSpecialLwStart, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
     ftPikachuSpecialLwStartInitStatusVars(fighter_gobj);
@@ -115,6 +124,12 @@ void ftPikachuSpecialLwStartSetStatus(GObj *fighter_gobj)
 // 0x80151FFC
 void ftPikachuSpecialAirLwStartSetStatus(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallThunder);
+    }
+#endif
     ftMainSetStatus(fighter_gobj, nFTPikachuStatusSpecialAirLwStart, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
     ftPikachuSpecialLwStartInitStatusVars(fighter_gobj);

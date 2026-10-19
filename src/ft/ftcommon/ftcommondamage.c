@@ -8,6 +8,9 @@
 #include "gr/grremix/grremixbowserbombs.h"
 #endif
 #include <if/ifscreenflash.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "if/ifremixhitannouncer.h"
+#endif
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -612,7 +615,11 @@ s32 damage_index, s32 element, s32 damage_player_num, sb32 is_rumble, sb32 is_fo
         status_id_set = status_id_replace;
     }
 
+#ifdef REGION_REMIX
+    if (ftRemixDamageUsesElectricStatus(element) && (status_id_set >= nFTCommonStatusDamageStart) && (status_id_set <= nFTCommonStatusDamageEnd))
+#else
     if (((element == nGMHitElementElectric) && (status_id_set >= nFTCommonStatusDamageStart)) && (status_id_set <= nFTCommonStatusDamageEnd))
+#endif
     {
         status_id_var = status_id_set;
 
@@ -709,11 +716,23 @@ void ftCommonDamageGotoDamageStatus(GObj *fighter_gobj)
     {
         fp->cliffcatch_wait = FTCOMMON_CLIFF_CATCH_WAIT;
     }
+#ifdef REGION_REMIX
+    if (ftRemixDamageGotoStunAction(fighter_gobj))
+    {
+        return;
+    }
+#endif
     if (fp->damage_element == nGMHitElementSleep)
     {
         ftCommonFuraSleepSetStatus(fighter_gobj);
     }
-    else ftCommonDamageInitDamageVars(fighter_gobj, -1, fp->damage_queue, fp->damage_knockback, fp->damage_angle, fp->damage_lr, fp->damage_index, fp->damage_element, fp->damage_player_num, FALSE, FALSE, TRUE);
+    else
+    {
+#if defined(PORT) && defined(REGION_REMIX)
+        ifRemixHitAnnouncerPlayHit(fp);
+#endif
+        ftCommonDamageInitDamageVars(fighter_gobj, -1, fp->damage_queue, fp->damage_knockback, fp->damage_angle, fp->damage_lr, fp->damage_index, fp->damage_element, fp->damage_player_num, FALSE, FALSE, TRUE);
+    }
 }
 
 // 0x801415F8

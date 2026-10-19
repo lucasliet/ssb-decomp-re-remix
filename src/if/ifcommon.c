@@ -9,6 +9,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -2903,7 +2904,11 @@ void ifCommonBattleEndPlaySoundQueue(void)
 
     for (i = 0; i < sIFCommonBattleEndSoundsNum; i++)
     {
+#ifdef REGION_REMIX
+        func_800269C0_275C0(ifRemixAnnouncerTimeUpFgm(sIFCommonBattleEndSoundsQueue[i]));
+#else
         func_800269C0_275C0(sIFCommonBattleEndSoundsQueue[i]);
+#endif
     }
 }
 
@@ -3640,11 +3645,19 @@ void ifCommonAnnounceEndMessage(void)
     }
     else
     {
+#ifdef REGION_REMIX
+        if ((gSCManagerBattleState->game_type == nSCBattleGameType1PGame) && (gSCManagerBattleState->players[gSCManagerSceneData.player].stock_count != -1))
+        {
+            ifCommonBattleSetInterface(ifCommonBattleInterfaceProcUpdate, ifCommon1PGameInterfaceProcSet, ifRemixAnnouncerGameSetFgm(nSYAudioVoiceAnnounceGameSet), ifRemixAnnouncerGameSetDelay(90));
+        }
+        else ifCommonBattleSetInterface(ifCommonBattleInterfaceProcUpdate, ifCommonBattleInterfaceProcSet, ifRemixAnnouncerGameSetFgm(nSYAudioVoiceAnnounceGameSet), ifRemixAnnouncerGameSetDelay(90));
+#else
         if ((gSCManagerBattleState->game_type == nSCBattleGameType1PGame) && (gSCManagerBattleState->players[gSCManagerSceneData.player].stock_count != -1))
         {
             ifCommonBattleSetInterface(ifCommonBattleInterfaceProcUpdate, ifCommon1PGameInterfaceProcSet, nSYAudioVoiceAnnounceGameSet, 90);
         }
         else ifCommonBattleSetInterface(ifCommonBattleInterfaceProcUpdate, ifCommonBattleInterfaceProcSet, nSYAudioVoiceAnnounceGameSet, 90);
+#endif
 
         ifCommonAnnounceGameSetMakeInterface();
     }

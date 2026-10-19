@@ -3,6 +3,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -282,6 +283,12 @@ sb32 wpSamusChargeShotProcReflector(GObj *weapon_gobj)
 GObj* wpSamusChargeShotMakeWeapon(GObj *fighter_gobj, Vec3f *pos, s32 charge_level, sb32 is_release) 
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallCharge);
+    }
+#endif
 #ifdef REGION_REMIX
     WPDesc weapon_desc = dWPSamusChargeShotWeaponDesc;
     GObj *weapon_gobj;

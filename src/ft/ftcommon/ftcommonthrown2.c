@@ -3,6 +3,9 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "if/ifremixhitannouncer.h"
+#endif
 
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -213,6 +216,9 @@ void ftCommonThrownReleaseThrownUpdateStats(GObj *fighter_gobj, s32 lr, s32 scri
     {
         this_fp->proc_status = ftCommonThrownProcStatus;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    ifRemixHitAnnouncerPlayThrow(damage, knockback_final);
+#endif
 #ifdef REGION_REMIX
     ftCommonDamageInitDamageVars(fighter_gobj, ft_throw->status_id, damage, knockback_final, ftRemixKnockbackAngle(this_fp, ft_throw->angle), lr, 1, ft_throw->element, capture_fp->player_num, TRUE, TRUE, TRUE); /* Knockback.asm get_angle_throw_ (0x8014B16C) */
 #else

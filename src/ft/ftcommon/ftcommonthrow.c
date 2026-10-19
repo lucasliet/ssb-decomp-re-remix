@@ -3,6 +3,9 @@
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "if/ifremixannouncer.h"
+#endif
 
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -101,8 +104,8 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
 #endif
 
 #ifdef REGION_REMIX
-    /* REMIX-TODO(PokemonAnnouncer): kirby_fthrow_1_fix also plays the seismic toss announcement for JKIRBY, BOWSER and
-     * GBOWSER and sets action 0xE5 for the Bowser ids; neither is ported, so those forward throws stay vanilla. */
+    /* REMIX-TODO(PokemonAnnouncer): kirby_fthrow_1_fix also plays the seismic toss announcement and sets action 0xE5 for
+     * the BOWSER and GBOWSER forward throws; not ported, so those forward throws stay vanilla. */
 #endif
     if ((is_throwf != FALSE) || ((this_fp->input.pl.stick_range.x * this_fp->lr) >= 0))
     {
@@ -113,6 +116,12 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
         )
         {
             status_id = nFTKirbyStatusThrowF;
+#if defined(PORT) && defined(REGION_REMIX)
+            if ((this_fp->fkind == REMIX_ID_JKIRBY) && ifRemixAnnouncerIsActive())
+            {
+                ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallSeismicToss);
+            }
+#endif
 
             mpCommonSetFighterAir(this_fp);
         }

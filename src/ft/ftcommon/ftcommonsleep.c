@@ -1,6 +1,9 @@
 #include <ft/fighter.h>
 #include <if/interface.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -63,6 +66,12 @@ void ftCommonSleepProcUpdate(GObj *fighter_gobj)
 
     if ((gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_STOCK) && (gSCManagerBattleState->is_team_battle == TRUE))
     {
+#ifdef REGION_REMIX
+        if (ifRemixAnnouncerIsActive())
+        {
+            ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallTeamKO);
+        }
+#endif
         if (this_fp->status_vars.common.sleep.stock_steal_wait != 0)
         {
             this_fp->status_vars.common.sleep.stock_steal_wait--;

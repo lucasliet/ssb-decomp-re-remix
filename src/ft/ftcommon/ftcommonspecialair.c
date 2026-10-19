@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -199,6 +200,12 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
 
     if (fp->input.pl.button_tap & fp->input.button_mask_b)
     {
+#ifdef REGION_REMIX
+        if (ifRemixAnnouncerIsActive() && (syUtilsRandIntRange(20) == 0))
+        {
+            ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallAttack);
+        }
+#endif
         if (ftHammerCheckHoldHammer(fighter_gobj) == FALSE)
         {
             if (fp->input.pl.stick_range.y >= FTCOMMON_SPECIALHI_STICK_RANGE_MIN)

@@ -26,7 +26,6 @@
 #define GRREMIX_METALLIC_SPAWN_TIME_FORCED 0xBB8      /* asm: the bee spawns at timer 3000 when no roll hit */
 #define GRREMIX_METALLIC_SHRINK_DURATION 0x384        /* asm robot_bee_laser_hit_: 900 tics */
 #define GRREMIX_METALLIC_SHRUNK_MULTIPLIER 0.5F       /* asm robot_bee_laser_hit_: 0x3F00 */
-#define GRREMIX_METALLIC_NORMAL_MULTIPLIER 1.0F       /* asm shrink_timer_ NORMAL state; GIANT and TINY are REMIX-TODO below */
 #define GRREMIX_METALLIC_PORT_COUNT 4
 #define GRREMIX_METALLIC_TRAINING_SCENE nSCKind1PTrainingMode /* asm bee_factory_: Global.current_screen == 0x36 */
 #define GRREMIX_METALLIC_BEE_FACING_RANGE 2
@@ -239,14 +238,10 @@ static void grRemixMetallicShrinkTimerTick(s32 port)
     sGRRemixMetallicShrinkTimer[port] = timer - 1;
 }
 
-/**
- * Restores the normal size of `port`. The asm chooses NORMAL, GIANT or TINY from Size.match_state_table; the
- * Remix size state is not readable from C yet, so the port always restores NORMAL.
- */
+/** Restores the size of the match state of `port` (NORMAL, GIANT or TINY, Size.match_state_table). */
 static void grRemixMetallicEndShrink(s32 port)
 {
-    /* REMIX-TODO(Size): asm restores 2.25F for GIANT and 0.5F for TINY from Size.match_state_table, not ported. */
-    ftRemixSizeSetMultiplier(port, GRREMIX_METALLIC_NORMAL_MULTIPLIER);
+    ftRemixSizeSetMultiplier(port, ftRemixSizeGetModeMultiplier(port));
     sGRRemixMetallicShrinkTimer[port] = 0;
 }
 

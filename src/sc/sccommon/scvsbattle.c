@@ -1,5 +1,6 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #include "gm/gmremixspawnsetup.h"
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
@@ -283,6 +284,7 @@ void scVSBattleStartBattle(void)
 	scVSBattleSetupFiles();
 #ifdef REGION_REMIX
 	ifRemixComboMeterSetup();
+	ifRemixAnnouncerSetup();
 #endif
 
 #ifndef PORT

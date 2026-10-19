@@ -195,6 +195,14 @@ s32 ftRemixKirbyCloneActionSwap(GObj *fighter_gobj, s32 action_id);
 f32 ftRemixSizeGetMultiplier(s32 player);
 void ftRemixSizeSetMultiplier(s32 player, f32 multiplier);
 void ftRemixSizeInitFighter(FTStruct *fp);
+#define FTREMIX_SIZE_STATE_NORMAL 0
+#define FTREMIX_SIZE_STATE_GIANT 1
+#define FTREMIX_SIZE_STATE_TINY 2
+#define FTREMIX_SIZE_GIANT_MULTIPLIER 2.25F
+#define FTREMIX_SIZE_TINY_MULTIPLIER 0.5F
+s32 ftRemixSizeGetMatchState(s32 player);
+void ftRemixSizeSetMatchState(s32 player, s32 state);
+f32 ftRemixSizeGetModeMultiplier(s32 player);
 void ftRemixSizeApplyTopJointAndEcb(FTStruct *fp);
 f32 ftRemixSizeCameraZoomFactor(FTStruct *fp);
 f32 ftRemixSizeScaleValue(FTStruct *fp, f32 value);
@@ -267,6 +275,10 @@ sb32 ftRemixForceGrabImmunity(FTStruct *fp);
 
 /* Surface.asm get_friction_ (0x800D8BDC, 0x800E21DC), gr/grremix/grremixsurface.c: ground friction of a material id */
 f32 grRemixSurfaceFriction(u32 material);
+
+/* Surface.asm fighter_apply_conveyor_surface (0x800E23D8) and item_apply_conveyor_surface (0x8016F8E4), gr/grremix/grremixsurface.c:
+ * TRUE and the push speed when the material under a grounded object is a conveyor that is active */
+sb32 grRemixSurfaceConveyorPush(u32 material, f32 *speed);
 
 /* Blastzone.asm skip_bottom_blast_sfx (0x800E234C), gr/grremix/grremixblastzone.c: TRUE when the bottom altitude sound is skipped */
 sb32 grRemixBlastZoneSkipsBottomSfx(void);
@@ -535,5 +547,11 @@ s32 ifRemixBattlePlace(void);
  * force_hi_lo_poly_): the forced poly detail of a fighter, and the fighter display mode from the Special Model toggle */
 u8 ftRemixModelDisplayDetail(u8 detail);
 void ftRemixHitboxDisplayApply(FTStruct *fp);
+
+/* Damage.asm stun_damage_action_ (0x8014158C) and stun_electric_action_ (0x801412E8), ftremix/ftremixdamagestun.c:
+ * TRUE when the stun, deku stun, flashbang or bury action started (ftCommonDamageGotoDamageStatus), and TRUE when the
+ * damage type takes the electric status path (ftCommonDamageInitDamageVars) */
+sb32 ftRemixDamageGotoStunAction(GObj *fighter_gobj);
+sb32 ftRemixDamageUsesElectricStatus(s32 element);
 
 #endif

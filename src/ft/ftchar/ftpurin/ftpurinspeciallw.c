@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include <if/ifremixannouncer.h>
+#endif
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -45,6 +48,12 @@ void ftPurinSpecialLwSwitchStatusAir(GObj *fighter_gobj)
 // 0x801517E4
 void ftPurinSpecialLwSetStatus(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallRest);
+    }
+#endif
     ftMainSetStatus(fighter_gobj, nFTPurinStatusSpecialLw, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 }
@@ -52,6 +61,12 @@ void ftPurinSpecialLwSetStatus(GObj *fighter_gobj)
 // 0x8015181C
 void ftPurinSpecialAirLwSetStatus(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallRest);
+    }
+#endif
     ftMainSetStatus(fighter_gobj, nFTPurinStatusSpecialAirLw, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 }

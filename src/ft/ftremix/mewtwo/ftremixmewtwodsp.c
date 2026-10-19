@@ -10,6 +10,9 @@
 
 #include "ft/ftremix/ftremix.h"
 #include "remix/remix_symbols.h"
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #include <ft/ftmain.h>
 #include <ft/ftphysics.h>
 #include <mp/mpcommon.h>
@@ -41,7 +44,12 @@ static void ftRemixMewtwoDSPAirTransition(GObj *fighter_gobj)
 /* MewtwoDSP.ground_initial_: special entry for the grounded DSP. */
 static void ftRemixMewtwoDSPGroundInitial(GObj *fighter_gobj)
 {
-    /* REMIX-TODO(PokemonAnnouncer): skips PokemonAnnouncer.disable_announcement_ (PokemonAnnouncer.asm:799). */
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallDisable);
+    }
+#endif
     ftMainSetStatus(fighter_gobj, nFTRemixMewtwoStatusDSPGround, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 }
@@ -51,7 +59,12 @@ static void ftRemixMewtwoDSPAirInitial(GObj *fighter_gobj)
 {
     FTStruct *fp;
 
-    /* REMIX-TODO(PokemonAnnouncer): skips PokemonAnnouncer.disable_announcement_ (PokemonAnnouncer.asm:799). */
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallDisable);
+    }
+#endif
     ftMainSetStatus(fighter_gobj, nFTRemixMewtwoStatusDSPAir, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 

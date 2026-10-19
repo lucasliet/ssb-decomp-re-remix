@@ -11,6 +11,7 @@
 
 #include "ft/ftremix/ftremix.h"
 #include "remix/remix_symbols.h"
+#include <if/ifremixannouncer.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
 #include <ft/ftchar/ftcaptain/ftcaptainfunctions.h>
 #include <ft/ftchar/ftfox/ftfox.h>
@@ -500,7 +501,12 @@ static u32 ftRemixWolfSpecialUSlashGraphics(FTStruct *fp)
 
     if (slash_state == 0)
     {
-        /* REMIX-TODO(PokemonAnnouncer): PokemonAnnouncer.slash_announcement_ is not ported. */
+#ifdef REGION_REMIX
+        if (ifRemixAnnouncerIsActive())
+        {
+            ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallSlash);
+        }
+#endif
         efManagerCaptainFalconPunchMakeEffect(fp->fighter_gobj);
         fp->is_effect_attach = TRUE;
         fp->motion_vars.flags.flag0 = 1;

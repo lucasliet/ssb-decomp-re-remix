@@ -256,8 +256,7 @@ static void itRemixLightningShrinkTick(s32 port)
     }
     if (sITRemixLightningShrinkTimers[port] == 1)
     {
-        /* REMIX-TODO(Size): the asm restores the size of Size.match_state_table (GIANT/TINY match modes, ROADMAP T2.4); every match is NORMAL today. */
-        ftRemixSizeSetMultiplier(port, 1.0F);
+        ftRemixSizeSetMultiplier(port, ftRemixSizeGetModeMultiplier(port));
         sITRemixLightningShrinkTimers[port] = 0;
         return;
     }

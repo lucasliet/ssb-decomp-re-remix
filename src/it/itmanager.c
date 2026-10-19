@@ -5,6 +5,7 @@
 #include "it/itremix/itremixspawn.h"
 #include "remix/remix_debug.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixannouncer.h"
 #endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
@@ -866,6 +867,10 @@ void itManagerInitMonsterVars(void)
 GObj* itManagerMakeItemKind(GObj *parent_gobj, s32 kind, Vec3f *pos, Vec3f *vel, u32 flags)
 {
 #ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayName(kind);
+    }
     if (itRemixIsCustomKind(kind))
     {
         return itRemixMakeItem(parent_gobj, kind, pos, vel, flags);

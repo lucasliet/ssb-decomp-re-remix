@@ -14,6 +14,9 @@
 #include "ft/ftremix/ftremixenvcolor.h"
 #include "ft/ftremix/ftremix.h"
 #include "remix/remix_symbols.h"
+#ifdef REGION_REMIX
+#include "if/ifremixannouncer.h"
+#endif
 #include <ft/fighter.h>
 #include <sys/utils.h>
 
@@ -203,7 +206,12 @@ static void ftRemixMewtwoUSPMoveSetStatus(GObj *fighter_gobj)
     sb32 is_grounded_at_start = (fp->ga == nMPKineticsGround);
     s32 stick_magnitude;
 
-    /* REMIX-TODO(PokemonAnnouncer): skipped teleport_announcement_ (announcer line or FGM fallback). */
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallTeleport);
+    }
+#endif
     if (ABS(fp->input.pl.stick_range.x) >= MTWO_USP_MIN_STICK_MAGNITUDE)
     {
         ftParamSetStickLR(fp);

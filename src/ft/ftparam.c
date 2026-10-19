@@ -12,7 +12,9 @@
 #include <sys/audio.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixbury.h"
 #include "it/itremix/itremixcloakingdevice.h"
+#include "if/ifremixannouncer.h"
 #endif
 extern void func_80026738_27338(void *arg0);
 
@@ -622,6 +624,14 @@ void ftParamSetVelPush(GObj *fighter_gobj, Vec3f *vel_push)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    /* Damage.asm prevent_wind_push_while_buried (0x800E86B4): a buried fighter does not store the x and y push, only z */
+    if (ftRemixDamageIsBuried(fp))
+    {
+        fp->coll_data.vel_push.z = vel_push->z;
+        return;
+    }
+#endif
     fp->coll_data.vel_push = *vel_push;
 }
 
@@ -1836,6 +1846,12 @@ void ftParamUpdateDamage(FTStruct *fp, s32 damage)
 // 0x800EA3D4
 void ftParamSetHealDamage(FTStruct *fp, s32 heal)
 {
+#ifdef REGION_REMIX
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallRecovery);
+    }
+#endif
     fp->damage_heal += heal;
 
     ftParamCheckSetFighterColAnimID(fp->fighter_gobj, nGMColAnimFighterHeal, 0);

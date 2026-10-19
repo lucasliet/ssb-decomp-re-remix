@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include <if/ifremixannouncer.h>
+#endif
 #ifdef PORT
 extern void func_80026738_27338(void *arg0);
 #include "fighter_registry.h"
@@ -148,6 +151,13 @@ void ftPublicPlayCommon(u16 new_sfx)
             func_80026738_27338(sFTPublicCommonALSound);
         }
     }
+#ifdef REGION_REMIX
+    /* 0x267 is the recovery cheer sound (PokemonAnnouncer.asm hung_tough_announcement_). */
+    if ((new_sfx == 0x267) && ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallTough);
+    }
+#endif
     sFTPublicCommonALSound = func_800269C0_275C0(new_sfx);
 
     if (sFTPublicCommonALSound != NULL)
