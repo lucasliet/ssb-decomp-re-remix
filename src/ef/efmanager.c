@@ -3929,7 +3929,11 @@ GObj* efManagerQuakeMakeEffect(s32 magnitude)
 
     gcAddXObjForDObjFixed(gcAddDObjForGObj(effect_gobj, NULL), nGCMatrixKindTra, 0);
 
+#ifdef REGION_REMIX
+    switch (efRemixQuakeSeverity(magnitude))
+#else
     switch (magnitude)
+#endif
     {
     case 0:
         gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], llEFCommonEffects1QuakeMag0AnimJoint), 0.0F);
@@ -4905,6 +4909,12 @@ GObj* efManagerDeadExplodeMakeEffect(Vec3f *pos, s32 player, u32 type)
     DObj *sibling_dobj;
     u8 index = ((type % 2) * GMCOMMON_PLAYERS_MAX) + player; // WARNING: dEFManagerDeadExplodeGenID should be u8[2][GMCOMMON_PLAYERS_MAX], but it will not match this way; UB-risk
 
+#ifdef REGION_REMIX
+    if (efRemixBlastZoneGfxIsOff())
+    {
+        return NULL;
+    }
+#endif
     pc = lbParticleMakeScriptID(gEFManagerParticleBankID | LBPARTICLE_MASK_GENLINK(1), dEFManagerDeadExplodeGenID[index]);
 
     if (pc != NULL)
@@ -4913,6 +4923,9 @@ GObj* efManagerDeadExplodeMakeEffect(Vec3f *pos, s32 player, u32 type)
 
         if (xf != NULL)
         {
+#ifdef REGION_REMIX
+            efRemixBlastZoneScaleParticle(xf);
+#endif
             LBParticleProcessStruct(pc);
 
             if (xf->users_num == 0)
@@ -4934,6 +4947,9 @@ GObj* efManagerDeadExplodeMakeEffect(Vec3f *pos, s32 player, u32 type)
         return NULL;
     }
     dobj = DObjGetStruct(effect_gobj);
+#ifdef REGION_REMIX
+    efRemixBlastZoneScaleEffect(dobj);
+#endif
     dobj->translate.vec.f = *pos;
 
     child_dobj = dobj->child;

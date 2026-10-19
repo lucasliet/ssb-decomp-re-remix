@@ -3,6 +3,9 @@
 #include <ft/fighter.h>
 #include <reloc_data.h>
 #ifdef PORT
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 #endif
 
@@ -250,7 +253,11 @@ void itKamexAppearSetStatus(GObj *item_gobj)
 
     if (ip->kind == nITKindKamex)
     {
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceMBallKamexAppear));
+#else
         func_800269C0_275C0(nSYAudioVoiceMBallKamexAppear);
+#endif
     }
     itMainSetStatus(item_gobj, dITKamexStatusDescs, nITKamexStatusAppear);
 }

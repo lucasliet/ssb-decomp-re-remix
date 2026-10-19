@@ -5,6 +5,10 @@
 #include <sys/main.h>
 #include <PR/rcp.h>
 #include <PR/gu.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixmusic.h"
+#include "gm/gmremixtoggle.h"
+#endif
 
 #ifdef PORT
 #include "audio/audio_playback.h"
@@ -1653,6 +1657,13 @@ extern u32 port_enhancement_shuffle_music(u32 requested_bgm);
 // 0x80020AB4
 s32 syAudioPlayBGM(s32 sngplayer, u32 bgm)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    if (gmRemixToggle(play_music) == 0)
+    {
+        syAudioStopBGMAll();
+        return -1;
+    }
+#endif
 #ifdef PORT
     if (syAudioHasBGMData() == FALSE)
     {
@@ -1691,6 +1702,9 @@ void syAudioStopBGM(s32 sngplayer)
 // 0x80020B38
 void syAudioSetBGMVolume(s32 sngplayer, u32 vol)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    vol = gmRemixMasterVolume(vol, gmRemixToggle(bgm_volume));
+#endif
     if (vol > 30720)
     {
         vol = 30720;
@@ -1813,7 +1827,12 @@ void func_80020E28(void)
 
 void func_80020E64(u32 volume)
 {
-    u8 vol = (volume > 30720) ? AL_VOL_FULL : volume >> 8;
+    u8 vol;
+
+#if defined(PORT) && defined(REGION_REMIX)
+    volume = gmRemixMasterVolume(volume, gmRemixToggle(fgm_volume));
+#endif
+    vol = (volume > 30720) ? AL_VOL_FULL : volume >> 8;
 
     func_80026070_26C70(vol);
 }

@@ -4,6 +4,9 @@
 #include <gr/ground.h>
 #include <reloc_data.h>
 #ifdef PORT
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 #endif
 
@@ -231,7 +234,11 @@ GObj* itHitokageMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
         }
         dGRYamabukiMonsterAttackKind = ip->item_vars.hitokage.flags;
 
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceYamabukiHitokage));
+#else
         func_800269C0_275C0(nSYAudioVoiceYamabukiHitokage);
+#endif
     }
     return item_gobj;
 }

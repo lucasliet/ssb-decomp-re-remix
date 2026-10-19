@@ -470,6 +470,14 @@ Sprite *sIFCommonItemArrowSprite;
 // 0x801317F4 - Number of unique teams in-game minus one?
 s32 sIFCommonBattlePlace;
 
+#ifdef REGION_REMIX
+/* SpecialZoom.asm reads gBattlePlacement (RAM 0x801317F4) through this accessor, see ft/ftremix/ftremixhooks.h */
+s32 ifRemixBattlePlace(void)
+{
+    return sIFCommonBattlePlace;
+}
+#endif
+
 // 0x801317F8 - Padding?
 s32 sIFCommonPad0x801317F8;
 
@@ -2228,6 +2236,12 @@ void ifCommonAnnounceGoSetStatus(void)
     gSCManagerBattleState->game_status = nSCBattleGameStatusGo;
 
     gIFCommonPlayerInterface.is_magnify_display = TRUE;
+#ifdef REGION_REMIX
+    if (gmRemixCameraHudHiddenOnGo())
+    {
+        gIFCommonPlayerInterface.is_magnify_display = FALSE;
+    }
+#endif
 }
 
 // 0x80112234
@@ -2520,7 +2534,11 @@ void ifCommonEntryAllThread(GObj *interface_gobj)
 {
     gcSleepCurrentGObjThread(90);
     ifCommonCountdownMakeInterface();
+#ifdef REGION_REMIX
+    ifCommonEntryFocusMakeInterface(gmRemixCameraCinematicFocus(syUtilsRandIntRange(3)));
+#else
     ifCommonEntryFocusMakeInterface(syUtilsRandIntRange(3));
+#endif
     gcEjectGObj(NULL);
     gcSleepCurrentGObjThread(1);
 }
@@ -3072,6 +3090,9 @@ void ifCommonBattlePauseMakeInterface(s32 player)
     gcAddGObjDisplay(interface_gobj, lbCommonDrawSObjAttr, 24, GOBJ_PRIORITY_DEFAULT, ~0);
 
     ifCommonBattlePausePlayerNumMakeSObj(interface_gobj, player);
+#ifdef REGION_REMIX
+    /* REMIX-TODO(Render): Pause.asm disable_hud_ (entry_disable_hud) hides pause groups 0xE to 0x10 after the decals are made */
+#endif
     ifCommonBattlePauseMakeSObjsAll(interface_gobj);
 }
 
@@ -3146,7 +3167,11 @@ void ifCommonBattleGoUpdateInterface(void)
 
     for (player = 0; player < (ARRAY_COUNT(gSCManagerBattleState->players) + ARRAY_COUNT(gSYControllerDevices)) / 2; player++) // WARNING: GMCOMMON_PLAYERS_MAX and MAX_CONTROLLERS should be identical
     {
+#ifdef REGION_REMIX
+        if (ftRemixPauseStartRequested(player, gSYControllerDevices[player].button_tap, gSYControllerDevices[player].button_hold))
+#else
         if (gSYControllerDevices[player].button_tap & START_BUTTON)
+#endif
         {
             if (gSCManagerBattleState->players[player].pkind != nFTPlayerKindNot)
             {
@@ -3172,9 +3197,18 @@ void ifCommonBattleGoUpdateInterface(void)
                             sp5C.y = gMPCollisionGroundData->zoom_end.y;
                             sp5C.z = gMPCollisionGroundData->zoom_end.z;
 
+#ifdef REGION_REMIX
+                            if (gmRemixCameraPauseBonusZoomAllowed())
+                            {
+                                gmCameraSetStatusMapZoom(&sp68, &sp5C);
+
+                                sIFCommonBattlePauseKindInterface = nIFPauseKindBonus;
+                            }
+#else
                             gmCameraSetStatusMapZoom(&sp68, &sp5C);
 
                             sIFCommonBattlePauseKindInterface = nIFPauseKindBonus;
+#endif
                         }
                         else if (gmCameraCheckPausePlayerOutBounds(&DObjGetStruct(fighter_gobj)->translate.vec.f) != FALSE)
                         {
@@ -3187,7 +3221,18 @@ void ifCommonBattleGoUpdateInterface(void)
                             sIFCommonBattlePauseCameraEyeXOrigin = gGMCameraPauseCameraEyeX;
                             sIFCommonBattlePauseCameraEyeYOrigin = gGMCameraPauseCameraEyeY;
 
+#ifdef REGION_REMIX
+                            if (gmRemixCameraPauseControlEnabled())
+                            {
+                                sIFCommonBattlePauseKindInterface = nIFPauseKindDefault;
+                            }
+                            else
+                            {
+                                sIFCommonBattlePauseKindInterface = nIFPauseKindPlayerNA;
+                            }
+#else
                             sIFCommonBattlePauseKindInterface = nIFPauseKindDefault;
+#endif
 
                             sIFCommonBattlePausePlayerDetail = fp->detail_curr;
 
@@ -3233,6 +3278,16 @@ void ifCommonBattlePauseUpdateInterface(void)
     {
         s32 stick_x = gSYControllerDevices[sIFCommonBattlePausePlayer].stick_range.x;
         s32 stick_y = gSYControllerDevices[sIFCommonBattlePausePlayer].stick_range.y;
+
+#ifdef REGION_REMIX
+        /* REMIX-TODO(BGM): Pause.asm set_alternate_music_ (entry_play_music) and REMIX-TODO(Render): check_toggle_hud_press_
+         * (entry_disable_hud) and check_legend_toggle_press_ are not ported yet */
+        if (ftRemixPauseKeepsSceneCamera())
+        {
+            sIFCommonBattlePauseCameraEyeXOrigin = gGMCameraPauseCameraEyeX;
+            sIFCommonBattlePauseCameraEyeYOrigin = gGMCameraPauseCameraEyeY;
+        }
+#endif
 
         if (ABS(stick_x) > 8.0F)
         {
@@ -3332,7 +3387,11 @@ void ifCommonBattlePauseRestoreInterfaceAll(void)
     ifCommonInterfaceSetGObjFlagsAll(0);
     grWallpaperResumePerspUpdate();
 
+#ifdef REGION_REMIX
+    gIFCommonPlayerInterface.is_magnify_display = gmRemixCameraRestorePauseHud();
+#else
     gIFCommonPlayerInterface.is_magnify_display = TRUE;
+#endif
 
     gSCManagerBattleState->game_status = nSCBattleGameStatusGo;
 
@@ -3481,6 +3540,11 @@ void ifCommonPlayerStockMakeStockSnap(FTStruct *fp)
 void ifCommonPlayerScoreMakeEffect(FTStruct *fp, s32 score)
 {
     Vec3f pos;
+
+#ifdef REGION_REMIX
+    /* ComboMeter.asm hide_for_score_sprite_ (0x801149D8) */
+    ifRemixComboMeterHideForScore(fp->player);
+#endif
 
     pos.x = ((gIFCommonPlayerInterface.player_pos_x[fp->player] + dIFCommonPlayerScorePositionOffsetsX[fp->player]) << 2);
     pos.y = ((gIFCommonPlayerInterface.player_pos_y + 13) << 2); // ??? Can't get this one to match unless we do bitwise instead of literal multiplication

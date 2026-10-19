@@ -5,6 +5,7 @@
 #include <it/item.h>
 #ifdef REGION_REMIX
 #include "it/itremix/itremix.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_roster_data.h" /* REMIX_ID_*: a Remix id is also its port fkind */
 #endif
 #include <ft/fighter.h>
@@ -826,8 +827,10 @@ GObj* itMainMakeMonster(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
     GObj *monster_gobj;
     ITStruct *mp;
+#ifndef REGION_REMIX
     s32 i, j;
     s32 index;
+#endif
     s32 unused;
     Vec3f vel;
 
@@ -835,6 +838,9 @@ GObj* itMainMakeMonster(GObj *item_gobj)
     vel.y = 16.0F;
     vel.z = 0.0F;
 
+#ifdef REGION_REMIX
+    monster_gobj = itRemixPokemonMakeMonster(item_gobj, &vel);
+#else
     // Is this checking to spawn Mew? Can only spawn once at least one character has been unlocked.
     if
     (
@@ -866,6 +872,7 @@ GObj* itMainMakeMonster(GObj *item_gobj)
     gITManagerMonsterData.monster_curr = index;
 
     monster_gobj = itManagerMakeItemKind(item_gobj, index, &DObjGetStruct(item_gobj)->translate.vec.f, &vel, (ITEM_FLAG_COLLPROJECT | ITEM_FLAG_PARENT_ITEM));
+#endif
 
     if (monster_gobj != NULL)
     {

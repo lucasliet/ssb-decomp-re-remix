@@ -1,3 +1,6 @@
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <ft/fighter.h>
 #ifdef PORT
 extern void port_coroutine_yield(void);
@@ -269,6 +272,9 @@ void scVSBattleStartBattle(void)
 	gSCManagerSceneData.is_suddendeath = FALSE;
 
 	scVSBattleSetupFiles();
+#ifdef REGION_REMIX
+	ifRemixComboMeterSetup();
+#endif
 
 #ifndef PORT
 	if (!(gSCManagerBackupData.error_flags & LBBACKUP_ERROR_1PGAMEMARIO) && (gSCManagerBackupData.boot > 68))

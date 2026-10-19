@@ -1,5 +1,8 @@
 #include <it/item.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -158,7 +161,11 @@ sb32 itCapsuleWaitProcMap(GObj *item_gobj)
 // 0x80173FF4
 sb32 itCapsuleCommonProcHit(GObj *item_gobj)
 {
+#ifdef REGION_REMIX
+    if (itRemixContainerKeeps(itMainMakeContainerItem(item_gobj)) != FALSE)
+#else
     if (itMainMakeContainerItem(item_gobj) != FALSE)
+#endif
     {
         return TRUE;
     }
@@ -218,7 +225,11 @@ sb32 itCapsuleThrownProcMap(GObj *item_gobj)
 {
     if (itMapTestAllCollisionFlag(item_gobj, MAP_FLAG_MAIN_MASK) != FALSE)
     {
+#ifdef REGION_REMIX
+        if (itRemixContainerKeeps(itMainMakeContainerItem(item_gobj)) != FALSE)
+#else
         if (itMainMakeContainerItem(item_gobj) != FALSE)
+#endif
         {
             return TRUE;
         }

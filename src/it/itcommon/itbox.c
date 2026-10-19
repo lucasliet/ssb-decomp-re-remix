@@ -1,6 +1,9 @@
 #include <it/item.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -255,7 +258,11 @@ sb32 itBoxCommonCheckSpawnItems(GObj *item_gobj)
     s32 item_count;
     Vec3f vel_different;
 
+#ifdef REGION_REMIX
+    func_800269C0_275C0(itRemixContainerSmashFgm());
+#else
     func_800269C0_275C0(nSYAudioFGMContainerSmash);
+#endif
 
     itBoxContainerSmashMakeEffect(&DObjGetStruct(item_gobj)->translate.vec.f);
 
@@ -351,7 +358,11 @@ sb32 itBoxWaitProcMap(GObj *item_gobj)
 // 0x8017969C
 sb32 itBoxCommonProcHit(GObj *item_gobj)
 {
+#ifdef REGION_REMIX
+    if (itRemixContainerKeeps(itBoxCommonCheckSpawnItems(item_gobj)) != FALSE)
+#else
     if (itBoxCommonCheckSpawnItems(item_gobj) != FALSE)
+#endif
     {
         return TRUE;
     }
@@ -414,7 +425,11 @@ sb32 itBoxThrownProcMap(GObj *item_gobj)
 {
     if (itMapTestAllCollisionFlag(item_gobj, MAP_FLAG_MAIN_MASK) != FALSE)
     {
+#ifdef REGION_REMIX
+        if (itRemixContainerKeeps(itBoxCommonCheckSpawnItems(item_gobj)) != FALSE)
+#else
         if (itBoxCommonCheckSpawnItems(item_gobj) != FALSE)
+#endif
         {
             return TRUE;
         }

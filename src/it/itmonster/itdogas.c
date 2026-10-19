@@ -1,6 +1,9 @@
 #include <it/item.h>
 #include <wp/weapon.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 
 #ifdef PORT
@@ -205,7 +208,11 @@ void itDogasAttackInitVars(GObj *item_gobj)
         gcAddDObjAnimJoint(dobj->child, itGetPData(ip, llITCommonDataDogasDataStart, llITCommonDataDogasAnimJoint), 0.0F);
 
         gcPlayAnimAll(item_gobj);
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceMBallDogasAppear));
+#else
         func_800269C0_275C0(nSYAudioVoiceMBallDogasAppear);
+#endif
     }
 }
 

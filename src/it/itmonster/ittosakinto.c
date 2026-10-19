@@ -1,6 +1,9 @@
 #include <it/item.h>
 #include <reloc_data.h>
 #ifdef PORT
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 #endif
 
@@ -123,7 +126,11 @@ void itTosakintoAppearSetStatus(GObj *item_gobj)
 
     if (ip->kind == nITKindTosakinto)
     {
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceMBallTosakintoAppear));
+#else
         func_800269C0_275C0(nSYAudioVoiceMBallTosakintoAppear);
+#endif
     }
     itMainSetStatus(item_gobj, dITTosakintoStatusDescs, nITTosakintoStatusAppear);
 }

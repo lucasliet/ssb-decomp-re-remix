@@ -15,6 +15,9 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 //                               //
 // // // // // // // // // // // //
 
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern alSoundEffect* func_800269C0_275C0(u16);
 extern s32 dGRYamabukiMonsterAttackKind;
 
@@ -208,7 +211,11 @@ GObj* itFushigibanaMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags
         }
         dGRYamabukiMonsterAttackKind = ip->item_vars.fushigibana.flags;
 
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceYamabukiFushigibana));
+#else
         func_800269C0_275C0(nSYAudioVoiceYamabukiFushigibana);
+#endif
     }
     return item_gobj;
 }

@@ -2,6 +2,9 @@
 #include <sc/scene.h>
 #include <reloc_data.h>
 #ifdef PORT
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 #endif
 
@@ -211,7 +214,11 @@ void itMLuckyAppearSetStatus(GObj *item_gobj)
 
     if (ip->kind == nITKindMLucky)
     {
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceMBallLuckyAppear));
+#else
         func_800269C0_275C0(nSYAudioVoiceMBallLuckyAppear);
+#endif
     }
     itMainSetStatus(item_gobj, dITMLuckyStatusDescs, nITMLuckyStatusAppear);
 }

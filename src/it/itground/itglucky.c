@@ -3,6 +3,9 @@
 #include <sc/scene.h>
 #include <reloc_data.h>
 #ifdef PORT
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 #endif
 
@@ -233,7 +236,11 @@ GObj* itGLuckyMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 
         ip->item_vars.glucky.egg_spawn_count = ITGLUCKY_EGG_SPAWN_COUNT;
 
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceYamabukiLucky));
+#else
         func_800269C0_275C0(nSYAudioVoiceYamabukiLucky);
+#endif
     }
     return item_gobj;
 }

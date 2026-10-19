@@ -431,4 +431,104 @@ sb32 ftRemixParryWeaponHit(FTStruct *fp, WPStruct *wp, sb32 *is_damage_detect);
 sb32 ftRemixParryItemHit(FTStruct *fp, ITStruct *ip, sb32 *is_damage_detect);
 void ftRemixParryAddAttackerHitlag(FTStruct *fp);
 
+/* Screenshake setting (Toggles.asm entry_screenshake), ef/efremixscreenshake.c (Accessibility.asm screenshake_toggle,
+ * 0x80100964 in efManagerQuakeMakeEffect): the severity the quake effect switches on */
+s32 efRemixQuakeSeverity(s32 severity);
+
+/* Pause settings (Toggles.asm entry_hold_to_pause, entry_camera_mode), ftremix/ftremixpause.c (Pause.asm): the START check
+ * of ifCommonBattleGoUpdateInterface (TRUE when the pause starts; vanilla is the tap check when the setting is off) and the
+ * scene camera keep check of ifCommonBattlePauseUpdateInterface */
+sb32 ftRemixPauseStartRequested(s32 player, u16 button_tap, u16 button_hold);
+sb32 ftRemixPauseKeepsSceneCamera(void);
+
+/* Item.asm item_drop (All Items R Drop (Aerial)), ftremix/ftremixitemdrop.c: TRUE when the aerial attack throws the held item,
+ * FALSE when R drops it (setting on, R held) */
+sb32 ftRemixAerialItemIsThrowType(FTStruct *fp);
+
+/* BlastZone Warp (BETA) setting (Toggles.asm entry_blastzone_warp), ftremix/ftremixblastzone.c (Blastzone.asm): called by
+ * ftCommonDeadCheckInterruptCommon before each KO call of the standard map bounds (TRUE when the warp replaces the KO and
+ * the caller returns TRUE) */
+sb32 ftRemixBlastZoneWarpFromRight(GObj *fighter_gobj, Vec3f *pos);
+sb32 ftRemixBlastZoneWarpFromLeft(GObj *fighter_gobj, Vec3f *pos);
+sb32 ftRemixBlastZoneWarpFromTop(GObj *fighter_gobj, Vec3f *pos);
+sb32 ftRemixBlastZoneWarpFromBottom(GObj *fighter_gobj, Vec3f *pos);
+
+/* BlastZone GFX setting (Toggles.asm entry_blastzone_gfx), ef/efremixblastzone.c (Accessibility.asm blastzone_explode_gfx):
+ * the OFF skip of efManagerDeadExplodeMakeEffect and the REDUCED scales of its effect DObj and star particles */
+sb32 efRemixBlastZoneGfxIsOff(void);
+void efRemixBlastZoneScaleEffect(DObj *dobj);
+void efRemixBlastZoneScaleParticle(LBTransform *xf);
+
+/* Item Containers setting (Toggles.asm entry_item_containers), it/itremix/itremixcontainers.c (Item.asm item_containers_*):
+ * the item mask update of itManagerSetupContainerDrops, the keep-or-explode choice of a hit container (its spawn result
+ * in, TRUE when it is kept) and the crate sound of itBoxCommonCheckSpawnItems */
+void itRemixContainersApplyToggle(void);
+sb32 itRemixContainerKeeps(sb32 is_spawned);
+s32 itRemixContainerSmashFgm(void);
+
+/* Pokemon item picker (Toggles.asm entry_pokemon_*), it/itremix/itremixpokemonpicker.c: whos_that_pokemon replaces the Mew
+ * check and roll of itMainMakeMonster (the caller keeps the vanilla vel setup and tail), whos_that_pokemon_setup replaces
+ * the body of itManagerInitMonsterVars */
+GObj* itRemixPokemonMakeMonster(GObj *item_gobj, Vec3f *vel);
+void itRemixPokemonResetPicker(void);
+
+/* Pokemon voices (Toggles.asm entry_pokemon_voices), it/itremix/itremixpokemonvoices.c: pokemon_variant_sfx, the FGM id of the
+ * ten Pokemon voice sites (Item.asm 0x8017E2D4 .. 0x8017C66C) */
+u16 itRemixPokemonVoiceFgm(u16 fgm_id);
+
+/* Camera Mode setting (Camera.asm entry_camera_mode), gm/gmremixcameramode.c: gmRemixCameraSetupDefault runs in the default
+ * branch of gmCameraMakeDefaultCamera (set_initial_coordinates_), gmRemixCameraApplyFixedRun after the status routine is
+ * chosen (get_custom_camera_), gmRemixCameraSetStatusIsFrozen in gmCameraSetStatus (fixed_camera_always_),
+ * gmRemixCameraFreezeUpdate replaces the vector add of the four camera updates (frozen_camera_), gmRemixCameraIsFixed skips
+ * gcPlayCamAnim (fixed_camera_boss_), gmRemixCameraCinematicFocus is the countdown focus (cinematic_entry_), and the pause
+ * checks (prevent_fixed_camera_pause_bonus_, pause_disable_control_flag_) */
+sb32 gmRemixCameraIsFixed(void);
+sb32 gmRemixCameraIsScene(void);
+void gmRemixCameraSetupDefault(CObj *cobj);
+void gmRemixCameraApplyFixedRun(s32 gkind);
+sb32 gmRemixCameraSetStatusIsFrozen(void);
+sb32 gmRemixCameraFreezeUpdate(CObj *cobj);
+s32 gmRemixCameraCinematicFocus(s32 random_focus);
+sb32 gmRemixCameraPauseBonusZoomAllowed(void);
+sb32 gmRemixCameraPauseControlEnabled(void);
+
+/* Disable HUD setting (Camera.asm entry_disable_hud), gm/gmremixcamerapause.c: disable_hud_ after the GO announcement and
+ * unpause_camera_ when the pause ends (the magnifying glass flag it returns) */
+sb32 gmRemixCameraHudHiddenOnGo(void);
+sb32 gmRemixCameraRestorePauseHud(void);
+
+/* Combo meter settings (Toggles.asm entry_improved_combo_meter, entry_tech_chase_combo_meter), ftremix/ftremixcombo.c
+ * (Combo.asm improve_meter_, 0x800E19CC): TRUE when the combo count of the fighter must not reset this frame, in place of
+ * the is_hitstun check of ftMainUpdate */
+sb32 ftRemixComboKeepsCount(FTStruct *fp);
+
+/* Combo meter (Toggles.asm entry_combo_meter, entry_1v1_combo_meter_swap), if/ifremixcombometer.c (ComboMeter.asm): setup_
+ * (called from syTaskmanLoadScene before the scene starts) and hide_for_score_sprite_ (ifCommonPlayerScoreMakeEffect) */
+void ifRemixComboMeterSetup(void);
+void ifRemixComboMeterHideForScore(s32 port);
+
+/* Special Zoom (BETA) setting (Toggles.asm entry_special_zoom), gm/gmremixspecialzoom.c (SpecialZoom.asm): the hit zoom
+ * of ftCommonDamageInitDamageVars, the zoom focus of gmCameraUpdatePlayerZoom, the wallpaper of gmCameraMakeWallpaperCamera
+ * and the slow motion of gcRunAll (TRUE when the object update of the game update is skipped) */
+void ftRemixSpecialZoomFinalKnockback(FTStruct *fp, s32 damage_player_num);
+void ftRemixSpecialZoomCameraOffset(Vec3f *pos);
+void ftRemixSpecialZoomMakeWallpaper(void);
+sb32 ftRemixSpecialZoomSkipsObjectsUpdate(void);
+
+/* Special Zoom helpers, gm/gmremixspecialzoomko.c (KO prediction, decisive stock) and gmremixspecialzoomattack.c (attacker
+ * special moves) and gmremixspecialzoomwallpaper.c (background file, wallpaper camera and background object) */
+sb32 ftRemixSpecialZoomIsDecisiveStock(FTStruct *fp);
+s32 ftRemixSpecialZoomCountPlayersInMatch(void);
+sb32 ftRemixSpecialZoomCheckKO(FTStruct *fp);
+sb32 ftRemixSpecialZoomIsAttackerSpecialMove(GObj *attacker_gobj);
+void ftRemixSpecialZoomWallpaperLoad(void);
+void ftRemixSpecialZoomWallpaperCreateCamera(void);
+void ftRemixSpecialZoomWallpaperShow(void);
+void ftRemixSpecialZoomWallpaperPlayAnim(void);
+void ftRemixSpecialZoomWallpaperHide(void);
+
+/* Special Zoom helper, if/ifcommon.c: the teams in play minus one (sIFCommonBattlePlace, the
+ * RAM 0x801317F4 gBattlePlacement of SpecialZoom.asm) */
+s32 ifRemixBattlePlace(void);
+
 #endif

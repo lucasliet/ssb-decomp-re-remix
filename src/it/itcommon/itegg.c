@@ -1,5 +1,8 @@
 #include <it/item.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -161,7 +164,11 @@ sb32 itEggWaitProcMap(GObj *item_gobj)
 // 0x80181640
 sb32 itEggCommonProcHit(GObj *item_gobj)
 {
+#ifdef REGION_REMIX
+    if (itRemixContainerKeeps(itMainMakeContainerItem(item_gobj)) != FALSE)
+#else
     if (itMainMakeContainerItem(item_gobj) != FALSE)
+#endif
     {
         efManagerEggBreakMakeEffect(&DObjGetStruct(item_gobj)->translate.vec.f);
 
@@ -237,7 +244,11 @@ sb32 itEggThrownProcMap(GObj *item_gobj)
 {
     if (itMapTestAllCollisionFlag(item_gobj, MAP_FLAG_MAIN_MASK) != FALSE)
     {
+#ifdef REGION_REMIX
+        if (itRemixContainerKeeps(itMainMakeContainerItem(item_gobj)) != FALSE)
+#else
         if (itMainMakeContainerItem(item_gobj) != FALSE)
+#endif
         {
             efManagerEggBreakMakeEffect(&DObjGetStruct(item_gobj)->translate.vec.f);
 

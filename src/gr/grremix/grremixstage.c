@@ -6,6 +6,7 @@
 
 #include "grremixstage.h"
 #include "grremixhazards.h"
+#include "grremixrandommusic.h"
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include "remix/remix_ram_image.h"
@@ -17,6 +18,9 @@
 #define GRREMIX_ALT_MUSIC_CHANCE_OCCASIONAL 16
 #define GRREMIX_ALT_MUSIC_CHANCE_RARE 10
 #define GRREMIX_ALT_MUSIC_NONE 0xFFFF
+
+/* GameEnd.asm is_salty_runback in the Remix RAM image; missing from remix_symbols.h, so the address comes from remix.sym. */
+#define GRREMIX_ADDR_SALTY_RUNBACK 0x8048B174
 
 #define GRREMIX_FUNC_PEACHS_CASTLE 0x8010B4AC
 #define GRREMIX_FUNC_SECTOR_Z 0x80107FCC
@@ -181,7 +185,7 @@ s32 grRemixSelectGetStages(s32 *out_gkinds, s32 max_count)
     return count;
 }
 
-u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm)
+static u32 grRemixGetAlternateStageBGM(s32 gkind, u32 default_bgm)
 {
     s32 override_track = grRemixGetDefaultMusicTrack(gkind);
     s32 roll;
@@ -213,6 +217,13 @@ u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm)
     alternate = grRemixReadHalf(REMIX_SYM_Stages__alternate_music_table + (gkind * 8) + (slot * 2));
 
     return (alternate == GRREMIX_ALT_MUSIC_NONE) ? default_bgm : alternate;
+}
+
+u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm)
+{
+    sb32 salty_runback = (grRemixReadWord(GRREMIX_ADDR_SALTY_RUNBACK) != 0);
+
+    return grRemixRandomMusicPick(grRemixGetAlternateStageBGM(gkind, default_bgm), salty_runback);
 }
 
 void grRemixMakeGround(void)

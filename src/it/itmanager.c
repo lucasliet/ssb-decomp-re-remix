@@ -4,6 +4,7 @@
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixspawn.h"
 #include "remix/remix_debug.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #include <wp/weapon.h>
 #include <ft/fighter.h>
@@ -752,6 +753,8 @@ void itManagerSetupContainerDrops(void)
     s32 i;
 
 #ifdef REGION_REMIX
+    itRemixContainersApplyToggle();
+
     if ((gSCManagerBattleState->item_appearance_rate != nSCBattleItemSwitchNone) && ((gSCManagerBattleState->item_toggles != 0) || itRemixAnyStandardItemIsOn()) && (gMPCollisionGroundData->item_weights != NULL))
 #else
     if ((gSCManagerBattleState->item_appearance_rate != nSCBattleItemSwitchNone) && (gSCManagerBattleState->item_toggles != 0) && (gMPCollisionGroundData->item_weights != NULL))
@@ -851,8 +854,12 @@ void itManagerSetupContainerDrops(void)
 // 0x8016F218
 void itManagerInitMonsterVars(void)
 {
+#ifdef REGION_REMIX
+    itRemixPokemonResetPicker();
+#else
     gITManagerMonsterData.monster_curr = gITManagerMonsterData.monster_prev = U8_MAX;
     gITManagerMonsterData.monsters_num = (nITKindMBallMonsterEnd - nITKindMBallMonsterStart);
+#endif
 }
 
 // 0x8016F238

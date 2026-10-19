@@ -581,7 +581,14 @@ void gmCameraPan(CObj *cobj, Vec3f *pos, f32 scale)
     mag = syVectorMag3D(&add) * scale;
     syVectorNorm3D(&add);
     syVectorScale3D(&add, mag);
+#ifdef REGION_REMIX
+    if (gmRemixCameraFreezeUpdate(cobj) == FALSE)
+    {
+        syVectorAdd3D(&cobj->vec.at, &add);
+    }
+#else
     syVectorAdd3D(&cobj->vec.at, &add);
+#endif
 }
 
 // 0x8010C5C0
@@ -600,7 +607,14 @@ void func_ovl2_8010C5C0(CObj *cobj, Vec3f *scale)
     mag = syVectorMag3D(&sp34) * 0.1F;
     syVectorNorm3D(&sp34);
     syVectorScale3D(&sp34, mag);
+#ifdef REGION_REMIX
+    if (gmRemixCameraFreezeUpdate(cobj) == FALSE)
+    {
+        syVectorAdd3D(&cobj->vec.eye, &sp34);
+    }
+#else
     syVectorAdd3D(&cobj->vec.eye, &sp34);
+#endif
 }
 
 // 0x8010C670
@@ -623,7 +637,14 @@ void func_ovl2_8010C670(f32 dist)
 // 0x8010C6B8
 void gmCameraApplyVel(CObj *cobj)
 {
+#ifdef REGION_REMIX
+    if (gmRemixCameraFreezeUpdate(cobj) == FALSE)
+    {
+        syVectorAdd3D(&cobj->vec.at, &gGMCameraStruct.vel_at);
+    }
+#else
     syVectorAdd3D(&cobj->vec.at, &gGMCameraStruct.vel_at);
+#endif
     gGMCameraStruct.vel_at.x = gGMCameraStruct.vel_at.y = gGMCameraStruct.vel_at.z = 0.0F;
 }
 
@@ -688,7 +709,14 @@ void gmCameraUpdateAcidZoom(CObj *cobj, Vec3f *scale)
     mag = syVectorMag3D(&add) * 0.1F;
     syVectorNorm3D(&add);
     syVectorScale3D(&add, mag);
+#ifdef REGION_REMIX
+    if (gmRemixCameraFreezeUpdate(cobj) == FALSE)
+    {
+        syVectorAdd3D(&cobj->vec.eye, &add);
+    }
+#else
     syVectorAdd3D(&cobj->vec.eye, &add);
+#endif
 }
 
 // 0x8010C8C4
@@ -732,6 +760,9 @@ void gmCameraUpdatePlayerZoom(GObj *camera_gobj)
     pos.y += ftRemixSizeScaleValue(fp, fp->attr->cam_offset_y);
 #else
     pos.y += fp->attr->cam_offset_y;
+#endif
+#ifdef REGION_REMIX
+    ftRemixSpecialZoomCameraOffset(&pos);
 #endif
 
     gmCameraAdjustFOV(gGMCameraStruct.pzoom_fov);
@@ -801,7 +832,14 @@ void gmCameraUpdateAnimVel(GObj *camera_gobj)
 {
     CObj *cobj;
 
+#ifdef REGION_REMIX
+    if (gmRemixCameraIsFixed() == FALSE)
+    {
+        gcPlayCamAnim(camera_gobj);
+    }
+#else
     gcPlayCamAnim(camera_gobj);
+#endif
 
     cobj = CObjGetStruct(camera_gobj);
 
@@ -903,6 +941,12 @@ void gmCameraSetStatus(s32 status_id)
     gGMCameraStruct.status_prev = gGMCameraStruct.status_curr;
     gGMCameraStruct.status_curr = status_id;
 
+#ifdef REGION_REMIX
+    if (gmRemixCameraSetStatusIsFrozen())
+    {
+        return;
+    }
+#endif
     gGMCameraStruct.func_camera = dGMCameraFuncList[status_id];
 }
 
@@ -1229,6 +1273,7 @@ GObj* gmCameraMakeDefaultCamera(u8 tk1, u8 tk2, void (*proc)(GObj*))
 
     default:
 #ifdef REGION_REMIX
+        gmRemixCameraSetupDefault(cobj);
         gGMCameraStruct.status_curr = grRemixCameraDefaultStatus(gSCManagerBattleState->gkind);
 #else
         gGMCameraStruct.status_curr = nGMCameraStatusDefault;
@@ -1237,6 +1282,9 @@ GObj* gmCameraMakeDefaultCamera(u8 tk1, u8 tk2, void (*proc)(GObj*))
     }
     gGMCameraStruct.status_default = gGMCameraStruct.status_prev = gGMCameraStruct.status_curr;
     gGMCameraStruct.func_camera = dGMCameraFuncList[gGMCameraStruct.status_curr];
+#ifdef REGION_REMIX
+    gmRemixCameraApplyFixedRun(gSCManagerBattleState->gkind);
+#endif
     gGMCameraStruct.fovy = 38.0F;
 
     return camera_gobj;
@@ -1298,6 +1346,9 @@ GObj* gmCameraMakeWallpaperCamera(void)
         gGMCameraStruct.viewport_lrx,
         gGMCameraStruct.viewport_lry
     );
+#ifdef REGION_REMIX
+    ftRemixSpecialZoomMakeWallpaper();
+#endif
     return camera_gobj;
 }
 

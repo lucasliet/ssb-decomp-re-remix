@@ -48,7 +48,8 @@ s32 grRemixGetBackgroundStage(s32 gkind);
 
 /**
  * BGM id the stage plays (BGM.asm alternate_music_): the Stages.default_music_track_table override of default_bgm, then
- * the stage's Occasional/Rare/Rare2 alternates by chance (65/16/10/9 percent).
+ * the stage's Occasional/Rare/Rare2 alternates by chance (65/16/10/9 percent), then the Random Music pick
+ * (grremixrandommusic.h) when that toggle is on.
  */
 u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm);
 

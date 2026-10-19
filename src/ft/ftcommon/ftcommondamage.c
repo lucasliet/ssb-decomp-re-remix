@@ -677,6 +677,9 @@ s32 damage_index, s32 element, s32 damage_player_num, sb32 is_rumble, sb32 is_fo
         func_800269C0_275C0(this_fp->attr->damage_sfx);
     }
 
+#ifdef REGION_REMIX
+    ftRemixSpecialZoomFinalKnockback(this_fp, damage_player_num);
+#endif
     this_fp->is_hitstun = TRUE;
     this_fp->tics_since_last_z = FTINPUT_ZTRIGLAST_TICS_MAX;
 

@@ -129,7 +129,11 @@ sb32 ftCommonAttackAirCheckInterruptCommon(GObj *fighter_gobj)
             {
                 if ((ABS(fp->input.pl.stick_range.x) < FTCOMMON_ATTACKAIR_DIRECTION_STICK_RANGE_MIN) && (ABS(fp->input.pl.stick_range.y) < FTCOMMON_ATTACKAIR_DIRECTION_STICK_RANGE_MIN))
                 {
+#ifdef REGION_REMIX
+                    if (ftRemixAerialItemIsThrowType(fp) != FALSE)
+#else
                     if (itGetStruct(fp->item_gobj)->type == nITTypeThrow)
+#endif
                     {
                         ftCommonItemThrowSetStatus(fighter_gobj, nFTCommonStatusLightThrowAirF);
 

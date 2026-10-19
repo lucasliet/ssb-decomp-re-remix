@@ -1,5 +1,8 @@
 #include <it/item.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -178,7 +181,11 @@ sb32 itTaruCommonProcHit(GObj *item_gobj)
 
     itBoxContainerSmashMakeEffect(&DObjGetStruct(item_gobj)->translate.vec.f);
 
+#ifdef REGION_REMIX
+    if (itRemixContainerKeeps(itMainMakeContainerItem(item_gobj)) != FALSE)
+#else
     if (itMainMakeContainerItem(item_gobj) != FALSE)
+#endif
     {
         return TRUE;
     }

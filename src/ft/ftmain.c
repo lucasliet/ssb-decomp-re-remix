@@ -1721,7 +1721,12 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
             this_fp->proc_interrupt(fighter_gobj);
 #endif
         }
+#ifdef REGION_REMIX
+        /* Combo.asm improve_meter_ (0x800E19CC): the Improved and Tech Chase Combo Meter keep the count */
+        if (!ftRemixComboKeepsCount(this_fp))
+#else
         if (!(this_fp->is_hitstun))
+#endif
         {
             gSCManagerBattleState->players[this_fp->player].combo_damage_foe = 0;
             gSCManagerBattleState->players[this_fp->player].combo_count_foe = 0;

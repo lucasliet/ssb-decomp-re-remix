@@ -2,6 +2,9 @@
 #include <sys/develop.h>
 #include <sys/matrix.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 
 #ifdef PORT
@@ -236,7 +239,11 @@ GObj* itPippiMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
         dobj->translate.vec.f.y -= ip->attr->map_coll_bottom;
 
         gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, llITCommonDataPippiDataStart), 0.0F);
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceMBallPippiAppear));
+#else
         func_800269C0_275C0(nSYAudioVoiceMBallPippiAppear);
+#endif
 
         item_gobj->proc_display = itPippiCommonProcDisplay;
     }

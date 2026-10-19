@@ -1,6 +1,9 @@
 #include <it/item.h>
 #include <sys/develop.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 
 #ifdef PORT
@@ -161,7 +164,11 @@ void itKabigonFallInitVars(GObj *item_gobj)
 
     if (ip->kind == nITKindKabigon)
     {
+#ifdef REGION_REMIX
+        func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceMBallKabigonFall));
+#else
         func_800269C0_275C0(nSYAudioVoiceMBallKabigonFall);
+#endif
 
         dobj->scale.vec.f.x = dobj->scale.vec.f.y = ITKABIGON_DROP_SIZE_KABIGON;
 
@@ -311,7 +318,11 @@ GObj* itKabigonMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 
         if (ip->kind == nITKindKabigon)
         {
+#ifdef REGION_REMIX
+            func_800269C0_275C0(itRemixPokemonVoiceFgm(nSYAudioVoiceMBallKabigonAppear));
+#else
             func_800269C0_275C0(nSYAudioVoiceMBallKabigonAppear);
+#endif
         }
         item_gobj->proc_display = itKabigonCommonProcDisplay;
     }

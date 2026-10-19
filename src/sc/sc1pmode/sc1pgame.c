@@ -1,3 +1,6 @@
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
@@ -2377,6 +2380,9 @@ void sc1PGameFuncStart(void)
 
     sc1PGameSetupStageAll();
     sc1PGameSetupFiles();
+#ifdef REGION_REMIX
+    ifRemixComboMeterSetup();
+#endif
 
 #ifndef PORT
     /* Vanilla anti-piracy: after 92 boots, validate a signature by loading a

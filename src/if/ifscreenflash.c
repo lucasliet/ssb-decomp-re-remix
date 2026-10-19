@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
+#ifdef REGION_REMIX
+#include "gm/gmremixtoggle.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -64,7 +67,11 @@ void ifScreenFlashMakeInterface(u8 alpha)
 
     ftParamResetColAnim(&sIFScreenFlashColAnim);
 
+#ifdef REGION_REMIX
+    if ((gSCManagerBackupData.is_allow_screenflash != FALSE) && !gmRemixToggle(flash_guard))
+#else
     if (gSCManagerBackupData.is_allow_screenflash != FALSE)
+#endif
     {
         GObj *interface_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
 

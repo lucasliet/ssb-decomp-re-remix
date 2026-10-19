@@ -4,6 +4,9 @@
 #include "it/itremix/itremixstopwatch.h"
 #include "remix/remix_roster_data.h"
 #include "gm/gmremixcolscripts.h"
+#ifdef REGION_REMIX
+#include "gm/gmremixtoggle.h"
+#endif
 #include <it/item.h>
 #include <it/itcommon/ittomato.h>
 #include <if/ifcommon.h>
@@ -158,11 +161,14 @@ static sb32 itRemixStopwatchIsTeamMate(FTStruct *owner_fp, FTStruct *fp)
     return fp->team == owner_fp->team;
 }
 
-/* Stopwatch: Stopwatch behaviour toggle. DEFAULT is used until the Remix Toggles are ported. */
+/* Stopwatch: behaviour toggle (Toggles.asm entry_stopwatch_behaviour), read by pickup_stopwatch and clock_out_. */
 static s32 itRemixStopwatchGetBehaviour(void)
 {
-    /* REMIX-TODO(Toggles): Toggles.entry_stopwatch_behaviour (0x0004) has no port yet, so DEFAULT is always used */
+#ifdef REGION_REMIX
+    return gmRemixToggle(stopwatch_behaviour);
+#else
     return ITREMIX_STOPWATCH_BEHAVIOUR_DEFAULT;
+#endif
 }
 
 /* Stopwatch: pickup_stopwatch backfire roll. The roll is always drawn, as in the asm. */

@@ -9,6 +9,7 @@
 
 #ifdef REGION_REMIX
 #include "it/itremix/itremixstopwatch.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 
 extern void port_log(const char *fmt, ...);
@@ -2375,6 +2376,12 @@ void gcRunAll(void)
 	GObj *gobj;
 	GObjProcess *gobjproc;
 
+#ifdef REGION_REMIX
+	if (ftRemixSpecialZoomSkipsObjectsUpdate())
+	{
+		return;
+	}
+#endif
 	sGCRunStatus = nGCRunStatusDefault;
 	gGCCurrentCommon = NULL;
 	gGCCurrentProcess = NULL;

@@ -2,6 +2,9 @@
 #include <if/interface.h>
 #include <sc/scene.h>
 #include <it/itmain.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 
@@ -662,18 +665,36 @@ sb32 ftCommonDeadCheckInterruptCommon(GObj *fighter_gobj)
         }
         else if (pos->y < gMPCollisionGroundData->map_bound_bottom)
         {
+#ifdef REGION_REMIX
+            if (ftRemixBlastZoneWarpFromBottom(fighter_gobj, pos))
+            {
+                return TRUE;
+            }
+#endif
             ftCommonDeadDownSetStatus(fighter_gobj);
 
             return TRUE;
         }
         else if (pos->x > gMPCollisionGroundData->map_bound_right)
         {
+#ifdef REGION_REMIX
+            if (ftRemixBlastZoneWarpFromRight(fighter_gobj, pos))
+            {
+                return TRUE;
+            }
+#endif
             ftCommonDeadRightSetStatus(fighter_gobj);
 
             return TRUE;
         }
         else if (pos->x < gMPCollisionGroundData->map_bound_left)
         {
+#ifdef REGION_REMIX
+            if (ftRemixBlastZoneWarpFromLeft(fighter_gobj, pos))
+            {
+                return TRUE;
+            }
+#endif
             ftCommonDeadLeftSetStatus(fighter_gobj);
 
             return TRUE;
@@ -682,9 +703,24 @@ sb32 ftCommonDeadCheckInterruptCommon(GObj *fighter_gobj)
         {
             if (syUtilsRandFloat() < (1.0F / 6.0F))
             {
+#ifdef REGION_REMIX
+                if (ftRemixBlastZoneWarpFromTop(fighter_gobj, pos))
+                {
+                    return TRUE;
+                }
+#endif
                 ftCommonDeadUpFallSetStatus(fighter_gobj);
             }
-            else ftCommonDeadUpStarSetStatus(fighter_gobj);
+            else
+            {
+#ifdef REGION_REMIX
+                if (ftRemixBlastZoneWarpFromTop(fighter_gobj, pos))
+                {
+                    return TRUE;
+                }
+#endif
+                ftCommonDeadUpStarSetStatus(fighter_gobj);
+            }
 
             return TRUE;
         }
