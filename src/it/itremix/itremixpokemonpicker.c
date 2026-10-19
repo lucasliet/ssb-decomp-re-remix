@@ -13,6 +13,7 @@
 
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixtoggle.h"
+#include "it/itremix/itremix.h"
 #include <it/item.h>
 #include <it/itmanager.h>
 #include <sys/objdef.h>
@@ -171,6 +172,7 @@ GObj* itRemixPokemonMakeMonster(GObj *item_gobj, Vec3f *vel)
     s32 kind = itRemixPokemonPickKind(on_num, is_mew_on);
 
     itRemixPokemonRecordPick(on_num, kind);
+    itRemixLogEvent("monster", kind);
     return itManagerMakeItemKind(
         item_gobj,
         kind,

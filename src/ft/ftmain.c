@@ -1452,6 +1452,13 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
         case nFTPlayerKindMan:
             controller = this_fp->input.controller;
             button_hold = controller->button_hold;
+#if defined(PORT) && defined(REGION_REMIX)
+            {
+                u16 button_tap_unused = 0;
+
+                ftRemixSingleButtonModeFilter(&button_hold, &button_tap_unused, FTREMIX_SBM_GATE_OPEN);
+            }
+#endif
 
             if (button_hold & R_TRIG)
             {

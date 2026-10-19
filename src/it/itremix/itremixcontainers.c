@@ -12,6 +12,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixtoggle.h"
 #include "gm/gmsound.h"
+#include "it/itremix/itremix.h"
 #include "gr/grremix/grremixids.h"
 #include <sc/scene.h>
 #include <sc/scmanager.h>
@@ -86,6 +87,7 @@ void itRemixContainersApplyToggle(void)
     else mask |= ITREMIX_CONTAINERS_MASK_ALL;
 
     gSCManagerBattleState->item_toggles = (toggles & 0xFFFF0000) | mask;
+    itRemixLogEvent("containers_mask", mask);
 }
 
 /* Item.asm item_containers_explosions (_check_container_toggle): TRUE when a hit container is kept (no explosion), given

@@ -7,6 +7,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #ifdef REGION_REMIX
 #include "it/itremix/itremixspawn.h"
 #include "if/ifremixhud.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #include <gr/ground.h>
 #include <if/interface.h>
@@ -658,7 +659,15 @@ void sc1PTrainingModeUpdateAll(void)
 		sc1PTrainingModeUpdateMenu();
 		break;
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	sb32 is_skip_advance = sc1PTrainingModeCheckLagTic();
+
+	is_skip_advance = ftRemixSpeedTrainingRunFrames(sSC1PTrainingModeMenu.speed_menu_option == nSC1PTrainingModeMenuSpeedFull, is_skip_advance);
+
+	if (is_skip_advance == FALSE)
+#else
 	if (sc1PTrainingModeCheckLagTic() == FALSE)
+#endif
 	{
 		gcRunAll();
 	}
