@@ -3,6 +3,9 @@
 #include <ef/efmanager.h>
 extern void *func_800269C0_275C0(u16 id);
 #endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -120,7 +123,11 @@ void ftCommonGuardSetOffSetStatus(GObj *fighter_gobj)
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusGuardSetOff, 0.0F, 1.0F, (FTSTATUS_PRESERVE_MODELPART | FTSTATUS_PRESERVE_HITSTATUS | FTSTATUS_PRESERVE_EFFECT));
 
+#ifdef REGION_REMIX
+    fp->status_vars.common.guard.setoff_frames = ftRemixShieldStunFrames(fp, (fp->shield_damage * FTCOMMON_GUARD_SETOFF_MUL) + FTCOMMON_GUARD_SETOFF_ADD);
+#else
     fp->status_vars.common.guard.setoff_frames = (fp->shield_damage * FTCOMMON_GUARD_SETOFF_MUL) + FTCOMMON_GUARD_SETOFF_ADD;
+#endif
 
     fp->physics.vel_ground.x = ((fp->lr == fp->shield_lr) ? -1 : +1) * (fp->status_vars.common.guard.setoff_frames * FTCOMMON_GUARD_VEL_MUL);
 

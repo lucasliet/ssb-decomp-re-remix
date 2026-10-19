@@ -3206,7 +3206,11 @@ void ifCommonBattleGoUpdateInterface(void)
             return;
         }
     }
+#ifdef REGION_REMIX
+    ftRemixSpeedRunFrames();
+#else
     gcRunAll();
+#endif
 }
 
 // 0x801142B4

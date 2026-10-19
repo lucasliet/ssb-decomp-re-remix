@@ -111,6 +111,12 @@ void ftCommonDamageCommonProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixTrippingFinishDamage(fighter_gobj) != FALSE)
+    {
+        return;
+    }
+#endif
     ftCommonDamageDecHitStunSetPublic(fighter_gobj);
 
     if ((fighter_gobj->anim_frame <= 0.0F) && (fp->status_vars.common.damage.hitstun_tics == 0))
@@ -257,8 +263,15 @@ void ftCommonDamageCommonProcLagUpdate(GObj *fighter_gobj)
             {
                 Vec3f *translate = &DObjGetStruct(fighter_gobj)->translate.vec.f;
 
+#ifdef REGION_REMIX
+                f32 di_range_mul = ftRemixDamageSmashDIRangeMul(FTCOMMON_DAMAGE_SMASH_DI_RANGE_MUL);
+
+                translate->x += fp->input.pl.stick_range.x * di_range_mul;
+                translate->y += fp->input.pl.stick_range.y * di_range_mul;
+#else
                 translate->x += fp->input.pl.stick_range.x * FTCOMMON_DAMAGE_SMASH_DI_RANGE_MUL;
                 translate->y += fp->input.pl.stick_range.y * FTCOMMON_DAMAGE_SMASH_DI_RANGE_MUL;
+#endif
 
                 fp->tap_stick_x = fp->tap_stick_y = FTINPUT_STICKBUFFER_TICS_MAX;
             }
@@ -621,6 +634,7 @@ s32 damage_index, s32 element, s32 damage_player_num, sb32 is_rumble, sb32 is_fo
     }
 #ifdef REGION_REMIX
     ftRemixLankyUpSpecialDamageStatus(this_fp, &status_id_set, &status_id_var);
+    ftRemixJabLockDamageStatus(this_fp, &status_id_set);
 #endif
     ftMainSetStatus(this_gobj, status_id_set, 0.0F, 1.0F, FTSTATUS_PRESERVE_DAMAGEPLAYER);
     ftMainPlayAnimEventsAll(this_gobj);

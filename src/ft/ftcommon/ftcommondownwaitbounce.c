@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #include "fighter_registry.h"
@@ -131,6 +134,9 @@ void ftCommonDownBounceSetStatus(GObj *fighter_gobj)
     ftCommonDownBounceUpdateEffects(fighter_gobj);
 
     fp->status_vars.common.downbounce.attack_buffer = 0;
+#ifdef REGION_REMIX
+    ftRemixJabLockClear(fp);
+#endif
     fp->damage_mul = 0.5F;
 
     ftParamVelDamageTransferGround(fp);

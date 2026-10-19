@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -90,7 +93,14 @@ void ftCommonCliffWaitProcInterrupt(GObj *fighter_gobj)
 {
     if ((ftCommonCliffAttackCheckInterruptCommon(fighter_gobj) == FALSE) && (ftCommonCliffEscapeCheckInterruptCommon(fighter_gobj) == FALSE) && (ftCommonCliffClimbOrFallCheckInterruptCommon(fighter_gobj) == FALSE))
     {
+#ifdef REGION_REMIX
+        if (ftRemixLedgeJumpCheckCButtons(fighter_gobj) == FALSE)
+        {
+            ftCommonCliffWaitCheckFall(fighter_gobj);
+        }
+#else
         ftCommonCliffWaitCheckFall(fighter_gobj);
+#endif
     }
 }
 

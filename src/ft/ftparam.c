@@ -1,6 +1,7 @@
 #ifdef REGION_REMIX
 #include "lb/lbremixgfx.h"
 #include "gm/gmremixcolscripts.h"
+#include "gm/gmremixtoggle.h"
 #endif
 #include <string.h>
 #include <ft/fighter.h>
@@ -1700,6 +1701,9 @@ f32 ftParamGetCommonKnockback(s32 percent_damage, s32 recent_damage, s32 hit_dam
 
         knockback = ( ( ( ( ( ( ( damage_add * 0.1F ) + ( damage_add * hit_damage * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * ( gSCManagerBattleState->damage_ratio * 0.01F ) * dFTCommonDataHandicapTable[attack_handicap - 1][0] ) * dFTCommonDataHandicapTable[defend_handicap - 1][1];
     }
+#ifdef REGION_REMIX
+    knockback = ftRemixRageKnockbackScale(knockback, knockback_weight); /* Rage.asm knockback_multiply (0x800E9F60) */
+#endif
     if (knockback >= 2500.0F)
     {
         knockback = 2500.0F;
@@ -1749,13 +1753,22 @@ f32 ftParamGetGroundHazardKnockback(s32 percent_damage, s32 recent_damage, s32 h
 // 0x800EA1B0
 f32 ftParamGetHitStun(f32 knockback)
 {
+#ifdef REGION_REMIX
+    /* Hitstun.asm: melee style hitstun divides knockback by 2.5 (0x40200000) instead of 1.875 (0x3FF00000) */
+    if (gmRemixToggleVS(hitstun))
+    {
+        return knockback / 2.5F;
+    }
+#endif
     return knockback / 1.875F;
 }
 
 // 0x800EA1C0
 s32 ftParamGetHitLag(s32 damage, s32 status_id, f32 hitlag_mul)
 {
-#if defined(REGION_US)
+#ifdef REGION_REMIX
+    s32 hitlag_tics = ftRemixHitlagTics(damage, hitlag_mul, 5.0F);
+#elif defined(REGION_US)
     s32 hitlag_tics = (s32) ( (damage * (1.0F / 3.0F) ) + 5.0F ) * hitlag_mul;
 #else
     s32 hitlag_tics = (s32) ( (damage * (1.0F / 3.0F) ) + 4.0F ) * hitlag_mul;
@@ -1846,6 +1859,12 @@ f32 ftParamGetStale(s32 player, s32 attack_id, u16 motion_count)
 
     if (attack_id != nFTMotionAttackIDNone)
     {
+#ifdef REGION_REMIX
+        if (ftRemixStaleMovesIsCustom())
+        {
+            return ftRemixStaleMovesGetMultiplier(player, attack_id, motion_count);
+        }
+#endif
         current_array_id = start_array_id = (stale_id != 0) ? stale_id - 1 : ARRAY_COUNT(gSCManagerBattleState->players[player].stale_info) - 1;
 
         for (i = 0; i < ARRAY_COUNT(dFTParamStaleTable); i++)
@@ -1854,7 +1873,11 @@ f32 ftParamGetStale(s32 player, s32 attack_id, u16 motion_count)
             {
                 if (motion_count != gSCManagerBattleState->players[player].stale_info[current_array_id].motion_count)
                 {
+#ifdef REGION_REMIX
+                    return ftRemixStaleMovesTable(dFTParamStaleTable)[i];
+#else
                     return dFTParamStaleTable[i];
+#endif
                 }
                 else if (current_array_id == start_array_id)
                 {

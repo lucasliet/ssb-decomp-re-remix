@@ -4,13 +4,11 @@
 
 #ifdef PORT
 
+#include "gm/gmremixtoggle.h"
 #include <ssb_types.h>
 
-/*
- * REMIX-TODO(toggles): Toggles.entry_blastzone_warp (Remix default 0 = OFF, Toggles.asm) has no port accessor yet.
- * Bit 2 of the toggle is the top/bottom warp. The warp itself (Blastzone.asm loop_screen_*) is not ported.
- */
-#define GRREMIX_BLASTZONE_WARP_TOP_BOTTOM FALSE
+/* Toggles.entry_blastzone_warp: bit 1 (value & 2) is the top/bottom warp. */
+#define GRREMIX_BLASTZONE_WARP_TOP_BOTTOM ((gmRemixToggle(blastzone_warp) & 2) != 0)
 
 /**
  * TRUE when the altitude warning sound of the bottom blast zone is skipped (Blastzone.asm skip_bottom_blast_sfx).

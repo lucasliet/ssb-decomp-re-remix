@@ -4,6 +4,7 @@
 
 #ifdef PORT
 
+#include "gm/gmremixtoggle.h"
 #include "grremixgbland.h"
 #include <sys/objdef.h>
 #include <sys/objman.h>
@@ -73,14 +74,13 @@ static const GRRemixGBLandCue sGRRemixGBLandCues[] =
 static GRRemixGBLandState sGRRemixGBLand;
 
 /**
- * Returns the random music toggle. REMIX-TODO(toggles): Toggles.entry_random_music has no port accessor yet,
- * so the Remix default (CE: off) is returned.
+ * Returns the random music toggle (Toggles.entry_random_music).
  *
- * @return FALSE, the random music toggle is off.
+ * @return TRUE when Random Music is on.
  */
 static sb32 grRemixGBLandRandomMusicIsOn(void)
 {
-    return FALSE;
+    return (gmRemixToggle(random_music) != 0) ? TRUE : FALSE;
 }
 
 /**

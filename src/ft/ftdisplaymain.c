@@ -1329,8 +1329,13 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
             syMatrixTra
             (
                 m,
+#ifdef REGION_REMIX
+                ftRemixChargeSmashShufflePosition(fp).x,
+                ftRemixChargeSmashShufflePosition(fp).y,
+#else
                 dFTDisplayMainShufflePositions[fp->is_shuffle_electric][fp->shuffle_frame_index].x,
                 dFTDisplayMainShufflePositions[fp->is_shuffle_electric][fp->shuffle_frame_index].y,
+#endif
                 0.0F
             );
             gSPMatrix(gSYTaskmanDLHeads[0]++, m, G_MTX_PUSH | G_MTX_MUL | G_MTX_MODELVIEW);

@@ -7,6 +7,7 @@
 #include <sys/debug.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixids.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include <sc/sctypes.h>
 #endif
 extern void func_800267F4_273F4(void *arg0);
@@ -1908,8 +1909,13 @@ sb32 func_ovl0_800C9F70(Mtx *mtx, DObj *dobj, Gfx **dls)
     
     if (fp->shuffle_tics != 0)
     {
+#ifdef REGION_REMIX
+        f[3][0] += ftRemixChargeSmashShufflePosition(fp).x;
+        f[3][1] += ftRemixChargeSmashShufflePosition(fp).y;
+#else
         f[3][0] += dFTDisplayMainShufflePositions[fp->is_shuffle_electric][fp->shuffle_frame_index].x;
         f[3][1] += dFTDisplayMainShufflePositions[fp->is_shuffle_electric][fp->shuffle_frame_index].y;
+#endif
     }
     syMatrixF2LFixedW(&f, mtx);
     

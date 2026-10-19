@@ -407,7 +407,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
     case nFTMotionEventPlayFGM:
         if (!(fp->is_muted))
         {
+#ifdef REGION_REMIX
+            func_800269C0_275C0(ftRemixJapaneseMotionSoundFgm(fp, ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value));
+#else
             func_800269C0_275C0(ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value);
+#endif
         }
         else ftMotionEventAdvance(ms, FTMotionEventDefault);
         break;
@@ -2061,6 +2065,9 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     }
     if (fp->proc_map != NULL)
     {
+#ifdef REGION_REMIX
+        ftRemixRageSmokeEffect(fp); /* Rage.asm gen_gfx (0x800E23D0) */
+#endif
         fp->coll_data.mask_prev = fp->coll_data.mask_curr;
         fp->coll_data.mask_curr = 0;
         fp->coll_data.is_coll_end = FALSE;
@@ -2653,7 +2660,11 @@ void ftMainUpdateDamageStatWeapon(WPStruct *wp, WPAttackColl *wp_attack_coll, s3
         ftParamUpdatePlayerBattleStats(wp->player, fp->player, damage);
         ftParamUpdateStaleQueue(wp->player, fp->player, wp_attack_coll->motion_attack_id, wp_attack_coll->motion_count);
     }
+#ifdef REGION_REMIX
+    func_800269C0_275C0(ftRemixJapaneseProjectileSoundFgm(wp->owner_gobj, wp_attack_coll->fgm_id));
+#else
     func_800269C0_275C0(wp_attack_coll->fgm_id);
+#endif
 }
 
 // 0x800E35BC
@@ -2989,6 +3000,9 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
         case nFTHitLogObjectFighter:
             ft_attack_coll = hitlog->attack_coll;
             attacker_fp = ftGetStruct(hitlog->attacker_gobj);
+#ifdef REGION_REMIX
+            ftRemixRageSaveAttackerPercent(attacker_fp); /* Rage.asm direct_attack (0x800E3F70) */
+#endif
 
             knockback_temp = ftParamGetCommonKnockback
             (
@@ -3066,6 +3080,7 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
             damage = wpMainGetStaledDamage(wp);
 
 #ifdef REGION_REMIX
+            ftRemixRageSaveProjectileOwnerPercent(wp); /* Rage.asm projectile_attack (0x800E40FC) */
             knockback_temp = ftParamGetCommonKnockback(this_fp->percent_damage, this_fp->damage_queue, damage, wp_attack_coll->knockback_weight, wp_attack_coll->knockback_scale, wp_attack_coll->knockback_base, ftRemixSizeWeight(this_fp, attr->weight), wp->handicap, this_fp->handicap); /* Size.asm adjust_player_weight_2 (0x800E4120) */
 #else
             knockback_temp = ftParamGetCommonKnockback(this_fp->percent_damage, this_fp->damage_queue, damage, wp_attack_coll->knockback_weight, wp_attack_coll->knockback_scale, wp_attack_coll->knockback_base, attr->weight, wp->handicap, this_fp->handicap);
@@ -3495,7 +3510,11 @@ void ftMainSearchHitFighter(GObj *this_gobj)
                     }
                     if (k != 0)
                     {
+#ifdef REGION_REMIX
+                        if ((ftRemixParryDirectHit(this_fp, other_fp) == FALSE) && (this_fp->is_shield))
+#else
                         if (this_fp->is_shield)
+#endif
                         {
                             for (i = 0; i < ARRAY_COUNT(other_fp->attack_colls); i++)
                             {
@@ -3666,6 +3685,12 @@ void ftMainSearchHitWeapon(GObj *fighter_gobj)
                     }
                     if (l != 0)
                     {
+#ifdef REGION_REMIX
+                        if (ftRemixParryWeaponHit(fp, wp, gFTMainIsDamageDetect) != FALSE)
+                        {
+                            goto next_gobj;
+                        }
+#endif
 #ifdef REGION_REMIX
                         if ((fp->is_reflect) && (ftRemixReflectCanReflectWeapon(fp, wp)))
 #else
@@ -3875,6 +3900,12 @@ void ftMainSearchHitItem(GObj *fighter_gobj)
                     }
                     if (l != 0)
                     {
+#ifdef REGION_REMIX
+                        if (ftRemixParryItemHit(fp, ip, gFTMainIsDamageDetect) != FALSE)
+                        {
+                            goto next_gobj;
+                        }
+#endif
                         if ((fp->is_reflect) && (it_attack_coll->can_reflect))
                         {
                             for (i = 0; i < it_attack_coll->attack_count; i++)
@@ -4293,7 +4324,17 @@ void ftMainProcParams(GObj *fighter_gobj)
         {
             ftCommonShieldBreakFlyCommonSetStatus(fighter_gobj);
         }
-        else ftCommonGuardSetOffSetStatus(fighter_gobj);
+        else
+        {
+#ifdef REGION_REMIX
+            if (!ftRemixPerfectShieldHandlesGuardSetOff(fighter_gobj))
+            {
+                ftCommonGuardSetOffSetStatus(fighter_gobj);
+            }
+#else
+            ftCommonGuardSetOffSetStatus(fighter_gobj);
+#endif
+        }
 
         damage = fp->shield_damage;
     }
@@ -4358,6 +4399,9 @@ void ftMainProcParams(GObj *fighter_gobj)
     if (damage != 0)
     {
         fp->hitlag_tics = ftParamGetHitLag(damage, status_id, fp->hitlag_mul);
+#ifdef REGION_REMIX
+        ftRemixParryAddAttackerHitlag(fp);
+#endif
 
 #ifdef PORT
         /* SR shield_hitlag_patch_ (CrashSpecial.asm:911-963, ROM 0x800E651C):
@@ -5489,4 +5533,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         fp->proc_update = opening_struct[status_struct_id].proc_update;
     }
     else fp->proc_update = NULL;
+#ifdef REGION_REMIX
+    ftRemixChargeSmashLogic(fighter_gobj);
+#endif
 }

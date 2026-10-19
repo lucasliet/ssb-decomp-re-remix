@@ -59,7 +59,14 @@ void ftCommonWallDamageSetStatus(GObj *fighter_gobj, Vec3f *angle, Vec3f *pos)
 
     fp->status_vars.common.damage.hitstun_tics = ftParamGetHitStun(knockback);
 
+#ifdef REGION_REMIX
+    if (ftRemixWallTechTryStart(fighter_gobj) == FALSE)
+    {
+        ftMainSetStatus(fighter_gobj, nFTCommonStatusWallDamage, 0.0F, 2.0F, (FTSTATUS_PRESERVE_DAMAGEPLAYER | FTSTATUS_PRESERVE_PLAYERTAG));
+    }
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusWallDamage, 0.0F, 2.0F, (FTSTATUS_PRESERVE_DAMAGEPLAYER | FTSTATUS_PRESERVE_PLAYERTAG));
+#endif
 
     fp->damage_knockback_stack = knockback;
 

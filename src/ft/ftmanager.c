@@ -764,6 +764,10 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
     }
     fp->coll_data.pos_prev = DObjGetStruct(fighter_gobj)->translate.vec.f;
 
+#ifdef REGION_REMIX
+    /* AirDodge.asm reset_air_dash_initial_ (0x800D7DB4), at the initial script dispatch that the switch below replaces */
+    ftRemixAirDodgeResetAirDash(fp);
+#endif
     switch (fp->fkind)
     {
     case nFTKindMMario:

@@ -187,6 +187,7 @@ void ftCommonThrownReleaseThrownUpdateStats(GObj *fighter_gobj, s32 lr, s32 scri
 #endif
 
 #ifdef REGION_REMIX
+    ftRemixRageSaveAttackerPercent(capture_fp); /* Rage.asm throw (0x8014B060): the thrower is the attacker */
     knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, ftRemixSizeWeight(this_fp, this_fp->attr->weight), capture_fp->handicap, this_fp->handicap); /* Size.asm adjust_player_weight_5 (0x8014B084) */
 #else
     knockback_calc = ftParamGetCommonKnockback(this_fp->percent_damage, ft_throw->damage, ft_throw->damage, ft_throw->knockback_weight, ft_throw->knockback_scale, ft_throw->knockback_base, this_fp->attr->weight, capture_fp->handicap, this_fp->handicap);

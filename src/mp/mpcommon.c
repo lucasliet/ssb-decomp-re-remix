@@ -447,6 +447,8 @@ void mpCommonSetFighterLandingParams(GObj *fighter_gobj)
 #ifdef REGION_REMIX
     /* Remix get_grounded_script_ (Character.asm:1600) dispatches through a per-id table */
     ftRemixRunGroundedScript(fp);
+    /* AirDodge.asm reset_air_dash_grounded_ (0x800DE420), in the same grounded script dispatch */
+    ftRemixAirDodgeResetAirDash(fp);
 #endif
     switch (fp->fkind)
     {
@@ -570,6 +572,12 @@ sb32 mpCommonRunFighterSpecialCollisions(MPCollData *coll_data, GObj *fighter_go
 
                     if ((cliffcatch_fp->is_cliff_hold) && (this_fp->coll_data.cliff_id == cliffcatch_fp->coll_data.cliff_id) && (this_fp->lr == cliffcatch_fp->lr))
                     {
+#ifdef REGION_REMIX
+                        if (ftRemixLedgeTrumpSkipsHolder(cliffcatch_gobj))
+                        {
+                            goto next_gobj;
+                        }
+#endif
                         return is_ceilstop;
                     }
                     else goto next_gobj; // Bruh
@@ -579,6 +587,7 @@ sb32 mpCommonRunFighterSpecialCollisions(MPCollData *coll_data, GObj *fighter_go
             }
 #ifdef REGION_REMIX
             ftRemixPeachLandingSetLedgeFlag(this_fp);
+            /* REMIX-TODO(VsStats): LedgeTrump.asm track_ledge_grabs_ (0x800DE688), the VS ledge grab count, is not ported */
 #endif
             mpCommonSetFighterLandingParams(fighter_gobj);
 
@@ -910,6 +919,9 @@ void mpCommonSetFighterAir(FTStruct *fp)
 
     fp->physics.vel_air.z = fp->joints[nFTPartsJointTopN]->translate.vec.f.z = 0.0F;
 
+#ifdef REGION_REMIX
+    if (!ftRemixFootStoolPreservesJumps(fp))
+#endif
     fp->jumps_used = 1;
 }
 

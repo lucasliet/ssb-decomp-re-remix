@@ -318,4 +318,117 @@ sb32 ftRemixKirbyLoseCopyPrevented(FTStruct *fp);
 FTModelPart* ftRemixKirbyHatModelPart(FTStruct *fp, s32 joint_id, s32 modelpart_id, FTModelPartDesc *desc, s32 detail_index);
 void ftRemixKirbyHatsClearCache(void);
 
+/* DI toggle, ftremixdi.c (DI.asm, apply_di_modifiers 0x801408DC): the smash DI range multiplier of
+ * ftCommonDamageCommonProcLagUpdate */
+f32 ftRemixDamageSmashDIRangeMul(f32 vanilla_mul);
+
+/* Move Staling, ftremix/ftremixstalemoves.c (StaleMoves.asm): ftParamGetStale in the custom modes and the table of the
+ * vanilla loop in the strict and wait-for-it modes */
+sb32 ftRemixStaleMovesIsCustom(void);
+f32 ftRemixStaleMovesGetMultiplier(s32 player, s32 attack_id, u16 motion_count);
+const f32 *ftRemixStaleMovesTable(const f32 *vanilla_table);
+
+/* Jab Locking (JabLock.asm), ftremix/ftremixjablock.c: the lock bool at N64 0x0B28 and its hooks in DownBounce */
+void ftRemixJabLockClear(FTStruct *fp);
+void ftRemixJabLockDamageStatus(FTStruct *fp, s32 *status_id_set);
+sb32 ftRemixJabLockInterruptDownStand(GObj *fighter_gobj);
+
+/* Tripping (Tripping.asm), ftremix/ftremixtripping.c: the trip roll in the Turn, Dash and TurnRun status set, the turn
+ * state reset that keeps a trip's hitstun, and the trip recovery of ftCommonDamageCommonProcUpdate */
+s32 ftRemixTrippingEnterStatus(FTStruct *fp, s32 status_id);
+sb32 ftRemixTrippingAllowsTurnStateReset(FTStruct *fp);
+sb32 ftRemixTrippingFinishDamage(GObj *fighter_gobj);
+
+/* Z-Cancel settings (ZCancel.asm, Practice.asm flash_on_z_cancel_), ftremix/ftremixzcancel.c: the landing of an aerial
+ * attack, called by ftCommonAttackAirProcMap */
+void ftRemixZCancelAttackAirLanding(GObj *fighter_gobj);
+
+/* Air Dodging setting (Toggles.asm entry_air_dodge), ftremix/ftremixairdodge.c (AirDodge.asm): the jump check of
+ * ftCommonJumpAerialCheckInterruptCommon (TRUE when the dodge or air dash started) and the air dash flag reset of the
+ * grounded script (mpCommonSetFighterLandingParams) and of the initial script (ftManagerInitFighter) */
+sb32 ftRemixAirDodgeCheckInterrupt(GObj *fighter_gobj);
+void ftRemixAirDodgeResetAirDash(FTStruct *fp);
+
+/* Footstool Jumping setting (Toggles.asm entry_footstool), ftremix/ftremixfootstool.c (FootStool.asm): the aerial jump
+ * sites of ftCommonJumpAerialCheckInterruptCommon (TRUE when a footstool jump started, the caller then skips its jump)
+ * and the jump reset of mpCommonSetFighterAir */
+sb32 ftRemixFootStoolTryAerialJump(GObj *fighter_gobj, s32 jump_type);
+sb32 ftRemixFootStoolPreservesJumps(FTStruct *fp);
+
+/* Edge C-Jumping (Toggles.asm entry_ledge_jump), ftremix/ftremixledgejump.c (LedgeJump.asm): the C button check of
+ * ftCommonCliffWaitProcInterrupt (TRUE when a C button was tapped, the caller skips the fall check) and the jump of the
+ * default case of the Quick and Slow cliff proc updates */
+sb32 ftRemixLedgeJumpCheckCButtons(GObj *fighter_gobj);
+void ftRemixLedgeJumpCliffMotionDefault(GObj *fighter_gobj);
+
+/* Ledge Trumping (Toggles.asm entry_ledge_trump), ftremix/ftremixledgetrump.c (LedgeTrump.asm ledge_check_, 0x800DE66C):
+ * TRUE when the search for the ledge holder goes on, called by mpCommonRunFighterSpecialCollisions */
+sb32 ftRemixLedgeTrumpSkipsHolder(GObj *holder_gobj);
+
+/* Game Speed setting (Toggles.asm entry_game_speed), ftremix/ftremixspeed.c (Speed.asm handle_rate_ and
+ * handle_rate_training): the gcRunAll frames of ifCommonBattleGoUpdateInterface, the Training variant (returns the new
+ * Training.skip_advance; training_speed_is_default is FALSE when the Training speed multiplier overrides the toggle), and
+ * the additional_advance flag read by PoisonDmg */
+void ftRemixSpeedRunFrames(void);
+sb32 ftRemixSpeedTrainingRunFrames(sb32 training_speed_is_default, sb32 skip_advance);
+sb32 ftRemixSpeedIsAdditionalAdvance(void);
+
+/* Single Button Mode setting (Toggles.asm entry_single_button_mode), ftremix/ftremixsinglebutton.c (SingleButtonMode.asm):
+ * the input filter of single_button_mode for a gate (FTREMIX_SBM_GATE_*) and the CPU A/B and Z/L press hooks */
+#define FTREMIX_SBM_GATE_OPEN 0
+#define FTREMIX_SBM_GATE_TRAINING_MENU 1
+#define FTREMIX_SBM_GATE_CLOSED 2
+void ftRemixSingleButtonModeFilter(u16 *held, u16 *pressed, s32 gate);
+u16 ftRemixSingleButtonCpuAOrBPress(s32 mode, u16 cpu_button);
+u16 ftRemixSingleButtonCpuZOrLPress(s32 mode, u16 cpu_button);
+
+/* Rage setting (Toggles.asm entry_rage), ftremix/ftremixrage.c (Rage.asm): the attacker damage of a hit, the weapon owner
+ * of a projectile hit, the knockback scale of ftParamGetCommonKnockback and the smoke of the physics map */
+void ftRemixRageSaveAttackerPercent(FTStruct *attacker_fp);
+void ftRemixRageSaveProjectileOwnerPercent(WPStruct *wp);
+f32 ftRemixRageKnockbackScale(f32 knockback, s32 knockback_weight);
+void ftRemixRageSmokeEffect(FTStruct *fp);
+
+/* Wall Teching setting (Toggles.asm entry_wall_teching), ftremix/ftremixwalltech.c (WallTeching.asm): called by
+ * ftCommonWallDamageSetStatus, TRUE when the wall damage became a tech and the caller must skip its wall damage status */
+sb32 ftRemixWallTechTryStart(GObj *fighter_gobj);
+
+/* Spot Dodging setting (Toggles.asm entry_spot_dodge), ftremix/ftremixspotdodge.c (SpotDodge.asm): called by
+ * ftCommonGuardPassCheckInterruptGuard, TRUE when a spot dodge started; the pass input is vanilla_pass when the setting is off */
+sb32 ftRemixSpotDodgeCheckInterrupt(GObj *fighter_gobj);
+sb32 ftRemixSpotDodgePassInput(FTStruct *fp, sb32 vanilla_pass);
+
+/* Perfect Shielding, ftremix/ftremixperfectshield.c (PerfectShield.asm): the shield stun skip of ftMainProcParams
+ * (0x800E64D8), and the projectile and item reflect in the shield branch of wpProcessProcHitCollisions (0x80166C7C)
+ * and itProcessProcHitCollisions (0x801711BC) */
+sb32 ftRemixPerfectShieldHandlesGuardSetOff(GObj *fighter_gobj);
+sb32 ftRemixPerfectShieldWeapon(GObj *weapon_gobj);
+sb32 ftRemixPerfectShieldItem(GObj *item_gobj);
+
+/* Japanese.asm settings, ftremix/ftremixhitlag.c, ftremixshieldstun.c, ftremixjstunsleep.c and ftremixjapanesesounds.c:
+ * the Hitlag formula of ftParamGetHitLag (vanilla_add is the vanilla constant of the formula), the Shield Stun frames of
+ * ftCommonGuardSetOffSetStatus, the Fura Fura and Fura Sleep breakout waits, and the fgm ids of PlayFGM motion events
+ * (ftMainParseMotionEvent), projectile hits (ftMainUpdateDamageStatWeapon) */
+s32 ftRemixHitlagTics(s32 damage, f32 hitlag_mul, f32 vanilla_add);
+f32 ftRemixShieldStunFrames(FTStruct *fp, f32 vanilla_frames);
+s32 ftRemixFuraFuraBreakoutWait(s32 breakout_wait);
+s32 ftRemixFuraSleepBreakoutWait(s32 breakout_wait);
+u16 ftRemixJapaneseMotionSoundFgm(FTStruct *fp, u32 value);
+u16 ftRemixJapaneseProjectileSoundFgm(GObj *owner_gobj, u16 fgm_id);
+
+/* Charge Smashes setting (Toggles.asm entry_charged_smashes), ftremix/ftremixchargesmash.c (ChargeSmashAttacks.asm): the
+ * logic run on action change (ftMainSetStatus), the wait hold of ftAnimEndSetWait, and the shake offset of ftDisplayMainProcDisplay
+ * and func_ovl0_800C9F70 */
+void ftRemixChargeSmashLogic(GObj *fighter_gobj);
+sb32 ftRemixChargeSmashHoldsAnimEnd(GObj *fighter_gobj);
+Vec2f ftRemixChargeSmashShufflePosition(FTStruct *fp);
+
+/* Parrying (BETA) setting (Toggles.asm entry_parry), ftremix/ftremixparry.c (Parry.asm): the parry check before the shield
+ * check of ftMainSearchHitFighter, ftMainSearchHitWeapon and ftMainSearchHitItem (TRUE when the hit was parried, the caller
+ * skips it), and the extra attacker hitlag of ftMainProcParams */
+sb32 ftRemixParryDirectHit(FTStruct *victim_fp, FTStruct *attacker_fp);
+sb32 ftRemixParryWeaponHit(FTStruct *fp, WPStruct *wp, sb32 *is_damage_detect);
+sb32 ftRemixParryItemHit(FTStruct *fp, ITStruct *ip, sb32 *is_damage_detect);
+void ftRemixParryAddAttackerHitlag(FTStruct *fp);
+
 #endif

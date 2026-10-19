@@ -4,6 +4,7 @@
 
 #ifdef PORT
 
+#include "gm/gmremixtoggle.h"
 #include "grremixyoshiclouds.h"
 #include "grremixgating.h"
 #include "grremixhazards.h"
@@ -19,10 +20,10 @@ static const u8 sGRRemixYosterCloudLineIDs[] = { 0x1, 0x2, 0x3 };
 /* Value the asm stores in the cloud DObj field at 0x84 (DObj.user_data) to turn its clipping off (Hazards.asm a0 = 4). */
 #define GRREMIX_YOSTER_CLIPPING_DISABLED 4
 
-/** REMIX-TODO(Remix settings menu): Toggles.entry_yi_clouds ("Yoshi's Island Cloud Anims", default off) is not wired yet. */
+/** Toggles.entry_yi_clouds ("Yoshi's Island Cloud Anims", default off). */
 static sb32 grRemixYosterCloudScaleIsOn(void)
 {
-    return FALSE;
+    return (gmRemixToggle(yi_clouds) != 0) ? TRUE : FALSE;
 }
 
 /** TRUE on Onett and the Tal Tal stages, whose moving platform is a hazard and follows the hazard toggle (asm platform_movement_). */

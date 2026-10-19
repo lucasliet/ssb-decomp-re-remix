@@ -114,7 +114,11 @@ void ftCommonDashSetStatus(GObj *fighter_gobj, u32 flag)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, ftRemixTrippingEnterStatus(fp, nFTCommonStatusDash), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusDash, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#endif
     ftMainPlayAnimEventsAll(fighter_gobj);
 
 #ifdef REGION_REMIX

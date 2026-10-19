@@ -4,6 +4,7 @@
 
 #ifdef PORT
 
+#include "gm/gmremixtoggle.h"
 #include "grremixdreamland.h"
 #include <gr/ground.h>
 #include <sc/scene.h>
@@ -20,10 +21,10 @@
 #define GRREMIX_DREAMLAND_JAPANESE_WIND_DECAY 0.0003F
 #define GRREMIX_DREAMLAND_SUPER_WIND_DECAY 0.0006F
 
-/** REMIX-TODO(toggles): Toggles.entry_whispy_mode has no port accessor yet, so the mode stays Normal (vanilla). */
+/** Toggles.entry_whispy_mode (Whispy Mode setting). */
 static s32 grRemixDreamLandWhispyMode(void)
 {
-    return GRREMIX_WHISPY_MODE_NORMAL;
+    return gmRemixToggle(whispy_mode);
 }
 
 /** REMIX-TODO(screen id): asm `Global.current_screen == 1P`; mapped here to the 1P game scene, not yet verified. */

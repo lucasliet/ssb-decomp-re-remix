@@ -339,6 +339,13 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 input_source;
 
+#ifdef REGION_REMIX
+    /* AirDodge.asm airdodge_check (0x801401AC) runs before the hammer check and returns early when a dodge starts */
+    if (ftRemixAirDodgeCheckInterrupt(fighter_gobj) != FALSE)
+    {
+        return TRUE;
+    }
+#endif
     if (ftHammerCheckHoldHammer(fighter_gobj) != FALSE)
     {
         return FALSE;
@@ -358,6 +365,9 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
 
                 if (input_source != FTCOMMON_JUMPAERIAL_INPUT_TYPE_NONE)
                 {
+#ifdef REGION_REMIX
+                    if (!ftRemixFootStoolTryAerialJump(fighter_gobj, input_source))
+#endif
                     ftCommonJumpAerialMultiSetStatus(fighter_gobj, input_source);
 
                     return TRUE;
@@ -378,6 +388,9 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
 
                     if (input_source != FTCOMMON_JUMPAERIAL_INPUT_TYPE_NONE)
                     {
+#ifdef REGION_REMIX
+                        if (!ftRemixFootStoolTryAerialJump(fighter_gobj, input_source))
+#endif
                         ftCommonJumpAerialMultiSetStatus(fighter_gobj, input_source);
 
                         return TRUE;
@@ -397,6 +410,9 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
 
                     if (input_source != FTCOMMON_JUMPAERIAL_INPUT_TYPE_NONE)
                     {
+#ifdef REGION_REMIX
+                        if (!ftRemixFootStoolTryAerialJump(fighter_gobj, input_source))
+#endif
                         ftCommonJumpAerialMultiSetStatus(fighter_gobj, input_source);
 
                         return TRUE;
@@ -412,6 +428,9 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
 
         if ((input_source != FTCOMMON_JUMPAERIAL_INPUT_TYPE_NONE) && (fp->jumps_used < fp->attr->jumps_max))
         {
+#ifdef REGION_REMIX
+            if (!ftRemixFootStoolTryAerialJump(fighter_gobj, input_source))
+#endif
             ftCommonJumpAerialSetStatus(fighter_gobj, input_source);
 
             return TRUE;

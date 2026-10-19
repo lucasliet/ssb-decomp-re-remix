@@ -1,5 +1,6 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixreflect.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 #include <wp/weapon.h>
 #include <it/item.h>
@@ -501,6 +502,17 @@ void wpProcessProcHitCollisions(GObj *weapon_gobj)
                 goto next_check;
             }
         }
+#ifdef REGION_REMIX
+        if (ftRemixPerfectShieldWeapon(weapon_gobj) != FALSE)
+        {
+            if ((wp->proc_reflector != NULL) && (wp->proc_reflector(weapon_gobj) != FALSE))
+            {
+                wpMainDestroyWeapon(weapon_gobj);
+                return;
+            }
+            goto next_check;
+        }
+#endif
         if (wp->proc_shield != NULL)
         {
             if (wp->proc_shield(weapon_gobj) != FALSE)

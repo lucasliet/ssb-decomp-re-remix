@@ -1086,6 +1086,17 @@ void itProcessProcHitCollisions(GObj *item_gobj)
                 goto next_check;
             }
         }
+#ifdef REGION_REMIX
+        if (ftRemixPerfectShieldItem(item_gobj) != FALSE)
+        {
+            if ((ip->proc_reflector != NULL) && (ip->proc_reflector(item_gobj) != FALSE))
+            {
+                itMainDestroyItem(item_gobj);
+                return;
+            }
+            goto next_check;
+        }
+#endif
         if (ip->proc_shield != NULL)
         {
             if (ip->proc_shield(item_gobj) != FALSE)

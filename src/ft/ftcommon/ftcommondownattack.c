@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -19,6 +22,12 @@ sb32 ftCommonDownAttackCheckInterruptDownBounce(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 status_id;
 
+#ifdef REGION_REMIX
+    if (ftRemixJabLockInterruptDownStand(fighter_gobj))
+    {
+        return TRUE;
+    }
+#endif
     if (fp->status_vars.common.downbounce.attack_buffer != 0)
     {
         if (fp->status_id == nFTCommonStatusDownBounceD)

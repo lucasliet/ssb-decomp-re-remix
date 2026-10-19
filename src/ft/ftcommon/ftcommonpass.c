@@ -105,7 +105,15 @@ sb32 ftCommonGuardPassCheckInterruptGuard(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixSpotDodgeCheckInterrupt(fighter_gobj))
+    {
+        return TRUE;
+    }
+    if ((ftRemixSpotDodgePassInput(fp, ftCommonPassCheckInputSuccess(fp)) != FALSE) && (fp->input.pl.button_hold & fp->input.button_mask_z))
+#else
     if ((ftCommonPassCheckInputSuccess(fp) != FALSE) && (fp->input.pl.button_hold & fp->input.button_mask_z))
+#endif
     {
         ftCommonGuardPassSetStatus(fighter_gobj);
 

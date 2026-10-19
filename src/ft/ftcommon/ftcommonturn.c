@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -100,7 +103,14 @@ skip_interrupt_specials:
             }
             if (fp->status_vars.common.turn.is_allow_turn_direction != FALSE)
             {
+#ifdef REGION_REMIX
+                if (ftRemixTrippingAllowsTurnStateReset(fp) != FALSE)
+                {
+                    fp->status_vars.common.turn.is_allow_turn_direction = FALSE;
+                }
+#else
                 fp->status_vars.common.turn.is_allow_turn_direction = FALSE;
+#endif
             }
         }
     }
@@ -113,10 +123,21 @@ void ftCommonTurnSetStatus(GObj *fighter_gobj, s32 lr_dash)
 
     fp->motion_vars.flags.flag1 = 0;
 
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, ftRemixTrippingEnterStatus(fp, nFTCommonStatusTurn), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusTurn, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#endif
     ftMainPlayAnimEventsAll(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixTrippingAllowsTurnStateReset(fp) != FALSE)
+    {
+        fp->status_vars.common.turn.is_allow_turn_direction = FALSE;
+    }
+#else
     fp->status_vars.common.turn.is_allow_turn_direction = FALSE;
+#endif
     fp->status_vars.common.turn.is_disable_sa_interrupts = FALSE;
     fp->status_vars.common.turn.button_mask = 0;
     fp->status_vars.common.turn.lr_dash = lr_dash;

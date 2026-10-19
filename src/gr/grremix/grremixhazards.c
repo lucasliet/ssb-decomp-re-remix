@@ -4,20 +4,34 @@
 
 #ifdef PORT
 
+#include "gm/gmremixtoggle.h"
 #include "grremixhazards.h"
 #include <sc/sctypes.h>
 #include <sc/scmanager.h>
 #include <stdint.h>
 #include <sys/objtypes.h>
 
+/* Hazards.asm: Toggles.entry_hazard_mode only applies on the VS and Training screens; bit 0 turns the hazards off,
+ * bit 1 the movement. */
+static s32 grRemixHazardsMode(void)
+{
+    s32 scene = gSCManagerSceneData.scene_curr;
+
+    if ((scene != nSCKindVSBattle) && (scene != nSCKind1PTrainingMode))
+    {
+        return 0;
+    }
+    return gmRemixToggle(hazard_mode);
+}
+
 sb32 grRemixHazardsAreOn(void)
 {
-    return TRUE;
+    return ((grRemixHazardsMode() & 1) == 0) ? TRUE : FALSE;
 }
 
 sb32 grRemixMovementIsOn(void)
 {
-    return TRUE;
+    return ((grRemixHazardsMode() & 2) == 0) ? TRUE : FALSE;
 }
 
 sb32 grRemixHazardsMatchHasStarted(void)

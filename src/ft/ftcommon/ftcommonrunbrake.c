@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "gm/gmremixtoggle.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -62,7 +65,11 @@ sb32 ftCommonRunBrakeCheckInterruptTurnRun(GObj *fighter_gobj)
 
 #if defined(REGION_US)
         // Momentum slide fix
+#ifdef REGION_REMIX
+        if (!gmRemixToggleVS(momentum_slide) && (fp->physics.vel_ground.x > fp->attr->run_speed))
+#else
         if (fp->physics.vel_ground.x > fp->attr->run_speed)
+#endif
         {
             fp->physics.vel_ground.x = fp->attr->run_speed;
         }

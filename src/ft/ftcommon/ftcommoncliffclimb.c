@@ -29,6 +29,11 @@ void ftCommonCliffQuickProcUpdate(GObj *fighter_gobj)
         case nFTCommonCliffKindEscapeQuick:
             ftCommonCliffEscapeQuick1SetStatus(fighter_gobj);
             break;
+#ifdef REGION_REMIX
+        default:
+            ftRemixLedgeJumpCliffMotionDefault(fighter_gobj);
+            break;
+#endif
         }
     }
 }
@@ -53,6 +58,11 @@ void ftCommonCliffSlowProcUpdate(GObj *fighter_gobj)
         case nFTCommonCliffKindEscapeSlow:
             ftCommonCliffEscapeSlow1SetStatus(fighter_gobj);
             break;
+#ifdef REGION_REMIX
+        default:
+            ftRemixLedgeJumpCliffMotionDefault(fighter_gobj);
+            break;
+#endif
         }
     }
 }

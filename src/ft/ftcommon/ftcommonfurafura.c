@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -46,6 +49,9 @@ void ftCommonFuraFuraSetStatus(GObj *fighter_gobj)
     }
     breakout_wait += FTCOMMON_FURAFURA_BREAKOUT_WAIT_MIN;
 
+#ifdef REGION_REMIX
+    breakout_wait = ftRemixFuraFuraBreakoutWait(breakout_wait);
+#endif
     ftCommonCaptureTrappedInitBreakoutVars(fp, breakout_wait);
     ftParamCheckSetFighterColAnimID(fighter_gobj, nGMColAnimFighterFuraFura, 0);
 }

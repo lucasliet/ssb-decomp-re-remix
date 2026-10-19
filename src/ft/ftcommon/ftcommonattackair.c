@@ -70,6 +70,9 @@ void ftCommonAttackAirProcMap(GObj *fighter_gobj)
 
     if (mpCommonCheckFighterLanding(fighter_gobj) != FALSE)
     {
+#ifdef REGION_REMIX
+        ftRemixZCancelAttackAirLanding(fighter_gobj);
+#else
         // auto Z-cancel
         if ((fp->motion_vars.flags.flag1 != 0) && (fp->tics_since_last_z > FTCOMMON_ATTACKAIR_SMOOTHLANDING_TICS_MAX)
 #ifdef PORT
@@ -100,6 +103,7 @@ void ftCommonAttackAirProcMap(GObj *fighter_gobj)
             ftCommonWaitSetStatus(fighter_gobj);
         }
         else ftCommonLandingSetStatus(fighter_gobj);
+#endif
     }
 }
 

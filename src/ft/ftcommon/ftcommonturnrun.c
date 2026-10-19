@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -37,7 +40,11 @@ void ftCommonTurnRunSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, ftRemixTrippingEnterStatus(fp, nFTCommonStatusTurnRun), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusTurnRun, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#endif
 
     fp->motion_vars.flags.flag1 = 0;
     fp->motion_vars.flags.flag2 = 0;

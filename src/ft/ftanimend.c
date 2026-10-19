@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // 0x800D9480
 sb32 ftAnimEndCheckSetStatus(GObj *fighter_gobj, void (*proc_status)(GObj*))
@@ -15,6 +18,12 @@ sb32 ftAnimEndCheckSetStatus(GObj *fighter_gobj, void (*proc_status)(GObj*))
 // 0x800D94C4
 void ftAnimEndSetWait(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+    if (ftRemixChargeSmashHoldsAnimEnd(fighter_gobj))
+    {
+        return;
+    }
+#endif
     ftAnimEndCheckSetStatus(fighter_gobj, ftCommonWaitSetStatus);
 }
 
