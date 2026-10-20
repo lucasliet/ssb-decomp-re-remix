@@ -11,6 +11,9 @@ extern void lbBackupWrite(void);
 extern sb32 lbBackupIsSramValid(void);
 extern void lbBackupApplyOptions(void);
 extern void lbBackupCorrectErrors(void);
+#ifdef REGION_REMIX
+extern void lbBackupInitRemixDefaults(void);
+#endif
 extern void lbBackupClearNewcomers(void);
 extern void lbBackupClear1PHighScore(void);
 extern void lbBackupClearVSRecord(void);

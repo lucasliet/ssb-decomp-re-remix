@@ -20,6 +20,9 @@ extern float port_widescreen_clip_x_scale(void);
 #include "remix/remix_css_data.h"
 #include "gm/gmremixmenumusic.h"
 #include "gm/gmremixspawnsetup.h"
+#include "gm/gmremixtoggle.h"
+#include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixvariants.h"
 #endif
 
 
@@ -200,13 +203,16 @@ s32 mnPlayersVSGetShade(s32 player)
 }
 
 /* ftport.c points costume_row at dFTParamCostumeIDs[fkind], which is past the end of the table for
- * synthetic fkinds (>= nFTKindEnumCount), so they always take costume 0 instead of reading it. */
+ * synthetic fkinds (>= nFTKindEnumCount), so they always take costume 0 instead of reading it. Under REGION_REMIX the
+ * ids come from Character.default_costume.table. */
 s32 mnPlayersVSGetCostumeCommonID(s32 fkind, s32 color)
 {
+#ifndef REGION_REMIX
 	if (fkind >= nFTKindEnumCount)
 	{
 		return 0;
 	}
+#endif
 	return ftParamGetCostumeCommonID(fkind, color);
 }
 
@@ -219,11 +225,13 @@ void mnPlayersVSSelectFighterPuck(s32 player, s32 select_button)
 	{
 		costume = mnPlayersVSGetCostumeCommonID(sMNPlayersVSSlots[held_player].fkind, select_button);
 
+#ifndef REGION_REMIX
 		if (mnPlayersVSCheckCostumeUsed(sMNPlayersVSSlots[held_player].fkind, held_player, costume))
 		{
 			func_800269C0_275C0(nSYAudioFGMMenuDenied);
 			return;
 		}
+#endif
 		sMNPlayersVSSlots[held_player].shade = mnPlayersVSGetShade(held_player);
 		sMNPlayersVSSlots[held_player].costume = costume;
 		ftParamInitAllParts(sMNPlayersVSSlots[held_player].player, costume, sMNPlayersVSSlots[held_player].shade);
@@ -421,16 +429,27 @@ s32 mnPlayersVSRemixGetFighterKind(s32 slot)
 	return kRemixCssSlotIds[slot];
 }
 
-/* Inverse of mnPlayersVSRemixGetFighterKind. Fkinds without a grid cell map to slot 0. */
+/* Inverse of mnPlayersVSRemixGetFighterKind. A D-pad variant maps to the cell of the fighter it varies; other fkinds
+ * without a grid cell map to slot 0. */
 s32 mnPlayersVSRemixGetPortrait(s32 fkind)
 {
-	s32 slot;
+	s32 slot, variant_slot;
 
 	for (slot = 0; slot < REMIX_CSS_NUM_SLOTS; slot++)
 	{
 		if (kRemixCssSlotIds[slot] == fkind)
 		{
 			return slot;
+		}
+	}
+	for (slot = 0; slot < REMIX_CSS_NUM_SLOTS; slot++)
+	{
+		for (variant_slot = 1; variant_slot <= MNREMIX_VARIANT_SLOT_COUNT; variant_slot++)
+		{
+			if (mnRemixVariantLookup(kRemixCssSlotIds[slot], variant_slot) == fkind)
+			{
+				return slot;
+			}
 		}
 	}
 	return 0;
@@ -3553,7 +3572,7 @@ s32 mnPlayersVSGetRemixPuckFighterKind(s32 player)
 	{
 		return nFTKindNull;
 	}
-	return fkind;
+	return mnRemixVariantGetFighterKind(player, fkind);
 }
 #endif
 
@@ -3733,6 +3752,17 @@ void mnPlayersVSUpdateCursorNoRecall(GObj *gobj, s32 player)
 void mnPlayersVSUpdateCostume(s32 player, s32 select_button)
 {
 	s32 costume;
+#ifdef REGION_REMIX
+	s32 shade = sMNPlayersVSSlots[player].shade;
+
+	costume = sMNPlayersVSSlots[player].costume;
+	mnRemixCostumeApplyButton(sMNPlayersVSSlots[player].fkind, select_button, &costume, &shade);
+	sMNPlayersVSSlots[player].costume = costume;
+	sMNPlayersVSSlots[player].shade = shade;
+
+	ftParamInitAllParts(sMNPlayersVSSlots[player].player, costume, shade);
+	func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+#else
 	costume = mnPlayersVSGetCostumeCommonID(sMNPlayersVSSlots[player].fkind, select_button);
 
 	if (mnPlayersVSCheckCostumeUsed(sMNPlayersVSSlots[player].fkind, player, costume) != FALSE)
@@ -3747,6 +3777,7 @@ void mnPlayersVSUpdateCostume(s32 player, s32 select_button)
 		ftParamInitAllParts(sMNPlayersVSSlots[player].player, costume, sMNPlayersVSSlots[player].shade);
 		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 	}
+#endif
 }
 
 // 0x80137F9C
@@ -3991,6 +4022,25 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 classic_arrows_consumed:;
 #endif
 	}
+#ifdef REGION_REMIX
+	mnRemixVariantHandleInput(sMNPlayersVSSlots[player].held_player, gSYControllerDevices[player].button_tap);
+
+	if
+	(
+		(gmRemixToggle(l_random_char) != 0) &&
+		(gSYControllerDevices[player].button_tap & L_TRIG) &&
+		(sMNPlayersVSSlots[player].held_player == player) &&
+		(sMNPlayersVSSlots[player].is_recalling == FALSE) &&
+		(sMNPlayersVSSlots[player].fkind == nFTKindNull)
+	)
+	{
+		sMNPlayersVSSlots[player].fkind = mnPlayersVSRandFighterKind(sMNPlayersVSSlots[player].puck);
+
+		mnPlayersVSUpdateFighter(player);
+		mnPlayersVSUpdateNameAndEmblem(player);
+		mnPlayersVSSelectFighterPuck(player, nMNPlayersSelectButtonA);
+	}
+#endif
 	if (sMNPlayersVSIsTeamBattle == FALSE)
 	{
 		if
@@ -4101,19 +4151,23 @@ s32 mnPlayersVSRandFighterKind(GObj *gobj)
 {
 	s32 fkind;
 
+#ifdef REGION_REMIX
+	do
+	{
+		fkind = mnRemixRandomResolveFighterKind(kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)]);
+	}
+	while ((fkind == nFTKindNull) || (mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE));
+#else
 	do
 	{
 		do
 		{
-#ifdef REGION_REMIX
-			fkind = kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)];
-#else
 			fkind = syUtilsRandTimeUCharRange(nFTKindPlayableEnd + 1);
-#endif
 		}
 		while (mnPlayersVSCheckFighterCrossed(fkind) != FALSE);
 	}
 	while (mnPlayersVSCheckFighterLocked(fkind) != FALSE);
+#endif
 
 	mnPlayersVSCenterPuckInPortrait(gobj, fkind);
 

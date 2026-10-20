@@ -225,7 +225,7 @@ struct LBTransitionDesc
 
 struct LBBackupVSRecord
 {
-	u16 ko_count[GMCOMMON_FIGHTERS_PLAYABLE_NUM];
+	u16 ko_count[GMCOMMON_FIGHTERS_SAVE_NUM];
 	u32 time_used;                                  // In seconds
 	u32 damage_given;
 	u32 damage_taken;
@@ -233,8 +233,8 @@ struct LBBackupVSRecord
 	u16 selfdestructs;
 	u16 games_played;
 	u16 player_count_tally;
-	u16 player_count_tallies[GMCOMMON_FIGHTERS_PLAYABLE_NUM];
-	u16 played_against[GMCOMMON_FIGHTERS_PLAYABLE_NUM];
+	u16 player_count_tallies[GMCOMMON_FIGHTERS_SAVE_NUM];
+	u16 played_against[GMCOMMON_FIGHTERS_SAVE_NUM];
 };
 
 struct LBBackup1PRecord
@@ -253,7 +253,7 @@ struct LBBackup1PRecord
 // Save Data structure
 struct LBBackupData
 {
-	LBBackupVSRecord vs_records[GMCOMMON_FIGHTERS_PLAYABLE_NUM];
+	LBBackupVSRecord vs_records[GMCOMMON_FIGHTERS_SAVE_NUM];
 	ub8 is_allow_screenflash; 	// Toggle for enabling white screen flash when, for example, a character takes too much damage
 							  	// Likely tied to the unused "background flash" option? It is always toggled ON, even after clearing save data
 	ub8 sound_mono_or_stereo;   // Whether sound mode is mono or stereo
@@ -264,7 +264,7 @@ struct LBBackupData
 	u16 fighter_mask; 		    // Mask of available characters
 	u8 spgame_difficulty;       // Last 1P Game difficulty selected
 	u8 spgame_stock_count;      // Last 1P Game stock count selected
-	LBBackup1PRecord spgame_records[GMCOMMON_FIGHTERS_PLAYABLE_NUM];
+	LBBackup1PRecord spgame_records[GMCOMMON_FIGHTERS_SAVE_NUM];
 	u16 ground_mask;   	        // Records mask of unique stages played in VS mode
 	u8 vs_itemswitch_battles; 	// Records number of VS games played for Item Switch unlock
 	u16 vs_total_battles;		// Total amount of VS games played?

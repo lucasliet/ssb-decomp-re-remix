@@ -105,5 +105,11 @@ extern void mnPlayers1PBonusInitSlot(s32 player);
 extern sb32 mnPlayers1PBonusCheckBonusCompleteAll(void);
 extern void mnPlayers1PBonusFuncStart(void);
 extern void mnPlayers1PBonusStartScene(void);
+#ifdef REGION_REMIX
+extern void mnPlayers1PBonusMakeRemixPortrait(s32 slot);
+extern void mnPlayers1PBonusMakeRemixNameAndEmblem(GObj *gobj, s32 fkind);
+extern s32 mnPlayers1PBonusGetRemixForcePuckFighterKind(void);
+extern s32 mnPlayers1PBonusGetRemixPuckFighterKind(s32 player);
+#endif
 
 #endif

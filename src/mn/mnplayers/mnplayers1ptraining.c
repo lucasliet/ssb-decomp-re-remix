@@ -13,6 +13,13 @@ extern void func_800266A0_272A0(void);
 extern float port_widescreen_clip_x_scale(void);
 #include "fighter_registry.h"
 #endif
+#ifdef REGION_REMIX
+#include "remix/remix_css_data.h"
+#include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixcss.h"
+#include "mn/mnplayers/mnremixvariants.h"
+#define MN_PLAYERS_1P_TRAINING_REMIX_PORTRAITS_FILE 8
+#endif
 
 
 // // // // // // // // // // // //
@@ -32,6 +39,10 @@ u32 dMNPlayers1PTrainingFileIDs[/* */] =
 	llMNPlayersGameModesFileID,
 	llMNPlayersPortraitsFileID,
 	llMNPlayersSpotlightFileID
+#ifdef REGION_REMIX
+	/* [8] Remix portrait sheet; the 30 grid portraits are sliced from it. */
+	, REMIX_CSS_PORTRAITS_FILE_ID
+#endif
 };
 
 // 0x80137F80
@@ -115,6 +126,11 @@ LBFileNode sMNPlayers1PTrainingStatusBuffer[120];
 // 0x80138C98
 void *sMNPlayers1PTrainingFiles[ARRAY_COUNT(dMNPlayers1PTrainingFileIDs)];
 
+#ifdef REGION_REMIX
+/* Costume shade per slot. The Remix C-up/down buttons cycle it; the vanilla CSS has no shade. */
+s32 sMNPlayers1PTrainingShade[GMCOMMON_PLAYERS_MAX];
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //           FUNCTIONS           //
@@ -137,11 +153,15 @@ void mnPlayers1PTrainingSelectFighterPuck(s32 player, s32 select_button)
 	{
 		costume = ftParamGetCostumeCommonID(sMNPlayers1PTrainingSlots[held_player].fkind, select_button);
 
+#ifdef REGION_REMIX
+		sMNPlayers1PTrainingShade[held_player] = 0;
+#else
 		if (mnPlayers1PTrainingCheckCostumeUsed(sMNPlayers1PTrainingSlots[held_player].fkind, held_player, costume))
 		{
 			func_800269C0_275C0(nSYAudioFGMMenuDenied);
 			return;
 		}
+#endif
 		ftParamInitAllParts(sMNPlayers1PTrainingSlots[held_player].player, costume, 0);
 		sMNPlayers1PTrainingSlots[held_player].costume = costume;
 	}
@@ -294,6 +314,9 @@ void func_ovl28_80131FC8(void)
 // 0x80131FD0
 s32 mnPlayers1PTrainingGetFighterKind(s32 portrait)
 {
+#ifdef REGION_REMIX
+	return mnRemixCssGetFighterKind(portrait);
+#else
 	s32 fkinds[/* */] =
 	{
 		nFTKindLuigi, nFTKindMario, nFTKindDonkey, nFTKindLink, nFTKindSamus,   nFTKindCaptain,
@@ -301,11 +324,15 @@ s32 mnPlayers1PTrainingGetFighterKind(s32 portrait)
 	};
 
 	return fkinds[portrait];
+#endif
 }
 
 // 0x80132020
 s32 mnPlayers1PTrainingGetPortrait(s32 fkind)
 {
+#ifdef REGION_REMIX
+	return mnRemixCssGetPortrait(fkind);
+#else
 	s32 portraits[/* */] =
 	{
 		1, 9, 2, 4, 0, 3,
@@ -321,6 +348,7 @@ s32 mnPlayers1PTrainingGetPortrait(s32 fkind)
 	}
 #endif
 	return portraits[fkind];
+#endif
 }
 
 // 0x80132070
@@ -436,20 +464,103 @@ void mnPlayers1PTrainingMakePortrait(s32 portrait)
 	}
 }
 
+#ifdef REGION_REMIX
+/* Remix portrait: one static sprite per grid slot, sliced from the Remix sheet. It has no wallpaper, cross or slide process. */
+void mnPlayers1PTrainingMakeRemixPortrait(s32 slot)
+{
+	GObj *gobj;
+	SObj *sobj;
+	s32 fkind = mnRemixCssGetFighterKind(slot);
+
+	gobj = gcMakeGObjSPAfter(0, NULL, 18, GOBJ_PRIORITY_DEFAULT);
+	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
+	gobj->user_data.s = slot;
+
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_PORTRAITS_FILE], kRemixCssPortraitOffset[fkind]));
+	sobj->pos.x = mnRemixCssCellX(slot);
+	sobj->pos.y = mnRemixCssCellY(slot);
+	sobj->sprite.scalex = REMIX_CSS_PORTRAIT_SCALE;
+	sobj->sprite.scaley = REMIX_CSS_PORTRAIT_SCALE;
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+}
+#endif
+
 // 0x80132594
 void mnPlayers1PTrainingMakePortraitAll(void)
 {
+#ifdef REGION_REMIX
+	s32 slot;
+
+	for (slot = 0; slot < REMIX_CSS_NUM_SLOTS; slot++)
+	{
+		mnPlayers1PTrainingMakeRemixPortrait(slot);
+	}
+#else
 	s32 i;
 
 	for (i = nFTKindPlayableStart; i <= nFTKindPlayableEnd; i++)
 	{
 		mnPlayers1PTrainingMakePortrait(i);
 	}
+#endif
 }
+
+#ifdef REGION_REMIX
+/* A table offset of 0 means the Remix fighter has no name or logo texture: the old sprites are removed and nothing is drawn. */
+void mnPlayers1PTrainingMakeRemixNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
+{
+	SObj *sobj;
+
+	gcRemoveSObjAll(gobj);
+
+	if (((u32)fkind >= REMIX_CSS_NUM_CHARACTERS) || (kRemixCssLogoOffset[fkind] == 0) || (kRemixCssNameOffset[fkind] == 0))
+	{
+		return;
+	}
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PTrainingFiles[3], kRemixCssLogoOffset[fkind]));
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+
+	if (player == sMNPlayers1PTrainingManPlayer)
+	{
+		sobj->sprite.red = 0x1E;
+		sobj->sprite.green = 0x1E;
+		sobj->sprite.blue = 0x1E;
+		sobj->pos.x = 63.0F;
+		sobj->pos.y = 144.0F;
+	}
+	else
+	{
+		sobj->sprite.red = 0x44;
+		sobj->sprite.green = 0x44;
+		sobj->sprite.blue = 0x44;
+		sobj->pos.x = 195.0F;
+		sobj->pos.y = 144.0F;
+	}
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PTrainingFiles[0], kRemixCssNameOffset[fkind]));
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+
+	if (player == sMNPlayers1PTrainingManPlayer)
+	{
+		sobj->pos.x = 61.0F;
+		sobj->pos.y = 202.0F;
+	}
+	else
+	{
+		sobj->pos.x = 193.0F;
+		sobj->pos.y = 202.0F;
+	}
+}
+#endif
 
 // 0x801325D4
 void mnPlayers1PTrainingMakeNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 {
+#ifdef REGION_REMIX
+	mnPlayers1PTrainingMakeRemixNameAndEmblem(gobj, player, fkind);
+#else
 	SObj *sobj;
 	Vec2f pos[/* */] =
 	{
@@ -518,6 +629,7 @@ void mnPlayers1PTrainingMakeNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 			sobj->pos.y = 202.0F;
 		}
 	}
+#endif
 }
 
 // 0x801327C4
@@ -1159,11 +1271,19 @@ void mnPlayers1PTrainingMakeFighter(GObj *fighter_gobj, s32 player, s32 fkind, s
 		
 		desc.fkind = fkind;
 		sMNPlayers1PTrainingSlots[player].costume = desc.costume = costume;
+#ifdef REGION_REMIX
+		desc.shade = sMNPlayers1PTrainingShade[player];
+#else
 		desc.shade = 0;
+#endif
 		desc.figatree_heap = sMNPlayers1PTrainingSlots[player].figatree_heap;
 		desc.player = player;
 #ifdef PORT
 		desc.is_skip_shadow_setup = TRUE;
+#endif
+#ifdef REGION_REMIX
+		/* FuncStart preloads only the vanilla playables; Remix fighters are loaded on first hover, as in mnPlayersVSMakeFighter. */
+		ftManagerSetupFilesAllKind(fkind);
 #endif
 		fighter_gobj = ftManagerMakeFighter(&desc);
 
@@ -1379,7 +1499,11 @@ void mnPlayers1PTrainingUpdateFighter(s32 player)
 			if (sMNPlayers1PTrainingSlots[player].costume != costume)
 			{
 				sMNPlayers1PTrainingSlots[player].costume = costume;
+#ifdef REGION_REMIX
+				ftParamInitAllParts(sMNPlayers1PTrainingSlots[player].player, costume, sMNPlayers1PTrainingShade[player]);
+#else
 				ftParamInitAllParts(sMNPlayers1PTrainingSlots[player].player, costume, 0);
+#endif
 			}
 			sMNPlayers1PTrainingSlots[player].player->flags = GOBJ_FLAG_NONE;
 		}
@@ -1487,8 +1611,13 @@ void mnPlayers1PTrainingMakePortraitFlash(s32 player)
 	gcAddGObjProcess(gobj, mnPlayers1PTrainingPortraitFlashThreadUpdate, nGCProcessKindThread, 1);
 
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PTrainingFiles[6], llMNPlayersPortraitsWhiteSquareSprite));
+#ifdef REGION_REMIX
+	sobj->pos.x = mnRemixCssCellX(portrait) + 1.0F;
+	sobj->pos.y = mnRemixCssCellY(portrait) + 1.0F;
+#else
 	sobj->pos.x = (((portrait >= 6) ? portrait - 6 : portrait) * 45) + 26;
 	sobj->pos.y = (((portrait >= 6) ? 1 : 0) * 43) + 37;
+#endif
 }
 
 // 0x801341B0
@@ -1519,6 +1648,13 @@ void mnPlayers1PTrainingAnnounceFighter(s32 player, s32 slot)
 	}
 	func_800269C0_275C0(nSYAudioFGMMarioDash);
 
+#ifdef REGION_REMIX
+	sMNPlayers1PTrainingSlots[player].p_sfx = NULL;
+	if (((u32)sMNPlayers1PTrainingSlots[slot].fkind < REMIX_CSS_NUM_CHARACTERS) && (kRemixCssAnnounceFgm[sMNPlayers1PTrainingSlots[slot].fkind] != 0))
+	{
+		sMNPlayers1PTrainingSlots[player].p_sfx = func_800269C0_275C0(kRemixCssAnnounceFgm[sMNPlayers1PTrainingSlots[slot].fkind]);
+	}
+#else
 #ifdef PORT
 	/* Synth fkinds OOB the 12-wide announce table. CE's AnnounceFighter hook
 	 * plays the synth announcer; this is the backstop when it isn't installed. */
@@ -1530,6 +1666,7 @@ void mnPlayers1PTrainingAnnounceFighter(s32 player, s32 slot)
 #endif
 
 	sMNPlayers1PTrainingSlots[player].p_sfx = func_800269C0_275C0(announce_names[sMNPlayers1PTrainingSlots[slot].fkind]);
+#endif
 
 	if (sMNPlayers1PTrainingSlots[player].p_sfx != NULL)
 	{
@@ -1908,9 +2045,34 @@ sb32 mnPlayers1PTrainingCheckCursorPuckGrab(GObj *gobj, s32 player)
 	return FALSE;
 }
 
+#ifdef REGION_REMIX
+/* Grid cell under the puck centre, read through the Remix slot table. A D-pad variant replaces the base fighter it varies. */
+s32 mnPlayers1PTrainingGetRemixPuckFighterKind(s32 player)
+{
+	SObj *sobj = SObjGetStruct(sMNPlayers1PTrainingSlots[player].puck);
+	s32 slot = mnRemixCssSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	s32 fkind;
+
+	if (slot < 0)
+	{
+		return nFTKindNull;
+	}
+	fkind = mnRemixCssGetFighterKind(slot);
+
+	if ((mnPlayers1PTrainingCheckFighterCrossed(fkind) != FALSE) || (mnPlayers1PTrainingCheckFighterLocked(fkind) != FALSE))
+	{
+		return nFTKindNull;
+	}
+	return mnRemixVariantGetFighterKind(player, fkind);
+}
+#endif
+
 // 0x80134EE8
 s32 mnPlayers1PTrainingGetPuckFighterKind(s32 player)
 {
+#ifdef REGION_REMIX
+	return mnPlayers1PTrainingGetRemixPuckFighterKind(player);
+#else
 	SObj *sobj = SObjGetStruct(sMNPlayers1PTrainingSlots[player].puck);
 	s32 pos_x = (s32) sobj->pos.x + 13;
 	s32 pos_y = (s32) sobj->pos.y + 12;
@@ -1950,6 +2112,7 @@ s32 mnPlayers1PTrainingGetPuckFighterKind(s32 player)
 		}
 	}
 	return nFTKindNull;
+#endif
 }
 
 // 0x80135074
@@ -2079,6 +2242,17 @@ void mnPlayers1PTrainingUpdateCursorNoRecall(GObj *gobj, s32 player)
 // 0x801355E0
 void mnPlayers1PTrainingUpdateCostume(s32 player, s32 select_button)
 {
+#ifdef REGION_REMIX
+	s32 costume = sMNPlayers1PTrainingSlots[player].costume;
+	s32 shade = sMNPlayers1PTrainingShade[player];
+
+	mnRemixCostumeApplyButton(sMNPlayers1PTrainingSlots[player].fkind, select_button, &costume, &shade);
+	sMNPlayers1PTrainingSlots[player].costume = costume;
+	sMNPlayers1PTrainingShade[player] = shade;
+
+	ftParamInitAllParts(sMNPlayers1PTrainingSlots[player].player, costume, shade);
+	func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+#else
 	s32 costume = ftParamGetCostumeCommonID(sMNPlayers1PTrainingSlots[player].fkind, select_button);
 
 	if (mnPlayers1PTrainingCheckCostumeUsed(sMNPlayers1PTrainingSlots[player].fkind, player, costume) != FALSE)
@@ -2092,6 +2266,7 @@ void mnPlayers1PTrainingUpdateCostume(s32 player, s32 select_button)
 
 		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 	}
+#endif
 }
 
 // 0x80135674
@@ -2206,6 +2381,9 @@ void mnPlayers1PTrainingCursorProcUpdate(GObj *gobj)
 		mnPlayers1PTrainingBackTo1PMode();
 		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 	}
+#ifdef REGION_REMIX
+	mnRemixVariantHandleInput(sMNPlayers1PTrainingSlots[player].held_player, gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_tap);
+#endif
 	if (sMNPlayers1PTrainingDefaultCostumeOnly == FALSE)
 	{
 		if
@@ -2291,6 +2469,10 @@ void mnPlayers1PTrainingCenterPuckInPortrait(GObj *gobj, s32 fkind)
 {
 	s32 portrait = mnPlayers1PTrainingGetPortrait(fkind);
 
+#ifdef REGION_REMIX
+	SObjGetStruct(gobj)->pos.x = mnRemixCssCellX(portrait) + ((REMIX_CSS_PORTRAIT_WIDTH / 2) - 13);
+	SObjGetStruct(gobj)->pos.y = mnRemixCssCellY(portrait) + ((REMIX_CSS_PORTRAIT_HEIGHT / 2) - 12);
+#else
 	if (portrait >= 6)
 	{
 		SObjGetStruct(gobj)->pos.x = (portrait * 45) - (6 * 45) + 36;
@@ -2301,6 +2483,7 @@ void mnPlayers1PTrainingCenterPuckInPortrait(GObj *gobj, s32 fkind)
 		SObjGetStruct(gobj)->pos.x = (portrait * 45) + 36;
 		SObjGetStruct(gobj)->pos.y = 46.0F;
 	}
+#endif
 }
 
 // 0x80135D7C - Unused?
@@ -2646,8 +2829,17 @@ void mnPlayers1PTrainingPuckAdjustOverlap(s32 this_player, s32 other_player, f32
 void mnPlayers1PTrainingPuckAdjustPortraitEdge(s32 player)
 {
 	s32 portrait = mnPlayers1PTrainingGetPortrait(sMNPlayers1PTrainingSlots[player].fkind);
+#ifdef REGION_REMIX
+	f32 portrait_edge_x = mnRemixCssCellX(portrait);
+	f32 portrait_edge_y = mnRemixCssCellY(portrait);
+	f32 portrait_width = REMIX_CSS_PORTRAIT_WIDTH;
+	f32 portrait_height = REMIX_CSS_PORTRAIT_HEIGHT;
+#else
 	f32 portrait_edge_x = ((portrait >= 6) ? portrait - 6 : portrait) * 45 + 25;
 	f32 portrait_edge_y = ((portrait >= 6) ? 1 : 0) * 43 + 36;
+	f32 portrait_width = 45.0F;
+	f32 portrait_height = 43.0F;
+#endif
 	f32 new_pos_x = SObjGetStruct(sMNPlayers1PTrainingSlots[player].puck)->pos.x + sMNPlayers1PTrainingSlots[player].puck_vel_x + 13.0F;
 	f32 new_pos_y = SObjGetStruct(sMNPlayers1PTrainingSlots[player].puck)->pos.y + sMNPlayers1PTrainingSlots[player].puck_vel_y + 12.0F;
 
@@ -2655,17 +2847,17 @@ void mnPlayers1PTrainingPuckAdjustPortraitEdge(s32 player)
 	{
 		sMNPlayers1PTrainingSlots[player].puck_vel_x = ((portrait_edge_x + 5.0F) - new_pos_x) / 10.0F;
 	}
-	if (((portrait_edge_x + 45.0F) - 5.0F) < new_pos_x)
+	if (((portrait_edge_x + portrait_width) - 5.0F) < new_pos_x)
 	{
-		sMNPlayers1PTrainingSlots[player].puck_vel_x = ((new_pos_x - ((portrait_edge_x + 45.0F) - 5.0F)) * -1.0F) / 10.0F;
+		sMNPlayers1PTrainingSlots[player].puck_vel_x = ((new_pos_x - ((portrait_edge_x + portrait_width) - 5.0F)) * -1.0F) / 10.0F;
 	}
 	if (new_pos_y < (portrait_edge_y + 5.0F))
 	{
 		sMNPlayers1PTrainingSlots[player].puck_vel_y = ((portrait_edge_y + 5.0F) - new_pos_y) / 10.0F;
 	}
-	if (((portrait_edge_y + 43.0F) - 5.0F) < new_pos_y)
+	if (((portrait_edge_y + portrait_height) - 5.0F) < new_pos_y)
 	{
-		sMNPlayers1PTrainingSlots[player].puck_vel_y = ((new_pos_y - ((portrait_edge_y + 43.0F) - 5.0F)) * -1.0F) / 10.0F;
+		sMNPlayers1PTrainingSlots[player].puck_vel_y = ((new_pos_y - ((portrait_edge_y + portrait_height) - 5.0F)) * -1.0F) / 10.0F;
 	}
 }
 
@@ -3194,6 +3386,22 @@ void mnPlayers1PTrainingResetPlayerNot(s32 player)
 	sMNPlayers1PTrainingSlots[player].held_player = -1;
 }
 
+#ifdef REGION_REMIX
+/* Picks a random grid fighter for the CPU, rerolling a pick that is crossed, locked or rolled to nFTKindNull. */
+s32 mnPlayers1PTrainingRandFighterKind(void)
+{
+	s32 fkind;
+
+	do
+	{
+		fkind = mnRemixRandomResolveFighterKind(kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)]);
+	}
+	while ((fkind == nFTKindNull) || (mnPlayers1PTrainingCheckFighterCrossed(fkind) != FALSE) || (mnPlayers1PTrainingCheckFighterLocked(fkind) != FALSE));
+
+	return fkind;
+}
+#endif
+
 // 0x801379CC
 void mnPlayers1PTrainingInitVars(void)
 {
@@ -3201,6 +3409,12 @@ void mnPlayers1PTrainingInitVars(void)
 	s32 fkind, costume;
 
 	sMNPlayers1PTrainingTotalTimeTics = 0;
+#ifdef REGION_REMIX
+	for (i = 0; i < ARRAY_COUNT(sMNPlayers1PTrainingShade); i++)
+	{
+		sMNPlayers1PTrainingShade[i] = 0;
+	}
+#endif
 	sMNPlayers1PTrainingIsStart = FALSE;
 	sMNPlayers1PTrainingReturnTic = sMNPlayers1PTrainingTotalTimeTics + I_MIN_TO_TICS(5);
 	sMNPlayers1PTrainingManPlayer = gSCManagerSceneData.player;
@@ -3219,6 +3433,9 @@ void mnPlayers1PTrainingInitVars(void)
 
 	if (fkind == nFTKindNull)
 	{
+#ifdef REGION_REMIX
+		fkind = mnPlayers1PTrainingRandFighterKind();
+#else
 		do
 		{
 			do
@@ -3228,6 +3445,7 @@ void mnPlayers1PTrainingInitVars(void)
 			while (mnPlayers1PTrainingCheckFighterCrossed(fkind) != FALSE);
 		}
 		while (mnPlayers1PTrainingCheckFighterLocked(fkind) != FALSE);
+#endif
 
 		if (mnPlayers1PTrainingCheckCostumeUsed(fkind, sMNPlayers1PTrainingComPlayer, ftParamGetCostumeCommonID(fkind, 0)) != FALSE)
 		{

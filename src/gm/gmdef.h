@@ -2,6 +2,11 @@
 #define _GMDEF_H_
 
 #define GMCOMMON_FIGHTERS_PLAYABLE_NUM 12
+#ifdef REGION_REMIX
+#define GMCOMMON_FIGHTERS_SAVE_NUM 97				// One save record per Remix character id
+#else
+#define GMCOMMON_FIGHTERS_SAVE_NUM GMCOMMON_FIGHTERS_PLAYABLE_NUM
+#endif
 #define GMCOMMON_PLAYERS_MAX 4              				// Global limit for simultaneous players in a match
 
 #define GMRUMBLE_ARRAY_COLS 3

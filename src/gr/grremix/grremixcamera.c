@@ -61,12 +61,14 @@ static sb32 grRemixCameraIsStageCheckScreen(void)
  */
 f32 grRemixCameraAdjustZoomRange(void)
 {
-    s32 gkind = gSCManagerBattleState->gkind;
+    s32 gkind;
 
     if (grRemixCameraIsStageCheckScreen() == FALSE)
     {
         return GRREMIX_CAMERA_STANDARD_ZOOM_RANGE;
     }
+    gkind = gSCManagerBattleState->gkind;
+
     if ((gkind == nGRRemixStage_GB_LAND) || (gkind == nGRRemixStage_VENOM))
     {
         return GRREMIX_CAMERA_VENOM_ZOOM_RANGE;

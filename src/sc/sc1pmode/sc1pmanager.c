@@ -263,7 +263,7 @@ void sc1PManagerTrySaveBackup(sb32 is_complete_spgame)
 
 #ifdef PORT
     /* synth fkind (>= GMCOMMON_FIGHTERS_PLAYABLE_NUM) has no row in the 12-entry spgame_records */
-    if (gSCManagerSceneData.fkind >= GMCOMMON_FIGHTERS_PLAYABLE_NUM)
+    if (gSCManagerSceneData.fkind >= GMCOMMON_FIGHTERS_SAVE_NUM)
     {
         return;
     }

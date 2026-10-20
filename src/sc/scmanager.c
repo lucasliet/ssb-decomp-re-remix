@@ -852,6 +852,9 @@ void scManagerRunLoop(sb32 arg)
 	syDmaLoadOverlay(&dSCManagerOverlays[2]);
 	syDmaLoadOverlay(&dSCManagerOverlays[1]);
 
+#ifdef REGION_REMIX
+	lbBackupInitRemixDefaults();
+#endif
 	gSCManagerBackupData = dSCManagerDefaultBackupData;
 	gSCManagerSceneData = dSCManagerDefaultSceneData;
 

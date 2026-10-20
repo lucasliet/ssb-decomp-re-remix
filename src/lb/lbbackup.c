@@ -91,6 +91,20 @@ static sb32 lbBackupFighterIsLocked(u32 fkind)
 }
 #endif
 
+#ifdef REGION_REMIX
+/* The default save data lists the 12 vanilla fighters; the Remix rows past them copy the first row (zero scores and the
+ * 60 minute bonus best times). */
+void lbBackupInitRemixDefaults(void)
+{
+    s32 i;
+
+    for (i = GMCOMMON_FIGHTERS_PLAYABLE_NUM; i < ARRAY_COUNT(dSCManagerDefaultBackupData.spgame_records); i++)
+    {
+        dSCManagerDefaultBackupData.spgame_records[i] = dSCManagerDefaultBackupData.spgame_records[0];
+    }
+}
+#endif
+
 // 0x800D473C
 void lbBackupCorrectErrors(void)
 {

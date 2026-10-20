@@ -11,6 +11,8 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
+#include "mn/mnmaps/mnremixemblem.h"
+#include "mn/mnmaps/mnremixstagevariant.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -882,6 +884,20 @@ s32 mnMapsGetGroundKind(s32 slot)
 #endif
 }
 
+/* The stage a slot resolves to for the name, emblem, preview and the final selection: its variant when one is chosen. */
+s32 mnMapsGetDisplayGroundKind(s32 slot)
+{
+	s32 gkind = mnMapsGetGroundKind(slot);
+
+#ifdef REGION_REMIX
+	if (gkind != nMNMapsRandomGKind)
+	{
+		return mnRemixMapsGetVariantGroundKind(gkind);
+	}
+#endif
+	return gkind;
+}
+
 #ifdef PORT
 // PORT: locate which page a gkind lives on. Returns -1 if not in any page table.
 // Used by mnMapsInitVars to restore the cursor across sessions.
@@ -1364,6 +1380,17 @@ void mnMapsSetLogoPosition(GObj *gobj, s32 gkind)
 		{34.0F, 20.0F }
 	};
 
+#ifdef REGION_REMIX
+	u32 remix_offset;
+	f32 remix_x, remix_y;
+
+	if ((gkind != nMNMapsRandomGKind) && mnRemixMapsGetEmblem(gkind, &remix_offset, &remix_x, &remix_y))
+	{
+		SObjGetStruct(gobj)->pos.x = remix_x + 189.0F;
+		SObjGetStruct(gobj)->pos.y = remix_y + 124.0F;
+		return;
+	}
+#endif
 	if (gkind == nMNMapsRandomGKind)
 	{
 		SObjGetStruct(gobj)->pos.x = 223.0F;
@@ -1409,6 +1436,24 @@ void mnMapsMakeEmblem(GObj *gobj, s32 gkind)
 #endif
 	};
 
+#ifdef REGION_REMIX
+	u32 remix_offset;
+	f32 remix_x, remix_y;
+
+	if ((gkind != nMNMapsRandomGKind) && mnRemixMapsGetEmblem(gkind, &remix_offset, &remix_x, &remix_y))
+	{
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMapsFiles[0], remix_offset));
+		sobj->sprite.attr &= ~SP_FASTCOPY;
+		sobj->sprite.attr |= SP_TRANSPARENT;
+
+		sobj->sprite.red = 0x5C;
+		sobj->sprite.green = 0x22;
+		sobj->sprite.blue = 0x00;
+
+		mnMapsSetLogoPosition(gobj, gkind);
+		return;
+	}
+#endif
 	if (gkind == nMNMapsRandomGKind)
 	{
 #ifdef PORT
@@ -1465,14 +1510,14 @@ void mnMapsMakeNameAndEmblem(s32 slot)
 	gobj = gcMakeGObjSPAfter(0, NULL, 4, GOBJ_PRIORITY_DEFAULT);
 	sMNMapsNameLogoGObj = gobj;
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
-	mnMapsMakeEmblem(sMNMapsNameLogoGObj, mnMapsGetGroundKind(slot));
+	mnMapsMakeEmblem(sMNMapsNameLogoGObj, mnMapsGetDisplayGroundKind(slot));
 
 	if (slot != nMNMapsSlotRandom)
 	{
-		mnMapsMakeName(sMNMapsNameLogoGObj, mnMapsGetGroundKind(slot));
+		mnMapsMakeName(sMNMapsNameLogoGObj, mnMapsGetDisplayGroundKind(slot));
 #if defined(REGION_JP)
 		{
-			s32 ngkind = mnMapsGetGroundKind(slot);
+			s32 ngkind = mnMapsGetDisplayGroundKind(slot);
 			// Port-introduced stages have no JP subtitle table entry; dMNMapsSubtitles[]
 			// is only sized for the original 9 stages.
 			if ((ngkind != nGRKindLast) && (ngkind != nGRKindMetal) && (ngkind != nGRKindZako))
@@ -2365,7 +2410,7 @@ sb32 mnMapsTickScrollAnimation(void)
 		}
 		mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
 		mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
-		mnMapsMakePreview(mnMapsGetGroundKind(sMNMapsCursorSlot));
+		mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 		sMNMapsScrollDir = nMNMapsScrollDirNone;
 	}
 	return TRUE;
@@ -2533,7 +2578,7 @@ void mnMapsMakePreviewCamera(void)
 
 	cobj->projection.persp.far = 16384.0F;
 
-	mnMapsSetPreviewCameraPosition(cobj, mnMapsGetGroundKind(sMNMapsCursorSlot));
+	mnMapsSetPreviewCameraPosition(cobj, mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 
 	gcAddGObjProcess(gobj, mnMapsPreviewCameraThreadUpdate, nGCProcessKindThread, 1);
 }
@@ -2584,7 +2629,7 @@ void mnMapsSaveSceneData(void)
 		gSCManagerSceneData.gkind = gkind;
 #endif
 	}
-	else gSCManagerSceneData.gkind = mnMapsGetGroundKind(sMNMapsCursorSlot);
+	else gSCManagerSceneData.gkind = mnMapsGetDisplayGroundKind(sMNMapsCursorSlot);
 
 	if (sMNMapsIsTrainingMode == FALSE)
 	{
@@ -2753,6 +2798,19 @@ void mnMapsFuncRun(GObj *gobj)
 			sMNMapsScrollWait = 0;
 		}
 
+#ifdef REGION_REMIX
+		if
+		(
+			(scSubsysControllerGetPlayerTapButtons(D_CBUTTONS)) &&
+			(mnMapsGetGroundKind(sMNMapsCursorSlot) != nMNMapsRandomGKind) &&
+			(mnRemixMapsCycleVariant(mnMapsGetGroundKind(sMNMapsCursorSlot)) != FALSE)
+		)
+		{
+			func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+			mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
+			mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
+		}
+#endif
 		if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON))
 		{
 			#ifdef PORT
@@ -2836,7 +2894,7 @@ void mnMapsFuncRun(GObj *gobj)
 
 					mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 					mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
-					mnMapsMakePreview(mnMapsGetGroundKind(sMNMapsCursorSlot));
+					mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 				}
 				if (button_input != 0)
 				{
@@ -2860,7 +2918,7 @@ void mnMapsFuncRun(GObj *gobj)
 
 					mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 					mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
-					mnMapsMakePreview(mnMapsGetGroundKind(sMNMapsCursorSlot));
+					mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 				}
 				if (button_input != 0)
 				{
@@ -2888,7 +2946,7 @@ void mnMapsFuncRun(GObj *gobj)
 					func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 					mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 					mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
-					mnMapsMakePreview(mnMapsGetGroundKind(sMNMapsCursorSlot));
+					mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 				}
 
 				if (button_input != 0)
@@ -2915,7 +2973,7 @@ void mnMapsFuncRun(GObj *gobj)
 					func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 					mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 					mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
-					mnMapsMakePreview(mnMapsGetGroundKind(sMNMapsCursorSlot));
+					mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 				}
 
 				if (button_input != 0)
@@ -2972,7 +3030,7 @@ void mnMapsFuncStart(void)
 #endif
 	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 	mnMapsMakeCursor();
-	mnMapsMakePreview(mnMapsGetGroundKind(sMNMapsCursorSlot));
+	mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 }
 
 // 0x8013490C

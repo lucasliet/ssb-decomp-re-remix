@@ -2,6 +2,7 @@
 #include "lb/lbremixgfx.h"
 #include "gm/gmremixcolscripts.h"
 #include "gm/gmremixtoggle.h"
+#include "mn/mnplayers/mnremixcostumes.h"
 #endif
 #include <string.h>
 #include <ft/fighter.h>
@@ -3061,6 +3062,14 @@ void func_ovl2_800EBD08(DObj *root_dobj, f32 arg1, Vec3f *vec, f32 arg3)
 s32 ftParamGetCostumeCommonID(s32 fkind, s32 color)
 {
 #ifdef PORT
+#ifdef REGION_REMIX
+    s32 remix_costume;
+
+    if (mnRemixCostumeGetDefaultRoyal(fkind, color, &remix_costume))
+    {
+        return remix_costume;
+    }
+#endif
     struct FTCostume *row = port_fighter_costume_row(fkind);
     if (row == NULL) {
         return 0;
@@ -3075,6 +3084,14 @@ s32 ftParamGetCostumeCommonID(s32 fkind, s32 color)
 s32 ftParamGetCostumeTeamID(s32 fkind, s32 color)
 {
 #ifdef PORT
+#ifdef REGION_REMIX
+    s32 remix_costume;
+
+    if (mnRemixCostumeGetDefaultTeam(fkind, color, &remix_costume))
+    {
+        return remix_costume;
+    }
+#endif
     struct FTCostume *row = port_fighter_costume_row(fkind);
     if (row == NULL) {
         return 0;
