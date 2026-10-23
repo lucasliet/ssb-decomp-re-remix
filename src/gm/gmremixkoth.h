@@ -27,6 +27,15 @@ extern void gmRemixKothSetup(void);
 /** TimedStock.asm calculate_time_score_ KOTH branch: frames `port` (0..3) stood on the hill as the king. */
 extern s32 gmRemixKothGetScore(s32 port);
 
+/**
+ * KingOfTheHill.asm delay_respawn_: frames a KO'd fighter waits before it comes back. King of the Hill holds it for 120
+ * frames, every other mode keeps `default_wait`.
+ */
+extern s32 gmRemixKothGetDeadWait(s32 default_wait);
+
+/** KingOfTheHill.asm delay_respawn_._disabled_camera: the camera stops following a KO'd fighter 45 frames into the wait. */
+extern void gmRemixKothDeadUpdateCamera(FTStruct *fp);
+
 /** Port (or team) holding the hill: GMREMIX_KOTH_NO_KING or GMREMIX_KOTH_CONTESTED when nobody does. */
 extern s32 gmRemixKothGetKing(void);
 

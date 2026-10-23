@@ -26,6 +26,8 @@
 #define GMREMIX_KOTH_HIDDEN_FRAMES_MAX 120
 #define GMREMIX_KOTH_WIN_FRAMES 210
 #define GMREMIX_KOTH_PROC_PRIORITY 3
+#define GMREMIX_KOTH_DEAD_WAIT 120
+#define GMREMIX_KOTH_DEAD_CAMERA_FRAMES 45
 #define GMREMIX_KOTH_FGM_HILL_CHANGE 0xA2
 #define GMREMIX_KOTH_FGM_KING_GAINED 0x115
 #define GMREMIX_KOTH_FGM_KING_LOST 0xA9
@@ -91,6 +93,23 @@ s32 gmRemixKothGetScoreOf(s32 key)
 static s32 gmRemixKothGetKey(FTStruct *fp)
 {
     return fp->team;
+}
+
+s32 gmRemixKothGetDeadWait(s32 default_wait)
+{
+    return (gmRemixKothIsActive() != FALSE) ? GMREMIX_KOTH_DEAD_WAIT : default_wait;
+}
+
+void gmRemixKothDeadUpdateCamera(FTStruct *fp)
+{
+    if (gmRemixKothIsActive() == FALSE)
+    {
+        return;
+    }
+    if (fp->status_vars.common.dead.wait == (GMREMIX_KOTH_DEAD_WAIT - GMREMIX_KOTH_DEAD_CAMERA_FRAMES))
+    {
+        fp->camera_mode = nFTCameraModeGhost;
+    }
 }
 
 sb32 gmRemixKothIsOnHill(FTStruct *fp)

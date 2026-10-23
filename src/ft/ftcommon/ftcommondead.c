@@ -5,6 +5,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
+#include "gm/gmremixkoth.h"
 #include "gm/gmremixtugofwar.h"
 #endif
 
@@ -222,6 +223,9 @@ void ftCommonDeadCommonProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    gmRemixKothDeadUpdateCamera(fp);
+#endif
     fp->status_vars.common.dead.wait--;
 
     if (fp->status_vars.common.dead.wait == 0)
@@ -246,7 +250,11 @@ void ftCommonDeadInitStatusVars(GObj *fighter_gobj)
     if (ftRemixStaminaSkipsDeadWaitInit(fp) == FALSE)
 #endif
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        fp->status_vars.common.dead.wait = gmRemixKothGetDeadWait(FTCOMMON_DEAD_WAIT);
+#else
         fp->status_vars.common.dead.wait = FTCOMMON_DEAD_WAIT;
+#endif
     }
 
     ftPhysicsStopVelAll(fighter_gobj);
