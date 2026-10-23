@@ -979,6 +979,11 @@ void scManagerRunLoop(sb32 arg)
 			{
 				gSCManagerTransferBattleState.players[i].pkind = nFTPlayerKindNot;
 			}
+			for (i = 0; i < ARRAY_COUNT(gSCManagerTransferBattleState.players); i++)
+			{
+				gSCManagerTransferBattleState.players[i].player = i;
+				gSCManagerTransferBattleState.players[i].team = i;
+			}
 			gSCManagerTransferBattleState.players[0].pkind = nFTPlayerKindMan;
 			gSCManagerTransferBattleState.players[0].fkind = remix_debug_vs_fkind(0);
 			gSCManagerTransferBattleState.players[0].costume = 0;
