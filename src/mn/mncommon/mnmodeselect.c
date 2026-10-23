@@ -1,6 +1,7 @@
 #include <mn/menu.h>
 #include <sc/scene.h>
 #include <gm/gmsound.h>
+#include <gm/gmremixmenumusic.h>
 #include <sys/controller.h>
 #include <sys/video.h>
 #include <sys/rdp.h>
@@ -998,7 +999,11 @@ void mnModeSelectFuncStart(void)
         (gSCManagerSceneData.scene_prev != nSCKindData)
     )
     {
+#ifdef REGION_REMIX
+        gmRemixMenuMusicPlay(nSYAudioBGMModeSelect, gSCManagerSceneData.scene_prev == nSCKindTitle);
+#else
         syAudioPlayBGM(0, nSYAudioBGMModeSelect);
+#endif
     }
 }
 

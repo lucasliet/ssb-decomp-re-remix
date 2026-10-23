@@ -2,6 +2,8 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
 #include "gm/gmremixspawnsetup.h"
+#include "gm/gmremixstockmode.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixgameend.h"
@@ -273,6 +275,9 @@ void scVSBattleStartBattle(void)
 	FTDesc desc;
 	SYColorRGBA color;
 
+#ifdef REGION_REMIX
+	mnRemixVSStatsReset();
+#endif
 	syNetInputStartVSSession();
 	syNetReplayStartVSSession(gSCManagerBattleState);
 	syNetSyncStartVSSession();
@@ -345,7 +350,11 @@ void scVSBattleStartBattle(void)
 		desc.shade = gSCManagerBattleState->players[player].shade;
 		desc.handicap = gSCManagerBattleState->players[player].handicap;
 		desc.level = gSCManagerBattleState->players[player].level;
+#ifdef REGION_REMIX
+		desc.stock_count = gmRemixStockModeCount(player, gSCManagerBattleState->stocks);
+#else
 		desc.stock_count = gSCManagerBattleState->stocks;
+#endif
 		desc.damage = 0;
 		desc.pkind = gSCManagerBattleState->players[player].pkind;
 		desc.controller = &gSYControllerDevices[player];

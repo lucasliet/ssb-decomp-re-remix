@@ -1,0 +1,330 @@
+company	(Smash Remix)
+@	Project Leader
+The_Smashfather	I'm gonna make them a mod|they can't refuse	remix
+@	Designer and Gameplay Developer
+Fray	Clone Engine|Character Programming|Balance & Design Direction	remix
+@	Developer
+MarioReincarnate	Let's just say you owe him|lunch	remix
+Cyjorg	Stage Engine	remix
+Halofactory	Way of the road, buddy	remix
+Shino	Parry, Special Zoom, Rage,|CPU AI wizard,|Refactoring, tools,|scripting, modding engine	remix
+goombapatrol	Is this a work in progress?|nop	remix
+@	Lead Artist
+Sope	Should lay off the alcohol|tbh	remix
+@	Lead Musician
+Pringles	You didn't see 60 bucks|lyin' around, did ya bud?	remix
+@	Animation and Model Import Specialist
+Subdrag	Living Legend|Creator of GE Editor	remix
+@	Moveset Designer
+Honey	Gameplay Balance & Design	remix
+@	Lead Tester
+goombapatrol	Quality Assurance|Menu Coding Support|They make it, I break it	remix
+CMM1215	Hardware Testing|Public Patch Notes|1P & Item Spawn Tweaks|Misc Character Bios	remix
+@	Installation Specialist
+CEnnis91	-- .- -.. .|-.-- --- ..-|.-.. --- --- -.-	remix
+@	Modelers
+Retro64	Character Modeling|Stage Modeling	remix
+Sope	Character Modeling|Stage Modeling	remix
+Likiji123	Onett Model	remix
+Fray	Falco and Wario Models,|Fray's Stage Model	remix
+Pik	Marth and Giga Bowser|Models	remix
+Dshaynie	Dark Samus, Young Link|Models	remix
+Garret Atwood	Turtle - Great Bay	remix
+Adrian Garcia	Dark Samus Textures	remix
+M-1	Wolf Model, Gerudo Valley	remix
+TheQuickSlash	"Dork" -Sope|oFTo | https://youtu.be/ | widZEAJc0QM	remix
+Halofactory	Sheik, Polygon Sheik|Models|Stage Modeling	remix
+Jay6T4	Metal Luigi Model	remix
+HeronNobody	Ebisumaru and Roy Models	remix
+OniFox	Roy and Dark Samus Models	remix
+PrufStudent	Roy Model Optimization,|Wolf Model Optimization	remix
+Pringles	Dr. Luigi Model, Wolf|Model Optimization	remix
+@	Artists
+Sope	Character Models, VFX,|Character Artwork	remix
+Retro64	Remix 1P Character Icons,|Miscellaneous VFX, Promo|Art	remix
+Connor Rentz	Ganondorf Portrait	remix
+Colonel Birdstrong	Young Link Portrait	remix
+Jay6T4	Additional Menu Graphics,|Extra Costumes for|Original 12	remix
+Likiji123		remix
+Pik	Remix 1p Victory Image	remix
+Gael Romo		remix
+TheQuickSlash	Sonic Victory Image|Goemon Victory Image|Super Sonic Portrait	remix
+Halofactory	Sheik Portrait	remix
+Pringles	Ebisumaru Portrait, Metal|Luigi Portrait	remix
+1upShyguy	Snowboard Kids|Series Icon	remix
+OniFox	Roy and Dark Samus|Portraits, Various|Victory Images	remix
+@	Animators
+Sope	Character and Stage|Animations	remix
+Fray	Character and Cinematic|Animation	remix
+Coolguy	Character Animations	remix
+Super4ng	Character Animations	remix
+dshaynie	Character Animation and|Cinematic Designer	remix
+Retro64	Character and Stage|Animation	remix
+MrLuigi001	Character Animations	remix
+SushiiZ	Character Animations,|Work on Conker and Bowser	remix
+Meekal	Character Animations	remix
+BlazingFireOmega	Character Animations	remix
+PrufStudent	Character Animations	remix
+Zeozen	Character Animations	remix
+M-1	Character Animations	remix
+Halofactory	Character Animations	remix
+TheQuickSlash	Character Animations	remix
+Pringles	Character Animations	remix
+OniFox	Character Animations	remix
+UltIMa647	Character Animations	remix
+@	Musicians
+TT	Music Porter and Arranger	remix
+MyNewSoundtrack	Arranger	remix
+PablosCorner	Instrument Designer|Music Porter and Arranger	remix
+Sope	Music Porter and Arranger	remix
+Retro64	Music Porter	remix
+DSC	Music Porter	remix
+Coffee	Music Porter and Arranger	remix
+mosky2000	Music Porter - Crescent|Island, Frosty Village,|Windy and Co, Wizpig|Challenge	remix
+Jay6T4	Various VS Stage|Arrangements, Sonic|Victory Theme|Arrangement	remix
+PurpleFreezer	Arranger	remix
+Pun	Music Porter and Arranger	remix
+Fray	All-Star Rest Area and|Mewtwo Victory Theme|Arrangement, Various|Track Mixing	remix
+TheQuickSlash	Music Arranger	remix
+supa		remix
+Pringles	Three twenties,|or something?	remix
+TheMrIron2		remix
+copperthejackal		remix
+1upShyguy	Music Porter and Arranger|Menu Music Madman	remix
+Halofactory	Music Porter and Arranger	remix
+@	Stage Designers
+BridGurrr	Ganon's Tower, Deku Tree,|First Destination	remix
+Jay6T4	Various VS Stages, Bonus|Stages, Home-Run Contest	remix
+Plaehni	Muda Kingdom	remix
+Farcry15	Goomba Road, Zebes|Landing, Norfair, Cool|Cool Mountain, Great|Bay, Mad Monster Mansion	remix
+smb123w64gb	Tower of Heaven	remix
+Sope	 Smashketball, Glacial River,|Congo Falls, Planet|Clancer, Jungle Japes,|Pirate Land, Metallic|Madness, Scuttle Town	remix
+Fray	Fray's Stage, Pirate Land,|Miscellaneous Layout|Direction	remix
+Snooplax	Bowser's Stadium	remix
+Sixty Four	Frosty Village	remix
+M-1	Gerudo Valley	remix
+Retro64	Dr. Mario, Kitchen Island,|Onett, New Pork City,|Bowser's Keep, Windy,|Casino Night Zone	remix
+TheQuickSlash	dataDyne, Castle Siege,|Edo Town, Big Snowman	remix
+ownsoldier	Rith Essa	remix
+Halofactory	Smashville, Drac's Castle,|Mad Monster Rework|Shading on Ganon's Tower|and Frosty Village 	remix
+Pringles	First Destination Remix,|Big Boo's Haunt, RTTF|Remix	remix
+HeronNobody	Melrode, Deku Tree,|Crateria, Big Snowman	remix
+Sam the Salmon	Pigmask Fortress, N. Sanity|Beach, Snow Go, Windy|Shading, N64 Remix|Shading, Melrode Shading	remix
+OniFox	Hyrule Temple Rework	remix
+Maafia	Autumn How to Play	remix
+@	Voice Artists
+Zarkpudd	Narration	remix
+Puma Pet	Editing and Effects	remix
+Pringles	Editing and Effects	remix
+TheMrIron2	Narration	remix
+Jeff Manning	Narration	remix
+@	Modders
+Qapples		remix
+smb123w64gb		remix
+FaxMeAppleJuice	Regional Variant Porting	remix
+goombapatrol	Accessibility, 1P Practice,|Tripping, D-Pad Support,|Magic Kirby, PKMN Toggles,|P-Wing, Stopwatch, etc.	remix
+VetriTheRetri	Credits: Looks like Vetri	remix
+Krix08	Extended VS Stats|Volume Toggles|Sleeping, Tripping Failed Z|Cancel Punishments	remix
+@	Consultants
+Madao	Moveset Consultant	remix
+DannySsB	Moveset Consultant	remix
+tehz	Coding Consultant	remix
+Carnivorous	Stage Consultant	remix
+CrookedPoe/Clockwise	N64 Displaylist Consultant	remix
+CrashOveride	Animation and Modeling|Consultant	remix
+M-1	Animation and Modeling|Consultant	remix
+Kaki	Stage Consultant - Tent|Final Destination	remix
+Katakiri	Stage Consultant - Green|Hill Zone	remix
+Aqua MIDI	Instrument Consultant	remix
+Uncle Punch	Consultant	remix
+Cjag	Stage Consultant	remix
+Anonymous	Stage Consultant|Grim Reaper's Cavern	remix
+SilverJake	Stage Consultant	remix
+Ploaj	Animation and Model|Extraction Consultant	remix
+Gent	PAL Compatibility|Consultant	remix
+Nokaubure	Stage Consultant	remix
+ALM5252	Dr. Luigi Consultant	remix
+LMG	Original UI Design|Consultant	remix
+TheNewJGG	Sonic Car Model	remix
+Mark Kurko	Project Dream:|Lost MIDI	remix
+@	Playtesters
+Abnormal Adept		remix
+Darkhorse	Playtesting, Frame Data|Analysis, Great Ideas	remix
+hanson933		remix
+IronAidan07		remix
+majin_bukkake		remix
+minymidge		remix
+Stevie G		remix
+Luigidoed		remix
+Hyper64		remix
+Dogs_Johnson		remix
+emptyW		remix
+FaxMeAppleJuice		remix
+phreshguy		remix
+measTHEbeast		remix
+Xrmy		remix
+Q!		remix
+Raychu	He did cool things|with Ness.	remix
+Pluto		remix
+The Yid		remix
+Wololo		remix
+Wookiee		remix
+thelordoflight		remix
+JODO		remix
+farcry15	Hardware Testing	remix
+Mimimax		remix
+kyleglor		remix
+Revan		remix
+Big Red		remix
+Bamboo		remix
+cobr		remix
+Dr. D		remix
+Andykins		remix
+Loz		remix
+jonnjonn		remix
+Kaki		remix
+Maafia	Playtester Tourney|Regular|"To my two brothers,|Abdul and Hameed,|I love you both."	remix
+SushiiZ		remix
+JaimeHR	Playtester Tourney Champ|Playtester Tourney|Regular	remix
+MojoMonkey		remix
+DannySsB		remix
+Vidya James		remix
+SuperSqank		remix
+Goon		remix
+JeyKeyAr		remix
+Razz		remix
+PADB		remix
+madrush		remix
+krakhead		remix
+KM		remix
+fruitman		remix
+baby caweb		remix
+MissingN0pe		remix
+Shalaka		remix
+foca64		remix
+Lowww		remix
+Kix		remix
+HAMMERHEART		remix
+beta		remix
+Halofactory		remix
+LOC		remix
+Maciaga		remix
+pecosix		remix
+PKStickThing		remix
+SyluxVIV		remix
+Weedwack		remix
+KeroKeroppi		remix
+1upShyguy	Playtester Tourney|Operator	remix
+Terra		remix
+Stew		remix
+thetaiter		remix
+LesbianChemicalPlant	Playtester Tourney|Regular	remix
+Bedoop!		remix
+CMM1215	Ooooh, that's cute	remix
+Djzach		remix
+Exile	Playtester Tourney|Regular	remix
+FrankBlack22		remix
+Freean		remix
+Gibrani	is typing...	remix
+Huntsman		remix
+Indefa		remix
+MultiVolt		remix
+Policombo		remix
+Raihem/MayRai	Playtester Tourney|Regular	remix
+Roman		remix
+ShyGuyGH		remix
+The Ranger		remix
+Tylan 64		remix
+Toad		remix
+Wiseacre		remix
+MissingNo.	Playtester Tourney|Regular	remix
+Pringles	Nobody wants to |admit they ate |nine cans of |ravioli.	remix
+EG	Playtester Tourney|Regular	remix
+Gooby		remix
+Nax		remix
+Papamark		remix
+swooce		remix
+microwaved hotdogs		remix
+G-Rabbit		remix
+MUGEN	Formerly luigit0ilet	remix
+Bobakanoosh		remix
+TyloRen_		remix
+SPLORCH		remix
+Mrmariobros222	Playtester|Extraordinaire	remix
+bizzozeron		remix
+Cagt		remix
+Herb		remix
+Imakuni		remix
+Mist		remix
+KYOP		remix
+Julianmario		remix
+Matthew McClesky		remix
+Ashley!		remix
+sONIC1098		remix
+DesertYoshi		remix
+surname 05		remix
+pigma1		remix
+Vard		remix
+Lendri B. Mujina		remix
+Fred C.		remix
+@	Original Sequencing Musical Credits
+Golen	Ganondorf Battle	none
+King Meteor	Corneria, Flat Zone 2,|Multi-Man Melee 2,|Brinstar Depths	none
+Sirius	Kokiri Forest	none
+Jo~o *Johnnyz* Buaes	Battle! Champion, Victory:|Mewtwo, The Road to|Cerulean City	none
+Sonic SBL	Town Hall and Tom Nook's|Store	none
+ChocolateJake	Stonecarving City	none
+jrlepage	Final Destination (Melee)	none
+Matas Pealoza	Ballad of the Godess	none
+pigpag	Last Surprise	none
+Zenkusa	Battlefield Ver. 2, Flat|Zone	none
+Ryland Fallon	Melee Menu	none
+Jonathan Shen	Gourmet Race (Alternative)	none
+Dave Phaneuf	Metal Battle, Wendy's|House	none
+Sean Bee	River Stage, Clock Tower	none
+Insane Apu	Hyrule Temple	none
+Chibi Vegito	All I Needed Was You,|Together We Ride	none
+Leu	DCMC Performance,|Unfounded Revenge	none
+Mantato	Blooming Villain	none
+mittens	Team Select Music	none
+Anikom15	Pollyanna (I Believe in You)	none
+Dentelle (D. Stphanie)	Yoshi's Island	none
+David Alberto	Temple Theme 8-bit	none
+Dr. Fruitcake	Peach's Castle (Melee),|Battle Fanfare	none
+JexuBandicoot527	Multi-Man Melee 1	none
+Ethan Williams	Cruel Brawl	none
+Kirby of Doom	Showdown (Gourmet Race)	none
+Kiopineapple	K.Rool's Acid Punk	none
+Susan Carriere, A. R. C. T.	Beware The Forest's|Mushrooms	none
+erik@vbe.com	Fight Against Bowser	none
+Dicaeopolis	Surprise Attack!	none
+Paper Luigi	Windy and Co.	none
+Mark Jansen	Sloprano	none
+matthewcollinson	Level Music 1	none
+anthony bouchereau	Mabe Village	none
+ZERMa	Yoshi's Tale	none
+Gigasoft	Flower Garden	none
+Joe Cortez	Vs. Marx, Super Mario|Bros. 2 Overworld,|Super Mario Bros.|2 Boss	none
+Teck	Forest Interlude	none
+WaVeOf_DaRKnEsS	Bubbly Clouds	none
+Monster Iestyn	Emerald Hill Zone, Stardust|Speedway B Mix	none
+William Borges	Casino Night Zone	none
+Blue Warrior	Green Hill Zone	none
+isabellechiming	Onett	none
+Venatus	The Days When My Mother|Was There	none
+JILost	Crateria Surface	none
+dY Shock	Star Fox Medley	none
+thatoneinternetuser	Grabbag||CALL APOGEE|SAY "AARDWOLF"	none
+Sebastian Kingsley	Battle C1	none
+@	Video Team
+Fray	Trailer Editing, Footage|Capturing, Marth Cinematic	remix
+Darkhorse	Trailer Directing, Trailer|Editing, Graphics||hi joe	remix
+sope	Graphics, Cinematic|Animation	remix
+Dshaynie	Cinematic Animation,|Trailer Editing	remix
+TheQuickSlash	Cinematic Animation,|Trailer Editing	remix
+Retro64	Trailer Directing, Trailer|Editing, Graphics	remix
+Pringles	Trailer Directing,|Cinematic Animation, |Trailer Editing	remix
+HeronNobody	Graphics, Cinematic|Animation	remix
+OniFox	Graphics, Cinematic|Animation	remix
+Maafia	Footage Capturing,|Cinematic Animation	remix
+Matthew McCleskey	Acting, Cinematic|Animation, Trailer|Editing	remix

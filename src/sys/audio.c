@@ -1699,6 +1699,19 @@ void syAudioStopBGM(s32 sngplayer)
     sSYAudioBGMPlayingIDs[sngplayer] = -1;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Returns the BGM id last started on a BGM player, the port equivalent of BGM.safe_id.
+ *
+ * @param sngplayer BGM player index.
+ * @return The BGM id, or -1 when the player has no track.
+ */
+s32 syAudioGetBGMPlaying(s32 sngplayer)
+{
+    return sSYAudioBGMPlayingIDs[sngplayer];
+}
+#endif
+
 // 0x80020B38
 void syAudioSetBGMVolume(s32 sngplayer, u32 vol)
 {

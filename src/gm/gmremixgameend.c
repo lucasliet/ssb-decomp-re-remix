@@ -147,6 +147,8 @@ static sb32 gmRemixGameEndShowFullResults(void)
 /**
  * @param kind sMNVSResultsKind.
  * @return The time layout for the stock kinds when full results are on, otherwise kind unchanged.
+ * REMIX-TODO(results-mode-rows): the extra rows of GameEnd.asm add_row_to_results_ (VsRemixMenu.asm:1007: KOTH time,
+ * Smasketball score and goals) are not ported, so those modes show only the vanilla rows.
  */
 s32 gmRemixGameEndResultsDrawKind(s32 kind)
 {

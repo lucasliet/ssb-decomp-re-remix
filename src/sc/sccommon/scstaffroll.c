@@ -17,13 +17,22 @@ extern void *func_800269C0_275C0(u16 id);
 // 0x80135260
 s32 dSCStaffrollNameCharacters[/* */] =
 {
+/* REMIX-TODO(credits-glyphs): scroll glyphs 0x50-0x61 (digits, _ ! - / * ( ) @ ~) need Remix textures from Credits.asm add_new_character; the encoder in tools/gen_remix_credits.py maps them to spaces for now. */
+#ifdef REGION_REMIX
+	#include "credits/remix/staff.credits.encoded"
+#else
 	#include "credits/staff.credits.encoded"
+#endif
 };
 
 // 0x801364F4
 SCStaffrollText dSCStaffrollNameTextInfo[/* */] =
 {
+#ifdef REGION_REMIX
+	#include "credits/remix/staff.credits.metadata"
+#else
 	#include "credits/staff.credits.metadata"
+#endif
 };
 
 // 0x80136794
@@ -179,44 +188,75 @@ SCStaffrollJob dSCStaffrollJobDescriptions[/* */] =
 	{
 		-1,			// Prefix ID
 		14, 		// Job string ID
+#if defined(REGION_REMIX)
+		84 			// Show next job from this staff member in order (Remix names follow)
+#else
 		-1 			// Show next job from this staff member in order
-	}
+#endif
+	},
+#ifdef REGION_REMIX
+	#include "credits/remix/jobs.credits.inc"
+#endif
 };
 
 // 0x8013685C
 s32 dSCStaffrollJobCharacters[/* */] =
 {
+#ifdef REGION_REMIX
+	#include "credits/remix/titles.credits.encoded"
+#else
 	#include "credits/titles.credits.encoded"
+#endif
 };
 
 // 0x80136B10
 SCStaffrollText dSCStaffrollJobTextInfo[/* */] =
 {
+#ifdef REGION_REMIX
+	#include "credits/remix/titles.credits.metadata"
+#else
 	#include "credits/titles.credits.metadata"
+#endif
 };
 
 // 0x80136BA0
 s32 dSCStaffrollStaffRoleCharacters[/* */] =
 {
+#ifdef REGION_REMIX
+	#include "credits/remix/info.credits.encoded"
+#else
 	#include "credits/info.credits.encoded"
+#endif
 };
 
 // 0x80139B68
 SCStaffrollText dSCStaffrollStaffRoleTextInfo[/* */] =
 {
+#ifdef REGION_REMIX
+	#include "credits/remix/info.credits.metadata"
+#else
 	#include "credits/info.credits.metadata"
+#endif
 };
 
 // 0x80139E08
 s32 dSCStaffrollCompanyCharacters[/* */] =
 {
+#ifdef REGION_REMIX
+	#include "credits/remix/companies.credits.encoded"
+#else
 	#include "credits/companies.credits.encoded"
+#endif
 };
 
 // 0x80139FD4
 SCStaffrollText dSCStaffrollCompanyTextInfo[/* */] =
 {
+#ifdef REGION_REMIX
+	#include "credits/remix/companies.credits.metadata"
+#else
 	#include "credits/companies.credits.metadata"
+#endif
 };
 
 // 0x8013A02C - Empty word in company text info
@@ -324,7 +364,10 @@ s32 dSCStaffrollCompanyIDs[/* */] =
 	nSCStaffrollCompanyNINTENDO,
 	nSCStaffrollCompanyNINTENDO,
 	nSCStaffrollCompanyNull,
-	nSCStaffrollCompanyNull
+	nSCStaffrollCompanyNull,
+#ifdef REGION_REMIX
+	#include "credits/remix/companyids.credits.inc"
+#endif
 };
 
 // 0x8013A184
@@ -1428,7 +1471,12 @@ void scStaffrollFuncRun(GObj *gobj)
 		{
 			if (sSCStaffrollRollSpeed == 0.0037500001F)
 			{
+#ifdef REGION_REMIX
+				/* REMIX-TODO(credits-speed-assist): Remix's remix_credits_speed_assist_ (Credits.asm:1310) is not ported; it only slows the roll at the first Remix name when the 2nd player tag is "afk". */
+				sSCStaffrollRollSpeed = 0.11F;
+#else
 				sSCStaffrollRollSpeed = 0.049999997F;
+#endif
 			}
 			else sSCStaffrollRollSpeed = 0.0037500001F;
 		}

@@ -1452,6 +1452,12 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
         {
         case nFTPlayerKindMan:
             controller = this_fp->input.controller;
+#if defined(PORT) && defined(REGION_REMIX)
+            controller = ftRemixInputDelayController(this_fp, controller);
+            controller = ftRemixDpadControlController(this_fp, controller);
+            ftRemixInputDisplayUpdate(this_fp, controller->button_hold, controller->stick_range.x,
+                                      controller->stick_range.y);
+#endif
             button_hold = controller->button_hold;
 #if defined(PORT) && defined(REGION_REMIX)
             {
@@ -1489,6 +1495,9 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
 
         next:
             cp = &this_fp->input.cp;
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixInputDisplayUpdate(this_fp, cp->button_inputs, cp->stick_range.x, cp->stick_range.y);
+#endif
             button_hold_com = this_fp->input.cp.button_inputs;
 
             if (button_hold_com & R_TRIG)

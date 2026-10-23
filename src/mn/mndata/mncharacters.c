@@ -8,6 +8,9 @@
 #include <sys/audio.h>
 #include "fighter_registry.h"
 #endif
+#ifdef REGION_REMIX
+#include "mn/mndata/mnremixchardata.h"
+#endif
 
 
 // // // // // // // // // // // //
@@ -30,6 +33,14 @@ mnCommonSetOptionChangeWaitP(sMNCharactersChangeWait, is_button, stick_range, di
 
 #define mnCharactersSetOptionChangeWaitN(is_button, stick_range, div) \
 mnCommonSetOptionChangeWaitN(sMNCharactersChangeWait, is_button, stick_range, div)
+
+#ifdef REGION_REMIX
+#define MNCHARACTERS_FIRST_PAGE 0
+#define MNCHARACTERS_LAST_PAGE (MNREMIX_CHARDATA_PAGE_COUNT - 1)
+#else
+#define MNCHARACTERS_FIRST_PAGE nFTKindPlayableStart
+#define MNCHARACTERS_LAST_PAGE nFTKindPlayableEnd
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -1224,6 +1235,11 @@ u32 dMNCharactersFileIDs[/* */] =
 	&llFTEmblemSpritesFileID,
 	&llFTEmblemModelsFileID
 #endif
+#ifdef REGION_REMIX
+	,
+	MNREMIX_CHARDATA_BIOS_FILE_ID,
+	MNREMIX_CHARDATA_IMAGES_FILE_ID
+#endif
 };
 
 // 0x80136238
@@ -1331,10 +1347,19 @@ s32 sMNCharactersChangeWait;
 s32 sMNCharactersTotalTimeTics;
 
 // 0x80136720
+#ifdef REGION_REMIX
+/* The Remix fighters add main and extern-dependency file loads to the 12 vanilla previews. */
+LBFileNode sMNCharactersStatusBuffer[256];
+#else
 LBFileNode sMNCharactersStatusBuffer[100];
+#endif
 
 // 0x80136A40
+#ifdef REGION_REMIX
+LBFileNode sMNCharactersForceStatusBuffer[64];
+#else
 LBFileNode sMNCharactersForceStatusBuffer[7];
+#endif
 
 // 0x80136A78
 void *sMNCharactersFiles[ARRAY_COUNT(dMNCharactersFileIDs)];
@@ -1355,6 +1380,9 @@ void mnCharactersFuncLights(Gfx **dls)
 // 0x80131B58
 s32 mnCharactersGetFighterKind(s32 page)
 {
+#ifdef REGION_REMIX
+	return mnRemixCharDataGetFighterKind(page);
+#endif
 	s32 fkinds[/* */] =
 	{
 		nFTKindMario,
@@ -1376,6 +1404,9 @@ s32 mnCharactersGetFighterKind(s32 page)
 // 0x80131BA8
 s32 mnCharactersGetPage(s32 fkind)
 {
+#ifdef REGION_REMIX
+	return mnRemixCharDataGetPage(fkind);
+#endif
 	s32 pages[/* */] = { 0, 7, 2, 4, 1, 3, 5, 10, 6, 8, 9, 11 };
 
 	return pages[fkind];
@@ -1386,6 +1417,62 @@ s32 mnCharactersGetPage(s32 fkind)
 void func_ovl33_80131BF8(void)
 {
 	return;
+}
+#endif
+
+#ifdef REGION_REMIX
+/** Sprite of an extended fighter, read from the Remix extended files named by the asm offset flags. */
+static Sprite* mnCharactersGetRemixSprite(s32 fkind, s32 sprite_kind)
+{
+	MNRemixCharDataSpriteRef ref;
+
+	mnRemixCharDataGetSpriteRef(fkind, sprite_kind, &ref);
+	return lbRelocGetFileData(Sprite*, sMNCharactersFiles[ref.file_index], ref.offset);
+}
+
+static void mnCharactersMakeRemixStory(GObj *gobj, s32 fkind)
+{
+	SObj *sobj = lbCommonMakeSObjForGObj(gobj, mnCharactersGetRemixSprite(fkind, MNREMIX_CHARDATA_SPRITE_BIO));
+
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+
+	sobj->sprite.red = 0xFF;
+	sobj->sprite.green = 0xFF;
+	sobj->sprite.blue = 0xFF;
+
+	sobj->pos.x = 126.0F;
+	sobj->pos.y = 54.0F;
+}
+
+static void mnCharactersMakeRemixWorks(GObj *gobj, s32 fkind)
+{
+	SObj *sobj = lbCommonMakeSObjForGObj(gobj, mnCharactersGetRemixSprite(fkind, MNREMIX_CHARDATA_SPRITE_WORKS));
+
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+
+	sobj->pos.x = 139.0F;
+	sobj->pos.y = 180.0F;
+
+	sobj->sprite.red = 0xBC;
+	sobj->sprite.green = 0xBF;
+	sobj->sprite.blue = 0xFF;
+}
+
+static void mnCharactersMakeRemixName(GObj *gobj, s32 fkind)
+{
+	SObj *sobj = lbCommonMakeSObjForGObj(gobj, mnCharactersGetRemixSprite(fkind, MNREMIX_CHARDATA_SPRITE_NAME));
+
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+
+	sobj->pos.x = mnRemixCharDataGetNameX(fkind);
+	sobj->pos.y = mnRemixCharDataGetNameY(fkind);
+
+	sobj->sprite.red = 0x7D;
+	sobj->sprite.green = 0x45;
+	sobj->sprite.blue = 0x07;
 }
 #endif
 
@@ -1445,6 +1532,14 @@ void mnCharactersMakeStory(s32 fkind)
 
 	sobj->pos.x = 126.0F;
 	sobj->pos.y = 54.0F;
+#endif
+
+#ifdef REGION_REMIX
+	if (mnRemixCharDataIsExtended(fkind))
+	{
+		mnCharactersMakeRemixStory(gobj, fkind);
+		return;
+	}
 #endif
 
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNCharactersFiles[0], offsets[fkind]));
@@ -1599,6 +1694,13 @@ void mnCharactersMakeEmblem(s32 fkind)
 	};
 
 	sMNCharactersEmblemGObj = gobj = gcMakeGObjSPAfter(0, NULL, 19, GOBJ_PRIORITY_DEFAULT);
+#ifdef REGION_REMIX
+	// REMIX-TODO(chardata-emblem): the asm adds no emblem models for the extended fighters; the empty gobj keeps ChangeFighter's eject path valid.
+	if (mnRemixCharDataIsExtended(fkind))
+	{
+		return;
+	}
+#endif
 	gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMNCharactersFiles[3], dobjdescs[fkind]), NULL);
 	gcAddGObjDisplay(gobj, gcDrawDObjTreeForGObj, 28, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddMObjAll(gobj, lbRelocGetFileData(MObjSub***, sMNCharactersFiles[3], mobjsubs[fkind]));
@@ -1699,6 +1801,13 @@ void mnCharactersMakeName(s32 fkind)
 		sobj->sprite.green = 0x45;
 		sobj->sprite.blue = 0x07;
 	}
+#ifdef REGION_REMIX
+	if (mnRemixCharDataIsExtended(fkind))
+	{
+		mnCharactersMakeRemixName(gobj, fkind);
+		return;
+	}
+#endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNCharactersFiles[0], offsets[fkind]));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1778,6 +1887,13 @@ void mnCharactersMakeWorks(s32 fkind)
 	sMNCharactersWorksGObj = gobj = gcMakeGObjSPAfter(0, NULL, 22, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 31, GOBJ_PRIORITY_DEFAULT, ~0);
 
+#ifdef REGION_REMIX
+	if (mnRemixCharDataIsExtended(fkind))
+	{
+		mnCharactersMakeRemixWorks(gobj, fkind);
+		return;
+	}
+#endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNCharactersFiles[0], offsets[fkind]));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1833,6 +1949,14 @@ MNCharactersMotion* mnCharactersGetMotion(MNCharactersMotion *motion, s32 fkind,
 		&dMNCharactersSpecialMotionPurin,	&dMNCharactersSpecialMotionNess
 	};
 
+#ifdef REGION_REMIX
+	if (mnRemixCharDataIsExtended(fkind))
+	{
+		*motion = dMNCharactersCommonMotionDescs[motion_kind][track];
+
+		return motion;
+	}
+#endif
 	if ((motion_kind == nMNCharactersMotionKindSpecialHi) || (motion_kind == nMNCharactersMotionKindSpecialN) || (motion_kind == nMNCharactersMotionKindSpecialLw))
 	{
 		*motion = special_motions[fkind]->motions[motion_kind][track];
@@ -2111,6 +2235,9 @@ void mnCharactersMakeFighter(s32 fkind)
 	desc.fkind = mnCharactersGetFighterKind(sMNCharactersPage);
 	desc.costume = ftParamGetCostumeCommonID(mnCharactersGetFighterKind(sMNCharactersPage), 0);
 	desc.figatree_heap = sMNCharactersFigatreeHeap;
+#ifdef REGION_REMIX
+	ftManagerSetupFilesAllKind(desc.fkind);
+#endif
 	sMNCharactersFighterGObj = fighter_gobj = ftManagerMakeFighter(&desc);
 
 	gcAddGObjProcess(fighter_gobj, mnCharactersFighterProcUpdate, nGCProcessKindFunc, 1);
@@ -2238,6 +2365,12 @@ void mnCharactersUpdateMotionName(GObj *gobj)
 		sobj->sprite.green = 0x7D;
 		sobj->sprite.blue = 0x0C;
 
+#ifdef REGION_REMIX
+		if (mnRemixCharDataIsExtended(fkind))
+		{
+			return; // REMIX-TODO(chardata-motion-names): the asm adds no special-move name sprites for the extended fighters.
+		}
+#endif
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNCharactersFiles[0], motion_names[fkind][motion_kind]));
 
 		sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -2666,9 +2799,9 @@ void mnCharactersUpdateScene(void)
 		{
 			do
 			{
-				if (sMNCharactersPage == nFTKindPlayableStart)
+				if (sMNCharactersPage == MNCHARACTERS_FIRST_PAGE)
 				{
-					sMNCharactersPage = nFTKindPlayableEnd;
+					sMNCharactersPage = MNCHARACTERS_LAST_PAGE;
 				}
 				else sMNCharactersPage--;
 			}
@@ -2688,9 +2821,9 @@ void mnCharactersUpdateScene(void)
 		{
 			do
 			{
-				if (sMNCharactersPage == nFTKindPlayableEnd)
+				if (sMNCharactersPage == MNCHARACTERS_LAST_PAGE)
 				{
-					sMNCharactersPage = nFTKindPlayableStart;
+					sMNCharactersPage = MNCHARACTERS_FIRST_PAGE;
 				}
 				else sMNCharactersPage++;
 			}

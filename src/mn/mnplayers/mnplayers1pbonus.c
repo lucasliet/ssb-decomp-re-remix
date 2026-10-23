@@ -17,6 +17,7 @@ extern float port_widescreen_clip_x_scale(void);
 #endif
 #ifdef REGION_REMIX
 #include "remix/remix_css_data.h"
+#include "gm/gmremixmenumusic.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixvariants.h"
@@ -2319,7 +2320,11 @@ void mnPlayers1PBonusBackTo1PMode(void)
 	gSCManagerSceneData.scene_curr = nSCKind1PMode;
 
 	mnPlayers1PBonusSetSceneData();
+#ifdef REGION_REMIX
+	gmRemixMenuMusicStop();
+#else
 	syAudioStopBGMAll();
+#endif
 	func_800266A0_272A0();
 	syTaskmanSetLoadScene();
 }
@@ -3204,7 +3209,11 @@ void mnPlayers1PBonusFuncStart(void)
 
 	if (gSCManagerSceneData.scene_prev != nSCKindMaps)
 	{
+#ifdef REGION_REMIX
+		gmRemixMenuMusicPlay(nSYAudioBGMBattleSelect, FALSE);
+#else
 		syAudioPlayBGM(0, nSYAudioBGMBattleSelect);
+#endif
 	}
 }
 

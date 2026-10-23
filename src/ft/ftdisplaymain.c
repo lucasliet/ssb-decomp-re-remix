@@ -962,6 +962,9 @@ void ftDisplayMainDrawSkeleton(DObj *dobj)
 }
 
 // 0x800F24A0
+/* REMIX-TODO(Skeleton): Skeleton.asm apply_skeleton_mode forces the skeleton draw path (0x0800) per port in skeleton_mode_1_ (0x800F24B0)
+ * and skeleton_mode_2_ (0x800F2228). The port picks the path from fp->colanim.skeleton_id, which only the electrified colanim
+ * script sets, and the forced path needs a skeleton_id the fighter does not have. The register meaning was not decoded. */
 void ftDisplayMainDrawAll(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);

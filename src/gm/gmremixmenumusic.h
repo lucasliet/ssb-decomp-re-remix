@@ -15,6 +15,12 @@
  */
 void gmRemixMenuMusicPlay(u32 default_bgm, sb32 from_title_screen);
 
+/**
+ * Stops the BGM when a menu screen is left, except for the menu tracks and the RANDOM values (BGM.asm _prevent_stop).
+ * Call it in place of syAudioStopBGMAll on the CSS back paths.
+ */
+void gmRemixMenuMusicStop(void);
+
 #endif
 
 #endif

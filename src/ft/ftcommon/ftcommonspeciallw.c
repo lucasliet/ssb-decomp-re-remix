@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "mn/mnvsmode/mnremixvsstats.h"
+#endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
 #include "fighter_registry.h"
@@ -67,6 +70,9 @@ sb32 ftCommonSpecialLwCheckInterruptCommon(GObj *fighter_gobj)
     {
 #ifdef PORT
         port_log("SSB64: SpecialLwCheck -> PASS, calling down-B for fkind=%d\n", fp->fkind);
+#endif
+#ifdef REGION_REMIX
+        mnRemixVSStatsCountSpecial(fp->player, nMNRemixVSStatsSpecialDown);
 #endif
 #ifdef PORT
         {

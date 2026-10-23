@@ -1,15 +1,17 @@
 /**
  * gmremixmenumusic.c - Menu Music toggle of the Remix settings (BGM.asm alt_menu_music_, Toggles.asm entry_menu_music).
  *
- * Not ported: RANDOM ALL (BGM.random_music_ without the Random Music gate), the GameBoy easter egg when no stage track is
- * on, the "do not restart the track already playing" check (BGM.safe_id), and the menu tracks with no port id yet
- * (BOMBERMAN 64 and SONIC R use assembly-time MIDI ids). Those fall back to default_bgm.
+ * Not ported: RANDOM ALL picks (BGM.random_music_ without the Random Music gate, RANDOM ALL plays default_bgm), the GameBoy
+ * easter egg when no stage track is on, and the menu tracks with no port id yet (BOMBERMAN 64 and SONIC R use
+ * assembly-time MIDI ids). Those fall back to default_bgm. The "do not restart the track already playing" check
+ * (BGM.safe_id) is ported in gmRemixMenuMusicKeepsCurrent.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixmenumusic.h"
 #include "gm/gmremixtoggle.h"
+#include <gm/gmsound.h>
 #include <sys/audio.h>
 #include <sys/utils.h>
 
@@ -150,20 +152,86 @@ static u32 gmRemixMenuMusicRandomTrack(s32 value, u32 default_bgm)
 }
 
 /**
+ * Checks whether a Menu Music value is one of the RANDOM values.
+ *
+ * @param value Menu Music value.
+ * @return TRUE for RANDOM, RANDOM CLASSICS and RANDOM ALL.
+ */
+static sb32 gmRemixMenuMusicIsRandom(s32 value)
+{
+    return (value == GMREMIX_MENU_MUSIC_RANDOM) || (value == GMREMIX_MENU_MUSIC_RANDOM_CLASSICS) ||
+           (value == GMREMIX_MENU_MUSIC_RANDOM_ALL);
+}
+
+/**
+ * Checks whether a BGM id is one of the menu tracks of sMenuMusicTrackBGM (values 2 to 16).
+ *
+ * @param bgm BGM id to check, -1 when no track is playing.
+ * @return TRUE when bgm is a listed menu track.
+ */
+static sb32 gmRemixMenuMusicIsListedTrack(s32 bgm)
+{
+    u32 i;
+
+    for (i = 0; i < sizeof(sMenuMusicTrackBGM) / sizeof(sMenuMusicTrackBGM[0]); i++)
+    {
+        if (bgm == (s32)sMenuMusicTrackBGM[i])
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/**
+ * Checks whether a BGM id is one of the two 64 tracks (menu and character select), which BGM.asm always restarts.
+ *
+ * @param bgm BGM id to check.
+ * @return TRUE for nSYAudioBGMModeSelect and nSYAudioBGMBattleSelect.
+ */
+static sb32 gmRemixMenuMusicIs64Track(s32 bgm)
+{
+    return (bgm == nSYAudioBGMModeSelect) || (bgm == nSYAudioBGMBattleSelect);
+}
+
+/**
+ * Decides whether the track already playing keeps playing instead of being restarted (BGM.asm _check_current_track and
+ * _finish). Nothing is kept when no track plays or when a 64 track plays, since BGM.asm restarts those.
+ *
+ * @param value Menu Music value.
+ * @param current_bgm BGM id playing now, -1 when none.
+ * @param default_bgm BGM id of the vanilla screen.
+ * @return TRUE when the current track must keep playing.
+ */
+static sb32 gmRemixMenuMusicKeepsCurrent(s32 value, s32 current_bgm, u32 default_bgm)
+{
+    if ((current_bgm < 0) || gmRemixMenuMusicIs64Track(current_bgm))
+    {
+        return FALSE;
+    }
+    if (gmRemixMenuMusicIsRandom(value))
+    {
+        return TRUE;
+    }
+    if (value == GMREMIX_MENU_MUSIC_DEFAULT)
+    {
+        return gmRemixMenuMusicIsListedTrack(current_bgm);
+    }
+    return current_bgm == (s32)gmRemixMenuMusicTrackOf(value, default_bgm);
+}
+
+/**
  * Chooses the menu BGM id for the current Menu Music value.
  *
  * @param default_bgm BGM id of the vanilla screen.
  * @param from_title_screen TRUE on the title screen call.
- * @return The BGM id to play, or -1 when the Menu Music value is OFF and the BGM must stop.
+ * @return The BGM id to play. The OFF value never reaches this function (gmRemixMenuMusicPlay and gmRemixMenuMusicStop
+ *         handle it).
  */
-static s32 gmRemixMenuMusicChoose(u32 default_bgm, sb32 from_title_screen)
+static u32 gmRemixMenuMusicChoose(u32 default_bgm, sb32 from_title_screen)
 {
     s32 value = gmRemixToggle(menu_music);
 
-    if (value == GMREMIX_MENU_MUSIC_OFF)
-    {
-        return -1;
-    }
     if (value == GMREMIX_MENU_MUSIC_DEFAULT)
     {
         return from_title_screen ? gmRemixMenuMusicTitleRoll(default_bgm) : default_bgm;
@@ -179,16 +247,43 @@ static s32 gmRemixMenuMusicChoose(u32 default_bgm, sb32 from_title_screen)
     return gmRemixMenuMusicTrackOf(value, default_bgm);
 }
 
+/**
+ * Starts the Menu Music track of a menu screen, or keeps the track already playing when the Remix rules say so.
+ *
+ * @param default_bgm BGM id of the vanilla screen.
+ * @param from_title_screen TRUE only on the title screen call.
+ */
 void gmRemixMenuMusicPlay(u32 default_bgm, sb32 from_title_screen)
 {
-    s32 bgm = gmRemixMenuMusicChoose(default_bgm, from_title_screen);
+    s32 value = gmRemixToggle(menu_music);
+    s32 current_bgm = syAudioGetBGMPlaying(0);
 
-    if (bgm < 0)
+    if (value == GMREMIX_MENU_MUSIC_OFF)
     {
         syAudioStopBGMAll();
         return;
     }
-    syAudioPlayBGM(0, bgm);
+    if (gmRemixMenuMusicKeepsCurrent(value, current_bgm, default_bgm))
+    {
+        return;
+    }
+    syAudioPlayBGM(0, gmRemixMenuMusicChoose(default_bgm, from_title_screen));
+}
+
+/**
+ * Stops the BGM when a menu screen is left, unless a listed menu track or a RANDOM value keeps it playing (BGM.asm
+ * alt_menu_music_._prevent_stop, which replaces BGM.stop_ on the CSS back paths).
+ */
+void gmRemixMenuMusicStop(void)
+{
+    s32 value = gmRemixToggle(menu_music);
+    s32 current_bgm = syAudioGetBGMPlaying(0);
+
+    if (gmRemixMenuMusicIsRandom(value) || gmRemixMenuMusicIsListedTrack(current_bgm))
+    {
+        return;
+    }
+    syAudioStopBGMAll();
 }
 
 #endif

@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "if/ifremixannouncer.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
 #endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -160,6 +161,9 @@ sb32 ftCommonSpecialNCheckInterruptCommon(GObj *fighter_gobj)
             {
                 ftParamSetStickLR(fp);
             }
+#ifdef REGION_REMIX
+            mnRemixVSStatsCountSpecial(fp->player, nMNRemixVSStatsSpecialNeutral);
+#endif
 #ifdef PORT
             {
                 PortFTSpecialEnterFn h = port_fighter_special_handler(fp->fkind, PORT_FIGHTER_SPECIAL_N);

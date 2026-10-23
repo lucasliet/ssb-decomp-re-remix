@@ -87,7 +87,11 @@ sb32 ftCommonKneeBendCheckButtonTap(FTStruct *fp)
 {
     if (fp->input.pl.button_tap & (R_CBUTTONS | L_CBUTTONS | D_CBUTTONS | U_CBUTTONS))
     {
+#ifdef REGION_REMIX
+        return ftRemixTauntButtonAllowsJump(fp, fp->input.pl.button_tap);
+#else
         return TRUE;
+#endif
     }
     else return FALSE;
 }

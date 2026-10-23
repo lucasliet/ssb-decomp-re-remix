@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include <port_log.h>
 #include <it/item.h>
 #ifdef PORT
 #include "fighter_registry.h"
@@ -25,6 +26,13 @@ void ftCommonCapturePulledRotateScale(GObj *fighter_gobj, Vec3f *this_pos, Vec3f
      * their own model never built that joint (Bowser: id 31, 27 parts). */
     if (capture_joint == NULL)
     {
+        static sb32 is_logged = FALSE;
+
+        if (!is_logged)
+        {
+            is_logged = TRUE;
+            port_log("ftCommonCapturePulledRotateScale: fkind %d has no capture joint %d, using TopN\n", (int)capture_fp->fkind, (int)capture_fp->attr->joint_itemheavy_id);
+        }
         capture_joint = capture_fp->joints[nFTPartsJointTopN];
     }
     func_ovl0_800C9A38(mtx, capture_joint);

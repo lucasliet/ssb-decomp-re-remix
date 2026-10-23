@@ -580,6 +580,17 @@ void scAutoDemoInitDemo(void)
 	 * in the u16 mask and a shift by >= 32 is UB */
 	sSCAutoDemoFighterMask = 0;
 
+	/* The scene data starts with nFTKindNull in both slots and only the title picks them; entering the demo from another
+	 * scene (idle on a data screen, SSB64_START_SCENE) must not read the file table of that sentinel. */
+	if (gSCManagerSceneData.demo_fkind[0] == nFTKindNull)
+	{
+		gSCManagerSceneData.demo_fkind[0] = nFTKindMario;
+	}
+	if (gSCManagerSceneData.demo_fkind[1] == nFTKindNull)
+	{
+		gSCManagerSceneData.demo_fkind[1] = nFTKindFox;
+	}
+
 	if (gSCManagerSceneData.demo_fkind[0] < GMCOMMON_FIGHTERS_PLAYABLE_NUM)
 	{
 		sSCAutoDemoFighterMask |= (1 << gSCManagerSceneData.demo_fkind[0]);

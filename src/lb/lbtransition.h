@@ -5,7 +5,13 @@
 #include <sys/obj.h>
 #include <lb/lbdef.h>
 
-extern LBTransitionDesc dLBTransitionDescs[11];
+#ifdef REGION_REMIX
+#define LB_TRANSITION_DESC_COUNT 13
+#else
+#define LB_TRANSITION_DESC_COUNT 11
+#endif
+
+extern LBTransitionDesc dLBTransitionDescs[LB_TRANSITION_DESC_COUNT];
 
 extern GObj* lbTransitionMakeCamera(u32 id, s32 link, u32 link_priority, u64 camera_mask);
 extern void lbTransitionProcDisplay(GObj *gobj);

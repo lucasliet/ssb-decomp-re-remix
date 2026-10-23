@@ -4,6 +4,9 @@
 #include <ft/ftmanager.h>
 #include <if/ifcommon.h>
 #endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -163,6 +166,9 @@ void ftCommonRebirthStandSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusRebirthStand, 0.0F, 1.0F, (FTSTATUS_PRESERVE_PLAYERTAG | FTSTATUS_PRESERVE_EFFECT | FTSTATUS_PRESERVE_COLANIM));
+#ifdef REGION_REMIX
+    ftRemixStartItemRespawn(fighter_gobj);
+#endif
     ftMainPlayAnimEventsAll(fighter_gobj);
 
     fp->is_menu_ignore = TRUE;

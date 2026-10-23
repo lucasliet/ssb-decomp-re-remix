@@ -9,6 +9,8 @@
 #include <ft/fighter.h>
 #include <ft/ftparam.h>
 #include <gm/gmremixcolscripts.h>
+#include <gm/gmremixpanel.h>
+#include <gm/gmremixtoggle.h>
 #include <it/itremix/itremixcloakingdevice.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
@@ -26,9 +28,23 @@ extern void *func_800269C0_275C0(u16 id);
 #define FTREMIX_POISON_PORTS 4
 /* asm: Poison.asm 0x800E18A0, the heal tail resets colanim 9 once no heal is left */
 #define FTREMIX_POISON_BURN_COLANIM_RESET 0x9
-/* REMIX-TODO(toggles): css/PoisonDmg.asm apply_damage (CSS "Poison Damage" option, state_table per port, Remix default
- * 0 = Off) is not ported. With that default the asm returns at once, so skipping it changes nothing. */
-#define FTREMIX_POISON_CSS_DAMAGE_DEFAULT FALSE
+/* asm: css/PoisonDmg.asm apply_damage ticks when the match tic low 7 bits are zero, about every 2 s */
+#define FTREMIX_POISON_PANEL_TICK_MASK 0x7F
+/* asm: at game speed 1/3 or 2/3 the extra tics of the speed step can leave the low bits at 1 or 2 */
+#define FTREMIX_POISON_PANEL_SLOW_TICK_LIMIT 3
+/* asm: Toggles entry_game_speed values of 1/3 and 2/3 speed */
+#define FTREMIX_POISON_PANEL_SPEED_THIRD 9
+#define FTREMIX_POISON_PANEL_SPEED_TWO_THIRDS 11
+/* asm: apply_damage caps the percent at 999 */
+#define FTREMIX_POISON_PANEL_CAP 999
+/* asm: apply_damage Heal value adds 2 to the healing amount (0x0818) */
+#define FTREMIX_POISON_PANEL_HEAL_AMOUNT 2
+/* asm: css/PoisonDmg.asm state_table values */
+#define FTREMIX_POISON_PANEL_NONE 0
+#define FTREMIX_POISON_PANEL_LOW 1
+#define FTREMIX_POISON_PANEL_MEDIUM 2
+#define FTREMIX_POISON_PANEL_HIGH 3
+#define FTREMIX_POISON_PANEL_HEAL 4
 
 typedef struct FTRemixPoisonEntry
 {
@@ -153,13 +169,137 @@ static void ftRemixPoisonSyncStock(GObj *fighter_gobj, FTStruct *fp)
 }
 
 /**
- * Per-frame poison of one fighter (asm: Poison.poison_hook, the `_poison_check` path).
+ * Returns TRUE on the match tic when the CSS Poison Dmg option ticks (asm apply_damage, the speed test).
+ * At default speed the low tic bits must be zero; at 1/3 and 2/3 speed they must be below the speed step limit.
+ * The extra advance of a faster speed never ticks.
+ */
+static sb32 ftRemixPoisonPanelTickDue(void)
+{
+    s32 elapsed_tics = gSCManagerBattleState->time_passed;
+    s32 speed_toggle = gmRemixToggle(game_speed);
+    s32 low_bits = elapsed_tics & FTREMIX_POISON_PANEL_TICK_MASK;
+
+    if (elapsed_tics == 0)
+    {
+        return FALSE;
+    }
+    if (speed_toggle == 0)
+    {
+        return low_bits == 0;
+    }
+    if (ftRemixSpeedIsAdditionalAdvance())
+    {
+        return FALSE;
+    }
+    if ((speed_toggle == FTREMIX_POISON_PANEL_SPEED_THIRD) || (speed_toggle == FTREMIX_POISON_PANEL_SPEED_TWO_THIRDS))
+    {
+        return low_bits < FTREMIX_POISON_PANEL_SLOW_TICK_LIMIT;
+    }
+    return low_bits == 0;
+}
+
+/**
+ * Returns TRUE when a Super Star or the respawn stops the CSS Poison Dmg option (asm apply_damage).
+ * The spawn invincibility does not stop it, unlike the hazard poison.
+ */
+static sb32 ftRemixPoisonPanelIsBlocked(FTStruct *fp)
+{
+    if (fp->star_invincible_tics != 0)
+    {
+        return TRUE;
+    }
+    return fp->status_id < nFTCommonStatusWait;
+}
+
+/** Returns the percent added on each tick for a CSS Poison Dmg value (asm apply_damage _apply_damage). */
+static s32 ftRemixPoisonPanelAmount(s32 panel_value)
+{
+    switch (panel_value)
+    {
+        case FTREMIX_POISON_PANEL_LOW:
+            return 1;
+
+        case FTREMIX_POISON_PANEL_MEDIUM:
+            return 2;
+
+        case FTREMIX_POISON_PANEL_HIGH:
+            return 4;
+
+        default:
+            return 0;
+    }
+}
+
+/**
+ * Heals the fighter by the panel amount through the healing block of ftMainProcUpdateInterrupt, which reads damage_heal
+ * (asm 0x0818) as the amount of healing left.
+ */
+static void ftRemixPoisonPanelHeal(FTStruct *fp)
+{
+    fp->damage_heal = FTREMIX_POISON_PANEL_HEAL_AMOUNT;
+}
+
+/**
+ * Adds the panel damage to the percent, capped at 999, and syncs the stock record (asm apply_damage, then the tail at
+ * 0x800E1850).
+ */
+static void ftRemixPoisonPanelDamage(GObj *fighter_gobj, FTStruct *fp, s32 amount)
+{
+    s32 percent = fp->percent_damage + amount;
+
+    /* REMIX-TODO(Stamina): asm apply_damage clamps the percent at Stamina.TOTAL_HP in stamina mode and skips defeated stocks; no port of the mode yet. */
+    if (percent > FTREMIX_POISON_PANEL_CAP)
+    {
+        percent = FTREMIX_POISON_PANEL_CAP;
+    }
+    fp->percent_damage = percent;
+    ftRemixPoisonSyncStock(fighter_gobj, fp);
+}
+
+/**
+ * Applies the CSS Poison Dmg option for this match tic. Returns TRUE when it healed or hurt the fighter, which skips the
+ * hazard poison of this frame as the asm does. The cloak check only guards the damage, not the heal (asm apply_damage
+ * order).
+ */
+static sb32 ftRemixPoisonPanelTryApply(GObj *fighter_gobj, FTStruct *fp)
+{
+    s32 panel_value;
+
+    if (!ftRemixPoisonPanelTickDue() || ftRemixPoisonPanelIsBlocked(fp))
+    {
+        return FALSE;
+    }
+    panel_value = gmRemixPanel(POISON_DAMAGE, fp->player);
+    if (panel_value == FTREMIX_POISON_PANEL_NONE)
+    {
+        return FALSE;
+    }
+    if (panel_value == FTREMIX_POISON_PANEL_HEAL)
+    {
+        ftRemixPoisonPanelHeal(fp);
+        return TRUE;
+    }
+    if (itRemixCloakingDeviceIsCloaked(fp->player))
+    {
+        return FALSE;
+    }
+    ftRemixPoisonPanelDamage(fighter_gobj, fp, ftRemixPoisonPanelAmount(panel_value));
+    return TRUE;
+}
+
+/**
+ * Per-frame poison of one fighter: the CSS Poison Dmg option first (asm apply_damage), then the hazard poison
+ * (asm Poison.poison_hook, the `_poison_check` path).
  * Called from ftMainProcUpdateInterrupt when the fighter is not healing.
  */
 void ftRemixPoisonUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+    if (ftRemixPoisonPanelTryApply(fighter_gobj, fp))
+    {
+        return;
+    }
     if (!ftRemixPoisonCountDown(fp))
     {
         return;

@@ -10,6 +10,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
+#include "gm/gmremixmusictitle.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -2028,7 +2029,12 @@ void ifCommonPlayerTagProcDisplay(GObj *interface_gobj)
 
     if (!(fp->is_playertag_bossend) && !(fp->is_playertag_hide))
     {
+#ifdef REGION_REMIX
+        if (ifRemixPlayerTagAlwaysShown(player) || (fp->playertag_wait == 1) ||
+            (CObjGetStruct(gGMCameraGObj)->vec.eye.z > 6000.0F))
+#else
         if ((fp->playertag_wait == 1) || (CObjGetStruct(gGMCameraGObj)->vec.eye.z > 6000.0F))
+#endif
         {
             pos = fp->joints[nFTPartsJointTopN]->translate.vec.f;
 
@@ -2042,6 +2048,9 @@ void ifCommonPlayerTagProcDisplay(GObj *interface_gobj)
 
             if (gmCameraCheckTargetInBounds(x, y) != FALSE)
             {
+#ifdef REGION_REMIX
+                ftRemixVisibilityPlayerTagSetAlpha(SObjGetStruct(interface_gobj), player);
+#endif
                 SObjGetStruct(interface_gobj)->pos.x = (s32) ((gGMCameraStruct.viewport_center_x + x) - (SObjGetStruct(interface_gobj)->sprite.width * 0.5F));
                 SObjGetStruct(interface_gobj)->pos.y = (s32) ((gGMCameraStruct.viewport_center_y - y) - SObjGetStruct(interface_gobj)->sprite.height);
 
@@ -2067,7 +2076,12 @@ void ifCommonPlayerTagMakeInterface(void)
 
             gcAddGObjDisplay(interface_gobj, ifCommonPlayerTagProcDisplay, 23, GOBJ_PRIORITY_DEFAULT, ~0);
 
+#ifdef REGION_REMIX
+            sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[6],
+                ifRemixPlayerTagSpriteOffset(player, dIFCommonPlayerTagSpriteOffsets[gSCManagerBattleState->players[player].tag])));
+#else
             sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[6], dIFCommonPlayerTagSpriteOffsets[gSCManagerBattleState->players[player].tag]));
+#endif
 
             sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
 
@@ -2229,6 +2243,9 @@ void ifCommonAnnounceGoSetStatus(void)
         FTStruct *fp = ftGetStruct(fighter_gobj);
 
         ftParamUnlockPlayerControl(fighter_gobj);
+#ifdef REGION_REMIX
+        ftRemixStartItemMatchBegin(fighter_gobj);
+#endif
 
         fp->camera_mode = nFTCameraModeDefault;
 
@@ -2461,6 +2478,10 @@ SObj* ifCommonCountdownMakeInterface(void)
     sobj->envcolor.r = dIFCommonTrafficGoShadowR[0];
     sobj->envcolor.g = dIFCommonTrafficGoShadowG[0];
     sobj->envcolor.b = dIFCommonTrafficGoShadowB[0];
+
+#ifdef REGION_REMIX
+    gmRemixMusicTitleShowAtCountdown();
+#endif
 
     return sobj;
 }
@@ -3096,7 +3117,7 @@ void ifCommonBattlePauseMakeInterface(s32 player)
 
     ifCommonBattlePausePlayerNumMakeSObj(interface_gobj, player);
 #ifdef REGION_REMIX
-    /* REMIX-TODO(Render): Pause.asm disable_hud_ (entry_disable_hud) hides pause groups 0xE to 0x10 after the decals are made */
+    /* REMIX-TODO(Render): Pause.asm disable_hud_ hides Render groups 0xE to 0x10 after ifCommonBattlePauseMakeSObjsAll (asm 0x80113E04). The groups hold the R legend, camera legend and pause track title, which the port does not draw, so there is no GObj to hide yet */
 #endif
     ifCommonBattlePauseMakeSObjsAll(interface_gobj);
 }

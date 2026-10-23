@@ -9,6 +9,7 @@
 
 #include "ft/ftremix/ftremixhooks.h"
 #include <ft/fighter.h>
+#include <gm/gmremixpanel.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include <sys/utils.h>
@@ -20,10 +21,6 @@
 #define FTREMIX_KNOCKBACK_CHANCE_GOOD 60
 #define FTREMIX_KNOCKBACK_CHANCE_F_YOU 15
 #define FTREMIX_KNOCKBACK_CHANCE_RANDOM 15
-
-/* REMIX-TODO(toggles): the CSS Knockback menu (css/Knockback.asm) writes this word per port.
- * Remix default is 0 ("Default"), which keeps the vanilla angles. 1 ("Random") uses the table. */
-static s32 sFTRemixKnockbackState[FTREMIX_KNOCKBACK_PLAYERS];
 
 /* Scene the angles were last rolled for, per port (asm screen_table). */
 static u8 sFTRemixKnockbackScreen[FTREMIX_KNOCKBACK_PLAYERS];
@@ -100,7 +97,7 @@ s32 ftRemixKnockbackAngle(FTStruct *fp, s32 vanilla_angle)
     s32 player = fp->player;
     s32 action_id = fp->status_id;
 
-    if (player >= FTREMIX_KNOCKBACK_PLAYERS || sFTRemixKnockbackState[player] == 0)
+    if (player >= FTREMIX_KNOCKBACK_PLAYERS || gmRemixPanel(KNOCKBACK, player) == 0)
     {
         return vanilla_angle;
     }

@@ -14,9 +14,11 @@
 #include <sc/scmanager.h>
 #include <sys/develop.h>
 #include "ft/ftremix/ftremixhooks.h"
+#include <gm/gmremixpanel.h>
 #include "gm/gmremixtoggle.h"
 
-#define FTREMIX_HITBOX_DISPLAY_HITBOX 1                 /* Toggles.asm entry_special_model: hitbox */
+#define FTREMIX_MODEL_DISPLAY_DEFAULT 0                 /* Toggles.asm entry_model_display and CSS Model: default */
+#define FTREMIX_HITBOX_DISPLAY_HITBOX 1                /* Toggles.asm entry_special_model: hitbox */
 #define FTREMIX_HITBOX_DISPLAY_HITBOX_PLUS_MODEL 2      /* Toggles.asm entry_special_model: hitbox+model */
 #define FTREMIX_HITBOX_DISPLAY_ECB 3                    /* Toggles.asm entry_special_model: ECB */
 #define FTREMIX_MODEL_DISPLAY_HIGH 1                    /* Toggles.asm entry_model_display: always high poly */
@@ -38,26 +40,31 @@ static sb32 ftRemixHitboxDisplayIsIgnoredScene(void)
 }
 
 /**
- * Model Display: returns the poly detail a fighter must use. The toggle replaces the detail when it is not default.
- * Costumes.asm force_hi_lo_poly_. The per-port override (Costumes.model_display_for_port, written by the CSS
- * ModelDisplay.asm) is not ported and stays at the default.
+ * Model Display: returns the poly detail a fighter must use. The port's CSS panel value wins when it is not default,
+ * otherwise the universal toggle applies (Costumes.asm force_hi_lo_poly_ checks the toggle first and the per-port value
+ * second, so the per-port value overrides it).
  *
  * @param detail The detail the vanilla code would use (nFTPartsDetailHigh or nFTPartsDetailLow).
+ * @param player The port of the fighter (0 to 3).
  * @return The detail to use.
  */
-u8 ftRemixModelDisplayDetail(u8 detail)
+u8 ftRemixModelDisplayDetail(u8 detail, s32 player)
 {
-    s32 toggle = gmRemixToggle(model_display);
+    s32 choice = gmRemixPanel(MODEL_DISPLAY, player);
 
+    if (choice == FTREMIX_MODEL_DISPLAY_DEFAULT)
+    {
+        choice = gmRemixToggle(model_display);
+    }
     if (ftRemixHitboxDisplayIsIgnoredScene())
     {
         return detail;
     }
-    if (toggle == FTREMIX_MODEL_DISPLAY_HIGH)
+    if (choice == FTREMIX_MODEL_DISPLAY_HIGH)
     {
         return nFTPartsDetailHigh;
     }
-    if (toggle == FTREMIX_MODEL_DISPLAY_LOW)
+    if (choice == FTREMIX_MODEL_DISPLAY_LOW)
     {
         return nFTPartsDetailLow;
     }

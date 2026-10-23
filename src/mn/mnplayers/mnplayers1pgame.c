@@ -6,6 +6,9 @@
 #include <sys/rdp.h>
 #include <reloc_data.h>
 #include <sys/audio.h>
+#ifdef REGION_REMIX
+#include "gm/gmremixpractice.h"
+#endif
 #ifdef PORT
 extern char *getenv(const char *name);
 extern int atoi(const char *str);
@@ -14,6 +17,7 @@ extern float port_widescreen_clip_x_scale(void);
 #endif
 #ifdef REGION_REMIX
 #include "remix/remix_css_data.h"
+#include "gm/gmremixmenumusic.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixvariants.h"
@@ -2916,7 +2920,11 @@ void mnPlayers1PGameBackTo1PMode(void)
 	gSCManagerSceneData.scene_curr = nSCKind1PMode;
 
 	mnPlayers1PGameSetSceneData();
+#ifdef REGION_REMIX
+	gmRemixMenuMusicStop();
+#else
 	syAudioStopBGMAll();
+#endif
 	func_800266A0_272A0();
 	syTaskmanSetLoadScene();
 }
@@ -3604,6 +3612,9 @@ void mnPlayers1PGameSetSceneData(void)
 		}
 	}
 #endif
+#ifdef REGION_REMIX
+	gSCManagerSceneData.spgame_stage = (u8)gmRemixPracticeStartStage(gSCManagerSceneData.player, gSCManagerSceneData.spgame_stage);
+#endif
 	gSCManagerBackupData.spgame_stock_count = sMNPlayers1PGameStockValue;
 
 	if (sMNPlayers1PGameSlot.is_fighter_selected != FALSE)
@@ -3847,7 +3858,11 @@ void mnPlayers1PGameFuncStart(void)
 
 	if (gSCManagerSceneData.scene_prev != nSCKindMaps)
 	{
+#ifdef REGION_REMIX
+		gmRemixMenuMusicPlay(nSYAudioBGMBattleSelect, FALSE);
+#else
 		syAudioPlayBGM(0, nSYAudioBGMBattleSelect);
+#endif
 	}
 	func_800269C0_275C0(nSYAudioVoiceAnnounceSelectPlayer);
 }

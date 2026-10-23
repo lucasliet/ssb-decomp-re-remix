@@ -5,6 +5,9 @@
 #include <sys/controller.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include <mn/mncommon/mnremixgallery.h>
+#endif
 
 extern void* func_800269C0_275C0(u16);
 
@@ -244,6 +247,13 @@ void mnCongraActorFuncRun(GObj *gobj)
 {
 	SYColorRGBA color;
 
+#ifdef REGION_REMIX
+	if (mnRemixGalleryIsActive())
+	{
+		mnRemixGalleryUpdateInput();
+		return;
+	}
+#endif
 	if (sMNCongraSkipWait != 0)
 	{
 		sMNCongraSkipWait--;
@@ -461,7 +471,13 @@ void mnCongraStartScene(void)
 		sMNCongraFighterKind = gSCManagerTransferBattleState.players[0].fkind;
 		break;
 	}
-	dMNCongraVideoSetup.zbuffer = SYVIDEO_ZBUFFER_START(320, 240, 0, 10, u16);
+#ifdef REGION_REMIX
+	if (mnRemixGalleryIsActive())
+	{
+		sMNCongraFighterKind = mnRemixGalleryGetFighterKind();
+	}
+#endif
+	dMNCongraVideoSetup.zbuffer =SYVIDEO_ZBUFFER_START(320, 240, 0, 10, u16);
 	syVideoInit(&dMNCongraVideoSetup);
 
 	dMNCongraTaskmanSetup.scene_setup.arena_size = (size_t) (SYVIDEO_DEFINE_FRAMEBUFFER_ADDR(320, 230, 0, 10, u32, 0) - (uintptr_t)&ovl57_BSS_END);

@@ -170,7 +170,29 @@ LBTransitionDesc dLBTransitionDescs[/* */] =
         &llLBTransitionCurtainAnimJoint,
 #endif
         0
-    }
+    },
+
+#ifdef REGION_REMIX
+    // Falling Shapes (Remix restored, Transitions.asm: file 27, offsets 0x3BC0/0x3D78)
+    {
+        0x27,
+        0x3BC0,
+        0x3D78,
+        0
+    },
+
+    // Flip (Remix restored, Transitions.asm: file 2F, offsets 0x0F98/0x101C)
+    {
+        0x2F,
+        0x0F98,
+        0x101C,
+        0
+    },
+
+    /* REMIX-TODO(results-transition-remix-logo): Transitions.asm adds Smash Logo (file 0x1262, 0x3C80/0x4138) and
+     * Remix Logo (file 0x1366, 0xAB60/0xAF40). Those ids are above RELOC_FILE_COUNT (2132) in the port's reloc
+     * table, so lbRelocGetExternHeapFile cannot load them and they are not appended yet. */
+#endif
 };
 
 // // // // // // // // // // // //

@@ -609,7 +609,11 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
     f32 scale;
 
     fp->lr = desc->lr;
+#ifdef REGION_REMIX
+    fp->percent_damage = ftRemixPanelGetInitialDamage(fp, desc->damage);
+#else
     fp->percent_damage = desc->damage;
+#endif
 
     if (fp->pkind != nFTPlayerKindDemo)
     {
@@ -723,6 +727,7 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
 #ifdef REGION_REMIX
     /* Size.asm initialize_base_multiplier_table_ (RAM 0x800D7CB4); the magic hat part is not ported. */
     ftRemixSizeInitFighter(fp);
+    ftRemixVisibilityInitFighter(fp);
 #endif
 
     DObjGetStruct(fighter_gobj)->translate.vec.f = desc->pos;
@@ -891,6 +896,15 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
             }
 #endif
 #ifdef REGION_REMIX
+            {
+                s32 panel_hat_id = ftRemixKirbyHatPanelModelPart(fp);
+
+                if (panel_hat_id >= 0)
+                {
+                    ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, panel_hat_id);
+                    break;
+                }
+            }
             if (fp->fkind == nFTKindKirby)
             {
                 FTKirbyCopy *remix_copy = ftRemixKirbyGetCopyTable();
@@ -1014,6 +1028,7 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     fp->player = desc->player;
 #ifdef REGION_REMIX
     ftRemixKnockbackRandomizeAngles(fp); /* Knockback.asm randomize_angles_ (0x800D8008) */
+    ftRemixInputDelayReset(fp);
 #endif
     fp->stock_count = desc->stock_count;
 
@@ -1022,7 +1037,7 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
         gSCManagerBattleState->players[fp->player].stock_count = desc->stock_count;
     }
 #ifdef REGION_REMIX
-    fp->detail_curr = fp->detail_base = ftRemixModelDisplayDetail(desc->detail);
+    fp->detail_curr = fp->detail_base = ftRemixModelDisplayDetail(desc->detail, fp->player);
 #else
     fp->detail_curr = fp->detail_base = desc->detail;
 #endif
@@ -1034,7 +1049,11 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     fp->shade_color.g = (attr->shade_color[fp->shade - 1].g * attr->shade_color[fp->shade - 1].a) / 0xFF;
     fp->shade_color.b = (attr->shade_color[fp->shade - 1].b * attr->shade_color[fp->shade - 1].a) / 0xFF;
 
+#ifdef REGION_REMIX
+    fp->handicap = ftRemixHandicapGetFighterValue(fp, desc->handicap); /* Handicap.asm use_handicap_ (0x800D816C) */
+#else
     fp->handicap = desc->handicap;
+#endif
     fp->level = desc->level;
 
     fp->card_anim_frame_id = 0;
@@ -1156,7 +1175,11 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     fp->input.button_mask_a = desc->button_mask_a;
     fp->input.button_mask_b = desc->button_mask_b;
     fp->input.button_mask_z = desc->button_mask_z;
+#ifdef REGION_REMIX
+    fp->input.button_mask_l = ftRemixTauntButtonMaskFor(fp, desc->button_mask_l);
+#else
     fp->input.button_mask_l = desc->button_mask_l;
+#endif
 
     fp->tap_stick_x = fp->tap_stick_y = fp->hold_stick_x = fp->hold_stick_y = FTINPUT_STICKBUFFER_TICS_MAX;
 

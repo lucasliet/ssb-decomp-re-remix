@@ -2,6 +2,7 @@
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #include "if/ifremixannouncer.h"
+#include "ft/ftremix/ftremixhooks.h"
 #endif
 
 // // // // // // // // // // // //
@@ -44,6 +45,9 @@ void ftCommonAppealSetStatus(GObj *fighter_gobj)
         }
     }
     ftMainSetStatus(fighter_gobj, nFTCommonStatusAppeal, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#ifdef REGION_REMIX
+    ftRemixTauntItemSpawn(fighter_gobj);
+#endif
 
     fp->motion_vars.flags.flag1 = 0;
 }

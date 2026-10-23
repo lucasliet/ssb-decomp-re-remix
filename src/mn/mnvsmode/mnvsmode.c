@@ -1,5 +1,6 @@
 #include <mn/menu.h>
 #include <gm/gmsound.h>
+#include <gm/gmremixmenumusic.h>
 #include <sc/scene.h>
 #include <sys/video.h>
 #include <sys/rdp.h>
@@ -7,6 +8,7 @@
 #include <reloc_data.h>
 #include <ft/ftparam.h>
 #include <sys/audio.h>
+#include "mn/mnvsmode/mnremixvsmode.h"
 
 extern void* func_800269C0_275C0(u16);
 
@@ -112,6 +114,10 @@ LBFileNode sMNVSModeStatusBuffer[24];
 
 // 0x80134A48
 void *sMNVSModeFiles[ARRAY_COUNT(dMNVSModeFileIDs)];
+
+// Remix VS menu page (MNREMIX_VSMODE_PAGE_1 or MNREMIX_VSMODE_PAGE_2) and the Remix buttons, indexed like the cursor
+s32 sMNVSModePage;
+GObj* sMNVSModeRemixButtonGObjs[5];
 
 // // // // // // // // // // // //
 //                               //
@@ -1102,6 +1108,19 @@ void mnVSModeMakeBackgroundViewport()
     syRdpSetViewport(&cobj->viewport, 10.0F, 10.0F, 310.0F, 230.0F);
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/** Drops the Remix button references kept from an earlier run of this scene; their objects no longer exist. */
+static void mnVSModeClearRemixButtons(void)
+{
+    s32 index;
+
+    for (index = 0; index < ARRAY_COUNT(sMNVSModeRemixButtonGObjs); index++)
+    {
+        sMNVSModeRemixButtonGObjs[index] = NULL;
+    }
+}
+#endif
+
 // 0x801336AC
 void mnVSModeFuncStartVars()
 {
@@ -1143,6 +1162,11 @@ void mnVSModeFuncStartVars()
     sMNVSModeReturnTic = sMNVSModeTotalTimeTics + I_MIN_TO_TICS(5);
     sMNVSModeTimeStockArrowBlinkTimer = 0;
     sMNVSModeRuleArrowBlinkTimer = 0;
+#if defined(PORT) && defined(REGION_REMIX)
+    sMNVSModePage = MNREMIX_VSMODE_PAGE_1;
+    gMNVSModeRemixMode = MNREMIX_VSMODE_DEFAULT;
+    mnVSModeClearRemixButtons();
+#endif
 }
 
 // 0x801337B8
@@ -1278,14 +1302,129 @@ void mnVSModeSetCostumesAndShades(void)
     }
 }
 
+void mnVSModeMakePage1Buttons(void)
+{
+    mnVSModeMakeVSStartButton();
+    mnVSModeMakeRuleButton();
+    mnVSModeMakeRuleValue();
+    mnVSModeMakeTimeStockButton();
+    mnVSModeMakeTimeStockValue();
+    mnVSModeMakeVSOptionsButton();
+}
+
+/** Slot that holds the button object of cursor `index`, on page 1 or on the Remix page. */
+static GObj** mnVSModeGetButtonSlot(s32 index)
+{
+    // 0x80134870
+    GObj** buttons[/* */] = { &sMNVSModeButtonGObjVSStart, &sMNVSModeButtonGObjRule, &sMNVSModeButtonGObjTimeStock, &sMNVSModeButtonGObjVSOptions };
+
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((sMNVSModePage != MNREMIX_VSMODE_PAGE_1) || (index == MNREMIX_VSMODE_OPTION_REMIX_MODES))
+    {
+        return &sMNVSModeRemixButtonGObjs[index];
+    }
+#endif
+    return buttons[index];
+}
+
+#if defined(PORT) && defined(REGION_REMIX)
+/** Ejects the GObj behind `gobj_ref` and clears the reference, so it is never ejected twice. */
+static void mnVSModeEjectGObjRef(GObj **gobj_ref)
+{
+    if (*gobj_ref != NULL)
+    {
+        gcEjectGObj(*gobj_ref);
+        *gobj_ref = NULL;
+    }
+}
+
+/** Ejects every button and value object of the current page. */
+static void mnVSModeEjectPageGObjs(void)
+{
+    s32 index;
+
+    mnVSModeEjectGObjRef(&sMNVSModeButtonGObjVSStart);
+    mnVSModeEjectGObjRef(&sMNVSModeButtonGObjRule);
+    mnVSModeEjectGObjRef(&sMNVSModeRuleValueGObj);
+    mnVSModeEjectGObjRef(&sMNVSModeButtonGObjTimeStock);
+    mnVSModeEjectGObjRef(&sMNVSModeTimeStockValueGObj);
+    mnVSModeEjectGObjRef(&sMNVSModeButtonGObjVSOptions);
+    mnVSModeEjectGObjRef(&sMNVSModeRuleArrowsGObj);
+    mnVSModeEjectGObjRef(&sMNVSModeTimeStockArrowsGObj);
+
+    for (index = 0; index < ARRAY_COUNT(sMNVSModeRemixButtonGObjs); index++)
+    {
+        mnVSModeEjectGObjRef(&sMNVSModeRemixButtonGObjs[index]);
+    }
+}
+
+/** Creates the Remix button of cursor `index` from table row `row_index`, highlighted when it is the cursor. */
+static void mnVSModeMakeRemixButton(s32 index, s32 row_index)
+{
+    GObj *button_gobj;
+    s32 status;
+
+    button_gobj = mnRemixVSModeMakeButton(row_index, sMNVSModeFiles[1]);
+    sMNVSModeRemixButtonGObjs[index] = button_gobj;
+
+    status = (sMNVSModeCursorIndex == index) ? nMNOptionTabStatusHighlight : nMNOptionTabStatusNot;
+    mnVSModeUpdateButton(button_gobj, status);
+}
+
+/** Creates the Remix buttons of the current page: only "Remix Modes" on page 1, the five modes on page 2. */
+static void mnVSModeMakeRemixButtons(void)
+{
+    s32 index;
+
+    if (sMNVSModePage == MNREMIX_VSMODE_PAGE_1)
+    {
+        mnVSModeMakeRemixButton(MNREMIX_VSMODE_OPTION_REMIX_MODES, MNREMIX_VSMODE_ROW_REMIX_MODES);
+        return;
+    }
+    for (index = 0; index <= MNREMIX_VSMODE_OPTION_LAST; index++)
+    {
+        mnVSModeMakeRemixButton(index, index);
+    }
+}
+
+/** Switches between page 1 and the Remix page (page 2), rebuilding its buttons with the cursor on the first entry. */
+static void mnVSModeSetPage(s32 page)
+{
+    mnVSModeEjectPageGObjs();
+
+    sMNVSModePage = page;
+    sMNVSModeCursorIndex = (page == MNREMIX_VSMODE_PAGE_1) ? MNREMIX_VSMODE_OPTION_REMIX_MODES : 0;
+
+    if (page == MNREMIX_VSMODE_PAGE_1)
+    {
+        mnVSModeMakePage1Buttons();
+    }
+    mnVSModeMakeRemixButtons();
+}
+
+/** Stores the Remix mode under the cursor on page 2 and leaves for the VS CSS, as VS Start does. */
+static void mnVSModeSelectRemixMode(void)
+{
+    s32 index = sMNVSModeCursorIndex;
+
+    func_800269C0_275C0(nSYAudioFGMMenuSelect);
+    mnVSModeUpdateButton(sMNVSModeRemixButtonGObjs[index], nMNOptionTabStatusSelected);
+
+    gMNVSModeRemixMode = MNREMIX_VSMODE_TWELVE_CB + index;
+    mnVSModeSaveSettings();
+
+    sMNVSModeExitInterrupt = TRUE;
+
+    gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
+    gSCManagerSceneData.scene_curr = nSCKindPlayersVS;
+}
+#endif
+
 // 0x80133B8C
 void mnVSModeMain(GObj *gobj)
 {
     s32 unused;
 
-    // 0x80134870
-    GObj** buttons[/* */] = { &sMNVSModeButtonGObjVSStart, &sMNVSModeButtonGObjRule, &sMNVSModeButtonGObjTimeStock, &sMNVSModeButtonGObjVSOptions };
-    
     s32 stick_range;
     s32 is_button;
 
@@ -1328,6 +1467,13 @@ void mnVSModeMain(GObj *gobj)
         }
         if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON) != FALSE)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sMNVSModePage != MNREMIX_VSMODE_PAGE_1)
+            {
+                mnVSModeSelectRemixMode();
+                return;
+            }
+#endif
             switch (sMNVSModeCursorIndex)
             {
                 case nMNVSModeOptionStart:
@@ -1352,11 +1498,26 @@ void mnVSModeMain(GObj *gobj)
                     gSCManagerSceneData.scene_curr = nSCKindVSOptions;
 
                     return;
+#if defined(PORT) && defined(REGION_REMIX)
+                case MNREMIX_VSMODE_OPTION_REMIX_MODES:
+                    func_800269C0_275C0(nSYAudioFGMMenuSelect);
+                    mnVSModeSetPage(MNREMIX_VSMODE_PAGE_2);
+
+                    return;
+#endif
             }
         }
 
         if (scSubsysControllerGetPlayerTapButtons(B_BUTTON) != FALSE)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sMNVSModePage != MNREMIX_VSMODE_PAGE_1)
+            {
+                mnVSModeSetPage(MNREMIX_VSMODE_PAGE_1);
+
+                return;
+            }
+#endif
             mnVSModeSaveSettings();
 
             gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
@@ -1378,27 +1539,31 @@ void mnVSModeMain(GObj *gobj)
             {
                 sMNVSModeChangeWait += 8;
             }
-            mnVSModeUpdateButton(*buttons[sMNVSModeCursorIndex], nMNOptionTabStatusNot);
+            mnVSModeUpdateButton(*mnVSModeGetButtonSlot(sMNVSModeCursorIndex), nMNOptionTabStatusNot);
 
             if (sMNVSModeCursorIndex == nMNVSModeOptionStart)
             {
+#if defined(PORT) && defined(REGION_REMIX)
+                sMNVSModeCursorIndex = MNREMIX_VSMODE_OPTION_LAST;
+#else
                 sMNVSModeCursorIndex = nMNVSModeOptionOptions;
+#endif
             }
             else sMNVSModeCursorIndex--;
 
-            mnVSModeUpdateButton(*buttons[sMNVSModeCursorIndex], nMNOptionTabStatusHighlight);
+            mnVSModeUpdateButton(*mnVSModeGetButtonSlot(sMNVSModeCursorIndex), nMNOptionTabStatusHighlight);
             gcEjectGObj(sMNVSModeUnusedGObj);
             mnVSModeMakeSubtitle();
 
             sMNVSModeInputDirection = nMNVSModeInputDirectionUp;
 
-            if (sMNVSModeCursorIndex == nMNVSModeOptionRule)
+            if ((sMNVSModeCursorIndex == nMNVSModeOptionRule) && (sMNVSModePage == MNREMIX_VSMODE_PAGE_1))
             {
                 sMNVSModeRuleArrowsGObj->flags = GOBJ_FLAG_NONE;
                 sMNVSModeRuleArrowBlinkTimer = 30;
             }
 
-            if (sMNVSModeCursorIndex == nMNVSModeOptionTimeStock)
+            if ((sMNVSModeCursorIndex == nMNVSModeOptionTimeStock) && (sMNVSModePage == MNREMIX_VSMODE_PAGE_1))
             {
                 sMNVSModeTimeStockArrowsGObj->flags = GOBJ_FLAG_NONE;
                 sMNVSModeTimeStockArrowBlinkTimer = 30;
@@ -1420,33 +1585,41 @@ void mnVSModeMain(GObj *gobj)
                 sMNVSModeChangeWait += 8;
             }
 
-            mnVSModeUpdateButton(*buttons[sMNVSModeCursorIndex], nMNOptionTabStatusNot);
+            mnVSModeUpdateButton(*mnVSModeGetButtonSlot(sMNVSModeCursorIndex), nMNOptionTabStatusNot);
 
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sMNVSModeCursorIndex == MNREMIX_VSMODE_OPTION_LAST)
+#else
             if (sMNVSModeCursorIndex == nMNVSModeOptionOptions)
+#endif
             {
                 sMNVSModeCursorIndex = nMNVSModeOptionStart;
             }
             else sMNVSModeCursorIndex++;
 
-            mnVSModeUpdateButton(*buttons[sMNVSModeCursorIndex], nMNOptionTabStatusHighlight);
+            mnVSModeUpdateButton(*mnVSModeGetButtonSlot(sMNVSModeCursorIndex), nMNOptionTabStatusHighlight);
             gcEjectGObj(sMNVSModeUnusedGObj);
             mnVSModeMakeSubtitle();
 
             sMNVSModeInputDirection = nMNVSModeInputDirectionDown;
 
-            if (sMNVSModeCursorIndex == 1)
+            if ((sMNVSModeCursorIndex == 1) && (sMNVSModePage == MNREMIX_VSMODE_PAGE_1))
             {
                 sMNVSModeRuleArrowsGObj->flags = GOBJ_FLAG_NONE;
                 sMNVSModeRuleArrowBlinkTimer = 30;
             }
 
-            if (sMNVSModeCursorIndex == 2)
+            if ((sMNVSModeCursorIndex == 2) && (sMNVSModePage == MNREMIX_VSMODE_PAGE_1))
             {
                 sMNVSModeTimeStockArrowsGObj->flags = GOBJ_FLAG_NONE;
                 sMNVSModeTimeStockArrowBlinkTimer = 30;
             }
         }
 
+        if (sMNVSModePage != MNREMIX_VSMODE_PAGE_1)
+        {
+            return;
+        }
         switch (sMNVSModeCursorIndex)
         {
             case nMNVSModeOptionRule:
@@ -1646,17 +1819,19 @@ void mnVSModeFuncStart(void)
     mnVSModeMakeButtonValuegSYRdpViewport();
     mnVSModeMakeBackground();
     mnVSModeMakeMenuName();
-    mnVSModeMakeVSStartButton();
-    mnVSModeMakeRuleButton();
-    mnVSModeMakeRuleValue();
-    mnVSModeMakeTimeStockButton();
-    mnVSModeMakeTimeStockValue();
-    mnVSModeMakeVSOptionsButton();
+    mnVSModeMakePage1Buttons();
+#if defined(PORT) && defined(REGION_REMIX)
+    mnVSModeMakeRemixButtons();
+#endif
     mnVSModeMakeSubtitle();
 
     if (gSCManagerSceneData.scene_prev == nSCKindPlayersVS)
     {
+#ifdef REGION_REMIX
+        gmRemixMenuMusicPlay(nSYAudioBGMModeSelect, FALSE);
+#else
         syAudioPlayBGM(0, nSYAudioBGMModeSelect);
+#endif
     }
 }
 

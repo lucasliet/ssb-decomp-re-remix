@@ -10,7 +10,13 @@
 
 sb32 gmRemixToggleModeIsGuarded(void)
 {
-    s32 game_type = gSCManagerBattleState->game_type;
+    s32 game_type;
+
+    if (gSCManagerBattleState == NULL)
+    {
+        return FALSE;
+    }
+    game_type = gSCManagerBattleState->game_type;
 
     return (game_type == nSCBattleGameTypeBonus) || (game_type == nSCBattleGameType1PGame);
 }

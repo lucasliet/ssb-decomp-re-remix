@@ -2,6 +2,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -212,6 +213,9 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
             {
                 if (attr->is_have_specialairhi)
                 {
+#ifdef REGION_REMIX
+                    mnRemixVSStatsCountSpecial(fp->player, nMNRemixVSStatsSpecialUp);
+#endif
 #ifdef PORT
                     PortFTSpecialEnterFn h = port_fighter_special_handler(fp->fkind, PORT_FIGHTER_SPECIAL_AIR_HI);
                     if (h != NULL) h(fighter_gobj);
@@ -226,6 +230,9 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
             {
                 if (attr->is_have_specialairlw)
                 {
+#ifdef REGION_REMIX
+                    mnRemixVSStatsCountSpecial(fp->player, nMNRemixVSStatsSpecialDown);
+#endif
 #ifdef PORT
                     PortFTSpecialEnterFn h = port_fighter_special_handler(fp->fkind, PORT_FIGHTER_SPECIAL_AIR_LW);
                     if (h != NULL) h(fighter_gobj);
@@ -242,6 +249,9 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
                 {
                     ftParamSetStickLR(fp);
                 }
+#ifdef REGION_REMIX
+                mnRemixVSStatsCountSpecial(fp->player, nMNRemixVSStatsSpecialNeutral);
+#endif
 #ifdef PORT
                 {
                     PortFTSpecialEnterFn h = port_fighter_special_handler(fp->fkind, PORT_FIGHTER_SPECIAL_AIR_N);

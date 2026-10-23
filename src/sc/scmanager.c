@@ -19,6 +19,7 @@ extern void port_coroutine_yield(void);
 #include <sc/scene.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "mn/mncommon/mnremixgallery.h"
 #endif
 #include <db/debug.h>
 #include <sys/debug.h>
@@ -941,7 +942,16 @@ void scManagerRunLoop(sb32 arg)
 			gSCManagerBackupData.unlock_mask |= LBBACKUP_UNLOCK_MASK_ALL;
 			port_log("SSB64: SSB64_START_SCENE override → scene=%d (unlock_mask |= ALL)\n", n);
 		}
-		const char *stage_env = getenv("SSB64_SPGAME_STAGE");
+		#ifdef REGION_REMIX
+			if (getenv("SSB64_START_GALLERY") != NULL)
+			{
+				mnRemixGalleryActivate(nSCKindData);
+				gSCManagerSceneData.scene_curr = nSCKindCongra;
+				gSCManagerSceneData.scene_prev = nSCKindCongra;
+				port_log("SSB64: SSB64_START_GALLERY override → Remix Gallery on Congratulations scene\n");
+			}
+#endif
+			const char *stage_env = getenv("SSB64_SPGAME_STAGE");
 		if (stage_env != NULL)
 		{
 			int s = atoi(stage_env);
@@ -1154,6 +1164,7 @@ void scManagerRunLoop(sb32 arg)
 		 * no effect leaks into CSS / the next match. */
 		itRemixClearActiveItems();
 		ftRemixKirbyHatsClearCache();
+		ftRemixInputDisplayClear();
 #endif
 		switch (gSCManagerSceneData.scene_curr)
 		{

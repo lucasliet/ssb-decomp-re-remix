@@ -3846,7 +3846,11 @@ void mnPlayersVSBackToVSMode(void)
 #endif
 	mnPlayersVSSetSceneData();
 	mnPlayersVSPauseSlotProcesses();
+#ifdef REGION_REMIX
+	gmRemixMenuMusicStop();
+#else
 	syAudioStopBGMAll();
+#endif
 	syTaskmanSetLoadScene();
 }
 

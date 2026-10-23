@@ -4211,9 +4211,15 @@ void efManagerShieldProcDisplay(GObj *effect_gobj)
     EFStruct *ep = efGetStruct(effect_gobj);
     s32 id = (ep->effect_vars.shield.is_damage_shield != FALSE) ? 4 : ep->effect_vars.shield.player;
 
+    SYColorRGB env = dEFManagerShieldColors[id].env;
+
+#ifdef REGION_REMIX
+    env = ftRemixShieldGetEnvColor(ep->effect_vars.shield.player, ep->effect_vars.shield.is_damage_shield, env);
+#endif
+
     gDPPipeSync(gSYTaskmanDLHeads[1]++);
     gDPSetPrimColor(gSYTaskmanDLHeads[1]++, 0, 0, dEFManagerShieldColors[id].prim.r, dEFManagerShieldColors[id].prim.g, dEFManagerShieldColors[id].prim.b, 0xC0);
-    gDPSetEnvColor(gSYTaskmanDLHeads[1]++, dEFManagerShieldColors[id].env.r, dEFManagerShieldColors[id].env.g, dEFManagerShieldColors[id].env.b, 0xC0);
+    gDPSetEnvColor(gSYTaskmanDLHeads[1]++, env.r, env.g, env.b, 0xC0);
 
     gcDrawDObjTreeDLLinksForGObj(effect_gobj);
 }

@@ -224,6 +224,9 @@ extern void syAudioSetFXType(s32 fx_type);
 extern void syAudioStopBGMAll(void);
 extern s32 syAudioPlayBGM(s32 sngplayer, u32 bgm);
 extern void syAudioStopBGM(s32 sngplayer);
+#if defined(PORT) && defined(REGION_REMIX)
+extern s32 syAudioGetBGMPlaying(s32 sngplayer);
+#endif
 extern void syAudioSetBGMVolume(s32 sngplayer, u32 vol);
 extern void syAudioSetBGMVolumeFade(s32 sngplayer, u32 vol, u32 time);
 extern void syAudioSetBGMReverb(s32 sngplayer, u32 reverb);

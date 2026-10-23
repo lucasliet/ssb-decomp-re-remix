@@ -545,7 +545,7 @@ s32 ifRemixBattlePlace(void);
 
 /* Special Model Display and Model Display, ft/ftremix/ftremixhitboxdisplay.c (Hitbox.asm hitbox_mode_, Costumes.asm
  * force_hi_lo_poly_): the forced poly detail of a fighter, and the fighter display mode from the Special Model toggle */
-u8 ftRemixModelDisplayDetail(u8 detail);
+u8 ftRemixModelDisplayDetail(u8 detail, s32 player);
 void ftRemixHitboxDisplayApply(FTStruct *fp);
 
 /* Damage.asm stun_damage_action_ (0x8014158C) and stun_electric_action_ (0x801412E8), ftremix/ftremixdamagestun.c:
@@ -553,5 +553,57 @@ void ftRemixHitboxDisplayApply(FTStruct *fp);
  * damage type takes the electric status path (ftCommonDamageInitDamageVars) */
 sb32 ftRemixDamageGotoStunAction(GObj *fighter_gobj);
 sb32 ftRemixDamageUsesElectricStatus(s32 element);
+
+/* Remix CSS panel values read at fighter creation, ftremix/ftremixpanel.c */
+s32 ftRemixPanelGetInitialDamage(FTStruct *fp, s32 desc_damage);
+
+/* Visibility panel option, ftremix/ftremixvisibility.c (CharEnvColor.asm initialize_override_table_ and
+ * update_player_indicator_alpha_): the env colour state of a fighter at creation, and the alpha of its player tag */
+void ftRemixVisibilityInitFighter(FTStruct *fp);
+void ftRemixVisibilityPlayerTagSetAlpha(SObj *sobj, s32 player);
+
+/* Remix CSS panel InputDelay, ftremix/ftremixinputdelay.c (InputDelay.asm apply_input_delay_): the delayed controller
+ * sample of a human fighter (ftMainProcUpdateInterrupt) and the buffer clear at fighter creation (ftManagerInitFighter) */
+SYController *ftRemixInputDelayController(FTStruct *fp, SYController *controller);
+void ftRemixInputDelayReset(FTStruct *fp);
+
+/* Remix CSS Kirby Hat, ftremix/ftremixkirbyhats.c (KirbyHats.asm kirby_hat_select_): the hat modelpart a Kirby or J Kirby
+ * spawns with from its panel value, or -1 to keep the vanilla spawn hat */
+s32 ftRemixKirbyHatPanelModelPart(FTStruct *fp);
+
+/* Remix CSS panel Shield, ftremix/ftremixshield.c (Shield.asm color_fix_): the env colour of a shield, vanilla unless the
+ * port picked a colour 1 to 15 */
+SYColorRGB ftRemixShieldGetEnvColor(s32 port, sb32 is_damage_shield, SYColorRGB vanilla);
+
+/* Taunt Button setting (Joypad.asm set_taunt_mask_, prevent_taunt_jump_), ftremix/ftremixtauntbutton.c: the taunt mask of a
+ * fighter at creation (ftManagerMakeFighter), and TRUE when the C button presses may jump (ftCommonKneeBendCheckButtonTap,
+ * ftCommonJumpAerialMultiCheckJumpButtonHold) */
+u16 ftRemixTauntButtonMaskFor(FTStruct *fp, u16 vanilla_mask);
+sb32 ftRemixTauntButtonAllowsJump(FTStruct *fp, u16 pressed);
+
+/* Remix CSS panel Start With and Taunt Item, ftremix/ftremixstartitem.c (Item.asm match_begin_with_item_,
+ * respawn_with_item_, taunt_spawn_item_): the item given at the GO hook, on respawn and on a taunt */
+void ftRemixStartItemMatchBegin(GObj *fighter_gobj);
+void ftRemixStartItemRespawn(GObj *fighter_gobj);
+void ftRemixTauntItemSpawn(GObj *fighter_gobj);
+
+/* Remix CSS panel D-pad Control, ftremix/ftremixdpad.c (DpadControl.asm css_cursor_and_dpad_controls_, set_R_macro): the
+ * controller sample a human fighter reads with Stick Swap, Stickless or their J variants (ftMainProcUpdateInterrupt) */
+SYController *ftRemixDpadControlController(FTStruct *fp, SYController *controller);
+
+/* Remix CSS panel Handicap, ftremix/ftremixhandicap.c (Handicap.asm use_handicap_): the handicap byte of a fighter at
+ * creation, the panel value of a CPU port when it is not 0, vanilla otherwise */
+u8 ftRemixHandicapGetFighterValue(FTStruct *fp, u8 vanilla_handicap);
+
+/* Remix CSS panel Player Tag, if/ifremixplayertag.c (PlayerTag.asm use_custom_tag_image_, always_display_custom_tag_): the
+ * tag sprite offset of the battle indicator, and TRUE when the indicator stays shown */
+intptr_t ifRemixPlayerTagSpriteOffset(s32 player, intptr_t vanilla_offset);
+sb32 ifRemixPlayerTagAlwaysShown(s32 player);
+
+/* Remix CSS panel Input Display, ftremix/ftremixinputdisplay.c (InputDisplay.asm update_input_display_): the controller
+ * sample of a fighter sent to the port overlay (ftMainProcUpdateInterrupt), and the overlay clear at each scene change
+ * (scManagerRunLoop) */
+void ftRemixInputDisplayUpdate(FTStruct *fp, u16 buttons, s8 stick_x, s8 stick_y);
+void ftRemixInputDisplayClear(void);
 
 #endif

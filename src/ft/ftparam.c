@@ -1125,7 +1125,7 @@ void ftParamSetModelPartDetailAll(GObj *fighter_gobj, u8 detail)
     s32 i;
 
 #ifdef REGION_REMIX
-    detail = ftRemixModelDisplayDetail(detail);
+    detail = ftRemixModelDisplayDetail(detail, fp->player);
 #endif
 
     if (detail != fp->detail_curr)
@@ -1701,6 +1701,20 @@ void ftParamVelDamageTransferGround(FTStruct *fp)
     }
 }
 
+#ifdef REGION_REMIX
+#define FTPARAM_HANDICAP_TABLE_COUNT 36
+
+/* The Remix CPU handicap byte goes up to 40 (css/Handicap.asm); entries past the knockback table fall back to its last row. */
+static s32 ftParamGetHandicapIndex(s32 handicap)
+{
+    s32 index = handicap - 1;
+
+    return (index < FTPARAM_HANDICAP_TABLE_COUNT) ? index : (FTPARAM_HANDICAP_TABLE_COUNT - 1);
+}
+#else
+#define ftParamGetHandicapIndex(handicap) ((handicap) - 1)
+#endif
+
 // 0x800E9D78
 f32 ftParamGetCommonKnockback(s32 percent_damage, s32 recent_damage, s32 hit_damage, s32 knockback_weight, s32 knockback_scale, s32 knockback_base, f32 weight, s32 attack_handicap, s32 defend_handicap)
 {
@@ -1708,13 +1722,13 @@ f32 ftParamGetCommonKnockback(s32 percent_damage, s32 recent_damage, s32 hit_dam
 
     if (knockback_weight != 0)
     {
-        knockback = ( ( ( ( ( ( 1 + ( 10.0F * knockback_weight * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * ( gSCManagerBattleState->damage_ratio * 0.01F ) * dFTCommonDataHandicapTable[attack_handicap - 1][0] ) * dFTCommonDataHandicapTable[defend_handicap - 1][1];
+        knockback = ( ( ( ( ( ( 1 + ( 10.0F * knockback_weight * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * ( gSCManagerBattleState->damage_ratio * 0.01F ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(attack_handicap)][0] ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(defend_handicap)][1];
     } 
     else 
     {
         f32 damage_add = percent_damage + recent_damage;
 
-        knockback = ( ( ( ( ( ( ( damage_add * 0.1F ) + ( damage_add * hit_damage * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * ( gSCManagerBattleState->damage_ratio * 0.01F ) * dFTCommonDataHandicapTable[attack_handicap - 1][0] ) * dFTCommonDataHandicapTable[defend_handicap - 1][1];
+        knockback = ( ( ( ( ( ( ( damage_add * 0.1F ) + ( damage_add * hit_damage * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * ( gSCManagerBattleState->damage_ratio * 0.01F ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(attack_handicap)][0] ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(defend_handicap)][1];
     }
 #ifdef REGION_REMIX
     knockback = ftRemixRageKnockbackScale(knockback, knockback_weight); /* Rage.asm knockback_multiply (0x800E9F60) */
@@ -1745,13 +1759,13 @@ f32 ftParamGetGroundHazardKnockback(s32 percent_damage, s32 recent_damage, s32 h
 
     if (knockback_weight != 0)
     {
-        knockback = ( ( ( ( ( ( 1 + ( 10.0F * knockback_weight * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * 1 * dFTCommonDataHandicapTable[attack_handicap - 1][0] ) * dFTCommonDataHandicapTable[defend_handicap - 1][1];
+        knockback = ( ( ( ( ( ( 1 + ( 10.0F * knockback_weight * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * 1 * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(attack_handicap)][0] ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(defend_handicap)][1];
     }
     else
     {
         f32 damage_add = percent_damage + recent_damage;
 
-        knockback = ( ( ( ( ( ( ( damage_add * 0.1F ) + ( damage_add * hit_damage * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base) * 1 * dFTCommonDataHandicapTable[attack_handicap - 1][0] ) * dFTCommonDataHandicapTable[defend_handicap - 1][1];
+        knockback = ( ( ( ( ( ( ( damage_add * 0.1F ) + ( damage_add * hit_damage * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base) * 1 * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(attack_handicap)][0] ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(defend_handicap)][1];
     }
     if (knockback >= 2500.0F)
     {

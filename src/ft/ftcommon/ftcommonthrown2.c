@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include <port_log.h>
 #include <sc/scene.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
@@ -43,6 +44,13 @@ static FTThrowHitDesc *ftCommonThrownGetThrowDesc(FTStruct *capture_fp, s32 id)
 {
     if (capture_fp->throw_desc == NULL)
     {
+        static sb32 is_logged = FALSE;
+
+        if (!is_logged)
+        {
+            is_logged = TRUE;
+            port_log("ftCommonThrownGetThrowDesc: fkind %d released a captured fighter without SetThrow, no-damage knockback used\n", (int)capture_fp->fkind);
+        }
         return &dFTCommonThrownNoDamageKnockback;
     }
     return &capture_fp->throw_desc[id];

@@ -537,6 +537,10 @@ typedef enum SCStaffrollCompany
 	nSCStaffrollCompanyARTSVISION,
 	nSCStaffrollCompanyEZAKIProd,
 	nSCStaffrollCompanyNOA
+#ifdef REGION_REMIX
+	,
+	nSCStaffrollCompanyRemix
+#endif
 
 } SCStaffrollCompany;
 

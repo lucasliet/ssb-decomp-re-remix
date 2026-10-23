@@ -13,10 +13,10 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include <ft/fighter.h>
 #include <gm/gmdef.h>
+#include <gm/gmremixpanel.h>
 #include <port_log.h>
 #include <sc/scene.h>
 #include <sc/scmanager.h>
-#include <stdlib.h>
 
 /* Size.asm multiplier_table: current size multiplier of each player. */
 static f32 sFTRemixSizeMultiplier[GMCOMMON_PLAYERS_MAX] = { 1.0F, 1.0F, 1.0F, 1.0F };
@@ -100,31 +100,6 @@ f32 ftRemixSizeGetModeMultiplier(s32 player)
 }
 
 /**
- * SSB64_REMIX_SIZE_STATE="g,t,n,n": match size state per port (n normal, g giant, t tiny), a stand-in for the CSS size
- * menu. Read once, on the first fighter of the run.
- */
-static void ftRemixSizeReadEnvStates(void)
-{
-    static sb32 is_read = FALSE;
-    const char *text = getenv("SSB64_REMIX_SIZE_STATE");
-    s32 player = 0;
-
-    if (is_read)
-    {
-        return;
-    }
-    is_read = TRUE;
-    for (; (text != NULL) && (*text != '\0') && (player < GMCOMMON_PLAYERS_MAX); text++)
-    {
-        if (*text == ',')
-        {
-            continue;
-        }
-        sFTRemixSizeMatchState[player++] = (*text == 'g') ? FTREMIX_SIZE_STATE_GIANT : (*text == 't') ? FTREMIX_SIZE_STATE_TINY : FTREMIX_SIZE_STATE_NORMAL;
-    }
-}
-
-/**
  * Records the body size of a new fighter and sets its multiplier: 1.0F, or the size of its match state outside the
  * How to Play and Auto-Demo screens (Size.asm initialize_base_multiplier_table_).
  * Called from ftManagerInitFighter.
@@ -135,7 +110,7 @@ void ftRemixSizeInitFighter(FTStruct *fp)
     {
         return;
     }
-    ftRemixSizeReadEnvStates();
+    ftRemixSizeSetMatchState(fp->player, gmRemixPanel(SIZE, fp->player));
     sFTRemixSizeBaseMultiplier[fp->player] = fp->attr->size;
     sFTRemixSizeMultiplier[fp->player] = 1.0F;
 
