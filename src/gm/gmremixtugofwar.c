@@ -6,9 +6,17 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ft/fighter.h>
+#include <port_log.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixtugofwar.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
+#include <sc/scmanager.h>
+#include <sc/sctypes.h>
+#include <ft/ftcommon/ftcommonfunctions.h>
+
+#define GMREMIX_TUGOFWAR_STOCK_MAX 127
+
+extern s32 sIFCommonBattlePlace;
 
 static s32 sGMRemixTugOfWarLastHit[GMCOMMON_PLAYERS_MAX];
 static s32 sGMRemixTugOfWarTeam[GMCOMMON_PLAYERS_MAX];
@@ -152,6 +160,88 @@ s32 gmRemixTugOfWarPickCreditPort(s32 victim_team, s32 koer_team, s32 koer_port,
         return koer_port;
     }
     return last_hit_port;
+}
+
+/* TugOfWar.asm update_sIFCommonBattlePlace_: a revived fighter undoes the place step of its elimination, unless a teammate
+ * still had stocks (in teams the team had not been eliminated). */
+static void gmRemixTugOfWarFixPlace(FTStruct *revived)
+{
+    s32 i;
+
+    if (gSCManagerBattleState->is_team_battle != FALSE)
+    {
+        for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
+        {
+            SCPlayerData *data = &gSCManagerBattleState->players[i];
+
+            if ((i == revived->player) || (data->pkind == nFTPlayerKindNot))
+            {
+                continue;
+            }
+            if ((data->team == revived->team) && (data->stock_count >= 0))
+            {
+                return;
+            }
+        }
+    }
+    sIFCommonBattlePlace++;
+}
+
+static void gmRemixTugOfWarGiveStock(s32 port)
+{
+    SCPlayerData *data = &gSCManagerBattleState->players[port];
+    FTStruct *fp;
+    s32 stock_before;
+
+    if (data->fighter_gobj == NULL)
+    {
+        return;
+    }
+    fp = ftGetStruct(data->fighter_gobj);
+    stock_before = fp->stock_count;
+
+    if (stock_before < GMREMIX_TUGOFWAR_STOCK_MAX)
+    {
+        fp->stock_count++;
+    }
+    data->stock_count = fp->stock_count;
+    port_log("tugofwar: stock credit to port %d, stock_count %d -> %d\n", (int)port, (int)stock_before, (int)fp->stock_count);
+
+    if (gmRemixTugOfWarShouldRevive(stock_before) == FALSE)
+    {
+        return;
+    }
+    ftCommonRebirthDownSetStatus(data->fighter_gobj);
+    gmRemixTugOfWarFixPlace(fp);
+}
+
+void gmRemixTugOfWarCreditKO(FTStruct *victim)
+{
+    s32 koer_port = GMREMIX_TUGOFWAR_NO_PORT;
+    s32 koer_team = GMREMIX_TUGOFWAR_NO_PORT;
+    s32 credit_port;
+
+    if (gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR) == FALSE)
+    {
+        return;
+    }
+    victim->shield_player = GMREMIX_TUGOFWAR_NO_PORT;
+
+    if (gmRemixTugOfWarIsValidPort(victim->damage_player) != FALSE)
+    {
+        koer_port = victim->damage_player;
+        koer_team = sGMRemixTugOfWarTeam[koer_port];
+    }
+    credit_port = gmRemixTugOfWarPickCreditPort(victim->team, koer_team, koer_port, gmRemixTugOfWarGetLastHit(victim->player));
+
+    if (sGMRemixTugOfWarIs1v1 == FALSE)
+    {
+        sGMRemixTugOfWarLastHit[victim->player] = GMREMIX_TUGOFWAR_NO_PORT;
+    }
+    if ((gmRemixTugOfWarIsValidPort(credit_port) != FALSE) && (credit_port != victim->player))
+    {
+        gmRemixTugOfWarGiveStock(credit_port);
+    }
 }
 
 sb32 gmRemixTugOfWarShouldRevive(s32 stock_count_before)

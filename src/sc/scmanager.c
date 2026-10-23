@@ -1029,6 +1029,14 @@ void scManagerRunLoop(sb32 arg)
 					gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
 #endif
 					gSCManagerTransferBattleState.stocks = (u8)(atoi(stocks_env) - 1);
+					{
+						s32 stock_player;
+
+						for (stock_player = 0; stock_player < ARRAY_COUNT(gSCManagerTransferBattleState.players); stock_player++)
+						{
+							gSCManagerTransferBattleState.players[stock_player].is_single_stockicon = FALSE;
+						}
+					}
 				}
 			}
 #if defined(PORT) && defined(REGION_REMIX)

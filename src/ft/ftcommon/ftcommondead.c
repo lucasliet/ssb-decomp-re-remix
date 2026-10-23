@@ -5,6 +5,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
+#include "gm/gmremixtugofwar.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -92,6 +93,9 @@ void ftCommonDeadUpdateScore(FTStruct *this_fp)
         }
     }
     else gSCManagerBattleState->players[this_fp->player].total_selfdestructs++;
+#if defined(PORT) && defined(REGION_REMIX)
+    gmRemixTugOfWarCreditKO(this_fp);
+#endif
     
     if (gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_STOCK)
     {

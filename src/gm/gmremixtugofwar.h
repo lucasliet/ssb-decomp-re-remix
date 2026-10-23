@@ -57,6 +57,14 @@ extern s32 gmRemixTugOfWarPickCreditPort(s32 victim_team, s32 koer_team, s32 koe
  */
 extern sb32 gmRemixTugOfWarShouldRevive(s32 stock_count_before);
 
+/**
+ * TugOfWar.asm credit_stock_to_koer_ and credit_stock_when_no_koer_: called from ftCommonDeadUpdateScore before the victim
+ * loses its stock. Clears the shield player of the victim and gives one stock to the fighter chosen by
+ * gmRemixTugOfWarPickCreditPort; a fighter that was out comes back through ftCommonRebirthDownSetStatus and the place
+ * counter is fixed. Does nothing when the match is not Tug of War.
+ */
+extern void gmRemixTugOfWarCreditKO(FTStruct *victim);
+
 #endif
 
 #endif

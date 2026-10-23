@@ -14,6 +14,7 @@
 #include "remix/remix_hud_text.h"
 
 #define GMREMIX_MODE_SCORE_STOCK_SHIFT 12
+#define GMREMIX_MODE_SCORE_TUG_STOCK_SHIFT 24
 
 extern char *getenv(const char *name);
 extern int strcmp(const char *a, const char *b);
@@ -301,6 +302,12 @@ s32 gmRemixTimedStockScore(s32 player)
     SCPlayerData *data = &gSCManagerTransferBattleState.players[player];
     s32 stocks_left;
 
+    if (gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR) != FALSE)
+    {
+        stocks_left = data->stock_count + 1;
+
+        return (stocks_left << GMREMIX_MODE_SCORE_TUG_STOCK_SHIFT) + ((data->score - data->falls) << GMREMIX_MODE_SCORE_STOCK_SHIFT) - data->stock_damage_all;
+    }
     stocks_left = gmRemixStockModeCount(player, gSCManagerTransferBattleState.stocks) - data->falls + 1;
 
     if (stocks_left == 0)
