@@ -6,6 +6,7 @@
 #endif
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "gm/gmremixtagteam.h"
 #endif
 
 // // // // // // // // // // // //
@@ -26,6 +27,9 @@ f32 dFTCommonRebirthOffsetsX[/* */] = { 0.0F, -1000.0F, 1000.0F, -2000.0F };
 // 0x8013CF60
 void ftCommonRebirthDownSetStatus(GObj *this_gobj)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    this_gobj = gmRemixTagTeamLoadNextFighter(this_gobj);
+#endif
     FTStruct *this_fp = ftGetStruct(this_gobj);
     FTDesc rebirth_vars = dFTManagerDefaultFighterDesc;
     GObj *other_gobj;

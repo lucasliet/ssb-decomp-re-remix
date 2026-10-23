@@ -10,6 +10,7 @@
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixtagteam.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixtugofwar.h"
 #endif
@@ -394,6 +395,7 @@ void scVSBattleStartBattle(void)
 	gmRemixTugOfWarSetup();
 	gmRemixKothSetup();
 	gmRemixSmashketballSetup();
+	gmRemixTagTeamSetup();
 	gmRemixModeLogMatch();
 #endif
 
