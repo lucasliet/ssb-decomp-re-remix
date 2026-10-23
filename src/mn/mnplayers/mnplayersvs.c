@@ -19,10 +19,14 @@ extern float port_widescreen_clip_x_scale(void);
 #ifdef REGION_REMIX
 #include "remix/remix_css_data.h"
 #include "gm/gmremixmenumusic.h"
+#include "gm/gmremixmode.h"
 #include "gm/gmremixspawnsetup.h"
+#include "gm/gmremixstamina.h"
 #include "gm/gmremixtoggle.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixgoalpicker.h"
 #include "mn/mnplayers/mnremixvariants.h"
+#include "mn/mnvsmode/mnremixvsstamina.h"
 #endif
 
 
@@ -1460,6 +1464,12 @@ void mnPlayersVSMakeTimeSetting(s32 number)
 	{
 		mnPlayersVSMakeGameRuleNumber(sMNPlayersVSGameRuleGObj, number, 208.0F, 23.0F, colors, 2, FALSE);
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	else if (mnRemixGoalPickerIsActive() != FALSE)
+	{
+		mnPlayersVSMakeGameRuleNumber(sMNPlayersVSGameRuleGObj, number, mnRemixGoalPickerNumberX(number), 23.0F, colors, 3, FALSE);
+	}
+#endif
 	else mnPlayersVSMakeGameRuleNumber(sMNPlayersVSGameRuleGObj, number, 212.0F, 23.0F, colors, 2, FALSE);
 }
 
@@ -1510,6 +1520,13 @@ void mnPlayersVSMakeStockSetting(s32 number)
 	{
 		gcEjectSObj(SObjGetStruct(sMNPlayersVSGameRuleGObj)->next);
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	if (gGMRemixStaminaRule != FALSE)
+	{
+		mnRemixVSStaminaMakeCSSValue(sMNPlayersVSGameRuleGObj, gGMRemixStaminaHP, colors);
+		return;
+	}
+#endif
 	if (number < 10)
 	{
 		mnPlayersVSMakeGameRuleNumber(sMNPlayersVSGameRuleGObj, number, 210.0F, 23.0F, colors, 2, FALSE);
@@ -3845,6 +3862,9 @@ void mnPlayersVSBackToVSMode(void)
 	}
 #endif
 	mnPlayersVSSetSceneData();
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixModeLeaveCSS();
+#endif
 	mnPlayersVSPauseSlotProcesses();
 #ifdef REGION_REMIX
 	gmRemixMenuMusicStop();
@@ -3953,6 +3973,13 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 				sMNPlayersVSTimeValue = mnPlayersVSGetNextTimeValue(sMNPlayersVSTimeValue);
 				mnPlayersVSMakeTimeSelect(sMNPlayersVSTimeValue);
 			}
+#if defined(PORT) && defined(REGION_REMIX)
+			else if (gGMRemixStaminaRule != FALSE)
+			{
+				mnRemixVSStaminaScrollHP(TRUE);
+				mnPlayersVSMakeStockSelect(sMNPlayersVSStockValue);
+			}
+#endif
 			else
 			{
 				s32 stock_max = 98;
@@ -3982,6 +4009,13 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 				sMNPlayersVSTimeValue = mnPlayersVSGetPrevTimeValue(sMNPlayersVSTimeValue);
 				mnPlayersVSMakeTimeSelect(sMNPlayersVSTimeValue);
 			}
+#if defined(PORT) && defined(REGION_REMIX)
+			else if (gGMRemixStaminaRule != FALSE)
+			{
+				mnRemixVSStaminaScrollHP(FALSE);
+				mnPlayersVSMakeStockSelect(sMNPlayersVSStockValue);
+			}
+#endif
 			else
 			{
 				s32 stock_max = 98;
@@ -5172,7 +5206,11 @@ void mnPlayersVSSetSceneData(void)
 
 		gSCManagerTransferBattleState.players[i].tag = (gSCManagerTransferBattleState.players[i].pkind == nFTPlayerKindMan) ? i : GMCOMMON_PLAYERS_MAX;
 
+#if defined(PORT) && defined(REGION_REMIX)
+		gSCManagerTransferBattleState.players[i].is_single_stockicon = (gSCManagerTransferBattleState.game_rules == SCBATTLE_GAMERULE_TIME) ? TRUE : FALSE;
+#else
 		gSCManagerTransferBattleState.players[i].is_single_stockicon = (gSCManagerTransferBattleState.game_rules & SCBATTLE_GAMERULE_TIME) ? TRUE : FALSE;
+#endif
 
 		if (gSCManagerTransferBattleState.players[i].pkind == nFTPlayerKindCom)
 		{
@@ -5342,6 +5380,9 @@ void mnPlayersVSFuncRun(GObj *gobj)
 		}
 #endif
 		mnPlayersVSSetSceneData();
+#if defined(PORT) && defined(REGION_REMIX)
+		gmRemixModeLeaveCSS();
+#endif
 		syTaskmanSetLoadScene();
 
 		return;
@@ -5420,6 +5461,9 @@ void mnPlayersVSFuncRun(GObj *gobj)
 				gSCManagerSceneData.gkind = gkind;
 			}
 			mnPlayersVSSetSceneData();
+#if defined(PORT) && defined(REGION_REMIX)
+			gmRemixModeStartMatch();
+#endif
 			syTaskmanSetLoadScene();
 		}
 	}
@@ -5453,6 +5497,13 @@ s32 mnPlayersVSGetNextTimeValue(s32 current_value)
 	s32 i;
 	s32 timer_values[/* */] = { 2, 3, 5, 10, 15, 30, 60, SCBATTLE_TIMELIMIT_INFINITE };
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (mnRemixGoalPickerIsActive() != FALSE)
+	{
+		return mnRemixGoalPickerNext(current_value);
+	}
+#endif
+
 	if (current_value == timer_values[ARRAY_COUNT(timer_values) - 1])
 	{
 		return timer_values[0];
@@ -5472,6 +5523,13 @@ s32 mnPlayersVSGetPrevTimeValue(s32 current_value)
 {
 	s32 i;
 	s32 timer_values[/* */] = { 2, 3, 5, 10, 15, 30, 60, SCBATTLE_TIMELIMIT_INFINITE };
+
+#if defined(PORT) && defined(REGION_REMIX)
+	if (mnRemixGoalPickerIsActive() != FALSE)
+	{
+		return mnRemixGoalPickerPrev(current_value);
+	}
+#endif
 
 	if (current_value == timer_values[0])
 	{
@@ -5599,6 +5657,10 @@ void mnPlayersVSResetPlayer(s32 player)
 void mnPlayersVSInitVars(void)
 {
 	s32 i;
+
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixModeBeforeCSS();
+#endif
 
 	sMNPlayersVSTotalTimeTics = 0;
 	sMNPlayersVSReturnTic = sMNPlayersVSTotalTimeTics + I_MIN_TO_TICS(5);

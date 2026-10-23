@@ -20,6 +20,8 @@ extern void port_coroutine_yield(void);
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "mn/mncommon/mnremixgallery.h"
+#include "gm/gmremixmode.h"
+#include "gm/gmremixstamina.h"
 #endif
 #include <db/debug.h>
 #include <sys/debug.h>
@@ -1006,14 +1008,43 @@ void scManagerRunLoop(sb32 arg)
 				gSCManagerTransferBattleState.item_toggles = ~0U;
 				gSCManagerTransferBattleState.item_appearance_rate = (u8)remix_debug_vs_item_rate();
 			}
+#if defined(PORT) && defined(REGION_REMIX)
+			gmRemixModeBeforeCSS();
+			gmRemixModeStartMatch();
+#endif
 			{
 				const char *stocks_env = getenv("SSB64_VS_STOCKS");
 
 				if (stocks_env != NULL)
 				{
 					gSCManagerTransferBattleState.game_type = nSCBattleGameTypeRoyal;
+#if defined(PORT) && defined(REGION_REMIX)
+					gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIMED_STOCK;
+#else
 					gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
+#endif
 					gSCManagerTransferBattleState.stocks = (u8)(atoi(stocks_env) - 1);
+				}
+			}
+#if defined(PORT) && defined(REGION_REMIX)
+			{
+				const char *stamina_env = getenv("SSB64_VS_STAMINA");
+
+				if (stamina_env != NULL)
+				{
+					gSCManagerTransferBattleState.game_type = nSCBattleGameTypeRoyal;
+					gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIMED_STOCK;
+					gGMRemixStaminaRule = TRUE;
+					gGMRemixStaminaHP = atoi(stamina_env);
+				}
+			}
+#endif
+			{
+				const char *time_env = getenv("SSB64_VS_TIME");
+
+				if (time_env != NULL)
+				{
+					gSCManagerTransferBattleState.time_limit = (u8)atoi(time_env);
 				}
 			}
 			gSCManagerSceneData.scene_curr = nSCKindVSBattle;
@@ -1165,6 +1196,7 @@ void scManagerRunLoop(sb32 arg)
 		itRemixClearActiveItems();
 		ftRemixKirbyHatsClearCache();
 		ftRemixInputDisplayClear();
+		gmRemixModeSceneClear();
 #endif
 		switch (gSCManagerSceneData.scene_curr)
 		{

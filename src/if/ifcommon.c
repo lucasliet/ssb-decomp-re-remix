@@ -11,6 +11,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
 #include "gm/gmremixmusictitle.h"
+#include "if/ifremixstaminahud.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -677,7 +678,13 @@ void ifCommonPlayerDamageUpdateDigits(GObj *interface_gobj)
         }
         sIFCommonPlayerDamageInterface[player].char_display_count = char_count = ifCommonPlayerDamageGetHitPointsArrayID(hitpoints, digits);
     }
-    else sIFCommonPlayerDamageInterface[player].char_display_count = char_count = ifCommonPlayerDamageGetPercentArrayID(damage, digits);
+    else
+    {
+#ifdef REGION_REMIX
+        damage = ifRemixStaminaDisplayValue(damage);
+#endif
+        sIFCommonPlayerDamageInterface[player].char_display_count = char_count = ifCommonPlayerDamageGetPercentArrayID(damage, digits);
+    }
 
     pos_x = (ifCommonPlayerDamageGetDigitOffset(char_count, digits) * scale * 0.5F);
 
@@ -869,7 +876,11 @@ void ifCommonPlayerDamageProcDisplay(GObj *interface_gobj)
         }
         else
         {
+#ifdef REGION_REMIX
+            damage_scale = 1.0F - ifRemixStaminaDamageRatio(sIFCommonPlayerDamageInterface[player].damage);
+#else
             damage_scale = 1.0F - (sIFCommonPlayerDamageInterface[player].damage / 300.0F);
+#endif
 
             if (damage_scale < 0.0F)
             {

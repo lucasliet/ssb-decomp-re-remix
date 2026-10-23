@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixtugofwar.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -58,6 +61,9 @@ void ftCommonShieldBreakFlyCommonSetStatus(GObj *fighter_gobj)
     }
     else efManagerShieldBreakMakeEffect(&offset);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    gmRemixTugOfWarRecordShieldBreak(fp);
+#endif
     ftParamUpdate1PGameDamageStats(fp, fp->shield_player, nFTHitLogObjectNone, 0, 0, 0);
 
     if ((gSCManagerBattleState->game_type == nSCBattleGameType1PGame) && (fp->shield_damage != 0))

@@ -7,6 +7,9 @@
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixgameend.h"
+#include "gm/gmremixmode.h"
+#include "gm/gmremixstamina.h"
+#include "gm/gmremixtugofwar.h"
 #endif
 #include <ft/fighter.h>
 #ifdef PORT
@@ -384,6 +387,11 @@ void scVSBattleStartBattle(void)
 	func_800269C0_275C0(nSYAudioVoicePublicExcited);
 	ifCommonTimerMakeInterface(ifCommonAnnounceTimeUpInitInterface);
 	ifCommonTimerMakeDigits();
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixStaminaResetDefeated();
+	gmRemixTugOfWarSetup();
+	gmRemixModeLogMatch();
+#endif
 
 	color = dSCVSBattleCommonFadeColor;
 
@@ -403,6 +411,12 @@ sb32 scVSBattleSetScoreCheckSuddenDeath(void)
 	{
 		return FALSE;
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixTimedStockAllowsSuddenDeath() == FALSE)
+	{
+		return FALSE;
+	}
+#endif
 	gSCManagerVSBattleState = gSCManagerTransferBattleState;
 	gSCManagerVSBattleState.pl_count = gSCManagerVSBattleState.cp_count = 0;
 

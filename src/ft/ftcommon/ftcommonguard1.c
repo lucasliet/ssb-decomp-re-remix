@@ -1,6 +1,9 @@
 #include <ft/fighter.h>
 #include <ef/efmanager.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 
 // // // // // // // // // // // //
@@ -483,6 +486,12 @@ sb32 ftCommonGuardOnCheckInterruptSuccess(GObj *fighter_gobj, s32 slide_tics)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaIsOutOfHP(fp))
+    {
+        return FALSE;
+    }
+#endif
     if ((fp->input.pl.button_hold & fp->input.button_mask_z) && (fp->shield_health != 0))
     {
         ftCommonGuardOnSetStatus(fighter_gobj, slide_tics);

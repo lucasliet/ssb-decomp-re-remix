@@ -9,6 +9,11 @@
 #include <ft/ftparam.h>
 #include <sys/audio.h>
 #include "mn/mnvsmode/mnremixvsmode.h"
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixmode.h"
+#include "gm/gmremixstamina.h"
+#include "mn/mnvsmode/mnremixvsstamina.h"
+#endif
 
 extern void* func_800269C0_275C0(u16);
 
@@ -359,6 +364,14 @@ void mnVSModeMakeRuleValue()
 
     gcAddGObjDisplay(rule_value_gobj, lbCommonDrawSObjAttr, 3, GOBJ_PRIORITY_DEFAULT, ~0);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (mnRemixVSStaminaIsRule(sMNVSModeRule))
+    {
+        mnRemixVSStaminaMakeRuleValue(rule_value_gobj, sMNVSModeFiles[1], sMNVSModeRule);
+        return;
+    }
+#endif
+
     switch (sMNVSModeRule)
     {
         case nMNVSModeRuleStock:
@@ -514,7 +527,7 @@ void mnVSModeAnimateRuleArrows(GObj* rule_arrows_gobj)
                 mnVSModeMakeLeftArrow(rule_arrows_gobj, 165.0F, 70.0F);
             }
 
-            if (sMNVSModeRule == nMNVSModeRuleStockTeam)
+            if (sMNVSModeRule == nMNVSModeRuleLast)
             {
                 arrow_sobj = mnVSModeGetArrowSObj(rule_arrows_gobj, 1);
 
@@ -666,6 +679,13 @@ void mnVSModeMakeTimeStockValue()
 
     value = mnVSModeGetTimeStockValue();
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (mnRemixVSStaminaIsRule(sMNVSModeRule))
+    {
+        mnRemixVSStaminaMakeHPValue(time_stock_value_gobj, gGMRemixStaminaHP, colors);
+    }
+    else
+#endif
     if (value == SCBATTLE_TIMELIMIT_INFINITE)
     {
         time_stock_value_sobj = lbCommonMakeSObjForGObj(time_stock_value_gobj, lbRelocGetFileData(Sprite*, sMNVSModeFiles[0], llMNCommonInfinitySprite));
@@ -703,6 +723,13 @@ void mnVSModeMakeTimeStockButton()
 
     mnVSModeUpdateButton(time_stock_button_gobj, (sMNVSModeCursorIndex == nMNVSModeOptionTimeStock) ? nMNOptionTabStatusHighlight : nMNOptionTabStatusNot);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (mnRemixVSStaminaIsRule(sMNVSModeRule))
+    {
+        mnRemixVSStaminaMakeTimeStockLabels(time_stock_button_gobj, sMNVSModeFiles[1]);
+    }
+    else
+#endif
     if ((sMNVSModeRule == nMNVSModeRuleTime) || (sMNVSModeRule == nMNVSModeRuleTimeTeam))
     {
         time_stock_button_sobj = lbCommonMakeSObjForGObj(time_stock_button_gobj, lbRelocGetFileData(Sprite*, sMNVSModeFiles[1], llMNVSModeTimePeriodTextSprite));
@@ -1152,6 +1179,12 @@ void mnVSModeFuncStartVars()
             break;
     }
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (gGMRemixStaminaRule != FALSE)
+    {
+        sMNVSModeRule = mnRemixVSStaminaGetRule(gSCManagerTransferBattleState.is_team_battle);
+    }
+#endif
     sMNVSModeTime = gSCManagerTransferBattleState.time_limit;
     sMNVSModeStock = gSCManagerTransferBattleState.stocks;
     sMNVSModeTimeStockArrowsGObj = 0;
@@ -1174,12 +1207,19 @@ void mnVSModeSaveSettings()
 {
     gSCManagerTransferBattleState.time_limit = sMNVSModeTime;
     gSCManagerTransferBattleState.stocks = sMNVSModeStock;
+#if defined(PORT) && defined(REGION_REMIX)
+    mnRemixVSStaminaSaveRule(sMNVSModeRule);
+#endif
 
     switch (sMNVSModeRule)
     {
         case nMNVSModeRuleStock:
             gSCManagerTransferBattleState.is_team_battle = FALSE;
+#if defined(PORT) && defined(REGION_REMIX)
+            gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIMED_STOCK;
+#else
             gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
+#endif
             break;
         case nMNVSModeRuleTime:
             gSCManagerTransferBattleState.is_team_battle = FALSE;
@@ -1187,12 +1227,26 @@ void mnVSModeSaveSettings()
             break;
         case nMNVSModeRuleStockTeam:
             gSCManagerTransferBattleState.is_team_battle = TRUE;
+#if defined(PORT) && defined(REGION_REMIX)
+            gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIMED_STOCK;
+#else
             gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
+#endif
             break;
         case nMNVSModeRuleTimeTeam:
             gSCManagerTransferBattleState.is_team_battle = TRUE;
             gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIME;
             break;
+#if defined(PORT) && defined(REGION_REMIX)
+        case nMNVSModeRuleStamina:
+            gSCManagerTransferBattleState.is_team_battle = FALSE;
+            gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIMED_STOCK;
+            break;
+        case nMNVSModeRuleStaminaTeam:
+            gSCManagerTransferBattleState.is_team_battle = TRUE;
+            gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIMED_STOCK;
+            break;
+#endif
     }
 }
 
@@ -1202,7 +1256,11 @@ s32 mnVSModeGetShade(s32 player)
     sb32 is_same_costume[GMCOMMON_PLAYERS_MAX];
     s32 i;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((sMNVSModeRule == nMNVSModeRuleTime) || (sMNVSModeRule == nMNVSModeRuleStock) || (sMNVSModeRule == nMNVSModeRuleStamina))
+#else
     if ((sMNVSModeRule == nMNVSModeRuleTime) || (sMNVSModeRule == nMNVSModeRuleStock))
+#endif
     {
         return 0;
     }
@@ -1279,6 +1337,9 @@ void mnVSModeSetCostumesAndShades(void)
     {
         case nMNVSModeRuleTime:
         case nMNVSModeRuleStock:
+#if defined(PORT) && defined(REGION_REMIX)
+        case nMNVSModeRuleStamina:
+#endif
             for (i = 0; i < ARRAY_COUNT(gSCManagerTransferBattleState.players); i++)
             {
                 if (gSCManagerTransferBattleState.players[i].fkind != nFTKindNull)
@@ -1290,6 +1351,9 @@ void mnVSModeSetCostumesAndShades(void)
             break;
         case nMNVSModeRuleTimeTeam:
         case nMNVSModeRuleStockTeam:
+#if defined(PORT) && defined(REGION_REMIX)
+        case nMNVSModeRuleStaminaTeam:
+#endif
             for (i = 0; i < ARRAY_COUNT(gSCManagerTransferBattleState.players); i++)
             {
                 if (gSCManagerTransferBattleState.players[i].fkind != nFTKindNull)
@@ -1635,7 +1699,7 @@ void mnVSModeMain(GObj *gobj)
 
                         sMNVSModeRule--;
 
-                        if (sMNVSModeRule == nMNVSModeRuleStock)
+                        if (sMNVSModeRule == nMNVSModeRuleFreeForAllLast)
                         {
                             mnVSModeSetCostumesAndShades();
                         }
@@ -1661,7 +1725,7 @@ void mnVSModeMain(GObj *gobj)
                     mnCommonCheckGetOptionStickInputLR(sMNVSModeChangeWait, stick_range, 20, 1)
                 )
                 {
-                    if (sMNVSModeRule < nMNVSModeRuleStockTeam)
+                    if (sMNVSModeRule < nMNVSModeRuleLast)
                     {
                         func_800269C0_275C0(nSYAudioFGMMenuScroll1);
 
@@ -1706,6 +1770,16 @@ void mnVSModeMain(GObj *gobj)
                         sMNVSModeChangeWait *= 2;
                     }
 
+#if defined(PORT) && defined(REGION_REMIX)
+                    if (mnRemixVSStaminaIsRule(sMNVSModeRule))
+                    {
+                        if (mnRemixVSStaminaScrollHP(FALSE))
+                        {
+                            sMNVSModeChangeWait += 8;
+                        }
+                    }
+                    else
+#endif
                     if (mnVSModeIsTime() != FALSE)
                     {
                         if (sMNVSModeTime == 1)
@@ -1752,6 +1826,16 @@ void mnVSModeMain(GObj *gobj)
                         sMNVSModeChangeWait *= 2;
                     }
 
+#if defined(PORT) && defined(REGION_REMIX)
+                    if (mnRemixVSStaminaIsRule(sMNVSModeRule))
+                    {
+                        if (mnRemixVSStaminaScrollHP(TRUE))
+                        {
+                            sMNVSModeChangeWait += 8;
+                        }
+                    }
+                    else
+#endif
                     if (mnVSModeIsTime() != FALSE)
                     {
                         if (sMNVSModeTime == 100)

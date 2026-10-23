@@ -4932,6 +4932,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 #ifdef REGION_REMIX
     status_id = ftRemixDededeMapKirbyInhaleStatus(fp, status_id);
     status_id = ftRemixKirbyCloneActionSwap(fighter_gobj, status_id);
+    status_id = ftRemixStaminaKOStatus(fp, status_id);
 #endif
 #ifdef PORT
     /* SR change_action_ (0x800E6F2C) — the per-status-change reset of SR

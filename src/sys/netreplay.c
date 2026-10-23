@@ -165,7 +165,7 @@ void syNetReplayApplyBattleMetadata(const SYNetInputReplayMetadata *metadata)
 		battle_state->players[player].handicap = handicap;
 		battle_state->players[player].level = metadata->levels[player];
 		battle_state->players[player].tag = (metadata->player_kinds[player] == nFTPlayerKindMan) ? player : GMCOMMON_PLAYERS_MAX;
-		battle_state->players[player].is_single_stockicon = (metadata->game_rules & SCBATTLE_GAMERULE_TIME) ? TRUE : FALSE;
+		battle_state->players[player].is_single_stockicon = (metadata->game_rules == SCBATTLE_GAMERULE_TIME) ? TRUE : FALSE;
 
 		if (metadata->player_kinds[player] == nFTPlayerKindMan)
 		{

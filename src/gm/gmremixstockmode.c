@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixpanel.h"
+#include "gm/gmremixstamina.h"
 #include "gm/gmremixstockmode.h"
 
 #define GMREMIX_STOCK_MODE_MANUAL 2
@@ -13,7 +14,7 @@
  * (CharacterSelect.asm 5627, GameEnd.asm 138), and the port has no CSS stock counter, so Last uses the match count. */
 
 /**
- * Stock count a VS fighter starts with. The Manual count only lowers the match count, as set_initial_stock_count_ keeps the
+ * Stock count a VS fighter starts with. Stamina gives one stock (Stamina.asm stamina_stock). The Manual count only lowers the match count, as set_initial_stock_count_ keeps the
  * smaller of the two.
  *
  * @param player Port index of the fighter (0..3).
@@ -24,6 +25,10 @@ s32 gmRemixStockModeCount(s32 player, s32 match_stocks)
 {
     s32 manual_count;
 
+    if (gmRemixStaminaIsActive() != FALSE)
+    {
+        return 0;
+    }
     if (gmRemixPanel(STOCK_MODE, player) != GMREMIX_STOCK_MODE_MANUAL)
     {
         return match_stocks;

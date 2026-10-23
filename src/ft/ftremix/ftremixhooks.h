@@ -606,4 +606,36 @@ sb32 ifRemixPlayerTagAlwaysShown(s32 player);
 void ftRemixInputDisplayUpdate(FTStruct *fp, u16 buttons, s8 stick_x, s8 stick_y);
 void ftRemixInputDisplayClear(void);
 
+/* Remix Stamina knockback, ftremix/ftremixstaminaknockback.c (Stamina.asm stamina_knockback_ and the three siblings):
+ * the damage sum ftParamGetCommonKnockback scales, 20 percent while the Stamina rule is active */
+s32 ftRemixStaminaKnockbackDamageAdd(s32 percent_damage, s32 recent_damage);
+
+/* Remix Stamina KO and damage cap, ftremix/ftremixstaminako.c (Stamina.asm stamina_main_, stamina_ko_ and
+ * stamina_percent_prevent): the percent a hit adds in ftParamUpdateDamage; the KO happens inside this call, once */
+s32 ftRemixStaminaStoredDamage(FTStruct *fp, s32 damage);
+
+/* Remix Stamina forced KO action, ftremix/ftremixstaminaaction.c (Stamina.asm stamina_ko_action): the status a fighter
+ * out of HP is moved to in ftMainSetStatus, DownBounceD on the ground and Tumble in the air, unless the asm protects it */
+s32 ftRemixStaminaKOStatus(FTStruct *fp, s32 status_id);
+
+/* Remix Stamina guards, ftremix/ftremixstaminaguard.c (Stamina.asm stamina_shield_prevent, stamina_armor_fix_,
+ * stamina_invis_prevent, egg_crash_prevent): a fighter out of HP cannot shield, has no passive armor, and its KO skips
+ * the invisible flag and the dead wait in the actions the asm lists */
+sb32 ftRemixStaminaIsOutOfHP(FTStruct *fp);
+sb32 ftRemixStaminaArmorIsZeroed(FTStruct *fp);
+sb32 ftRemixStaminaSkipsInvisible(FTStruct *fp);
+sb32 ftRemixStaminaSkipsDeadWaitInit(FTStruct *fp);
+
+/* Remix Stamina down and ledge guards, ftremix/ftremixstaminadown.c (Stamina.asm stamina_down_wait_down,
+ * stamina_down_wait_input, stamina_down_bounce_input, stamina_ledge): a fighter out of HP stays out of down wait and
+ * cannot grab a ledge */
+sb32 ftRemixStaminaDownBlocked(GObj *fighter_gobj);
+sb32 ftRemixStaminaLedgeBlocked(FTStruct *fp);
+
+/* Remix Stamina death guards, ftremix/ftremixstaminadead.c (Stamina.asm stamina_ko_prevent, stamina_ko_prevent_front,
+ * stamina_fix_6 and stamina_fix_7): a fighter out of stock does not die again, and a star KO on the last stock is -1 */
+sb32 ftRemixStaminaIsOutOfStock(FTStruct *fp);
+sb32 ftRemixStaminaIsBlastRedeath(FTStruct *fp);
+sb32 ftRemixStaminaRebirthSleeps(FTStruct *fp);
+
 #endif

@@ -17,6 +17,7 @@
 #include <sc/sctypes.h>
 #include <sys/taskman.h>
 #include <gm/gmcamera.h>
+#include <gm/gmremixstamina.h>
 #include <gm/gmremixtoggle.h>
 #include "ft/ftremix/ftremixhooks.h"
 
@@ -260,7 +261,7 @@ sb32 ftRemixSpecialZoomSkipsObjectsUpdate(void)
 /**
  * Decides the Special Zoom of a fighter's hit, after the knockback is set (SpecialZoom.asm final_knockback_was_set). A
  * KO zoom needs the KO setting (any KO, or a KO while the decisive stock is the last one), the special move zoom is checked
- * after it. Stamina battles are not excluded yet (REMIX-TODO(Stamina): Stamina.VS_MODE has no port).
+ * after it. Stamina battles get no zoom at all (SpecialZoom.asm check_gamemode_2 jumps to the original function).
  */
 void ftRemixSpecialZoomFinalKnockback(FTStruct *fp, s32 damage_player_num)
 {
@@ -272,7 +273,10 @@ void ftRemixSpecialZoomFinalKnockback(FTStruct *fp, s32 damage_player_num)
     {
         return;
     }
-    /* REMIX-TODO(Stamina): the asm skips Stamina battles (Stamina.VS_MODE, RAM 0x800A4D0B); no port of the mode yet. */
+    if (gmRemixStaminaIsActive())
+    {
+        return;
+    }
     is_decisive_stock = ftRemixSpecialZoomIsDecisiveStock(fp);
     ftRemixSpecialZoomUpdateOffset(fp, damage_player_num);
 

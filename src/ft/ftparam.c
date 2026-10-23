@@ -1726,7 +1726,11 @@ f32 ftParamGetCommonKnockback(s32 percent_damage, s32 recent_damage, s32 hit_dam
     } 
     else 
     {
+#ifdef REGION_REMIX
+        f32 damage_add = ftRemixStaminaKnockbackDamageAdd(percent_damage, recent_damage); /* Stamina.asm stamina_knockback_throw_ (0x800E9E70) */
+#else
         f32 damage_add = percent_damage + recent_damage;
+#endif
 
         knockback = ( ( ( ( ( ( ( damage_add * 0.1F ) + ( damage_add * hit_damage * 0.05F ) ) * weight * 1.4F ) + 18.0F ) * ( knockback_scale * 0.01F ) ) + knockback_base ) * ( gSCManagerBattleState->damage_ratio * 0.01F ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(attack_handicap)][0] ) * dFTCommonDataHandicapTable[ftParamGetHandicapIndex(defend_handicap)][1];
     }
@@ -1827,7 +1831,11 @@ void ftParamUpdateDamage(FTStruct *fp, s32 damage)
         damage = 0;
     }
 #endif
+#ifdef REGION_REMIX
+    fp->percent_damage += ftRemixStaminaStoredDamage(fp, damage);
+#else
     fp->percent_damage += damage;
+#endif
 
     gSCManagerBattleState->players[fp->player].total_damage_all += damage;
 

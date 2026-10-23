@@ -138,6 +138,13 @@ void ftCommonDeadCheckRebirth(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaRebirthSleeps(fp) != FALSE)
+    {
+        ftCommonSleepSetStatus(fighter_gobj);
+        return;
+    }
+#endif
     if (gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_STOCK)
     {
         if (fp->stock_count == -1)
@@ -224,11 +231,28 @@ void ftCommonDeadInitStatusVars(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    fp->status_vars.common.dead.wait = FTCOMMON_DEAD_WAIT;
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaIsOutOfStock(fp) != FALSE)
+    {
+        ftCommonSleepSetStatus(fighter_gobj);
+        return;
+    }
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaSkipsDeadWaitInit(fp) == FALSE)
+#endif
+    {
+        fp->status_vars.common.dead.wait = FTCOMMON_DEAD_WAIT;
+    }
 
     ftPhysicsStopVelAll(fighter_gobj);
 
-    fp->is_invisible = TRUE;
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaSkipsInvisible(fp) == FALSE)
+#endif
+    {
+        fp->is_invisible = TRUE;
+    }
     fp->is_menu_ignore = TRUE;
     fp->is_playertag_hide = TRUE;
 
@@ -375,6 +399,13 @@ void ftCommonDeadUpStarProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaIsBlastRedeath(fp) != FALSE)
+    {
+        ftCommonSleepSetStatus(fighter_gobj);
+        return;
+    }
+#endif
     switch (fp->motion_vars.flags.flag1)
     {
     case 1:
@@ -470,6 +501,13 @@ void ftCommonDeadUpFallProcUpdate(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 sfx_id;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaIsBlastRedeath(fp) != FALSE)
+    {
+        ftCommonSleepSetStatus(fighter_gobj);
+        return;
+    }
+#endif
     switch (fp->motion_vars.flags.flag1)
     {
     case 1:

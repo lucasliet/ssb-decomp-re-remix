@@ -30,13 +30,24 @@ void ftCommonDownWaitProcUpdate(GObj *fighter_gobj)
 
     if (fp->status_vars.common.downwait.stand_wait == 0)
     {
-        ftCommonDownStandSetStatus(fighter_gobj);
+#if defined(PORT) && defined(REGION_REMIX)
+        if (ftRemixStaminaDownBlocked(fighter_gobj) == FALSE)
+#endif
+        {
+            ftCommonDownStandSetStatus(fighter_gobj);
+        }
     }
 }
 
 // 0x80144254
 void ftCommonDownWaitProcInterrupt(GObj *fighter_gobj)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaDownBlocked(fighter_gobj))
+    {
+        return;
+    }
+#endif
     if ((ftCommonDownAttackCheckInterruptDownWait(fighter_gobj) == FALSE) && (ftCommonDownForwardOrBackCheckInterruptCommon(fighter_gobj) == FALSE))
     {
         ftCommonDownStandCheckInterruptCommon(fighter_gobj);
@@ -77,6 +88,13 @@ void ftCommonDownBounceProcUpdate(GObj *fighter_gobj)
     {
         fp->status_vars.common.downbounce.attack_buffer = FTCOMMON_DOWNBOUNCE_ATTACK_BUFFER;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((fighter_gobj->anim_frame <= 0.0F) && ftRemixStaminaDownBlocked(fighter_gobj))
+    {
+        ftCommonDownWaitSetStatus(fighter_gobj);
+        return;
+    }
+#endif
     if ((fighter_gobj->anim_frame <= 0.0F) && (ftCommonDownAttackCheckInterruptDownBounce(fighter_gobj) == FALSE) && (ftCommonDownForwardOrBackCheckInterruptCommon(fighter_gobj) == FALSE))
     {
         ftCommonDownWaitSetStatus(fighter_gobj);

@@ -10,6 +10,7 @@
 #include <ft/ftparam.h>
 #include <gm/gmremixcolscripts.h>
 #include <gm/gmremixpanel.h>
+#include <gm/gmremixstamina.h>
 #include <gm/gmremixtoggle.h>
 #include <it/itremix/itremixcloakingdevice.h>
 #include <sc/scmanager.h>
@@ -117,6 +118,28 @@ static sb32 ftRemixPoisonCountDown(FTStruct *fp)
 }
 
 /**
+ * Returns TRUE when a Stamina battle fighter is out of HP, so the poison skips it (asm Poison.asm _poison_continue_2 and
+ * css/PoisonDmg.asm apply_damage, which skip a player whose stock is already defeated).
+ */
+static sb32 ftRemixPoisonIsStaminaDefeated(FTStruct *fp)
+{
+    return gmRemixStaminaIsActive() && gmRemixStaminaIsDefeated(fp->player);
+}
+
+/**
+ * Caps a poison percent at the Stamina total HP in a Stamina battle (asm Poison.asm _continue_2, css/PoisonDmg.asm
+ * _stamina). Other battles keep the percent.
+ */
+static s32 ftRemixPoisonStaminaCap(s32 percent)
+{
+    if (gmRemixStaminaIsActive() && (percent > gmRemixStaminaGetTotalHP()))
+    {
+        return gmRemixStaminaGetTotalHP();
+    }
+    return percent;
+}
+
+/**
  * Checks whether the poison hurts this fighter on this frame: once every 32 frames, not while invincible or respawning.
  * A fighter below the Idle action is respawning, which ends the poison.
  */
@@ -136,7 +159,7 @@ static sb32 ftRemixPoisonCanDamage(FTStruct *fp)
         gmRemixColScriptsSetOverride(fp->player, 0);
         return FALSE;
     }
-    return TRUE;
+    return !ftRemixPoisonIsStaminaDefeated(fp);
 }
 
 /**
@@ -145,8 +168,7 @@ static sb32 ftRemixPoisonCanDamage(FTStruct *fp)
  */
 static void ftRemixPoisonDamage(GObj *fighter_gobj, FTStruct *fp)
 {
-    /* REMIX-TODO(Stamina): asm _continue_2 clamps the percent at the stamina total in stamina mode and skips defeated stocks; no port yet. */
-    fp->percent_damage += sFTRemixPoisoned[fp->player].damage;
+    fp->percent_damage = ftRemixPoisonStaminaCap(fp->percent_damage + sFTRemixPoisoned[fp->player].damage);
     if (gmRemixColScriptsGetOverride(fp->player) == 0)
     {
         gmRemixColScriptsSetOverride(fp->player, FTREMIX_POISON_DOOM_ACID_COLANIM);
@@ -247,12 +269,11 @@ static void ftRemixPoisonPanelDamage(GObj *fighter_gobj, FTStruct *fp, s32 amoun
 {
     s32 percent = fp->percent_damage + amount;
 
-    /* REMIX-TODO(Stamina): asm apply_damage clamps the percent at Stamina.TOTAL_HP in stamina mode and skips defeated stocks; no port of the mode yet. */
     if (percent > FTREMIX_POISON_PANEL_CAP)
     {
         percent = FTREMIX_POISON_PANEL_CAP;
     }
-    fp->percent_damage = percent;
+    fp->percent_damage = ftRemixPoisonStaminaCap(percent);
     ftRemixPoisonSyncStock(fighter_gobj, fp);
 }
 
@@ -265,7 +286,7 @@ static sb32 ftRemixPoisonPanelTryApply(GObj *fighter_gobj, FTStruct *fp)
 {
     s32 panel_value;
 
-    if (!ftRemixPoisonPanelTickDue() || ftRemixPoisonPanelIsBlocked(fp))
+    if (!ftRemixPoisonPanelTickDue() || ftRemixPoisonPanelIsBlocked(fp) || ftRemixPoisonIsStaminaDefeated(fp))
     {
         return FALSE;
     }

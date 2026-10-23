@@ -21,6 +21,7 @@ extern void port_log(const char *fmt, ...);
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixgameend.h"
+#include "gm/gmremixmode.h"
 #endif
 
 // // // // // // // // // // // //
@@ -2680,6 +2681,12 @@ void mnVSResultsSetPoints(void)
 // 0x80136C08
 s32 mnVSResultsGetPointsDirect(s32 player)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixTimedStockIsActive() != FALSE)
+	{
+		return gmRemixTimedStockScore(player);
+	}
+#endif
 	return sMNVSResultsKOs[player] - sMNVSResultsTKO[player];
 }
 
@@ -2853,7 +2860,12 @@ void mnVSResultsSetPlaceStock(void)
 // 0x801373B4
 void mnVSResultsInitRankings(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	if ((gSCManagerTransferBattleState.game_rules == SCBATTLE_GAMERULE_STOCK) ||
+	    ((gmRemixTimedStockIsActive() != FALSE) && (gmRemixTimedStockUsesTimeScore() == FALSE)))
+#else
 	if (gSCManagerTransferBattleState.game_rules == SCBATTLE_GAMERULE_STOCK)
+#endif
 	{
 		mnVSResultsSetKOs();
 		mnVSResultsSetTKO();

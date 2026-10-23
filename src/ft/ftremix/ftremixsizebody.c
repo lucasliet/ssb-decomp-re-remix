@@ -60,10 +60,14 @@ s32 ftRemixSizeScaleDamage(FTStruct *fp, s32 damage)
 
 /**
  * Passive knockback resist of a fighter, plus 48 above size 1 (Size.asm passive_armor_, RAM 0x800E6324).
- * The stamina armor fix that the asm calls first has no port and is not applied here.
+ * The stamina armor fix (Stamina.asm stamina_armor_fix_, called first by the asm) returns no armor for a fighter out of HP.
  */
 f32 ftRemixSizePassiveArmor(FTStruct *fp, f32 passive_resist)
 {
+    if (ftRemixStaminaArmorIsZeroed(fp))
+    {
+        return 0.0F;
+    }
     if (ftRemixSizeGetMultiplier(fp->player) <= 1.0F)
     {
         return passive_resist;

@@ -2,6 +2,9 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixtugofwar.h"
+#endif
 #include <it/item.h>
 #ifdef PORT
 #ifdef REGION_REMIX
@@ -702,6 +705,9 @@ s32 damage_index, s32 element, s32 damage_player_num, sb32 is_rumble, sb32 is_fo
     {
         FTStruct *attacker_fp = ftGetStruct(attacker_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+        gmRemixTugOfWarRecordDamage(this_fp, attacker_fp);
+#endif
         attacker_fp->attack_count++;
         attacker_fp->attack_knockback = knockback;
     }

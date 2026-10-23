@@ -160,10 +160,25 @@ typedef enum MNVSModeRule
 {
     nMNVSModeRuleTime,            // Time
     nMNVSModeRuleStock,           // Stock
+#if defined(PORT) && defined(REGION_REMIX)
+    nMNVSModeRuleStamina,         // Stamina (Remix, Stamina.asm)
     nMNVSModeRuleTimeTeam,        // Time Team
     nMNVSModeRuleStockTeam,       // Stock Team
+    nMNVSModeRuleStaminaTeam,     // Stamina Team (Remix)
+#else
+    nMNVSModeRuleTimeTeam,        // Time Team
+    nMNVSModeRuleStockTeam,       // Stock Team
+#endif
 
 } MNVSModeRule;
+
+#if defined(PORT) && defined(REGION_REMIX)
+#define nMNVSModeRuleLast nMNVSModeRuleStaminaTeam
+#define nMNVSModeRuleFreeForAllLast nMNVSModeRuleStamina
+#else
+#define nMNVSModeRuleLast nMNVSModeRuleStockTeam
+#define nMNVSModeRuleFreeForAllLast nMNVSModeRuleStock
+#endif
 
 typedef enum MNVSModeInputDirection
 {

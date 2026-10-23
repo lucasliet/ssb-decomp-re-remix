@@ -44,6 +44,12 @@ void ftCommonCliffCatchSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     Vec3f pos;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixStaminaLedgeBlocked(fp))
+    {
+        return;
+    }
+#endif
     mpCommonSetFighterGround(fp);
     ftMainSetStatus(fighter_gobj, nFTCommonStatusCliffCatch, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
