@@ -9,6 +9,7 @@
 #include "gm/gmremixgameend.h"
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
+#include "gm/gmremixsmashketball.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixtugofwar.h"
 #endif
@@ -392,6 +393,7 @@ void scVSBattleStartBattle(void)
 	gmRemixStaminaResetDefeated();
 	gmRemixTugOfWarSetup();
 	gmRemixKothSetup();
+	gmRemixSmashketballSetup();
 	gmRemixModeLogMatch();
 #endif
 
@@ -414,6 +416,10 @@ sb32 scVSBattleSetScoreCheckSuddenDeath(void)
 		return FALSE;
 	}
 #if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixSmashketballIsActive() != FALSE)
+	{
+		return gmRemixSmashketballPrepareSuddenDeath();
+	}
 	if (gmRemixTimedStockAllowsSuddenDeath() == FALSE)
 	{
 		return FALSE;
@@ -647,7 +653,11 @@ void scVSBattleStartSuddenDeath(void)
 		desc.handicap = gSCManagerBattleState->players[player].handicap;
 		desc.level = gSCManagerBattleState->players[player].level;
 		desc.stock_count = 0;
+#if defined(PORT) && defined(REGION_REMIX)
+		desc.damage = gmRemixSmashketballGetSuddenDeathDamage(300);
+#else
 		desc.damage = 300;
+#endif
 		desc.is_skip_entry = TRUE;
 		desc.pkind = gSCManagerBattleState->players[player].pkind;
 		desc.controller = &gSYControllerDevices[player];
@@ -674,6 +684,9 @@ void scVSBattleStartSuddenDeath(void)
 	ifCommonPlayerDamageInitInterface();
 	ifCommonPlayerStockInitInterface();
 	ifCommonSuddenDeathMakeInterface();
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixSmashketballSetup();
+#endif
 	mpCollisionSetPlayBGM();
 #ifdef PORT
 	scVSBattlePortFixupFDMusic();

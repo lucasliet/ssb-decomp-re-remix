@@ -12,6 +12,7 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"
+#include "gm/gmremixsmashketball.h"
 #include "it/itmain.h"
 #include "it/itmap.h"
 #include "it/itmanager.h"
@@ -279,20 +280,18 @@ static ITRemixBasketballVars* itRemixBasketballGetVars(GObj *item_gobj)
 
 /**
  * Smashketball.type read: TRUE when the mode is soccer.
- * REMIX-TODO(Smashketball.type): the mode global is not ported; the ball is always a basketball.
  */
 static sb32 itRemixBasketballIsSoccer(void)
 {
-    return FALSE;
+    return gmRemixSmashketballIsSoccer();
 }
 
 /**
  * Smashketball.spawn_golden read: TRUE when a soccer ball spawns golden.
- * REMIX-TODO(Smashketball.spawn_golden): the mode global is not ported; never golden.
  */
 static sb32 itRemixBasketballIsGolden(void)
 {
-    return FALSE;
+    return gmRemixSmashketballIsGolden();
 }
 
 /**
@@ -1211,6 +1210,137 @@ static sb32 itRemixBasketballRespawnProcUpdate(GObj *item_gobj)
     }
 
     return TRUE;
+}
+
+#define ITREMIX_BASKETBALL_HOOP_OFFSET 267.0F        /* Smashketball.asm basketball_main_ HOOP_OFFSET (0x43858000) */
+#define ITREMIX_BASKETBALL_HOOP_MIN_X 3504.0F        /* HOOP_MIN (0x455B0000): the ball must be past this |x| */
+#define ITREMIX_BASKETBALL_GOAL_X 4288.0F            /* soccer goal |x| (0x45860000) */
+
+/**
+ * Smashketball.asm basketball_main_: the first ball in the item list.
+ * Returns: the ball object, or NULL when there is none.
+ */
+GObj* itRemixBasketballFind(void)
+{
+    GObj *item_gobj;
+
+    for (item_gobj = gGCCommonLinks[nGCCommonLinkIDItem]; item_gobj != NULL; item_gobj = item_gobj->link_next)
+    {
+        if (itGetStruct(item_gobj)->kind == ITREMIX_BASKETBALL_KIND)
+        {
+            return item_gobj;
+        }
+    }
+    return NULL;
+}
+
+/**
+ * Smashketball.asm basketball_main_ _get_position: the ball position, taken from the item joint of its owner while held.
+ * item_gobj: ball object.
+ * pos: receives the world position.
+ */
+void itRemixBasketballGetPosition(GObj *item_gobj, Vec3f *pos)
+{
+    ITStruct *ip = itGetStruct(item_gobj);
+    GObj *owner_gobj = ip->owner_gobj;
+
+    if (owner_gobj != NULL)
+    {
+        FTStruct *fp = ftGetStruct(owner_gobj);
+
+        if (fp->item_gobj == item_gobj)
+        {
+            s32 joint_id = (ip->weight == nITWeightHeavy) ? fp->attr->joint_itemheavy_id : fp->attr->joint_itemlight_id;
+
+            pos->x = pos->y = pos->z = 0.0F;
+            gmCollisionGetFighterPartsWorldPosition(fp->joints[joint_id], pos);
+            return;
+        }
+    }
+    *pos = DObjGetStruct(item_gobj)->translate.vec.f;
+}
+
+/* The x of the ball when it crossed the height of the hoop between the last frame and this one. */
+static f32 itRemixBasketballGetHoopCrossX(ITRemixBasketballVars *vars, Vec3f *pos, f32 hoop_y)
+{
+    f32 dx = pos->x - vars->prev_x;
+    f32 dy = pos->y - vars->prev_y;
+
+    if ((dx == 0.0F) || (dy == 0.0F))
+    {
+        return pos->x;
+    }
+    return (((hoop_y - pos->y) * (dx / dy)) + pos->x);
+}
+
+/**
+ * Smashketball.asm basketball_main_ (basketball branch): updates the above-rim state from the current position and tells
+ * when the ball went from above the rim to below it through the hoop.
+ * Returns: TRUE when it scored. `*x` receives the x the ball crossed the hoop at.
+ */
+static sb32 itRemixBasketballCheckRim(ITRemixBasketballVars *vars, Vec3f *pos, f32 baskets_y)
+{
+    f32 hoop_y = baskets_y - ITREMIX_BASKETBALL_HOOP_OFFSET;
+    sb32 is_above = (pos->y >= hoop_y) ? TRUE : FALSE;
+    f32 cross_x;
+    sb32 is_passing;
+
+    if (vars->is_above_rim == is_above)
+    {
+        return FALSE;
+    }
+    vars->is_above_rim = is_above;
+    cross_x = itRemixBasketballGetHoopCrossX(vars, pos, hoop_y);
+    is_passing = (ABSF(cross_x) >= ITREMIX_BASKETBALL_HOOP_MIN_X) ? TRUE : FALSE;
+
+    if (is_above != FALSE)
+    {
+        vars->is_scoreable = (is_passing != FALSE) ? FALSE : TRUE;
+        return FALSE;
+    }
+    return ((is_passing != FALSE) && (vars->is_scoreable != FALSE)) ? TRUE : FALSE;
+}
+
+/**
+ * Smashketball.asm basketball_main_: one frame of basket or goal detection.
+ * item_gobj: ball object.
+ * baskets_y: y of the baskets joint (basketball only).
+ * is_soccer: TRUE for the soccer goals.
+ * side: receives -1 when the ball went into the left hoop, 1 for the right one.
+ * Returns: TRUE when the ball scored this frame; the ball is then marked scored and goes to its respawn status.
+ */
+sb32 itRemixBasketballCheckHoop(GObj *item_gobj, f32 baskets_y, sb32 is_soccer, s32 *side)
+{
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
+    Vec3f pos;
+    sb32 is_scored;
+
+    if (vars->is_scored != FALSE)
+    {
+        return FALSE;
+    }
+    itRemixBasketballGetPosition(item_gobj, &pos);
+
+    if (is_soccer != FALSE)
+    {
+        is_scored = (ABSF(pos.x) >= ITREMIX_BASKETBALL_GOAL_X) ? TRUE : FALSE;
+    }
+    else is_scored = itRemixBasketballCheckRim(vars, &pos, baskets_y);
+
+    if (is_scored == FALSE)
+    {
+        return FALSE;
+    }
+    *side = (pos.x < 0.0F) ? -1 : 1;
+    vars->is_scored = *side;
+
+    return TRUE;
+}
+
+/** TRUE when the ball spawned as the golden soccer ball (itRemixBasketballIsGolden). */
+sb32 itRemixBasketballIsGoldenBall(GObj *item_gobj)
+{
+    return itRemixBasketballGetVars(item_gobj)->is_golden;
 }
 
 /**

@@ -1,7 +1,7 @@
 /**
  * gmremixspawnsetup.c - Smash Remix VS setup: neutral spawn positions (Spawn.asm, load_spawn_ hook at
  * 0x800FAF64) and the default CPU level applied when the VS battle setup starts (AI.asm, 0x8013AF2C).
- * Only the VS path is ported. Training, bonus and Smashketball spawns stay vanilla.
+ * Only the VS path is ported. Training and bonus spawns stay vanilla; Smashketball always uses its own neutral spawns.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -9,6 +9,7 @@
 #include <ft/fighter.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
+#include "gm/gmremixsmashketball.h"
 #include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixtoggle.h"
 
@@ -197,9 +198,6 @@ static s32 gmRemixSpawnNeutralSlot(s32 player)
     return gmRemixSpawnSlotFromSetups(sGMRemixValidSingles, ARRAY_COUNT(sGMRemixValidSingles), keys, player);
 }
 
-/* REMIX-TODO(Smashketball): Spawn.asm _smashketball always uses the neutral spawns of Smashketball.player_spawns
- * (VsRemixMenu.vs_mode_flag). That mode flag has no port yet, so Smashketball follows the Neutral Spawns toggle. */
-
 /**
  * Overwrites the vanilla VS spawn of a player with the Remix neutral spawn when the Neutral Spawns toggle is on and
  * the match has a valid setup. Only x and y change, as in Spawn.asm. Called after the vanilla map lookup.
@@ -211,6 +209,15 @@ void gmRemixNeutralSpawnApply(s32 player, Vec3f *pos)
     s32 slot;
     s32 stage_id;
 
+    if (gmRemixSmashketballIsActive() != FALSE)
+    {
+        f32 x, y;
+
+        gmRemixSmashketballGetSpawnPos(gmRemixSmashketballGetSpawnSlot(player), &x, &y);
+        pos->x = x;
+        pos->y = y;
+        return;
+    }
     if (!gmRemixToggle(neutral_spawns))
     {
         return;

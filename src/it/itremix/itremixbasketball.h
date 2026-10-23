@@ -25,6 +25,13 @@ sb32 itRemixBasketballIsFire(GObj *item_gobj);
  * basketball with the bounce squash applied (asm ITStruct 0x1E4). */
 sb32 itRemixBasketballIsBounceScaled(GObj *item_gobj);
 
+/* Smashketball.asm basketball_main_: the ball object in play (NULL when none), its position (the owner's item joint while it
+ * is held) and one frame of basket or goal detection. */
+GObj* itRemixBasketballFind(void);
+void itRemixBasketballGetPosition(GObj *item_gobj, Vec3f *pos);
+sb32 itRemixBasketballCheckHoop(GObj *item_gobj, f32 baskets_y, sb32 is_soccer, s32 *side);
+sb32 itRemixBasketballIsGoldenBall(GObj *item_gobj);
+
 extern const ITRemixItemDesc dITRemixBasketballItemDesc;
 
 #endif

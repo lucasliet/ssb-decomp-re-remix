@@ -23,6 +23,7 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixgameend.h"
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
+#include "gm/gmremixsmashketball.h"
 #endif
 
 // // // // // // // // // // // //
@@ -2683,6 +2684,10 @@ void mnVSResultsSetPoints(void)
 s32 mnVSResultsGetPointsDirect(s32 player)
 {
 #if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixSmashketballIsActive() != FALSE)
+	{
+		return gmRemixSmashketballGetWinnerScore(player);
+	}
 	if (gmRemixKothIsActive() != FALSE)
 	{
 		return gmRemixKothGetScore(player);

@@ -9,6 +9,7 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
+#include "gm/gmremixsmashketball.h"
 #include "gm/gmremixstockmode.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_hud_text.h"
@@ -250,6 +251,11 @@ void gmRemixModeStartMatch(void)
     gmRemixModeInitSaved();
     gmRemixModeSaveFromCSS(mode);
 
+    if (mode == MNREMIX_VSMODE_SMASHKETBALL)
+    {
+        gSCManagerTransferBattleState.gkind = gmRemixSmashketballGetStage();
+        gSCManagerSceneData.gkind = gmRemixSmashketballGetStage();
+    }
     if ((dGMRemixModeProfiles[mode].uses_goal != FALSE) && (sGMRemixModeVanillaIsSaved != FALSE))
     {
         gSCManagerTransferBattleState.time_limit = sGMRemixModeVanilla.time_limit;
