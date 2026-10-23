@@ -7,6 +7,7 @@
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixgameend.h"
+#include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixtugofwar.h"
@@ -390,6 +391,7 @@ void scVSBattleStartBattle(void)
 #if defined(PORT) && defined(REGION_REMIX)
 	gmRemixStaminaResetDefeated();
 	gmRemixTugOfWarSetup();
+	gmRemixKothSetup();
 	gmRemixModeLogMatch();
 #endif
 

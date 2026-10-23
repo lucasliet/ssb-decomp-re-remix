@@ -319,6 +319,10 @@ s32 gmRemixTimedStockScore(s32 player)
 
 sb32 gmRemixTimedStockAllowsSuddenDeath(void)
 {
+    if (gmRemixModeIs(MNREMIX_VSMODE_KOTH) != FALSE)
+    {
+        return FALSE;
+    }
     return (gSCManagerBattleState->game_rules == SCBATTLE_GAMERULE_TIME) ? TRUE : FALSE;
 }
 

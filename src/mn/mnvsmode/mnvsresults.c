@@ -21,6 +21,7 @@ extern void port_log(const char *fmt, ...);
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixgameend.h"
+#include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
 #endif
 
@@ -2682,6 +2683,10 @@ void mnVSResultsSetPoints(void)
 s32 mnVSResultsGetPointsDirect(s32 player)
 {
 #if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixKothIsActive() != FALSE)
+	{
+		return gmRemixKothGetScore(player);
+	}
 	if (gmRemixTimedStockIsActive() != FALSE)
 	{
 		return gmRemixTimedStockScore(player);
