@@ -7,6 +7,7 @@
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 
 #define SC1PREMIX_HRC_CAMERA_PAN_DIVISOR 3.0F
+#define SC1PREMIX_HRC_COUNTER_SINK_PER_TIC 0.5F
 
 void sc1PRemixHrcStateReset(SC1PRemixHrcState *state)
 {
@@ -78,6 +79,25 @@ int sc1PRemixHrcAttemptVerdict(const SC1PRemixHrcAttempt *attempt)
         return SC1PREMIX_HRC_VERDICT_END;
     }
     return SC1PREMIX_HRC_VERDICT_DISABLE_INPUTS;
+}
+
+void sc1PRemixHrcCounterAt(int complete_tics, SC1PRemixHrcCounterLayout *layout)
+{
+    float progress;
+
+    if (complete_tics > SC1PREMIX_HRC_COMPLETE_TIMER_START)
+    {
+        complete_tics = SC1PREMIX_HRC_COMPLETE_TIMER_START;
+    }
+    if (complete_tics < 0)
+    {
+        complete_tics = 0;
+    }
+    progress = (float)complete_tics / (float)SC1PREMIX_HRC_COMPLETE_TIMER_START;
+
+    layout->x = SC1PREMIX_HRC_COUNTER_X + ((SC1PREMIX_HRC_COUNTER_CENTER_X - SC1PREMIX_HRC_COUNTER_X) * progress);
+    layout->y = SC1PREMIX_HRC_COUNTER_Y + (complete_tics * SC1PREMIX_HRC_COUNTER_SINK_PER_TIC);
+    layout->height = SC1PREMIX_HRC_COUNTER_HEIGHT * (1.0F + progress);
 }
 
 #endif

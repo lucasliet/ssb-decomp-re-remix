@@ -15,6 +15,10 @@
 #define SC1PREMIX_HRC_CAMERA_WARP_DISTANCE (-9120.0F)
 #define SC1PREMIX_HRC_COMPLETE_TIMER_START 45
 #define SC1PREMIX_HRC_TIME_LIMIT_TICS 600
+#define SC1PREMIX_HRC_COUNTER_X 246.0F
+#define SC1PREMIX_HRC_COUNTER_Y 44.0F
+#define SC1PREMIX_HRC_COUNTER_HEIGHT 16.0F
+#define SC1PREMIX_HRC_COUNTER_CENTER_X 160.0F
 
 /** Verdicts of an attempt check. */
 #define SC1PREMIX_HRC_VERDICT_KEEP_GOING 0
@@ -38,6 +42,15 @@ typedef struct SC1PRemixHrcMove
     int is_past_start;
 
 } SC1PRemixHrcMove;
+
+/** Where the distance counter sits on the 320x240 screen and how tall its text is. */
+typedef struct SC1PRemixHrcCounterLayout
+{
+    float x;
+    float y;
+    float height;
+
+} SC1PRemixHrcCounterLayout;
 
 /** What the attempt check reads from the game (HRC.asm main_, _check_failure_complete). */
 typedef struct SC1PRemixHrcAttempt
@@ -74,6 +87,15 @@ extern void sc1PRemixHrcTrack(SC1PRemixHrcState *state, float sandbag_x, float c
  * @return SC1PREMIX_HRC_VERDICT_*.
  */
 extern int sc1PRemixHrcAttemptVerdict(const SC1PRemixHrcAttempt *attempt);
+
+/**
+ * Layout of the distance counter. At COMPLETE it moves to the centre of the screen while growing to twice its size and sinking half a unit
+ * per tic over the end timer (HRC.asm _complete, _animate_counter).
+ *
+ * @param complete_tics Tics since the attempt ended in COMPLETE, 0 while it is on; capped at the end timer.
+ * @param layout Receives the position and the height of the text.
+ */
+extern void sc1PRemixHrcCounterAt(int complete_tics, SC1PRemixHrcCounterLayout *layout);
 
 #endif
 

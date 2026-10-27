@@ -22,9 +22,6 @@
 #include "sc/sc1pmode/sc1premixhrctravel.h"
 
 #define SC1PREMIX_HRC_HUD_SLOT 29
-#define SC1PREMIX_HRC_HUD_X 246.0F
-#define SC1PREMIX_HRC_HUD_Y 44.0F
-#define SC1PREMIX_HRC_HUD_HEIGHT 16.0F
 #define SC1PREMIX_HRC_HUD_COLOR 0xFFFFFFFF
 #define SC1PREMIX_HRC_FEET_TENTHS 10
 #define SC1PREMIX_HRC_PLATFORM_LINE_ID 0
@@ -37,9 +34,15 @@
 #define SC1PREMIX_HRC_STATUS_DK_CARGO 0xEB
 #define SC1PREMIX_HRC_STATUS_LANKY_ORANGSTAND 0xEB
 
+/* Specials that need the controls on to let go (HRC.asm _disable_inputs): Conker Catapult Charge, Bowser Fire Breath and Kirby Inhale. */
+#define SC1PREMIX_HRC_STATUS_CONKER_CATAPULT_CHARGE 0xF7
+#define SC1PREMIX_HRC_STATUS_BOWSER_FIRE_BREATH 0xE4
+#define SC1PREMIX_HRC_STATUS_KIRBY_INHALE 0x10E
+
 static SC1PRemixHrcState sSC1PRemixHrcState;
 static sb32 sSC1PRemixHrcIsEnded;
 static sb32 sSC1PRemixHrcIsBatSpawned;
+static sb32 sSC1PRemixHrcIsCompleting;
 
 static const s32 sSC1PRemixHrcRestingStatuses[] =
 {
@@ -134,6 +137,8 @@ static void sc1PRemixHrcRunSpawnBat(void)
 
 static void sc1PRemixHrcRunEndAttempt(sb32 is_complete)
 {
+    sSC1PRemixHrcIsCompleting = is_complete;
+
     if (sSC1PRemixHrcState.complete_timer-- > 0)
     {
         return;
@@ -149,11 +154,44 @@ static void sc1PRemixHrcRunEndAttempt(sb32 is_complete)
     ifCommonAnnounceEndMessage();
 }
 
+static sb32 sc1PRemixHrcRunNeedsInputsToRelease(const FTStruct *fp)
+{
+    switch (fp->fkind)
+    {
+    case REMIX_ID_CONKER:
+        return (fp->status_id == SC1PREMIX_HRC_STATUS_CONKER_CATAPULT_CHARGE) ? TRUE : FALSE;
+
+    case REMIX_ID_BOWSER:
+        return (fp->status_id == SC1PREMIX_HRC_STATUS_BOWSER_FIRE_BREATH) ? TRUE : FALSE;
+
+    case REMIX_ID_KIRBY:
+    case REMIX_ID_JKIRBY:
+        return (fp->status_id == SC1PREMIX_HRC_STATUS_KIRBY_INHALE) ? TRUE : FALSE;
+
+    default:
+        return FALSE;
+    }
+}
+
+/** Cuts the inputs of the player once the attempt is over; the specials above keep the controls on but start from clear inputs. */
+static void sc1PRemixHrcRunCutInputs(GObj *human_gobj)
+{
+    ftParamLockPlayerControl(human_gobj);
+
+    if (sc1PRemixHrcRunNeedsInputsToRelease(ftGetStruct(human_gobj)) != FALSE)
+    {
+        ftParamUnlockPlayerControl(human_gobj);
+    }
+}
+
 static void sc1PRemixHrcRunDrawHud(void)
 {
+    SC1PRemixHrcCounterLayout layout;
     s32 distance = sSC1PRemixHrcState.distance;
+    s32 complete_tics = (sSC1PRemixHrcIsCompleting != FALSE) ? (SC1PREMIX_HRC_COMPLETE_TIMER_START - sSC1PRemixHrcState.complete_timer) : 0;
 
-    remix_hud_text_putf(SC1PREMIX_HRC_HUD_SLOT, SC1PREMIX_HRC_HUD_X, SC1PREMIX_HRC_HUD_Y, SC1PREMIX_HRC_HUD_COLOR, SC1PREMIX_HRC_HUD_HEIGHT,
+    sc1PRemixHrcCounterAt(complete_tics, &layout);
+    remix_hud_text_putf(SC1PREMIX_HRC_HUD_SLOT, layout.x, layout.y, SC1PREMIX_HRC_HUD_COLOR, layout.height,
                         "%d.%d FT.", (int)(distance / SC1PREMIX_HRC_FEET_TENTHS), (int)(distance % SC1PREMIX_HRC_FEET_TENTHS));
 }
 
@@ -166,6 +204,7 @@ void sc1PRemixHrcRunStart(void)
     sc1PRemixHrcStateReset(&sSC1PRemixHrcState);
     sSC1PRemixHrcIsEnded = FALSE;
     sSC1PRemixHrcIsBatSpawned = FALSE;
+    sSC1PRemixHrcIsCompleting = FALSE;
     sc1PRemixHrcTravelReset();
     gmRemixCameraSetHrcX(SC1PREMIX_HRC_DEFAULT_CAMERA_X);
 }
@@ -211,7 +250,7 @@ void sc1PRemixHrcRunUpdate(void)
 
     if (verdict == SC1PREMIX_HRC_VERDICT_DISABLE_INPUTS)
     {
-        ftParamLockPlayerControl(human_gobj);
+        sc1PRemixHrcRunCutInputs(human_gobj);
     }
     if (verdict == SC1PREMIX_HRC_VERDICT_END)
     {
