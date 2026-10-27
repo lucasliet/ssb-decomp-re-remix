@@ -70,6 +70,15 @@ extern void gmRemixTwelveCBInit(GMRemixTwelveCBState *state);
 extern void gmRemixTwelveCBUpdateStocks(GMRemixTwelveCBState *state, int32_t stocks);
 
 /**
+ * Portrait slot a character takes in the default character set: the 12 original fighters sit in the slots 0..11, any other
+ * fighter in the slots 12..23 by its number (REMIX-TODO(twelvecb-css): the 24 slot CSS of the Remix lets the player place
+ * characters, the port has no such CSS yet).
+ *
+ * @param fkind Fighter kind of the character.
+ */
+extern int32_t gmRemixTwelveCBPortraitOf(int32_t fkind);
+
+/**
  * Stocks left of the character in `portrait`, 1-based (get_stocks_remaining_for_char_); 0 means it is defeated.
  *
  * @param state Battle state.

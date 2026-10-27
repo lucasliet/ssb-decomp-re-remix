@@ -11,6 +11,7 @@
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixtagteam.h"
+#include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixtugofwar.h"
 #endif
@@ -329,6 +330,9 @@ void scVSBattleStartBattle(void)
 	ifScreenFlashMakeInterface(0xFF);
 	gmRumbleMakeActor();
 	ftPublicMakeActor();
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixTwelveCBBeginMatch();
+#endif
 
 	for (player = 0; player < ARRAY_COUNT(gSCManagerBattleState->players); player++)
 	{

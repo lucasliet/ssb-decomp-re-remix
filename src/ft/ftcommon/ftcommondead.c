@@ -7,6 +7,7 @@
 #include "if/ifremixannouncer.h"
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixtugofwar.h"
+#include "gm/gmremixtwelvecb.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -105,6 +106,9 @@ void ftCommonDeadUpdateScore(FTStruct *this_fp)
         gSCManagerBattleState->players[this_fp->player].stock_count--;
 
         ifCommonBattleUpdateScoreStocks(this_fp);
+#if defined(PORT) && defined(REGION_REMIX)
+        gmRemixTwelveCBOnKo(this_fp);
+#endif
     }
     if (gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_1PGAME)
     {

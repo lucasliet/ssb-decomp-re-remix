@@ -7,6 +7,7 @@
 #include "gm/gmremixpanel.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixstockmode.h"
+#include "gm/gmremixtwelvecb.h"
 
 #define GMREMIX_STOCK_MODE_MANUAL 2
 
@@ -17,6 +18,8 @@
  * Stock count a VS fighter starts with. Stamina gives one stock (Stamina.asm stamina_stock). The Manual count only lowers the match count, as set_initial_stock_count_ keeps the
  * smaller of the two.
  *
+ * The 12-Character Battle takes the count of its stock pool instead.
+ *
  * @param player Port index of the fighter (0..3).
  * @param match_stocks Stock count of the match rules (gSCManagerBattleState->stocks).
  * @return The stock count of the fighter.
@@ -25,6 +28,10 @@ s32 gmRemixStockModeCount(s32 player, s32 match_stocks)
 {
     s32 manual_count;
 
+    if (gmRemixTwelveCBIsActive() != FALSE)
+    {
+        return gmRemixTwelveCBGetStocks(player, match_stocks);
+    }
     if (gmRemixStaminaIsActive() != FALSE)
     {
         return 0;

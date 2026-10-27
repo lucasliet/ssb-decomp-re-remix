@@ -10,6 +10,7 @@
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixtwelvecb.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 
 typedef enum GMRemixModeTeams
@@ -171,6 +172,7 @@ void gmRemixModeLeaveCSS(void)
     gmRemixModeInitSaved();
     gmRemixModeSaveFromCSS(mode);
     gmRemixModeRestoreVanilla();
+    gmRemixTwelveCBReset();
 }
 
 void gmRemixModeStartMatch(void)

@@ -76,6 +76,15 @@ void gmRemixTwelveCBUpdateStocks(GMRemixTwelveCBState *state, int32_t stocks)
     }
 }
 
+int32_t gmRemixTwelveCBPortraitOf(int32_t fkind)
+{
+    if ((fkind >= 0) && (fkind < GMREMIX_TWELVECB_CHARACTERS))
+    {
+        return fkind;
+    }
+    return GMREMIX_TWELVECB_CHARACTERS + (((fkind < 0) ? -fkind : fkind) % GMREMIX_TWELVECB_CHARACTERS);
+}
+
 int32_t gmRemixTwelveCBGetPortraitStocks(const GMRemixTwelveCBState *state, int32_t portrait)
 {
     if (gmRemixTwelveCBPortraitIsValid(portrait) == 0)

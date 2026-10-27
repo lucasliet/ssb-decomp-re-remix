@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixgameend.h"
+#include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtoggle.h"
 #include <gr/grremix/grremixids.h>
 #include <mn/mndef.h>
@@ -103,9 +104,8 @@ static sb32 gmRemixGameEndCanSkipResults(void)
 }
 
 /**
- * Chooses the scene after a VS battle ends. Holding R or L always shows the results and cancels the salty runback.
- * The 12 Character Battle check of GameEnd.asm is REMIX-TODO(TwelveCharBattle): the port has no reader for
- * TwelveCharBattle.twelve_cb_flag, so a salty runback is allowed in that mode.
+ * Chooses the scene after a VS battle ends. Holding R or L always shows the results and cancels the salty runback, and the
+ * 12 Character Battle never starts one (GameEnd.asm checks TwelveCharBattle.twelve_cb_flag).
  *
  * @return nSCKindVSBattle (salty runback), nSCKindPlayersVS (results skipped) or nSCKindVSResults.
  */
@@ -117,7 +117,7 @@ s32 gmRemixGameEndSelectScene(void)
     {
         return nSCKindVSResults;
     }
-    if (gmRemixGameEndStartSaltyRunback())
+    if ((gmRemixTwelveCBIsActive() == FALSE) && gmRemixGameEndStartSaltyRunback())
     {
         return nSCKindVSBattle;
     }
