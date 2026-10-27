@@ -27,6 +27,10 @@ static f32 sFTRemixSizeBaseMultiplier[GMCOMMON_PLAYERS_MAX] = { 1.0F, 1.0F, 1.0F
 /* Size.asm match_state_table: GIANT or TINY forces the body size through the whole match. */
 static s32 sFTRemixSizeMatchState[GMCOMMON_PLAYERS_MAX];
 
+/* Size state a mode forces on a port (the Remix 1P giant and tiny stages) in place of the CSS panel, FTREMIX_SIZE_STATE_UNFORCED when none. */
+static s32 sFTRemixSizeForcedState[GMCOMMON_PLAYERS_MAX] = { FTREMIX_SIZE_STATE_UNFORCED, FTREMIX_SIZE_STATE_UNFORCED,
+                                                              FTREMIX_SIZE_STATE_UNFORCED, FTREMIX_SIZE_STATE_UNFORCED };
+
 /** TRUE when player is a valid index into the per-player tables, logs the offending value otherwise. */
 static sb32 ftRemixSizePlayerIsValid(s32 player)
 {
@@ -83,6 +87,21 @@ void ftRemixSizeSetMatchState(s32 player, s32 state)
     sFTRemixSizeMatchState[player] = state;
 }
 
+/** Forces the size state of player for the fighters created from now on, FTREMIX_SIZE_STATE_UNFORCED gives the port back to the CSS panel. */
+void ftRemixSizeForceMatchState(s32 player, s32 state)
+{
+    if (!ftRemixSizePlayerIsValid(player))
+    {
+        return;
+    }
+    if ((state < FTREMIX_SIZE_STATE_UNFORCED) || (state > FTREMIX_SIZE_STATE_TINY))
+    {
+        port_log("ftRemixSize: forced state %d is outside %d..%d\n", state, FTREMIX_SIZE_STATE_UNFORCED, FTREMIX_SIZE_STATE_TINY);
+        return;
+    }
+    sFTRemixSizeForcedState[player] = state;
+}
+
 /** Multiplier of the match size state of player: 2.25F GIANT, 0.5F TINY, 1.0F NORMAL. */
 f32 ftRemixSizeGetModeMultiplier(s32 player)
 {
@@ -110,7 +129,8 @@ void ftRemixSizeInitFighter(FTStruct *fp)
     {
         return;
     }
-    ftRemixSizeSetMatchState(fp->player, gmRemixPanel(SIZE, fp->player));
+    ftRemixSizeSetMatchState(fp->player, (sFTRemixSizeForcedState[fp->player] != FTREMIX_SIZE_STATE_UNFORCED) ? sFTRemixSizeForcedState[fp->player]
+                                                                                                           : gmRemixPanel(SIZE, fp->player));
     sFTRemixSizeBaseMultiplier[fp->player] = fp->attr->size;
     sFTRemixSizeMultiplier[fp->player] = 1.0F;
 

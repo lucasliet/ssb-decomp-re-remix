@@ -246,6 +246,16 @@ static void sc1PRemix1PBuildPath(void)
     sc1PRemix1PPickBossSlot();
 }
 
+static void sc1PRemix1PClearSizes(void)
+{
+    s32 port;
+
+    for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
+    {
+        ftRemixSizeForceMatchState(port, FTREMIX_SIZE_STATE_UNFORCED);
+    }
+}
+
 static void sc1PRemix1PLogPath(void)
 {
     s32 i;
@@ -265,6 +275,7 @@ sb32 sc1PRemix1PIsActive(void)
 void sc1PRemix1PRandomize(void)
 {
     sSC1PRemix1PIsReady = FALSE;
+    sc1PRemix1PClearSizes();
 
     if (sc1PRemixModeIs(SC1PREMIX_MODE_REMIX_1P) == FALSE)
     {
@@ -289,29 +300,21 @@ SC1PGameStage* sc1PRemix1PGetStage(s32 stage_index)
 
 void sc1PRemix1PSetupEnemy(s32 player)
 {
-    s32 port;
-
     if (sc1PRemix1PIsActive() == FALSE)
     {
         return;
     }
     if (gSCManagerSceneData.spgame_stage == nSC1PGameStageDonkey)
     {
-        ftRemixSizeSetMatchState(player, FTREMIX_SIZE_STATE_GIANT);
+        ftRemixSizeForceMatchState(player, FTREMIX_SIZE_STATE_GIANT);
         return;
     }
     if (gSCManagerSceneData.spgame_stage == nSC1PGameStageSamus)
     {
-        ftRemixSizeSetMatchState(player, FTREMIX_SIZE_STATE_TINY);
+        ftRemixSizeForceMatchState(player, FTREMIX_SIZE_STATE_TINY);
         return;
     }
-    for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
-    {
-        if (port != gSCManagerSceneData.player)
-        {
-            ftRemixSizeSetMatchState(port, FTREMIX_SIZE_STATE_NORMAL);
-        }
-    }
+    sc1PRemix1PClearSizes();
 }
 
 SC1PGameComputer* sc1PRemix1PGetComputer(s32 stage_index)

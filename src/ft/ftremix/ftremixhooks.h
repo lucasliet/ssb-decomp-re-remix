@@ -195,6 +195,7 @@ s32 ftRemixKirbyCloneActionSwap(GObj *fighter_gobj, s32 action_id);
 f32 ftRemixSizeGetMultiplier(s32 player);
 void ftRemixSizeSetMultiplier(s32 player, f32 multiplier);
 void ftRemixSizeInitFighter(FTStruct *fp);
+#define FTREMIX_SIZE_STATE_UNFORCED -1
 #define FTREMIX_SIZE_STATE_NORMAL 0
 #define FTREMIX_SIZE_STATE_GIANT 1
 #define FTREMIX_SIZE_STATE_TINY 2
@@ -202,6 +203,7 @@ void ftRemixSizeInitFighter(FTStruct *fp);
 #define FTREMIX_SIZE_TINY_MULTIPLIER 0.5F
 s32 ftRemixSizeGetMatchState(s32 player);
 void ftRemixSizeSetMatchState(s32 player, s32 state);
+void ftRemixSizeForceMatchState(s32 player, s32 state);
 f32 ftRemixSizeGetModeMultiplier(s32 player);
 void ftRemixSizeApplyTopJointAndEcb(FTStruct *fp);
 f32 ftRemixSizeCameraZoomFactor(FTStruct *fp);
