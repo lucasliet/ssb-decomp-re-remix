@@ -38,6 +38,12 @@ extern void sc1PRemixMultimanOnPlayerKo(void);
 /** KOs scored so far in the run. */
 extern s32 sc1PRemixMultimanGetKos(void);
 
+/** Draws the KO counter of the horde modes as an overlay label (1P slot); no-op outside them. Call once per frame. */
+extern void sc1PRemixMultimanDrawHud(void);
+
+/** Draws the KO counter of the horde modes (the overlay label of the 1P slots); no-op outside them. Call once per frame. */
+extern void sc1PRemixMultimanDrawHud(void);
+
 #endif
 
 #endif

@@ -841,6 +841,9 @@ void sc1PGameSetGameEnd(void)
 void sc1PGameFuncUpdate(void)
 {
     ifCommonBattleUpdateInterfaceAll();
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixMultimanDrawHud();
+#endif
 
     if ((sSC1PGameIsStartStage == FALSE) && (gSCManagerBattleState->game_status == nSCBattleGameStatusGo))
     {
@@ -2005,6 +2008,13 @@ void sc1PGameInitTeamStockDisplay(void)
     FTStruct *fp;
     Sprite *sprite;
     s32 i;
+
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixMultimanIsActive() != FALSE)
+    {
+        return;
+    }
+#endif
 
     switch (gSCManagerSceneData.spgame_stage)
     {

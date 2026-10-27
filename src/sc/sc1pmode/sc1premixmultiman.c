@@ -5,15 +5,22 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ft/fighter.h>
+#include <port_log.h>
 #include <sc/scmanager.h>
 #include <sc/scene.h>
 #include <sys/utils.h>
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmoderules.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
+#include "remix/remix_hud_text.h"
 
 #define SC1PREMIX_MULTIMAN_POLYGON_KINDS 12
 #define SC1PREMIX_MULTIMAN_STOCK_COUNT 0
+#define SC1PREMIX_MULTIMAN_HUD_SLOT 28
+#define SC1PREMIX_MULTIMAN_HUD_X 48.0F
+#define SC1PREMIX_MULTIMAN_HUD_Y 22.0F
+#define SC1PREMIX_MULTIMAN_HUD_HEIGHT 16.0F
+#define SC1PREMIX_MULTIMAN_HUD_COLOR 0xFFFFFFFF
 
 static SC1PRemixMultimanKos sSC1PRemixMultimanKos;
 
@@ -78,16 +85,29 @@ s32 sc1PRemixMultimanPolygonKind(void)
 void sc1PRemixMultimanOnEnemyKo(void)
 {
     sc1PRemixMultimanKosAddEnemy(&sSC1PRemixMultimanKos);
+    port_log("multiman: enemy KO, kos=%d player_ko=%d\n", (int)sSC1PRemixMultimanKos.kos, (int)sSC1PRemixMultimanKos.is_player_ko);
 }
 
 void sc1PRemixMultimanOnPlayerKo(void)
 {
     sc1PRemixMultimanKosSetPlayerKo(&sSC1PRemixMultimanKos);
+    port_log("multiman: player KO, kos=%d\n", (int)sSC1PRemixMultimanKos.kos);
 }
 
 s32 sc1PRemixMultimanGetKos(void)
 {
     return sSC1PRemixMultimanKos.kos;
+}
+
+void sc1PRemixMultimanDrawHud(void)
+{
+    if (sc1PRemixMultimanIsActive() == FALSE)
+    {
+        return;
+    }
+    remix_hud_text_putf(SC1PREMIX_MULTIMAN_HUD_SLOT, SC1PREMIX_MULTIMAN_HUD_X, SC1PREMIX_MULTIMAN_HUD_Y,
+                        SC1PREMIX_MULTIMAN_HUD_COLOR, SC1PREMIX_MULTIMAN_HUD_HEIGHT, "KOs %d",
+                        (int)sSC1PRemixMultimanKos.kos);
 }
 
 #endif
