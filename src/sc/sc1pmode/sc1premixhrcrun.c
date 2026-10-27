@@ -7,6 +7,7 @@
 #include <ft/fighter.h>
 #include <ft/ftparam.h>
 #include <if/ifcommon.h>
+#include <if/interface.h>
 #include <it/itmanager.h>
 #include <port_log.h>
 #include <sc/scmanager.h>
@@ -16,6 +17,7 @@
 #include "remix/remix_hud_text.h"
 #include "remix/remix_roster_data.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premixhrcclouds.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
 #include "sc/sc1pmode/sc1premixhrcsigns.h"
@@ -117,6 +119,12 @@ static void sc1PRemixHrcRunFollowSandbag(GObj *sandbag_gobj, GObj *human_gobj, S
 
     gmRemixCameraSetHrcX(move->camera_x);
     top_joint->translate.vec.f.x += move->sandbag_shift;
+    sc1PRemixHrcCloudsSetSpeed(ftGetStruct(sandbag_gobj)->coll_data.pos_diff.x, move->is_past_start);
+
+    if (move->is_past_start != FALSE)
+    {
+        gIFCommonPlayerInterface.is_magnify_display = FALSE;
+    }
 
     if (move->sandbag_shift != 0.0F)
     {
@@ -206,6 +214,7 @@ void sc1PRemixHrcRunStart(void)
     sSC1PRemixHrcIsBatSpawned = FALSE;
     sSC1PRemixHrcIsCompleting = FALSE;
     sc1PRemixHrcTravelReset();
+    sc1PRemixHrcCloudsReset();
     gmRemixCameraSetHrcX(SC1PREMIX_HRC_DEFAULT_CAMERA_X);
 }
 

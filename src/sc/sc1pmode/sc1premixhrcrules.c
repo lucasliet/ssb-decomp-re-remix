@@ -100,4 +100,24 @@ void sc1PRemixHrcCounterAt(int complete_tics, SC1PRemixHrcCounterLayout *layout)
     layout->height = SC1PREMIX_HRC_COUNTER_HEIGHT * (1.0F + progress);
 }
 
+float sc1PRemixHrcCloudSpeed(float sandbag_dx, int is_past_start)
+{
+    if (is_past_start == 0)
+    {
+        return 0.0F;
+    }
+    return sandbag_dx * SC1PREMIX_HRC_CLOUD_SPEED_FACTOR;
+}
+
+float sc1PRemixHrcCloudStep(float x, float speed)
+{
+    x += speed;
+
+    if (x <= SC1PREMIX_HRC_CLOUD_WARP_THRESHOLD)
+    {
+        x += SC1PREMIX_HRC_CLOUD_WARP_DISTANCE;
+    }
+    return x;
+}
+
 #endif

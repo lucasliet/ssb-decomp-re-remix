@@ -12,6 +12,8 @@
 #include "if/ifremixannouncer.h"
 #include "gm/gmremixmusictitle.h"
 #include "if/ifremixstaminahud.h"
+#include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premixhrcrules.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -2744,6 +2746,37 @@ SObj* ifCommonTimerMakeDigits(void)
     return sobj;
 }
 
+// Announces each second left of the last five once, as the match timer reaches it
+static void ifCommonTimerAnnounceSeconds(void)
+{
+    s32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sIFCommonIsAnnouncedSecond); i++)
+    {
+        if ((sIFCommonIsAnnouncedSecond[i] == FALSE) && (gSCManagerBattleState->time_remain <= (I_SEC_TO_TICS(i) + I_SEC_TO_TICS(1))))
+        {
+            func_800269C0_275C0(dIFCommonAnnounceTimerVoiceIDs[i]);
+
+            sIFCommonIsAnnouncedSecond[i] = TRUE;
+        }
+    }
+}
+
+#if defined(PORT) && defined(REGION_REMIX)
+// The Home-Run Contest counts its ten seconds down on the match timer without ending the match at zero (SinglePlayerModes.asm update_routine, HRC.asm apply_countdown_)
+static void ifCommonTimerUpdateHrc(void)
+{
+    s32 time_passed = gSCManagerBattleState->time_passed;
+
+    gSCManagerBattleState->time_remain = (time_passed < SC1PREMIX_HRC_TIME_LIMIT_TICS) ? (SC1PREMIX_HRC_TIME_LIMIT_TICS - time_passed) : 0;
+
+    if ((gSCManagerBattleState->time_remain != 0) && (gSCManagerBattleState->time_remain <= I_SEC_TO_TICS(5)))
+    {
+        ifCommonTimerAnnounceSeconds();
+    }
+}
+#endif
+
 // 0x80113104
 void ifCommonTimerFuncRun(GObj *interface_gobj)
 {
@@ -2765,6 +2798,13 @@ void ifCommonTimerFuncRun(GObj *interface_gobj)
 
             // decouple timer logic for comp. ruleset
             extern int port_get_comp_ruleset(void);
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemixHrcIsActive() != FALSE)
+            {
+                ifCommonTimerUpdateHrc();
+            }
+            else
+#endif
             if (((gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_TIME) || (port_get_comp_ruleset() && gSCManagerSceneData.scene_curr == nSCKindVSBattle)) && (gSCManagerBattleState->time_limit != SCBATTLE_TIMELIMIT_INFINITE))
             {
                 if (gSCManagerBattleState->time_remain != 0)
@@ -2793,15 +2833,7 @@ void ifCommonTimerFuncRun(GObj *interface_gobj)
 
                             gcEjectGObj(NULL);
                         }
-                        else for (i = 0; i < ARRAY_COUNT(sIFCommonIsAnnouncedSecond); i++)
-                        {
-                            if ((sIFCommonIsAnnouncedSecond[i] == FALSE) && (gSCManagerBattleState->time_remain <= (I_SEC_TO_TICS(i) + I_SEC_TO_TICS(1))))
-                            {
-                                func_800269C0_275C0(dIFCommonAnnounceTimerVoiceIDs[i]);
-
-                                sIFCommonIsAnnouncedSecond[i] = TRUE;
-                            }
-                        }
+                        else ifCommonTimerAnnounceSeconds();
                         syAudioSetBGMVolume(0, ((gSCManagerBattleState->time_remain / F_SEC_TO_TICS(5)) * 20480.0F) + 10240.0F);
                     }
                 }
@@ -2815,6 +2847,12 @@ void ifCommonTimerMakeInterface(void (*proc)(void))
 {
     gSCManagerBattleState->time_remain = sIFCommonTimerLimit = I_MIN_TO_TICS(gSCManagerBattleState->time_limit);
     gSCManagerBattleState->time_passed = 0;
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixHrcIsActive() != FALSE)
+    {
+        gSCManagerBattleState->time_remain = sIFCommonTimerLimit = SC1PREMIX_HRC_TIME_LIMIT_TICS;
+    }
+#endif
 
     sIFCommonTimerIsStarted = FALSE;
 

@@ -3,6 +3,7 @@
 #include <sc/sc1pmode/sc1pgameboss.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixids.h"
+#include "sc/sc1pmode/sc1premixhrcclouds.h"
 #endif
 
 #ifdef PORT
@@ -151,6 +152,9 @@ void grWallpaperCalcPersp(SObj *wallpaper_sobj)
 void grWallpaperCommonProcUpdate(GObj *wallpaper_gobj)
 {
     grWallpaperCalcPersp(SObjGetStruct(wallpaper_gobj));
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixHrcCloudsApply(SObjGetStruct(wallpaper_gobj));
+#endif
 }
 
 // 0x80104850

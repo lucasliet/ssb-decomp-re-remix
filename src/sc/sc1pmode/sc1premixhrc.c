@@ -18,6 +18,11 @@
 #include "sc/sc1pmode/sc1premixmodename.h"
 
 #define SC1PREMIX_HRC_STOCK_COUNT 0
+#define SC1PREMIX_HRC_TIMER_MINUTES 1
+#define SC1PREMIX_HRC_ARE_YOU_READY_FGM 509
+#define SC1PREMIX_HRC_READY_TICS 66
+
+extern void *func_800269C0_275C0(u16 id);
 
 sb32 sc1PRemixHrcIsActive(void)
 {
@@ -36,7 +41,7 @@ void sc1PRemixHrcSetupBattle(void)
     }
     gSCManagerBattleState->gkind = nGRRemixStage_HRC;
     gSCManagerBattleState->item_appearance_rate = 0;
-    gSCManagerBattleState->time_limit = SCBATTLE_TIMELIMIT_INFINITE;
+    gSCManagerBattleState->time_limit = SC1PREMIX_HRC_TIMER_MINUTES;
     sc1PRemixHrcRunStart();
 }
 
@@ -65,6 +70,16 @@ sb32 sc1PRemixHrcKeepsItem(GObj *item_gobj)
         return FALSE;
     }
     return (itGetStruct(item_gobj)->kind == nITKindBat) ? TRUE : FALSE;
+}
+
+s32 sc1PRemixHrcPlayReady(s32 default_tics)
+{
+    if (sc1PRemixHrcIsActive() == FALSE)
+    {
+        return default_tics;
+    }
+    func_800269C0_275C0(SC1PREMIX_HRC_ARE_YOU_READY_FGM);
+    return SC1PREMIX_HRC_READY_TICS;
 }
 
 void sc1PRemixHrcLeaveRun(void)

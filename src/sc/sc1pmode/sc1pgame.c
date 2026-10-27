@@ -1056,6 +1056,11 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupEnemy(player);
     sc1PRemixHrcSetupEnemy(player);
+
+    if (sc1PRemixHrcIsActive() != FALSE)
+    {
+        sSC1PGamePlayerSetups[player].is_skip_entry = TRUE;
+    }
 #endif
 
     sSC1PGameTeamPlayersRemaining--;
@@ -1208,6 +1213,12 @@ void sc1PGameSetupStageAll(void)
         sSC1PGamePlayerSetups[gSCManagerSceneData.player].is_skip_entry = FALSE;
         break;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixHrcIsActive() != FALSE)
+    {
+        sSC1PGamePlayerSetups[gSCManagerSceneData.player].is_skip_entry = TRUE;
+    }
+#endif
 #ifdef PORT
     /* Co-op: P2 enters the same way P1 does on every stage (challenger duels
      * included — there P1's is_skip_entry is FALSE, so P2 matches). */
@@ -1788,7 +1799,11 @@ void sc1PGameWaitStageBonus3Update(void)
         0.3F, 
         31.5F
     );
+#if defined(PORT) && defined(REGION_REMIX)
+    gcSleepCurrentGObjThread(sc1PRemixHrcPlayReady(60));
+#else
     gcSleepCurrentGObjThread(60);
+#endif
     ifCommonAnnounceGoMakeInterface();
     ifCommonPlayerDamageSetShowInterface();
     func_800269C0_275C0(nSYAudioVoiceAnnounceGo);
@@ -1890,6 +1905,13 @@ void sc1PGameWaitThreadUpdate(GObj *gobj)
     switch (gSCManagerSceneData.spgame_stage)
     {
     case nSC1PGameStageLink:
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemixHrcIsActive() != FALSE)
+        {
+            sc1PGameWaitStageBonus3Update();
+            break;
+        }
+#endif
     case nSC1PGameStageFox:
     case nSC1PGameStageMario:
     case nSC1PGameStagePikachu:

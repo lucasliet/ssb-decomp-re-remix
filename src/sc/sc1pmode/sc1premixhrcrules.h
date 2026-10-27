@@ -19,6 +19,11 @@
 #define SC1PREMIX_HRC_COUNTER_Y 44.0F
 #define SC1PREMIX_HRC_COUNTER_HEIGHT 16.0F
 #define SC1PREMIX_HRC_COUNTER_CENTER_X 160.0F
+#define SC1PREMIX_HRC_CLOUD_START (-7.505F)
+#define SC1PREMIX_HRC_CLOUD_WARP_THRESHOLD (-342.505F)
+#define SC1PREMIX_HRC_CLOUD_WARP_DISTANCE 335.0F
+#define SC1PREMIX_HRC_CLOUD_SPEED_FACTOR (-0.001F)
+#define SC1PREMIX_HRC_CLOUD_SCALE_X 2.2334F
 
 /** Verdicts of an attempt check. */
 #define SC1PREMIX_HRC_VERDICT_KEEP_GOING 0
@@ -96,6 +101,25 @@ extern int sc1PRemixHrcAttemptVerdict(const SC1PRemixHrcAttempt *attempt);
  * @param layout Receives the position and the height of the text.
  */
 extern void sc1PRemixHrcCounterAt(int complete_tics, SC1PRemixHrcCounterLayout *layout);
+
+/**
+ * Scroll speed of the clouds: the contest scrolls them against the Sandbag once it passes the start line.
+ *
+ * @param sandbag_dx X the Sandbag moved this frame.
+ * @param is_past_start Whether the Sandbag is at or past the start line.
+ * @return Speed to add to the background X each frame.
+ */
+extern float sc1PRemixHrcCloudSpeed(float sandbag_dx, int is_past_start);
+
+/**
+ * Moves the background by one scroll step. The image is the same clouds twice, so once it has scrolled past the threshold it jumps
+ * back by the width of one copy (HRC.asm animate_background_image_).
+ *
+ * @param x Background X.
+ * @param speed Scroll speed.
+ * @return The new background X.
+ */
+extern float sc1PRemixHrcCloudStep(float x, float speed);
 
 #endif
 
