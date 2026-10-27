@@ -23,6 +23,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixtwelvecb.h"
+#include "gm/gmremixtwelvecbhud.h"
 #include "gm/gmremixtoggle.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
@@ -5378,6 +5379,9 @@ void mnPlayersVSFuncRun(GObj *gobj)
 	}
 
 	sMNPlayersVSTotalTimeTics++;
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixTwelveCBHudDrawCSS();
+#endif
 
 	mnPlayersVSUpdateControllerOrders();
 

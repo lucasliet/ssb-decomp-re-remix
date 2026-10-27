@@ -5,6 +5,7 @@
 
 #include <ssb_types.h>
 #include <ft/fighter.h>
+#include "gm/gmremixtwelvecbrules.h"
 
 /*
  * 12-Character Battle (TwelveCharBattle.asm, ROADMAP T6.1f) on the match: every character has stocks that last across the
@@ -49,6 +50,13 @@ extern sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind);
 
 /** TRUE when the stock pool of a player is empty, which ends the battle. */
 extern sb32 gmRemixTwelveCBIsComplete(void);
+
+/**
+ * The battle in progress, with the best character of each player worked out, for the CSS and results text.
+ *
+ * @return The state (a fresh battle before the first game), or NULL when the mode is not active.
+ */
+extern const GMRemixTwelveCBState* gmRemixTwelveCBGetState(void);
 
 /** Forgets the battle (the CSS goes back to the VS menu). */
 extern void gmRemixTwelveCBReset(void);

@@ -24,6 +24,7 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixtwelvecbhud.h"
 #endif
 
 // // // // // // // // // // // //
@@ -3405,6 +3406,9 @@ void mnVSResultsFuncRun(GObj *gobj)
 	s32 i;
 
 	sMNVSResultsTotalTimeTics++;
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixTwelveCBHudDrawResults();
+#endif
 
 	if (sMNVSResultsTotalTimeTics == sMNVSResultsDrawWallpaperTic)
 	{

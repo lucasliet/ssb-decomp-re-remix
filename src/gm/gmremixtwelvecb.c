@@ -37,6 +37,17 @@ void gmRemixTwelveCBReset(void)
     sGMRemixTwelveCBIsInit = FALSE;
 }
 
+const GMRemixTwelveCBState* gmRemixTwelveCBGetState(void)
+{
+    if (gmRemixTwelveCBIsActive() == FALSE)
+    {
+        return NULL;
+    }
+    gmRemixTwelveCBEnsureInit();
+    gmRemixTwelveCBCalculateBest(&sGMRemixTwelveCB);
+    return &sGMRemixTwelveCB;
+}
+
 sb32 gmRemixTwelveCBIsComplete(void)
 {
     return (sGMRemixTwelveCBIsInit != FALSE) && (sGMRemixTwelveCB.status == GMREMIX_TWELVECB_STATUS_COMPLETE);
