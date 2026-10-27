@@ -19,6 +19,7 @@
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
 #include "sc/sc1pmode/sc1premixhrcsigns.h"
+#include "sc/sc1pmode/sc1premixhrctravel.h"
 
 #define SC1PREMIX_HRC_HUD_SLOT 29
 #define SC1PREMIX_HRC_HUD_X 246.0F
@@ -105,7 +106,7 @@ static void sc1PRemixHrcRunFillAttempt(SC1PRemixHrcAttempt *attempt, const SC1PR
     attempt->is_human_resting = sc1PRemixHrcRunIsResting(human_fp->status_id);
 }
 
-static void sc1PRemixHrcRunFollowSandbag(GObj *sandbag_gobj, SC1PRemixHrcMove *move)
+static void sc1PRemixHrcRunFollowSandbag(GObj *sandbag_gobj, GObj *human_gobj, SC1PRemixHrcMove *move)
 {
     DObj *top_joint = DObjGetStruct(sandbag_gobj);
 
@@ -118,6 +119,7 @@ static void sc1PRemixHrcRunFollowSandbag(GObj *sandbag_gobj, SC1PRemixHrcMove *m
     {
         sc1PRemixHrcSignsAdvance();
     }
+    sc1PRemixHrcTravelUpdate(human_gobj, move->camera_x, sSC1PRemixHrcState.warp_distance);
 }
 
 /** Drops the Home-Run Bat on the left side of the platform (SinglePlayerModes.asm _hrc, Hazards.add_item_ with BAT_SPAWN). */
@@ -164,6 +166,7 @@ void sc1PRemixHrcRunStart(void)
     sc1PRemixHrcStateReset(&sSC1PRemixHrcState);
     sSC1PRemixHrcIsEnded = FALSE;
     sSC1PRemixHrcIsBatSpawned = FALSE;
+    sc1PRemixHrcTravelReset();
     gmRemixCameraSetHrcX(SC1PREMIX_HRC_DEFAULT_CAMERA_X);
 }
 
@@ -197,7 +200,7 @@ void sc1PRemixHrcRunUpdate(void)
     {
         return;
     }
-    sc1PRemixHrcRunFollowSandbag(sandbag_gobj, &move);
+    sc1PRemixHrcRunFollowSandbag(sandbag_gobj, human_gobj, &move);
 
     if (sSC1PRemixHrcIsEnded != FALSE)
     {
