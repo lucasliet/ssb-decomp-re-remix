@@ -8,6 +8,7 @@
 #include <sys/audio.h>
 #ifdef REGION_REMIX
 #include "gm/gmremixpractice.h"
+#include "sc/sc1pmode/sc1premix1p.h"
 #endif
 #ifdef PORT
 extern char *getenv(const char *name);
@@ -3677,6 +3678,9 @@ void mnPlayers1PGameFuncRun(GObj *gobj)
 
 				sMNPlayers1PGameStartProceedWait = 30;
 				sMNPlayers1PGameIsStart = TRUE;
+#ifdef REGION_REMIX
+				sc1PRemix1PRandomize();
+#endif
 
 				mnPlayers1PGamePauseSlotProcesses();
 			}

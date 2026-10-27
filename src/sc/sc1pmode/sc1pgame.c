@@ -3,6 +3,7 @@
 #include "if/ifremixannouncer.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
 #endif
 #include <ft/fighter.h>
@@ -1074,6 +1075,14 @@ void sc1PGameSetupStageAll(void)
     s32 player, com;
     u16 flags;
     s32 i;
+
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemix1PIsActive() != FALSE)
+    {
+        stagesetup = sc1PRemix1PGetStage(gSCManagerSceneData.spgame_stage);
+        comsetup = sc1PRemix1PGetComputer(gSCManagerSceneData.spgame_stage);
+    }
+#endif
     s32 variations;
     s32 level;
     s32 costume, kind;
@@ -2488,6 +2497,13 @@ void sc1PGameFuncStart(void)
     ftManagerAllocFighter(FTDATA_FLAG_MAINMOTION, 4);
     wpManagerAllocWeapons();
     efManagerInitEffects();
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemix1PIsActive() != FALSE)
+    {
+        ifScreenFlashMakeInterface(sc1PRemix1PGetStage(gSCManagerSceneData.spgame_stage)->screenflash_alpha);
+    }
+    else
+#endif
     ifScreenFlashMakeInterface(dSC1PGameStageDesc[gSCManagerSceneData.spgame_stage].screenflash_alpha);
     gmRumbleMakeActor();
     ftPublicMakeActor();

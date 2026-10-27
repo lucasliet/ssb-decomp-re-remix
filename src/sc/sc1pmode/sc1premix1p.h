@@ -1,0 +1,47 @@
+#ifndef _SC1PREMIX1P_H_
+#define _SC1PREMIX1P_H_
+
+#if defined(PORT) && defined(REGION_REMIX)
+
+#include <ssb_types.h>
+#include <sc/sctypes.h>
+#include "sc/sc1pmode/sc1premix1pdata.h"
+
+/*
+ * Remix 1P (SinglePlayerModes.asm remix_1p_randomization): a random path through the 1P game. The stage table of the mode is read
+ * from the Remix build, six of its lines get a random fighter and stage, the Star Fox line a random duo and the next to last line one of
+ * three bosses. The path is built when START is pressed on the 1P CSS and read by the 1P game through sc1PRemix1PGetStage.
+ */
+
+/** TRUE while the 1P game being played is Remix 1P with its path built. */
+extern sb32 sc1PRemix1PIsActive(void);
+
+/** Builds a new path (the hook of the 1P CSS START); no-op outside Remix 1P. */
+extern void sc1PRemix1PRandomize(void);
+
+/**
+ * Line of the stage table of the Remix path.
+ *
+ * @param stage_index Stage of the 1P game.
+ * @return The line, or NULL when Remix 1P is not active or the stage is past the table.
+ */
+extern SC1PGameStage* sc1PRemix1PGetStage(s32 stage_index);
+
+/** CPU settings of a stage of the Remix path (levels, handicaps, team attack, item rate); NULL when Remix 1P is not active. */
+extern SC1PGameComputer* sc1PRemix1PGetComputer(s32 stage_index);
+
+/** What the title card of a stage shows; NULL when Remix 1P is not active or the stage is past the path. */
+extern const SC1PRemix1PSlotCard* sc1PRemix1PGetCard(s32 stage_index);
+
+/** Kirby power and hat of a slot of the Kirby team (seven random ones and the Magic Hat Kirby). @param slot 0 to 7. */
+extern void sc1PRemix1PGetKirby(s32 slot, s32 *power, s32 *hat);
+
+/** TRUE when the Star Fox line is a duo whose partner loads first (`duo_spawn`). */
+extern sb32 sc1PRemix1PIsDuoPartnerFirst(void);
+
+/** TRUE when the boss of the path is Metal Mario and Metal Luigi (`metal_bros_flag`). */
+extern sb32 sc1PRemix1PIsMetalBros(void);
+
+#endif
+
+#endif

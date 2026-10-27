@@ -16,7 +16,7 @@
 
 #define SC1PREMIX_BONUSEXIT_TIME_LIMIT 5
 
-static void sc1PRemixModeAdvanceSeed(void)
+void sc1PRemixModeAdvanceSeed(void)
 {
     u32 steps = sc1PRemixModeSeedAdvanceCount(dSYTaskmanFrameCount);
 
