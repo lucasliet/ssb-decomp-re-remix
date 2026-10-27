@@ -27,6 +27,46 @@ extern int sc1PRemixModeLeavesBonusCSSFor1P(int mode);
  */
 extern unsigned int sc1PRemixModeSeedAdvanceCount(unsigned int frame_count);
 
+/** KOs of a Multi-Man run: the enemy KOs the player scored, which stop counting once the player was KO'd (multiman_ko_count_stop). */
+typedef struct SC1PRemixMultimanKos
+{
+    int kos;
+    int is_player_ko;
+} SC1PRemixMultimanKos;
+
+/**
+ * Whether the mode is one of the horde modes (Multi-Man and Cruel Multi-Man), which fight endless Fighting Polygons in the
+ * Duel Zone with one stock, no items and no team attack.
+ *
+ * @param mode Mode id (SC1PREMIX_MODE_*).
+ */
+extern int sc1PRemixModeIsMultiman(int mode);
+
+/**
+ * Knockback ratio (the "handicap" of the 1P setup) of the polygons of a horde mode: easy for Multi-Man, very hard for Cruel.
+ *
+ * @param mode Mode id (SC1PREMIX_MODE_*).
+ * @return The ratio, or 0 when the mode keeps the stage value.
+ */
+extern int sc1PRemixModeEnemyHandicap(int mode);
+
+/**
+ * Knockback ratio the player takes: raised in Cruel Multi-Man only.
+ *
+ * @param mode Mode id (SC1PREMIX_MODE_*).
+ * @return The ratio, or 0 when the mode keeps the default.
+ */
+extern int sc1PRemixModeHumanHandicap(int mode);
+
+/** Starts a run with no KOs and the player alive. */
+extern void sc1PRemixMultimanKosReset(SC1PRemixMultimanKos *counter);
+
+/** Counts one enemy KO unless the player was already KO'd. */
+extern void sc1PRemixMultimanKosAddEnemy(SC1PRemixMultimanKos *counter);
+
+/** Marks the player as KO'd, so later enemy KOs are not counted. */
+extern void sc1PRemixMultimanKosSetPlayerKo(SC1PRemixMultimanKos *counter);
+
 #endif
 
 #endif

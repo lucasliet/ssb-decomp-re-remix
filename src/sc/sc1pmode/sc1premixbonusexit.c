@@ -12,9 +12,9 @@
 #include "sc/sc1pmode/sc1premixbonusexit.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmoderules.h"
+#include "sc/sc1pmode/sc1premixmultiman.h"
 
 #define SC1PREMIX_BONUSEXIT_TIME_LIMIT 5
-#define SC1PREMIX_BONUSEXIT_FIRST_STAGE 0
 
 static void sc1PRemixModeAdvanceSeed(void)
 {
@@ -45,7 +45,7 @@ sb32 sc1PRemixModeExitBonusCSS(s32 fkind, s32 costume)
     gSCManagerSceneData.fkind = fkind;
     gSCManagerSceneData.costume = costume;
     gSCManagerSceneData.spgame_time_limit = SC1PREMIX_BONUSEXIT_TIME_LIMIT;
-    gSCManagerSceneData.spgame_stage = SC1PREMIX_BONUSEXIT_FIRST_STAGE;
+    gSCManagerSceneData.spgame_stage = sc1PRemixMultimanFirstStage(mode);
     lbBackupWrite();
     return TRUE;
 }

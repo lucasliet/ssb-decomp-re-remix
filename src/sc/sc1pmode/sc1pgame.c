@@ -1,6 +1,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
+#include "sc/sc1pmode/sc1premixmultiman.h"
 #endif
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
@@ -1046,6 +1047,9 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
     gSCManagerBattleState->players[player].pkind = nFTPlayerKindCom;
 
     sSC1PGamePlayerSetups[player].cp_trait = stagesetup->opponent_behavior;
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixMultimanSetupEnemy(player);
+#endif
 
     sSC1PGameTeamPlayersRemaining--;
 }
@@ -1105,6 +1109,9 @@ void sc1PGameSetupStageAll(void)
     }
     gSCManagerBattleState->item_toggles = stagesetup->item_toggles;
     gSCManagerBattleState->item_appearance_rate = comsetup->item_appearance_rate;
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixMultimanSetupBattle();
+#endif
 
     sSC1PGameEnemyPlayerCount = sSC1PGameEnemyStocksRemaining = sSC1PGameTeamPlayersRemaining = stagesetup->opponent_count;
 
@@ -1524,6 +1531,13 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
     player = fp->player;
     figatree = fp->figatree_heap;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixMultimanIsActive() != FALSE)
+    {
+        sSC1PGameTeamPlayersRemaining = 1;
+        sSC1PGameCurrentEnemyVariation = 0;
+    }
+#endif
     if (sSC1PGameTeamPlayersRemaining == 0)
     {
         ftCommonSleepSetStatus(player_gobj);
@@ -1552,6 +1566,12 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
 
         case nSC1PGameStageZako:
             gSCManagerBattleState->players[player].fkind = sSC1PGameEnemyVariations[sSC1PGameCurrentEnemyVariation];
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemixMultimanIsActive() != FALSE)
+            {
+                gSCManagerBattleState->players[player].fkind = sc1PRemixMultimanPolygonKind();
+            }
+#endif
             break;
 
         case nSC1PGameStageKirby:
@@ -2090,6 +2110,9 @@ void sc1PGameSetPlayerDefeatStats(s32 player, s32 team_order)
         (gSCManagerBattleState->game_status != nSCBattleGameStatusEnd)
     )
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        sc1PRemixMultimanOnPlayerKo();
+#endif
 #ifdef PORT
         /* Co-op: P1's elimination only ends the stage if P2 is already out. */
         if (sc1PManagerIsCoopActive() &&
@@ -2115,6 +2138,13 @@ void sc1PGameSetPlayerDefeatStats(s32 player, s32 team_order)
 #endif
     else if (gSCManagerBattleState->players[player].is_spgame_enemy != FALSE)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemixMultimanIsActive() != FALSE)
+        {
+            sc1PRemixMultimanOnEnemyKo();
+            return;
+        }
+#endif
         sSC1PGameEnemyStocksRemaining--;
         sSC1PGameEnemyStockSpriteFlags |= (1 << team_order);
 

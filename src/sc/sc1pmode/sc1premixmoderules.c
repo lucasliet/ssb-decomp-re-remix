@@ -8,6 +8,9 @@
 #include "sc/sc1pmode/sc1premixmodename.h"
 
 #define SC1PREMIX_SEED_FRAME_MASK 0x3F
+#define SC1PREMIX_MULTIMAN_ENEMY_HANDICAP 0x15
+#define SC1PREMIX_CRUEL_ENEMY_HANDICAP 0x18
+#define SC1PREMIX_CRUEL_HUMAN_HANDICAP 0x16
 
 int sc1PRemixModeLeavesBonusCSSFor1P(int mode)
 {
@@ -27,6 +30,45 @@ int sc1PRemixModeLeavesBonusCSSFor1P(int mode)
 unsigned int sc1PRemixModeSeedAdvanceCount(unsigned int frame_count)
 {
     return (frame_count & SC1PREMIX_SEED_FRAME_MASK) + 1;
+}
+
+int sc1PRemixModeIsMultiman(int mode)
+{
+    return ((mode == SC1PREMIX_MODE_MULTIMAN) || (mode == SC1PREMIX_MODE_CRUEL)) ? 1 : 0;
+}
+
+int sc1PRemixModeEnemyHandicap(int mode)
+{
+    if (mode == SC1PREMIX_MODE_MULTIMAN)
+    {
+        return SC1PREMIX_MULTIMAN_ENEMY_HANDICAP;
+    }
+    return (mode == SC1PREMIX_MODE_CRUEL) ? SC1PREMIX_CRUEL_ENEMY_HANDICAP : 0;
+}
+
+int sc1PRemixModeHumanHandicap(int mode)
+{
+    return (mode == SC1PREMIX_MODE_CRUEL) ? SC1PREMIX_CRUEL_HUMAN_HANDICAP : 0;
+}
+
+void sc1PRemixMultimanKosReset(SC1PRemixMultimanKos *counter)
+{
+    counter->kos = 0;
+    counter->is_player_ko = 0;
+}
+
+void sc1PRemixMultimanKosAddEnemy(SC1PRemixMultimanKos *counter)
+{
+    if (counter->is_player_ko != 0)
+    {
+        return;
+    }
+    counter->kos++;
+}
+
+void sc1PRemixMultimanKosSetPlayerKo(SC1PRemixMultimanKos *counter)
+{
+    counter->is_player_ko = 1;
 }
 
 #endif

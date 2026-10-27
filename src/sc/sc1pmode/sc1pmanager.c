@@ -2,6 +2,9 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
 #include <sys/dma.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1premixmultiman.h"
+#endif
 #ifdef PORT
 #include <mn/mncommon/mncongra.h>
 #include <mn/mncommon/mnmessage.h>
@@ -331,6 +334,9 @@ void sc1PManagerUpdateScene(void)
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].costume = gSCManagerSceneData.costume;
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].stock_count = gSCManagerBackupData.spgame_stock_count;
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].is_spgame_enemy = FALSE;
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixMultimanSetupPlayer(gSCManagerSceneData.player);
+#endif
 
     gSCManagerSceneData.spgame_score = 0;
     gSCManagerSceneData.continues_used = 0;
