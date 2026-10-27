@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ft/fighter.h>
+#include <it/item.h>
 #include <port_log.h>
 #include <sc/scmanager.h>
 #include <sc/scene.h>
@@ -55,6 +56,15 @@ void sc1PRemixHrcSetupEnemy(s32 player)
         return;
     }
     gSCManagerBattleState->players[player].fkind = REMIX_ID_SANDBAG;
+}
+
+sb32 sc1PRemixHrcKeepsItem(GObj *item_gobj)
+{
+    if (sc1PRemixHrcIsActive() == FALSE)
+    {
+        return FALSE;
+    }
+    return (itGetStruct(item_gobj)->kind == nITKindBat) ? TRUE : FALSE;
 }
 
 void sc1PRemixHrcLeaveRun(void)

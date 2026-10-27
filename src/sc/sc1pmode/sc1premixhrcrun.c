@@ -7,6 +7,7 @@
 #include <ft/fighter.h>
 #include <ft/ftparam.h>
 #include <if/ifcommon.h>
+#include <it/itmanager.h>
 #include <port_log.h>
 #include <sc/scmanager.h>
 #include <sc/scene.h>
@@ -19,13 +20,15 @@
 #include "sc/sc1pmode/sc1premixhrcrun.h"
 
 #define SC1PREMIX_HRC_HUD_SLOT 29
-#define SC1PREMIX_HRC_HUD_X 112.0F
-#define SC1PREMIX_HRC_HUD_Y 22.0F
+#define SC1PREMIX_HRC_HUD_X 246.0F
+#define SC1PREMIX_HRC_HUD_Y 44.0F
 #define SC1PREMIX_HRC_HUD_HEIGHT 16.0F
 #define SC1PREMIX_HRC_HUD_COLOR 0xFFFFFFFF
 #define SC1PREMIX_HRC_FEET_TENTHS 10
 #define SC1PREMIX_HRC_PLATFORM_LINE_ID 0
 #define SC1PREMIX_HRC_COMPLETE_FGM 0x1CB
+#define SC1PREMIX_HRC_BAT_SPAWN_X (-22542.0F)
+#define SC1PREMIX_HRC_BAT_SPAWN_Y 256.0F
 
 /* Action.asm ThrownDK and DK.Cargo; Lanky stands as an Orangstand from DSPGBegin on (HRC.asm _check_sandbag_moving). */
 #define SC1PREMIX_HRC_STATUS_THROWN_DK 0xB8
@@ -34,6 +37,7 @@
 
 static SC1PRemixHrcState sSC1PRemixHrcState;
 static sb32 sSC1PRemixHrcIsEnded;
+static sb32 sSC1PRemixHrcIsBatSpawned;
 
 static const s32 sSC1PRemixHrcRestingStatuses[] =
 {
@@ -110,6 +114,16 @@ static void sc1PRemixHrcRunFollowSandbag(GObj *sandbag_gobj, SC1PRemixHrcMove *m
     top_joint->translate.vec.f.x += move->sandbag_shift;
 }
 
+/** Drops the Home-Run Bat on the left side of the platform (SinglePlayerModes.asm _hrc, Hazards.add_item_ with BAT_SPAWN). */
+static void sc1PRemixHrcRunSpawnBat(void)
+{
+    Vec3f pos = { SC1PREMIX_HRC_BAT_SPAWN_X, SC1PREMIX_HRC_BAT_SPAWN_Y, 0.0F };
+    Vec3f vel = { 0.0F, 0.0F, 0.0F };
+
+    sSC1PRemixHrcIsBatSpawned = TRUE;
+    itManagerMakeItemSetupCommon(NULL, nITKindBat, &pos, &vel, ITEM_FLAG_PARENT_GROUND);
+}
+
 static void sc1PRemixHrcRunEndAttempt(sb32 is_complete)
 {
     if (sSC1PRemixHrcState.complete_timer-- > 0)
@@ -143,6 +157,7 @@ void sc1PRemixHrcRunStart(void)
     }
     sc1PRemixHrcStateReset(&sSC1PRemixHrcState);
     sSC1PRemixHrcIsEnded = FALSE;
+    sSC1PRemixHrcIsBatSpawned = FALSE;
     gmRemixCameraSetHrcX(SC1PREMIX_HRC_DEFAULT_CAMERA_X);
 }
 
@@ -163,7 +178,15 @@ void sc1PRemixHrcRunUpdate(void)
     sandbag_gobj = sc1PRemixHrcRunGetSandbag();
     human_gobj = sc1PRemixHrcRunGetHuman();
 
-    if ((sandbag_gobj == NULL) || (human_gobj == NULL) || (gSCManagerBattleState->game_status != nSCBattleGameStatusGo))
+    if ((sandbag_gobj == NULL) || (human_gobj == NULL))
+    {
+        return;
+    }
+    if (sSC1PRemixHrcIsBatSpawned == FALSE)
+    {
+        sc1PRemixHrcRunSpawnBat();
+    }
+    if (gSCManagerBattleState->game_status != nSCBattleGameStatusGo)
     {
         return;
     }

@@ -15,6 +15,7 @@ extern void port_dump_backtrace(void);
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixcommand.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "sc/sc1pmode/sc1premixhrc.h"
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"
 #include "it/itremix/itremixfranklinbadge.h"
@@ -2065,7 +2066,15 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     }
     else fp->coll_data.vel_speed.x = fp->coll_data.vel_speed.y = fp->coll_data.vel_speed.z = 0.0F;
 
-    ftCommonDeadCheckInterruptCommon(fighter_gobj);
+#ifdef REGION_REMIX
+    /* HRC.asm turn_off_blastzones_ (0x800E22F0): the contest has no blast zones */
+    if (sc1PRemixHrcIsActive() == FALSE)
+    {
+#endif
+        ftCommonDeadCheckInterruptCommon(fighter_gobj);
+#ifdef REGION_REMIX
+    }
+#endif
 
     if ((fp->coll_data.pos_prev.y >= gMPCollisionGroundData->alt_warning) && (topn_translate->y < gMPCollisionGroundData->alt_warning) && (fp->fkind != nFTKindBoss))
     {

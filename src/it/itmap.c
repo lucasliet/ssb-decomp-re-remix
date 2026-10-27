@@ -3,6 +3,7 @@
 #ifdef REGION_REMIX
 #include "it/itremix/itremixbasketball.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "sc/sc1pmode/sc1premixhrc.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -337,7 +338,11 @@ sb32 itMapCheckDestroyDropped(GObj *item_gobj, f32 common_rebound, f32 ground_re
                 (
                     (ip->times_thrown == ITEM_THROW_NUM_MAX)            
                     || 
+#ifdef REGION_REMIX
+                    ((syUtilsRandIntRange(ITEM_THROW_DESPAWN_RANDOM) == 0) && (sc1PRemixHrcKeepsItem(item_gobj) == FALSE))
+#else
                     (syUtilsRandIntRange(ITEM_THROW_DESPAWN_RANDOM) == 0)
+#endif
                 )
             )
             {
