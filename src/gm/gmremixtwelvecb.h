@@ -37,6 +37,16 @@ extern s32 gmRemixTwelveCBGetStocks(s32 player, s32 match_stocks);
  */
 extern void gmRemixTwelveCBOnKo(FTStruct *fp);
 
+/**
+ * Whether one CSS slot lets the 12-Character Battle start: only the ports 1 and 2 play, and a character with no stocks left
+ * cannot be taken into another game (treat_selected_defeated_chars_as_unselected_). Always TRUE outside the mode.
+ *
+ * @param slot Port index of the CSS slot (0..3).
+ * @param pkind Player kind of the slot (nFTPlayerKind*).
+ * @param fkind Fighter the slot selected.
+ */
+extern sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind);
+
 /** TRUE when the stock pool of a player is empty, which ends the battle. */
 extern sb32 gmRemixTwelveCBIsComplete(void);
 

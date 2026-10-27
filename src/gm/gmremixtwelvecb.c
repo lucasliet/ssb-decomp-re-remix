@@ -88,6 +88,23 @@ void gmRemixTwelveCBBeginMatch(void)
              (int)sGMRemixTwelveCB.players[1].stocks_remaining);
 }
 
+sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind)
+{
+    if (gmRemixTwelveCBIsActive() == FALSE)
+    {
+        return TRUE;
+    }
+    if (slot >= GMREMIX_TWELVECB_PLAYERS)
+    {
+        return (pkind == nFTPlayerKindNot) ? TRUE : FALSE;
+    }
+    if ((sGMRemixTwelveCBIsInit == FALSE) || (gmRemixTwelveCBIsComplete() != FALSE) || (pkind == nFTPlayerKindNot))
+    {
+        return TRUE;
+    }
+    return (gmRemixTwelveCBGetPortraitStocks(&sGMRemixTwelveCB, gmRemixTwelveCBPortraitOf(fkind)) > 0) ? TRUE : FALSE;
+}
+
 s32 gmRemixTwelveCBGetStocks(s32 player, s32 match_stocks)
 {
     if ((gmRemixTwelveCBIsActive() == FALSE) || (player >= GMREMIX_TWELVECB_PLAYERS))

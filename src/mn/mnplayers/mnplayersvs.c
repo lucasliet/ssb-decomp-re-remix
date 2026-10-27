@@ -22,6 +22,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixmode.h"
 #include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixstamina.h"
+#include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtoggle.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
@@ -5157,6 +5158,20 @@ sb32 mnPlayersVSCheckReady(void)
 			is_ready = FALSE;
 		}
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	if (is_ready != FALSE)
+	{
+		s32 slot;
+
+		for (slot = 0; slot < ARRAY_COUNT(sMNPlayersVSSlots); slot++)
+		{
+			if (gmRemixTwelveCBCheckSlot(slot, sMNPlayersVSSlots[slot].pkind, sMNPlayersVSSlots[slot].fkind) == FALSE)
+			{
+				is_ready = FALSE;
+			}
+		}
+	}
+#endif
 	if (is_ready != FALSE)
 	{
 		if (mnPlayersVSCheckNoPuckOnPortraitAll() == FALSE)
