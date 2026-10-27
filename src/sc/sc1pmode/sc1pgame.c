@@ -1057,6 +1057,7 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupEnemy(player);
     sc1PRemixHrcSetupEnemy(player);
+    sc1PRemix1PSetupEnemy(player);
 
     if (sc1PRemixHrcIsActive() != FALSE)
     {

@@ -6,6 +6,8 @@
 
 #include <port_log.h>
 #include <sys/utils.h>
+#include <sc/scene.h>
+#include "ft/ftremix/ftremixhooks.h"
 #include "gr/grremix/grremixids.h"
 #include "remix/remix_roster_data.h"
 #include "sc/sc1pmode/sc1premix1p.h"
@@ -283,6 +285,33 @@ SC1PGameStage* sc1PRemix1PGetStage(s32 stage_index)
         return NULL;
     }
     return &sSC1PRemix1PStages[stage_index];
+}
+
+void sc1PRemix1PSetupEnemy(s32 player)
+{
+    s32 port;
+
+    if (sc1PRemix1PIsActive() == FALSE)
+    {
+        return;
+    }
+    if (gSCManagerSceneData.spgame_stage == nSC1PGameStageDonkey)
+    {
+        ftRemixSizeSetMatchState(player, FTREMIX_SIZE_STATE_GIANT);
+        return;
+    }
+    if (gSCManagerSceneData.spgame_stage == nSC1PGameStageSamus)
+    {
+        ftRemixSizeSetMatchState(player, FTREMIX_SIZE_STATE_TINY);
+        return;
+    }
+    for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
+    {
+        if (port != gSCManagerSceneData.player)
+        {
+            ftRemixSizeSetMatchState(port, FTREMIX_SIZE_STATE_NORMAL);
+        }
+    }
 }
 
 SC1PGameComputer* sc1PRemix1PGetComputer(s32 stage_index)

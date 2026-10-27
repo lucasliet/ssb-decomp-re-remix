@@ -27,6 +27,14 @@ extern void sc1PRemix1PRandomize(void);
  */
 extern SC1PGameStage* sc1PRemix1PGetStage(s32 stage_index);
 
+/**
+ * Sizes the CPU of the stage being set up (remix_1p_giant): giant on the Giant slot, tiny on the Tiny Team slot, normal elsewhere.
+ * The size state of the ports other than the player's is reset on the other stages so a size does not carry over. No-op outside Remix 1P.
+ *
+ * @param player Port of the CPU.
+ */
+extern void sc1PRemix1PSetupEnemy(s32 player);
+
 /** CPU settings of a stage of the Remix path (levels, handicaps, team attack, item rate); NULL when Remix 1P is not active. */
 extern SC1PGameComputer* sc1PRemix1PGetComputer(s32 stage_index);
 
