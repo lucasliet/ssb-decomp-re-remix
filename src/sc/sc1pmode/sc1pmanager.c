@@ -512,8 +512,13 @@ void sc1PManagerUpdateScene(void)
             gSCManagerSceneData.scene_prev = nSCKind1PGame;
             gSCManagerSceneData.scene_curr = nSCKind1PIntro;
 
-            sc1PIntroStartScene();
-            SC1P_PORT_RESET_BAIL();
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemixMultimanIsActive() == FALSE)
+#endif
+            {
+                sc1PIntroStartScene();
+                SC1P_PORT_RESET_BAIL();
+            }
 
             switch (gSCManagerSceneData.spgame_stage)
             {
@@ -570,6 +575,13 @@ void sc1PManagerUpdateScene(void)
                 }
                 break;
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemixMultimanIsActive() != FALSE)
+            {
+                sc1PRemixMultimanLeaveRun();
+                return;
+            }
+#endif
             if (gSCManagerSceneData.is_reset != FALSE)
             {
                 gSCManagerSceneData.scene_prev = nSCKind1PGame;

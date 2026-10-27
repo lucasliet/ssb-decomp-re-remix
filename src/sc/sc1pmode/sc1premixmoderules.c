@@ -51,6 +51,11 @@ int sc1PRemixModeHumanHandicap(int mode)
     return (mode == SC1PREMIX_MODE_CRUEL) ? SC1PREMIX_CRUEL_HUMAN_HANDICAP : 0;
 }
 
+int sc1PRemixMultimanRestartsRun(int is_reset)
+{
+    return (is_reset != 0) ? 1 : 0;
+}
+
 void sc1PRemixMultimanKosReset(SC1PRemixMultimanKos *counter)
 {
     counter->kos = 0;

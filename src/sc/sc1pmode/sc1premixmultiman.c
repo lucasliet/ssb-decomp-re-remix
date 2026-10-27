@@ -99,6 +99,17 @@ s32 sc1PRemixMultimanGetKos(void)
     return sSC1PRemixMultimanKos.kos;
 }
 
+void sc1PRemixMultimanLeaveRun(void)
+{
+    sb32 is_restart = (sc1PRemixMultimanRestartsRun(gSCManagerSceneData.is_reset) != 0) ? TRUE : FALSE;
+
+    port_log("multiman: run ended, kos=%d restart=%d\n", (int)sSC1PRemixMultimanKos.kos, (int)is_restart);
+
+    gSCManagerSceneData.is_reset = FALSE;
+    gSCManagerSceneData.scene_prev = nSCKind1PGame;
+    gSCManagerSceneData.scene_curr = (is_restart != FALSE) ? nSCKind1PGame : nSCKind1PBonus2Players;
+}
+
 void sc1PRemixMultimanDrawHud(void)
 {
     if (sc1PRemixMultimanIsActive() == FALSE)

@@ -58,6 +58,14 @@ extern int sc1PRemixModeEnemyHandicap(int mode);
  */
 extern int sc1PRemixModeHumanHandicap(int mode);
 
+/**
+ * Whether a horde run that ended starts over: the reset button restarts the run, any other end (the player KO'd) goes back to
+ * the character select (_end_match_screen).
+ *
+ * @param is_reset Non-zero when the run ended by the reset button.
+ */
+extern int sc1PRemixMultimanRestartsRun(int is_reset);
+
 /** Starts a run with no KOs and the player alive. */
 extern void sc1PRemixMultimanKosReset(SC1PRemixMultimanKos *counter);
 
