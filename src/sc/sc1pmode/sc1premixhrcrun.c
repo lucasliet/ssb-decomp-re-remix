@@ -18,6 +18,7 @@
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
+#include "sc/sc1pmode/sc1premixhrcsigns.h"
 
 #define SC1PREMIX_HRC_HUD_SLOT 29
 #define SC1PREMIX_HRC_HUD_X 246.0F
@@ -112,6 +113,11 @@ static void sc1PRemixHrcRunFollowSandbag(GObj *sandbag_gobj, SC1PRemixHrcMove *m
 
     gmRemixCameraSetHrcX(move->camera_x);
     top_joint->translate.vec.f.x += move->sandbag_shift;
+
+    if (move->sandbag_shift != 0.0F)
+    {
+        sc1PRemixHrcSignsAdvance();
+    }
 }
 
 /** Drops the Home-Run Bat on the left side of the platform (SinglePlayerModes.asm _hrc, Hazards.add_item_ with BAT_SPAWN). */
@@ -185,6 +191,7 @@ void sc1PRemixHrcRunUpdate(void)
     if (sSC1PRemixHrcIsBatSpawned == FALSE)
     {
         sc1PRemixHrcRunSpawnBat();
+        sc1PRemixHrcSignsInit();
     }
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusGo)
     {
