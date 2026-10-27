@@ -2,6 +2,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
+#include "sc/sc1pmode/sc1premixhrc.h"
 #endif
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
@@ -1052,6 +1053,7 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
     sSC1PGamePlayerSetups[player].cp_trait = stagesetup->opponent_behavior;
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupEnemy(player);
+    sc1PRemixHrcSetupEnemy(player);
 #endif
 
     sSC1PGameTeamPlayersRemaining--;
@@ -1114,6 +1116,7 @@ void sc1PGameSetupStageAll(void)
     gSCManagerBattleState->item_appearance_rate = comsetup->item_appearance_rate;
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupBattle();
+    sc1PRemixHrcSetupBattle();
 #endif
 
     sSC1PGameEnemyPlayerCount = sSC1PGameEnemyStocksRemaining = sSC1PGameTeamPlayersRemaining = stagesetup->opponent_count;

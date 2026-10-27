@@ -4,6 +4,7 @@
 #include <sys/dma.h>
 #if defined(PORT) && defined(REGION_REMIX)
 #include "sc/sc1pmode/sc1premixmultiman.h"
+#include "sc/sc1pmode/sc1premixhrc.h"
 #endif
 #ifdef PORT
 #include <mn/mncommon/mncongra.h>
@@ -336,6 +337,7 @@ void sc1PManagerUpdateScene(void)
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].is_spgame_enemy = FALSE;
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupPlayer(gSCManagerSceneData.player);
+    sc1PRemixHrcSetupPlayer(gSCManagerSceneData.player);
 #endif
 
     gSCManagerSceneData.spgame_score = 0;
@@ -513,7 +515,7 @@ void sc1PManagerUpdateScene(void)
             gSCManagerSceneData.scene_curr = nSCKind1PIntro;
 
 #if defined(PORT) && defined(REGION_REMIX)
-            if (sc1PRemixMultimanIsActive() == FALSE)
+            if ((sc1PRemixMultimanIsActive() == FALSE) && (sc1PRemixHrcIsActive() == FALSE))
 #endif
             {
                 sc1PIntroStartScene();
