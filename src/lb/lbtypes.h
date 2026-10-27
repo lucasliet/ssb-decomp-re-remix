@@ -248,6 +248,9 @@ struct LBBackup1PRecord
 	u32 bonus2_time;	        // Board the Platforms high score
 	u8 bonus2_task_count;       // Platforms boarded
 	ub8 is_spgame_complete;	    // Whether character has completed 1P Game or not
+#if defined(PORT) && defined(REGION_REMIX)
+	u32 hrc_distance;           // Home-Run Contest record in tenths of a foot (Character.HRC_HIGH_SCORE_TABLE)
+#endif
 };
 
 // Save Data structure

@@ -25,6 +25,11 @@
 #define SC1PREMIX_HRC_CLOUD_SPEED_FACTOR (-0.001F)
 #define SC1PREMIX_HRC_CLOUD_SCALE_X 2.2334F
 
+/** What an attempt does to the record of the fighter. */
+#define SC1PREMIX_HRC_RECORD_KEEP 0
+#define SC1PREMIX_HRC_RECORD_FIRST 1
+#define SC1PREMIX_HRC_RECORD_BEATEN 2
+
 /** Verdicts of an attempt check. */
 #define SC1PREMIX_HRC_VERDICT_KEEP_GOING 0
 #define SC1PREMIX_HRC_VERDICT_DISABLE_INPUTS 1
@@ -120,6 +125,16 @@ extern float sc1PRemixHrcCloudSpeed(float sandbag_dx, int is_past_start);
  * @return The new background X.
  */
 extern float sc1PRemixHrcCloudStep(float x, float speed);
+
+/**
+ * Compares a distance with the record of the fighter (SinglePlayerModes.asm _time_save): the first distance is saved quietly, a longer one
+ * is saved and announced as a new record, anything else leaves the record alone.
+ *
+ * @param previous Saved record in tenths of a foot, 0 for none.
+ * @param distance Distance of the attempt in tenths of a foot.
+ * @return SC1PREMIX_HRC_RECORD_*.
+ */
+extern int sc1PRemixHrcRecordVerdict(unsigned int previous, unsigned int distance);
 
 #endif
 

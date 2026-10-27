@@ -18,6 +18,7 @@
 #include "remix/remix_roster_data.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcclouds.h"
+#include "sc/sc1pmode/sc1premixhrcrecord.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
 #include "sc/sc1pmode/sc1premixhrcsigns.h"
@@ -28,6 +29,7 @@
 #define SC1PREMIX_HRC_FEET_TENTHS 10
 #define SC1PREMIX_HRC_PLATFORM_LINE_ID 0
 #define SC1PREMIX_HRC_COMPLETE_FGM 0x1CB
+#define SC1PREMIX_HRC_NEW_RECORD_FGM 0x1D0
 #define SC1PREMIX_HRC_BAT_SPAWN_X (-22542.0F)
 #define SC1PREMIX_HRC_BAT_SPAWN_Y 256.0F
 
@@ -145,6 +147,8 @@ static void sc1PRemixHrcRunSpawnBat(void)
 
 static void sc1PRemixHrcRunEndAttempt(sb32 is_complete)
 {
+    sb32 is_new_record;
+
     sSC1PRemixHrcIsCompleting = is_complete;
 
     if (sSC1PRemixHrcState.complete_timer-- > 0)
@@ -154,9 +158,11 @@ static void sc1PRemixHrcRunEndAttempt(sb32 is_complete)
     sSC1PRemixHrcIsEnded = TRUE;
     port_log("hrc: attempt ended, complete=%d distance=%d\n", (int)is_complete, (int)sSC1PRemixHrcState.distance);
 
+    is_new_record = sc1PRemixHrcRecordSave(gSCManagerBattleState->players[gSCManagerSceneData.player].fkind, sSC1PRemixHrcState.distance);
+
     if (is_complete != FALSE)
     {
-        ifCommonAnnounceCompleteInitInterface(SC1PREMIX_HRC_COMPLETE_FGM);
+        ifCommonAnnounceCompleteInitInterface((is_new_record != FALSE) ? SC1PREMIX_HRC_NEW_RECORD_FGM : SC1PREMIX_HRC_COMPLETE_FGM);
         return;
     }
     ifCommonAnnounceEndMessage();

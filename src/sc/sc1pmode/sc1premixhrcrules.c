@@ -120,4 +120,13 @@ float sc1PRemixHrcCloudStep(float x, float speed)
     return x;
 }
 
+int sc1PRemixHrcRecordVerdict(unsigned int previous, unsigned int distance)
+{
+    if (previous == 0)
+    {
+        return (distance != 0) ? SC1PREMIX_HRC_RECORD_FIRST : SC1PREMIX_HRC_RECORD_KEEP;
+    }
+    return (distance > previous) ? SC1PREMIX_HRC_RECORD_BEATEN : SC1PREMIX_HRC_RECORD_KEEP;
+}
+
 #endif
