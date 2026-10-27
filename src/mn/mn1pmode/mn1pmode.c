@@ -10,6 +10,9 @@
 #include <sys/audio.h>
 extern void *func_800269C0_275C0(u16 id);
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "mn/mn1pmode/mnremix1pmode.h"
+#endif
 
 extern ub8 gSYMainDmemOK;
 
@@ -66,6 +69,10 @@ Gfx dMN1PModeDisplayList[/* */] =
 
 // 0x801331A0
 GObj *sMN1PModeOptionGObjs[nMN1PModeOptionEnumCount];
+
+#if defined(PORT) && defined(REGION_REMIX)
+GObj *sMN1PRemixButtonGObjs[MNREMIX_1PMODE_OPTION_COUNT_MAX];
+#endif
 
 // 0x801331B0
 s32 sMN1PModePad0x801331B4[2];
@@ -685,6 +692,43 @@ void mn1PModeMakeDecalsCamera(void)
     syRdpSetViewport(&cobj->viewport, 10.0F, 10.0F, 310.0F, 230.0F);
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/** Creates the buttons of the current page of the Remix 1P menu, the cursor one highlighted. */
+static void mn1PRemixMakeButtons(void)
+{
+    s32 option;
+
+    for (option = 0; option <= mnRemix1PModeGetLastOption(); option++)
+    {
+        sMN1PRemixButtonGObjs[option] = mnRemix1PModeMakeButton(option, sMN1PModeFiles[0], sMN1PModeFiles[1], (sMN1PModeOption == option) ? TRUE : FALSE);
+    }
+}
+
+/** Moves the cursor one button up (step -1) or down (step 1), wrapping around the page. */
+static void mn1PRemixMoveOption(s32 step)
+{
+    s32 last = mnRemix1PModeGetLastOption();
+
+    mnRemix1PModeSetButtonColors(sMN1PRemixButtonGObjs[sMN1PModeOption], nMNOptionTabStatusNot, sMN1PModeOption);
+
+    sMN1PModeOption += step;
+
+    if (sMN1PModeOption < 0)
+    {
+        sMN1PModeOption = last;
+    }
+    else if (sMN1PModeOption > last)
+    {
+        sMN1PModeOption = 0;
+    }
+    if ((sMN1PModeOption == 0) || (sMN1PModeOption == last))
+    {
+        sMN1PModeOptionChangeWait += 8;
+    }
+    mnRemix1PModeSetButtonColors(sMN1PRemixButtonGObjs[sMN1PModeOption], nMNOptionTabStatusHighlight, sMN1PModeOption);
+}
+#endif
+
 // 0x80132910
 void mn1PModeInitVars(void)
 {
@@ -706,6 +750,9 @@ void mn1PModeInitVars(void)
         sMN1PModeOption = nMN1PModeOptionBonus2Practice;
         break;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    sMN1PModeOption = mnRemix1PModeGetStartOption(gSCManagerSceneData.scene_prev, sMN1PModeOption);
+#endif
     sMN1PModeOptionChangeWait = 0;
     sMN1PModeTotalTimeTics = 0;
 
@@ -778,6 +825,14 @@ void mn1PModeFuncRun(GObj *gobj)
 
         if (player != FALSE)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            func_800269C0_275C0(nSYAudioFGMMenuSelect);
+            mnRemix1PModeSetButtonColors(sMN1PRemixButtonGObjs[sMN1PModeOption], nMNOptionTabStatusSelected, sMN1PModeOption);
+            mnRemix1PModeSelect(sMN1PModeOption, player);
+
+            sMN1PModeIsProceedScene = TRUE;
+            return;
+#else
             switch (sMN1PModeOption)
             {
             case nMN1PModeOption1PGame:
@@ -847,11 +902,16 @@ void mn1PModeFuncRun(GObj *gobj)
                 sMN1PModeIsProceedScene = TRUE;
                 return;
             }
+#endif
         }
         if (scSubsysControllerGetPlayerTapButtons(B_BUTTON) != FALSE)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            mnRemix1PModeBack();
+#else
             gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
             gSCManagerSceneData.scene_curr = nSCKindModeSelect;
+#endif
 
             syTaskmanSetLoadScene();
         }
@@ -864,6 +924,9 @@ void mn1PModeFuncRun(GObj *gobj)
             func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 
             mn1PModeSetOptionChangeWaitP(is_button, stick_range, 7);
+#if defined(PORT) && defined(REGION_REMIX)
+            mn1PRemixMoveOption(-1);
+#else
             mn1PModeSetOptionSpriteColors(*option_gobjss[sMN1PModeOption], nMNOptionTabStatusNot, sMN1PModeOption);
 
             if (sMN1PModeOption == nMN1PModeOptionStart)
@@ -877,6 +940,7 @@ void mn1PModeFuncRun(GObj *gobj)
                 sMN1PModeOptionChangeWait += 8;
             }
             mn1PModeSetOptionSpriteColors(*option_gobjss[sMN1PModeOption], nMNOptionTabStatusHighlight, sMN1PModeOption);
+#endif
             gcEjectGObj(sMN1PModeSubtitleGObj);
             mn1PModeMakeSubtitle();
         }
@@ -889,6 +953,9 @@ void mn1PModeFuncRun(GObj *gobj)
             func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 
             mn1PModeSetOptionChangeWaitN(is_button, stick_range, 7);
+#if defined(PORT) && defined(REGION_REMIX)
+            mn1PRemixMoveOption(1);
+#else
             mn1PModeSetOptionSpriteColors(*option_gobjss[sMN1PModeOption], nMNOptionTabStatusNot, sMN1PModeOption);
 
             if (sMN1PModeOption == nMN1PModeOptionEnd)
@@ -902,6 +969,7 @@ void mn1PModeFuncRun(GObj *gobj)
                 sMN1PModeOptionChangeWait += 8;
             }
             mn1PModeSetOptionSpriteColors(*option_gobjss[sMN1PModeOption], nMNOptionTabStatusHighlight, sMN1PModeOption);
+#endif
             gcEjectGObj(sMN1PModeSubtitleGObj);
             mn1PModeMakeSubtitle();
         }
@@ -944,13 +1012,21 @@ void mn1PModeFuncStart(void)
     mn1PModeMakeLink3Camera();
     mn1PModeMakeDecals();
     mn1PModeMakeLabels();
+#if defined(PORT) && defined(REGION_REMIX)
+    mn1PRemixMakeButtons();
+#else
     mn1PModeMake1PGame();
     mn1PModeMakeTrainingMode();
     mn1PModeMakeBonus1Practice();
     mn1PModeMakeBonus2Practice();
+#endif
     mn1PModeMakeSubtitle();
     
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((gSCManagerSceneData.scene_prev != nSCKindModeSelect) && (gSCManagerSceneData.scene_prev != nSCKind1PMode))
+#else
     if (gSCManagerSceneData.scene_prev != nSCKindModeSelect)
+#endif
     {
 #ifdef REGION_REMIX
         gmRemixMenuMusicPlay(nSYAudioBGMModeSelect, FALSE);
