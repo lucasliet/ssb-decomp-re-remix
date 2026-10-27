@@ -21,6 +21,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixvariants.h"
+#include "sc/sc1pmode/sc1premixbonusexit.h"
 #endif
 
 
@@ -3039,6 +3040,15 @@ void mnPlayers1PBonusFuncRun(GObj *gobj)
 		}
 		if ((sMNPlayers1PBonusIsSelected != FALSE) && ((--sMNPlayers1PBonusStartWait == 0) || (gSYControllerDevices[sMNPlayers1PBonusManPlayer].button_tap & START_BUTTON)))
 		{
+#if defined(PORT) && defined(REGION_REMIX)
+			mnPlayers1PBonusSetSceneData();
+
+			if (sc1PRemixModeExitBonusCSS(sMNPlayers1PBonusSlot.fkind, sMNPlayers1PBonusSlot.costume) != FALSE)
+			{
+				syTaskmanSetLoadScene();
+				return;
+			}
+#endif
 			if (sMNPlayers1PBonusBonusKind == 0)
 			{
 				gSCManagerSceneData.scene_prev = nSCKind1PBonus1Players;
