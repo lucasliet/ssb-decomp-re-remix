@@ -18,6 +18,7 @@
 #include "gm/gmremixkothhill.h"
 #include "gm/gmremixmode.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
+#include "remix/remix_debug.h"
 
 #define GMREMIX_KOTH_FIRST_HILL_FRAMES 120
 #define GMREMIX_KOTH_HILL_FRAMES_MIN 1200
@@ -33,8 +34,6 @@
 #define GMREMIX_KOTH_FGM_KING_LOST 0xA9
 
 extern void *func_800269C0_275C0(u16 id);
-extern char *getenv(const char *name);
-extern int atoi(const char *str);
 
 typedef struct GMRemixKothState
 {
@@ -80,9 +79,7 @@ s32 gmRemixKothGetContestedBuffer(void)
 /* SSB64_KOTH_GOAL=<seconds> replaces the CSS goal, so the smoke tests can finish a match quickly. */
 s32 gmRemixKothGetTargetFrames(void)
 {
-    const char *goal_env = getenv("SSB64_KOTH_GOAL");
-
-    return ((goal_env != NULL) ? atoi(goal_env) : gmRemixModeGetGoal()) * 60;
+    return remix_debug_env_int("SSB64_KOTH_GOAL", gmRemixModeGetGoal()) * 60;
 }
 
 s32 gmRemixKothGetScoreOf(s32 key)
@@ -142,13 +139,13 @@ static sb32 gmRemixKothHoldsEnemy(FTStruct *fp)
 /* SSB64_KOTH_LINE=<floor line id> makes the first hill that line, so the smoke tests can put the hill under a fighter. */
 static sb32 gmRemixKothPickDebugHill(void)
 {
-    const char *line_env = getenv("SSB64_KOTH_LINE");
+    s32 line = remix_debug_env_int("SSB64_KOTH_LINE", -1);
 
-    if ((line_env == NULL) || (sGMRemixKoth.hill_line >= 0))
+    if ((line < 0) || (sGMRemixKoth.hill_line >= 0))
     {
         return FALSE;
     }
-    sGMRemixKoth.hill_line = atoi(line_env);
+    sGMRemixKoth.hill_line = line;
     return TRUE;
 }
 

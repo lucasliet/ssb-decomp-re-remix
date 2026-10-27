@@ -12,12 +12,12 @@
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixstockmode.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
+#include "remix/remix_debug.h"
 #include "remix/remix_hud_text.h"
 
 #define GMREMIX_MODE_SCORE_STOCK_SHIFT 12
 #define GMREMIX_MODE_SCORE_TUG_STOCK_SHIFT 24
 
-extern char *getenv(const char *name);
 extern int strcmp(const char *a, const char *b);
 
 typedef struct GMRemixModeName
@@ -100,7 +100,7 @@ static s32 gmRemixModeReadEnv(void)
         return sGMRemixModeEnvMode;
     }
     sGMRemixModeEnvIsRead = TRUE;
-    value = getenv("SSB64_REMIX_MODE");
+    value = remix_debug_env_text("SSB64_REMIX_MODE");
 
     if (value == NULL)
     {

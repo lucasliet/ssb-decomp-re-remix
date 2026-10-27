@@ -1018,9 +1018,9 @@ void scManagerRunLoop(sb32 arg)
 			gmRemixModeStartMatch();
 #endif
 			{
-				const char *stocks_env = getenv("SSB64_VS_STOCKS");
+				s32 stocks = remix_debug_env_int("SSB64_VS_STOCKS", -1);
 
-				if (stocks_env != NULL)
+				if (stocks >= 0)
 				{
 					gSCManagerTransferBattleState.game_type = nSCBattleGameTypeRoyal;
 #if defined(PORT) && defined(REGION_REMIX)
@@ -1028,7 +1028,7 @@ void scManagerRunLoop(sb32 arg)
 #else
 					gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
 #endif
-					gSCManagerTransferBattleState.stocks = (u8)(atoi(stocks_env) - 1);
+					gSCManagerTransferBattleState.stocks = (u8)(stocks - 1);
 					{
 						s32 stock_player;
 
@@ -1041,23 +1041,23 @@ void scManagerRunLoop(sb32 arg)
 			}
 #if defined(PORT) && defined(REGION_REMIX)
 			{
-				const char *stamina_env = getenv("SSB64_VS_STAMINA");
+				s32 stamina_hp = remix_debug_env_int("SSB64_VS_STAMINA", -1);
 
-				if (stamina_env != NULL)
+				if (stamina_hp >= 0)
 				{
 					gSCManagerTransferBattleState.game_type = nSCBattleGameTypeRoyal;
 					gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_TIMED_STOCK;
 					gGMRemixStaminaRule = TRUE;
-					gGMRemixStaminaHP = atoi(stamina_env);
+					gGMRemixStaminaHP = stamina_hp;
 				}
 			}
 #endif
 			{
-				const char *time_env = getenv("SSB64_VS_TIME");
+				s32 time_limit = remix_debug_env_int("SSB64_VS_TIME", -1);
 
-				if (time_env != NULL)
+				if (time_limit >= 0)
 				{
-					gSCManagerTransferBattleState.time_limit = (u8)atoi(time_env);
+					gSCManagerTransferBattleState.time_limit = (u8)time_limit;
 				}
 			}
 			gSCManagerSceneData.scene_curr = nSCKindVSBattle;

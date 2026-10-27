@@ -16,6 +16,7 @@
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
+#include "remix/remix_debug.h"
 #include "remix/remix_modes.h"
 
 #define GMREMIX_SMASHKETBALL_PROC_PRIORITY 3
@@ -31,8 +32,6 @@
 #define GMREMIX_SMASHKETBALL_SPAWN_Y 5.0F
 
 extern void *func_800269C0_275C0(u16 id);
-extern char *getenv(const char *name);
-extern int atoi(const char *str);
 extern GObj* efManagerDeadExplodeMakeEffect(Vec3f *pos, s32 player, u32 type);
 
 typedef struct GMRemixSmashketballState
@@ -68,7 +67,7 @@ sb32 gmRemixSmashketballIsActive(void)
 /* SSB64_SMASH_TYPE=basketball|soccer overrides the port menu choice. */
 sb32 gmRemixSmashketballIsSoccer(void)
 {
-    const char *type_env = getenv("SSB64_SMASH_TYPE");
+    const char *type_env = remix_debug_env_text("SSB64_SMASH_TYPE");
 
     if (type_env != NULL)
     {
@@ -95,9 +94,7 @@ s32 gmRemixSmashketballGetWinnerScore(s32 port)
 /* SSB64_SMASH_GOAL=<score> replaces the CSS goal, so the smoke tests can finish a match quickly. */
 static s32 gmRemixSmashketballGetGoal(void)
 {
-    const char *goal_env = getenv("SSB64_SMASH_GOAL");
-
-    return (goal_env != NULL) ? atoi(goal_env) : gmRemixModeGetGoal();
+    return remix_debug_env_int("SSB64_SMASH_GOAL", gmRemixModeGetGoal());
 }
 
 static sb32 gmRemixSmashketballPortIsPresent(s32 port)
@@ -261,7 +258,7 @@ static GObj* gmRemixSmashketballSpawnBall(void)
     Vec3f pos;
     Vec3f vel;
 
-    pos.x = (getenv("SSB64_SMASH_BALL_X") != NULL) ? (f32)atoi(getenv("SSB64_SMASH_BALL_X")) : 0.0F;
+    pos.x = (f32)remix_debug_env_int("SSB64_SMASH_BALL_X", 0);
     pos.y = (sGMRemixSmashketball.spawn_golden != FALSE) ? GMREMIX_SMASHKETBALL_GOLDEN_BALL_Y : GMREMIX_SMASHKETBALL_BALL_Y;
     pos.z = 0.0F;
     vel.x = vel.y = vel.z = 0.0F;
