@@ -15,6 +15,14 @@
  */
 extern sb32 sc1PRemixModeExitBonusCSS(s32 fkind, s32 costume);
 
+/**
+ * Ends a run of a Remix bonus mode (Multi-Man, Cruel, Home-Run Contest): the scene goes back to the Bonus 2 CSS, or restarts the
+ * 1P game when the run ended through the reset button. The reset flag is cleared.
+ *
+ * @return TRUE when the run restarts, FALSE when the Bonus 2 CSS comes back.
+ */
+extern sb32 sc1PRemixModeLeaveRun(void);
+
 #endif
 
 #endif

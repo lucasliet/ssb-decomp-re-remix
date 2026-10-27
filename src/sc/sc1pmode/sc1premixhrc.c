@@ -5,11 +5,14 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ft/fighter.h>
+#include <port_log.h>
 #include <sc/scmanager.h>
 #include <sc/scene.h>
 #include "gr/grremix/grremixids.h"
 #include "remix/remix_roster_data.h"
+#include "sc/sc1pmode/sc1premixbonusexit.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premixhrcrun.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmodename.h"
 
@@ -33,6 +36,7 @@ void sc1PRemixHrcSetupBattle(void)
     gSCManagerBattleState->gkind = nGRRemixStage_HRC;
     gSCManagerBattleState->item_appearance_rate = 0;
     gSCManagerBattleState->time_limit = SCBATTLE_TIMELIMIT_INFINITE;
+    sc1PRemixHrcRunStart();
 }
 
 void sc1PRemixHrcSetupPlayer(s32 player)
@@ -51,6 +55,18 @@ void sc1PRemixHrcSetupEnemy(s32 player)
         return;
     }
     gSCManagerBattleState->players[player].fkind = REMIX_ID_SANDBAG;
+}
+
+void sc1PRemixHrcLeaveRun(void)
+{
+    sb32 is_restart;
+
+    if (sc1PRemixHrcIsActive() == FALSE)
+    {
+        return;
+    }
+    is_restart = sc1PRemixModeLeaveRun();
+    port_log("hrc: run ended, distance=%d restart=%d\n", (int)sc1PRemixHrcRunGetDistance(), (int)is_restart);
 }
 
 #endif

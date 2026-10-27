@@ -46,7 +46,7 @@ static const GMRemixCameraParams sGMRemixCameraFrozenWorld1 = { { 0.0F, -100.0F,
 static const GMRemixCameraParams sGMRemixCameraFrozenFlatZone = { { 0.0F, -100.0F, 6600.0F }, { 0.0F, -100.0F, 0.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
 static const GMRemixCameraParams sGMRemixCameraFrozenFlatZone2 = { { 0.0F, 0.0F, 8000.0F }, { 0.0F, 0.0F, 0.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
 static const GMRemixCameraParams sGMRemixCameraGBLand = { { 0.0F, 1250.0F, 7000.0F }, { 0.0F, 1250.0F, 0.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
-static const GMRemixCameraParams sGMRemixCameraHRC = { { -21312.0F, 1536.0F, 6112.0F }, { -21312.0F, -512.0F, -3584.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
+static GMRemixCameraParams sGMRemixCameraHRC = { { -21312.0F, 1536.0F, 6112.0F }, { -21312.0F, -512.0F, -3584.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
 static const GMRemixCameraParams sGMRemixCameraPokeFloats = { { 0.0F, 0.0F, 7000.0F }, { 0.0F, 0.0F, 0.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
 
 /* Camera.asm _set_fixed_camera_values, the fixed view of each stage (the default is fixed_default) */
@@ -347,6 +347,19 @@ sb32 gmRemixCameraSetStatusIsFrozen(void)
         return TRUE;
     }
     return gmRemixCameraFreezeParams(gSCManagerBattleState->gkind) != NULL;
+}
+
+/** X of the Home-Run Contest camera (Camera.hrc eye X), which HRC.asm main_ moves to follow the Sandbag. */
+f32 gmRemixCameraGetHrcX(void)
+{
+    return sGMRemixCameraHRC.eye.x;
+}
+
+/** Moves the Home-Run Contest camera along X, eye and focal point together (HRC.asm main_ writes Camera.hrc + 0x0 and + 0xC). */
+void gmRemixCameraSetHrcX(f32 x)
+{
+    sGMRemixCameraHRC.eye.x = x;
+    sGMRemixCameraHRC.at.x = x;
 }
 
 /**

@@ -3,6 +3,7 @@
 #include "if/ifremixannouncer.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premixhrcrun.h"
 #endif
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
@@ -844,6 +845,7 @@ void sc1PGameFuncUpdate(void)
     ifCommonBattleUpdateInterfaceAll();
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanDrawHud();
+    sc1PRemixHrcRunUpdate();
 #endif
 
     if ((sSC1PGameIsStartStage == FALSE) && (gSCManagerBattleState->game_status == nSCBattleGameStatusGo))

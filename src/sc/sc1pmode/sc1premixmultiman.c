@@ -9,6 +9,7 @@
 #include <sc/scmanager.h>
 #include <sc/scene.h>
 #include <sys/utils.h>
+#include "sc/sc1pmode/sc1premixbonusexit.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmoderules.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
@@ -101,13 +102,9 @@ s32 sc1PRemixMultimanGetKos(void)
 
 void sc1PRemixMultimanLeaveRun(void)
 {
-    sb32 is_restart = (sc1PRemixMultimanRestartsRun(gSCManagerSceneData.is_reset) != 0) ? TRUE : FALSE;
+    sb32 is_restart = sc1PRemixModeLeaveRun();
 
     port_log("multiman: run ended, kos=%d restart=%d\n", (int)sSC1PRemixMultimanKos.kos, (int)is_restart);
-
-    gSCManagerSceneData.is_reset = FALSE;
-    gSCManagerSceneData.scene_prev = nSCKind1PGame;
-    gSCManagerSceneData.scene_curr = (is_restart != FALSE) ? nSCKind1PGame : nSCKind1PBonus2Players;
 }
 
 void sc1PRemixMultimanDrawHud(void)

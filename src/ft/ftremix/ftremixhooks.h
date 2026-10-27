@@ -500,6 +500,8 @@ void gmRemixCameraSetupDefault(CObj *cobj);
 void gmRemixCameraApplyFixedRun(s32 gkind);
 sb32 gmRemixCameraSetStatusIsFrozen(void);
 sb32 gmRemixCameraFreezeUpdate(CObj *cobj);
+f32 gmRemixCameraGetHrcX(void);
+void gmRemixCameraSetHrcX(f32 x);
 s32 gmRemixCameraCinematicFocus(s32 random_focus);
 sb32 gmRemixCameraPauseBonusZoomAllowed(void);
 sb32 gmRemixCameraPauseControlEnabled(void);

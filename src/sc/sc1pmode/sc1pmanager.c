@@ -583,6 +583,11 @@ void sc1PManagerUpdateScene(void)
                 sc1PRemixMultimanLeaveRun();
                 return;
             }
+            if (sc1PRemixHrcIsActive() != FALSE)
+            {
+                sc1PRemixHrcLeaveRun();
+                return;
+            }
 #endif
             if (gSCManagerSceneData.is_reset != FALSE)
             {

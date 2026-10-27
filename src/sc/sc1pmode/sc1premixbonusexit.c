@@ -50,4 +50,15 @@ sb32 sc1PRemixModeExitBonusCSS(s32 fkind, s32 costume)
     return TRUE;
 }
 
+sb32 sc1PRemixModeLeaveRun(void)
+{
+    sb32 is_restart = (sc1PRemixMultimanRestartsRun(gSCManagerSceneData.is_reset) != 0) ? TRUE : FALSE;
+
+    gSCManagerSceneData.is_reset = FALSE;
+    gSCManagerSceneData.scene_prev = nSCKind1PGame;
+    gSCManagerSceneData.scene_curr = (is_restart != FALSE) ? nSCKind1PGame : nSCKind1PBonus2Players;
+
+    return is_restart;
+}
+
 #endif

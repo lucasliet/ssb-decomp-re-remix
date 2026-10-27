@@ -22,6 +22,9 @@ extern void sc1PRemixHrcSetupPlayer(s32 player);
 /** Makes the opponent of the contest the Sandbag; no-op outside it. */
 extern void sc1PRemixHrcSetupEnemy(s32 player);
 
+/** Ends the run of the contest: back to the Bonus 2 CSS, or a restart through reset; no-op outside it. */
+extern void sc1PRemixHrcLeaveRun(void);
+
 #endif
 
 #endif
