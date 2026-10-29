@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premix1p.h"
 #endif
 #ifdef PORT
 #include <mn/mncommon/mncongra.h>
@@ -464,6 +465,13 @@ void sc1PManagerUpdateScene(void)
 #endif
                 gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].fkind = sc1PManagerGetShuffledFighterKind(this_mask, 0, syUtilsRandIntRange(sc1PManagerGetFighterKindsNum(this_mask)));
 
+#if defined(PORT) && defined(REGION_REMIX)
+                /* starfox_costume: Remix 1P swaps a Luigi ally for DK (its Luigi costume clashes with Team Star Fox). */
+                if ((sc1PRemix1PIsActive() != FALSE) && (gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].fkind == nFTKindLuigi))
+                {
+                    gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].fkind = nFTKindDonkey;
+                }
+#endif
                 if (gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].fkind == nFTKindLuigi)
                 {
                     gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].costume = ftParamGetCostumeCommonID(nFTKindLuigi, 1);

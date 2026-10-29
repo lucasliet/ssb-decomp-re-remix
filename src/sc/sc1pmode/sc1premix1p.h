@@ -5,6 +5,7 @@
 
 #include <ssb_types.h>
 #include <sc/sctypes.h>
+#include "remix/remix_roster_data.h"
 #include "sc/sc1pmode/sc1premix1pdata.h"
 
 /*
@@ -43,6 +44,13 @@ extern const SC1PRemix1PSlotCard* sc1PRemix1PGetCard(s32 stage_index);
 
 /** Kirby power and hat of a slot of the Kirby team (seven random ones and the Magic Hat Kirby). @param slot 0 to 7. */
 extern void sc1PRemix1PGetKirby(s32 slot, s32 *power, s32 *hat);
+
+/** Remix polygons (polygon_id_table): the ids NWARIO to NCRASH, which the Fighting Polygon Team and Race to the Finish draw from. */
+#define SC1PREMIX_1P_POLYGON_FIRST REMIX_ID_NWARIO
+#define SC1PREMIX_1P_POLYGON_LAST REMIX_ID_NCRASH
+
+/** Random Remix polygon, repeats allowed (polygon_selection_match). */
+extern s32 sc1PRemix1PPolygonKind(void);
 
 /** TRUE when the Star Fox line is a duo whose partner loads first (`duo_spawn`). */
 extern sb32 sc1PRemix1PIsDuoPartnerFirst(void);

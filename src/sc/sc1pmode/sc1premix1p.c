@@ -347,6 +347,11 @@ void sc1PRemix1PGetKirby(s32 slot, s32 *power, s32 *hat)
     *hat = sSC1PRemix1PKirbyHats[slot];
 }
 
+s32 sc1PRemix1PPolygonKind(void)
+{
+    return SC1PREMIX_1P_POLYGON_FIRST + sc1PRemix1PRandom(SC1PREMIX_1P_POLYGON_LAST - SC1PREMIX_1P_POLYGON_FIRST + 1);
+}
+
 sb32 sc1PRemix1PIsDuoPartnerFirst(void)
 {
     return sSC1PRemix1PIsDuoPartnerFirst;

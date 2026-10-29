@@ -5,8 +5,12 @@
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
+#include <port_log.h>
 #endif
 #include <ft/fighter.h>
+#ifdef PORT
+#include "fighter_registry.h"
+#endif
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #endif
@@ -60,6 +64,17 @@ u8 dSC1PGameKirbyTeamCopyKinds[/* */] =
     nFTKindFox,
     nFTKindPikachu
 };
+
+#if defined(PORT) && defined(REGION_REMIX)
+static s32 sc1PGameGetYoshiTeamFkind(void)
+{
+    SC1PGameStage *stage = sc1PRemix1PGetStage(nSC1PGameStageYoshi);
+
+    return (stage != NULL) ? stage->fkind[0] : nFTKindYoshi;
+}
+#else
+#define sc1PGameGetYoshiTeamFkind() nFTKindYoshi
+#endif
 
 #if defined(PORT) && defined(REGION_REMIX)
 static s32 sc1PGameGetKirbyTeamCopy(s32 variation)
@@ -721,7 +736,12 @@ s32 sSC1PGameEnemyKirbyCostume;
 void *sSC1PGameZakoStockFile;
 
 // 0x80193068
+#if defined(PORT) && defined(REGION_REMIX)
+/* The 20 Remix polygons of the Fighting Polygon Team load past the 100 files of the vanilla buffer. */
+LBFileNode sSC1PGameStatusBuffer[256];
+#else
 LBFileNode sSC1PGameStatusBuffer[100];
+#endif
 
 // 0x80193388
 LBFileNode sSC1PGameForceStatusBuffer[7];
@@ -1366,7 +1386,7 @@ void sc1PGameSetupStageAll(void)
             gSCManagerBattleState->players[player].costume = sSC1PGameEnemyVariations[sSC1PGameCurrentEnemyVariation];
 
 #ifdef PORT
-            if (sc1PGameCoopHumanCostumeMatch(nFTKindYoshi, gSCManagerBattleState->players[player].costume))
+            if (sc1PGameCoopHumanCostumeMatch(sc1PGameGetYoshiTeamFkind(), gSCManagerBattleState->players[player].costume))
 #else
             if ((gSCManagerSceneData.fkind == nFTKindYoshi) && (gSCManagerSceneData.costume == gSCManagerBattleState->players[player].costume))
 #endif
@@ -1398,6 +1418,17 @@ void sc1PGameSetupStageAll(void)
 
             variations--;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemix1PIsActive() != FALSE)
+        {
+            for (i = 0; i < SC1PGAME_STAGE_MAX_VARIATIONS_COUNT; i++)
+            {
+                sSC1PGameEnemyVariations[i] = sc1PRemix1PPolygonKind();
+            }
+            port_log("remix1p: polygon team 0x%02X 0x%02X 0x%02X 0x%02X\n", (int)sSC1PGameEnemyVariations[0], (int)sSC1PGameEnemyVariations[1],
+                     (int)sSC1PGameEnemyVariations[2], (int)sSC1PGameEnemyVariations[3]);
+        }
+#endif
         for (kind = 0, i = SC1PGAME_STAGE_MAX_VARIATIONS_COUNT; i < stagesetup->opponent_count; i++)
         {
             sSC1PGameEnemyVariations[i] = sSC1PGameEnemyVariations[kind];
@@ -1486,6 +1517,15 @@ void sc1PGameSetupStageAll(void)
 
             variations--;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemix1PIsActive() != FALSE)
+        {
+            for (i = 0; i < SC1PGAME_STAGE_MAX_OPPONENT_COUNT; i++)
+            {
+                sSC1PGameEnemyVariations[i] = sc1PRemix1PPolygonKind();
+            }
+        }
+#endif
         sSC1PGameCurrentEnemyVariation = 0;
 
         for (i = 0; i < SC1PGAME_STAGE_MAX_OPPONENT_COUNT; i++)
@@ -1605,7 +1645,7 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
             gSCManagerBattleState->players[player].costume = sSC1PGameEnemyVariations[sSC1PGameCurrentEnemyVariation];
 
 #ifdef PORT
-            gSCManagerBattleState->players[player].shade = sc1PGameCoopHumanCostumeMatch(nFTKindYoshi, gSCManagerBattleState->players[player].costume) ? 1 : 0;
+            gSCManagerBattleState->players[player].shade = sc1PGameCoopHumanCostumeMatch(sc1PGameGetYoshiTeamFkind(), gSCManagerBattleState->players[player].costume) ? 1 : 0;
 #else
             gSCManagerBattleState->players[player].shade = ((gSCManagerSceneData.fkind == nFTKindYoshi) && (gSCManagerSceneData.costume == gSCManagerBattleState->players[player].costume)) ? 1 : 0;
 #endif
@@ -2473,6 +2513,8 @@ void sc1PGameFuncStart(void)
     GObj *fighter_gobj;
     FTData *plns;
     size_t largest_size;
+    s32 polygon_first;
+    s32 polygon_last;
     FTStruct *fp;
 #ifndef PORT
     sb32 (*func_sign)(void*);
@@ -2553,18 +2595,32 @@ void sc1PGameFuncStart(void)
         break;
 
     case nSC1PGameStageZako:
-        for (i = nFTKindNStart; i <= nFTKindNEnd; i++)
+#if defined(PORT) && defined(REGION_REMIX)
+        polygon_first = (sc1PRemix1PIsActive() != FALSE) ? SC1PREMIX_1P_POLYGON_FIRST : nFTKindNStart;
+        polygon_last = (sc1PRemix1PIsActive() != FALSE) ? SC1PREMIX_1P_POLYGON_LAST : nFTKindNEnd;
+#else
+        polygon_first = nFTKindNStart;
+        polygon_last = nFTKindNEnd;
+#endif
+        for (i = polygon_first; i <= polygon_last; i++)
         {
             ftManagerSetupFilesAllKind(i);
         }
         largest_size = 0;
 
-        for (i = nFTKindNStart; i <= nFTKindNEnd; i++)
+        for (i = polygon_first; i <= polygon_last; i++)
         {
+#ifdef PORT
+            if (largest_size < port_fighter_data(i)->file_anim_size)
+            {
+                largest_size = port_fighter_data(i)->file_anim_size;
+            }
+#else
             if (largest_size < dFTManagerDataFiles[i]->file_anim_size)
             {
                 largest_size = dFTManagerDataFiles[i]->file_anim_size;
             }
+#endif
         }
         for (i = 0; i < (ARRAY_COUNT(gSCManagerBattleState->players) + ARRAY_COUNT(sSC1PGamePlayerSetups)) / 2; i++)
         {
