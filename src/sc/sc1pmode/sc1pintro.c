@@ -1,5 +1,6 @@
 #include <ft/fighter.h>
 #if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixintro.h"
 #endif
 #include <sc/scene.h>
@@ -232,6 +233,51 @@ void sc1PIntroMakeVSDecal(void)
     sobj->pos.y = 104.0F;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define SC1PINTRO_REMIX_YOSHI_TEAM_COSTUMES 5
+#define SC1PINTRO_REMIX_TINY_TEAM_COUNT 3
+#define SC1PINTRO_REMIX_TINY_TEAM_SCALE 0.3984375F
+#define SC1PINTRO_REMIX_TINY_TEAM_Y 250.0F
+#define SC1PINTRO_REMIX_TINY_TEAM_ALLOCS 4
+#define SC1PINTRO_REMIX_DUO_ALLOCS 4
+
+static f32 dSC1PIntroRemixTinyTeamX[SC1PINTRO_REMIX_TINY_TEAM_COUNT] = { 250.0F, -100.0F, -524.0F };
+
+/* metal_bros_magic: the Metal Bros title card of the boss stage is laid out as the duo of the Mario Bros. stage. */
+static s32 sc1PIntroGetLayoutStage(s32 stage)
+{
+    if ((stage == nSC1PGameStageMMario) && (sc1PRemix1PIsActive() != FALSE) && (sc1PRemix1PIsMetalBros() != FALSE))
+    {
+        return nSC1PGameStageMario;
+    }
+    return stage;
+}
+
+static s32 sc1PIntroGetCardFkind(s32 stage, s32 vanilla_fkind)
+{
+    const SC1PRemix1PSlotCard *card = sc1PRemix1PGetCard(stage);
+
+    return (card != NULL) ? (s32)card->title_fkind : vanilla_fkind;
+}
+
+/* doubles_card_1 and doubles_card_2: which fighter of the duo takes the Mario slot (0) and the Luigi slot (1) of the card. */
+static s32 sc1PIntroGetDuoFkind(s32 slot, s32 vanilla_fkind)
+{
+    SC1PGameStage *line = sc1PRemix1PGetStage((sSC1PIntroStage == nSC1PGameStageMMario) ? nSC1PGameStageMMario : nSC1PGameStageMario);
+    sb32 is_partner_first = ((sSC1PIntroStage == nSC1PGameStageMMario) || (sc1PRemix1PIsDuoPartnerFirst() == FALSE)) ? FALSE : TRUE;
+
+    if (line == NULL)
+    {
+        return vanilla_fkind;
+    }
+    return line->fkind[(slot == 0) ? ((is_partner_first != FALSE) ? 1 : 0) : ((is_partner_first != FALSE) ? 0 : 1)];
+}
+#else
+#define sc1PIntroGetLayoutStage(stage) (stage)
+#define sc1PIntroGetCardFkind(stage, vanilla_fkind) (vanilla_fkind)
+#define sc1PIntroGetDuoFkind(slot, vanilla_fkind) (vanilla_fkind)
+#endif
+
 // 0x80131F6C
 sb32 sc1PIntroCheckNotBonusStage(s32 stage)
 {
@@ -435,6 +481,13 @@ void sc1PIntroMakeFigures(s32 stage)
     {
         if (i >= stage)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemix1PGetCard(i) != NULL)
+            {
+                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], sc1PRemix1PGetCard(i)->progress_icon));
+            }
+            else
+#endif
             sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], figure_offsets[i]));
 
             sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -531,6 +584,98 @@ void sc1PIntroMakeBonusTasks(s32 stage)
 #endif
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define SC1PINTRO_REMIX_GIANT_TEXT 0x5CB8
+#define SC1PINTRO_REMIX_TEAM_TEXT 0x5EF8
+#define SC1PINTRO_REMIX_TINY_TEAM_TEXT 0x9548
+#define SC1PINTRO_REMIX_TEAM_GAP 4.0F
+#define SC1PINTRO_REMIX_TEAM_Y 195.75F
+#define SC1PINTRO_REMIX_GIANT_GAP -9.0F
+#define SC1PINTRO_REMIX_GIANT_Y 196.5F
+
+static const SC1PRemix1PSlotCard* sc1PIntroGetRemixCard(s32 stage)
+{
+    switch (stage)
+    {
+    case nSC1PGameStageKirby:
+    case nSC1PGameStageZako:
+        return NULL;
+
+    default:
+        return sc1PRemix1PGetCard(stage);
+    }
+}
+
+static SObj* sc1PIntroMakeRemixTextSObj(GObj *gobj, intptr_t offset)
+{
+    SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[1], offset));
+
+    sobj->sprite.attr &= ~SP_FASTCOPY;
+    sobj->sprite.attr |= SP_TRANSPARENT;
+
+    sobj->sprite.red = 0xFF;
+    sobj->sprite.green = 0xFF;
+    sobj->sprite.blue = 0xFF;
+
+    return sobj;
+}
+
+static void sc1PIntroMakeRemixNameSObj(GObj *gobj, const SC1PRemix1PSlotCard *card)
+{
+    SObj *sobj = sc1PIntroMakeRemixTextSObj(gobj, card->name_texture);
+    s32 width = sc1PRemixIntroNameWidth(card->title_fkind);
+
+    if (width != 0)
+    {
+        sobj->sprite.width = width;
+    }
+}
+
+static void sc1PIntroMakeRemixVSNameTexts(GObj *gobj, s32 stage, const SC1PRemix1PSlotCard *card)
+{
+    switch (stage)
+    {
+    case nSC1PGameStageDonkey:
+        sc1PIntroMakeRemixTextSObj(gobj, SC1PINTRO_REMIX_GIANT_TEXT);
+        sc1PIntroMakeRemixNameSObj(gobj, card);
+        break;
+
+    case nSC1PGameStageYoshi:
+        sc1PIntroMakeRemixNameSObj(gobj, card);
+        sc1PIntroMakeRemixTextSObj(gobj, SC1PINTRO_REMIX_TEAM_TEXT);
+        break;
+
+    case nSC1PGameStageSamus:
+        sc1PIntroMakeRemixTextSObj(gobj, SC1PINTRO_REMIX_TINY_TEAM_TEXT);
+        break;
+
+    default:
+        sc1PIntroMakeRemixNameSObj(gobj, card);
+        break;
+    }
+}
+
+static void sc1PIntroSetRemixNameChainPositions(s32 stage, SObj *opponent)
+{
+    SObj *second = opponent->next;
+
+    if (second == NULL)
+    {
+        return;
+    }
+    if (stage == nSC1PGameStageDonkey)
+    {
+        second->pos.x = opponent->pos.x + opponent->sprite.width + SC1PINTRO_REMIX_GIANT_GAP;
+        second->pos.y = SC1PINTRO_REMIX_GIANT_Y;
+    }
+    else if (stage == nSC1PGameStageYoshi)
+    {
+        second->pos.x = opponent->pos.x + opponent->sprite.width + SC1PINTRO_REMIX_TEAM_GAP;
+        second->pos.y = SC1PINTRO_REMIX_TEAM_Y;
+    }
+}
+#endif
+
 // 0x801324EC
 void sc1PIntroMakeVSName(s32 stage)
 {
@@ -596,6 +741,13 @@ void sc1PIntroMakeVSName(s32 stage)
     sobj->sprite.green = 0xFF;
     sobj->sprite.blue = 0xFF;
     
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PIntroGetRemixCard(stage) != NULL)
+    {
+        sc1PIntroMakeRemixVSNameTexts(gobj, stage, sc1PIntroGetRemixCard(stage));
+        return;
+    }
+#endif
     if ((stage == nSC1PGameStageLink) || (stage == nSC1PGameStagePikachu))
     {
         sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[1], opponent_offsets[stage]));
@@ -717,6 +869,12 @@ void sc1PIntroMakeName(s32 stage)
     sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[1], name_offsets[sSC1PIntroPlayerFighterDemoDesc.fkind]));
 #endif
     
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixIntroNameWidth(sSC1PIntroPlayerFighterDemoDesc.fkind) != 0)
+    {
+        sobj->sprite.width = sc1PRemixIntroNameWidth(sSC1PIntroPlayerFighterDemoDesc.fkind);
+    }
+#endif
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
     
@@ -809,6 +967,12 @@ s32 sc1PIntroGetVSNameOffsetX(s32 stage)
 {
     SObj *sobj = SObjGetStruct(sSC1PIntroVSNameGObj);
     
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sobj->next->next != NULL)
+    {
+        return sobj->sprite.width + sobj->next->sprite.width + sobj->next->next->sprite.width + 10;
+    }
+#endif
     return sobj->sprite.width + sobj->next->sprite.width + 10;
 }
 
@@ -863,6 +1027,9 @@ void sc1PIntroSetNamePositions(s32 stage)
     sobj->pos.y = 196.0F;
 
     sobj->next->pos.x = sobj->pos.x + sobj->sprite.width + 10.0F;
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PIntroSetRemixNameChainPositions(stage, sobj->next);
+#endif
 #if defined(REGION_US)
     sobj->next->pos.y = (stage == nSC1PGameStageZako) ? 190.0F : 196.0F;
 #else
@@ -1408,6 +1575,13 @@ CObj* sc1PIntroMakeStageCamera(s32 stage, u32 dl_link)
     cobj = CObjGetStruct(gobj);
     
     syRdpSetViewport(&cobj->viewport, 10.0F, 10.0F, 310.0F, 230.0F);
+    #if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemix1PGetCard(stage) != NULL)
+    {
+        gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sSC1PIntroFiles[0], sc1PRemix1PGetCard(stage)->model_scale), 0.0F);
+    }
+    else
+#endif
     gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sSC1PIntroFiles[0], camanim_joints[stage]), 0.0F);
     gcPlayCamAnim(gobj);
     
@@ -1470,6 +1644,122 @@ sb32 sSC1PIntroCheckCostumeUsed(s32 stage, s32 fkind, s32 color)
     }
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+static void sc1PIntroMakeRemixCardFighter(s32 fkind, s32 stage, s32 heap, u32 dl_link)
+{
+    GObj *fighter_gobj = sc1PIntroMakeVSFighter(fkind, stage, 0, &sSC1PIntroFigatreeHeaps[heap], dl_link);
+
+    if (sSC1PIntroPlayerFighterDemoDesc.fkind != fkind)
+    {
+        return;
+    }
+    if (ftParamGetCostumeCommonID(fkind, 0) == sSC1PIntroPlayerFighterDemoDesc.costume)
+    {
+        ftParamInitAllParts(fighter_gobj, ftParamGetCostumeCommonID(fkind, 1), 0);
+    }
+    else ftParamInitAllParts(fighter_gobj, ftParamGetCostumeCommonID(fkind, 0), 0);
+}
+
+static void sc1PIntroMakeRemixTeamFighters(s32 fkind, s32 stage)
+{
+    GObj *fighter_gobj;
+    s32 costume;
+    s32 i;
+
+    for (i = 0; i < SC1PGAME_STAGE_YOSHI_TEAM_COUNT; i++)
+    {
+        fighter_gobj = sc1PIntroMakeVSFighter(fkind, stage, i, &sSC1PIntroFigatreeHeaps[i + 1], 32);
+        costume = syUtilsRandIntRange(SC1PINTRO_REMIX_YOSHI_TEAM_COSTUMES);
+
+        ftParamInitAllParts(fighter_gobj, costume, ((sSC1PIntroPlayerFighterDemoDesc.fkind == fkind) && (sSC1PIntroPlayerFighterDemoDesc.costume == costume)) ? 1 : 0);
+    }
+}
+
+static void sc1PIntroMakeRemixTinyTeamFighters(s32 fkind, s32 stage)
+{
+    GObj *fighter_gobj;
+    DObj *dobj;
+    s32 i;
+
+    for (i = 0; i < SC1PINTRO_REMIX_TINY_TEAM_COUNT; i++)
+    {
+        fighter_gobj = sc1PIntroMakeVSFighter(fkind, stage, 0, &sSC1PIntroFigatreeHeaps[i + 1], 32);
+        dobj = DObjGetStruct(fighter_gobj);
+
+        dobj->scale.vec.f.x = dobj->scale.vec.f.y = dobj->scale.vec.f.z = SC1PINTRO_REMIX_TINY_TEAM_SCALE;
+        dobj->translate.vec.f.x = dSC1PIntroRemixTinyTeamX[i];
+        dobj->translate.vec.f.y = SC1PINTRO_REMIX_TINY_TEAM_Y;
+    }
+}
+
+static void sc1PIntroMakeRemixDuoFighters(s32 stage)
+{
+    GObj *fighter_gobj;
+    CObj *cobj;
+    s32 fkind = sc1PIntroGetDuoFkind(0, nFTKindMario);
+
+    sc1PIntroMakeStageCamera(stage, 32);
+    fighter_gobj = sc1PIntroMakeVSFighter(fkind, stage, 0, &sSC1PIntroFigatreeHeaps[2], 32);
+
+    if (sSC1PIntroCheckCostumeUsed(stage, fkind, 0) != FALSE)
+    {
+        ftParamInitAllParts(fighter_gobj, ftParamGetCostumeCommonID(fkind, 1), 0);
+    }
+    cobj = sc1PIntroMakeStageCamera(stage, 33);
+
+    cobj->flags |= COBJ_FLAG_ZBUFFER;
+
+    fkind = sc1PIntroGetDuoFkind(1, nFTKindLuigi);
+    fighter_gobj = sc1PIntroMakeVSFighter(fkind, stage, 0, &sSC1PIntroFigatreeHeaps[3], 33);
+
+    if (sSC1PIntroCheckCostumeUsed(stage, fkind, 0) != FALSE)
+    {
+        ftParamInitAllParts(fighter_gobj, ftParamGetCostumeCommonID(fkind, 1), 0);
+    }
+}
+
+static sb32 sc1PIntroInitRemixVSFighters(s32 stage)
+{
+    const SC1PRemix1PSlotCard *card = sc1PRemix1PGetCard(stage);
+    s32 layout_stage = sc1PIntroGetLayoutStage(stage);
+
+    if (card == NULL)
+    {
+        return FALSE;
+    }
+    switch (layout_stage)
+    {
+    case nSC1PGameStageKirby:
+    case nSC1PGameStageZako:
+        return FALSE;
+
+    case nSC1PGameStageYoshi:
+        sc1PIntroMakeStageCamera(layout_stage, 32);
+        sc1PIntroMakeRemixTeamFighters(card->title_fkind, layout_stage);
+        return TRUE;
+
+    case nSC1PGameStageMario:
+        sc1PIntroMakeRemixDuoFighters(layout_stage);
+        return TRUE;
+
+    case nSC1PGameStageSamus:
+        sc1PIntroMakeStageCamera(layout_stage, 32);
+        sc1PIntroMakeRemixTinyTeamFighters(card->title_fkind, layout_stage);
+        return TRUE;
+
+    case nSC1PGameStageDonkey:
+        sc1PIntroMakeStageCamera(layout_stage, 32);
+        sc1PIntroMakeVSFighter(card->title_fkind, layout_stage, 0, &sSC1PIntroFigatreeHeaps[3], 32);
+        return TRUE;
+
+    default:
+        sc1PIntroMakeStageCamera(layout_stage, 32);
+        sc1PIntroMakeRemixCardFighter(card->title_fkind, layout_stage, 1, 32);
+        return TRUE;
+    }
+}
+#endif
+
 // 0x80133AC8
 void sc1PIntroInitVSFighters(s32 stage)
 {
@@ -1497,6 +1787,12 @@ void sc1PIntroInitVSFighters(s32 stage)
         nFTKindBoss
     };
     
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PIntroInitRemixVSFighters(stage) != FALSE)
+    {
+        return;
+    }
+#endif
     switch (stage)
     {
     case nSC1PGameStageYoshi:
@@ -1966,6 +2262,19 @@ s32 sc1PIntroGetFighterAllocsNum(s32 stage)
         13,
         2
     };
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemix1PGetCard(stage) != NULL)
+    {
+        if (stage == nSC1PGameStageSamus)
+        {
+            return SC1PINTRO_REMIX_TINY_TEAM_ALLOCS;
+        }
+        if (sc1PIntroGetLayoutStage(stage) != stage)
+        {
+            return SC1PINTRO_REMIX_DUO_ALLOCS;
+        }
+    }
+#endif
 #ifdef PORT
     /* Co-op: one more fighter alloc + figatree heap for the P2 intro card.
      * P2 uses the LAST heap slot (index = stock count) so none of the
@@ -2182,18 +2491,21 @@ void sc1PIntroSetupFighterFiles(s32 stage)
     
     ftManagerSetupFilesAllKind(sSC1PIntroPlayerFighterDemoDesc.fkind);
     
-    switch (stage)
+    switch (sc1PIntroGetLayoutStage(stage))
     {
     case nSC1PGameStageDonkey:
         ftManagerSetupFilesAllKind(sSC1PIntroAlly1FighterDemoDesc.fkind);
         ftManagerSetupFilesAllKind(sSC1PIntroAlly2FighterDemoDesc.fkind);
-        ftManagerSetupFilesAllKind(nFTKindDonkey);
+        ftManagerSetupFilesAllKind(sc1PIntroGetCardFkind(stage, nFTKindDonkey));
         break;
         
     case nSC1PGameStageMario:
-        ftManagerSetupFilesAllKind(sSC1PIntroAlly1FighterDemoDesc.fkind);
-        ftManagerSetupFilesAllKind(nFTKindMario);
-        ftManagerSetupFilesAllKind(nFTKindLuigi);
+        if (stage == nSC1PGameStageMario)
+        {
+            ftManagerSetupFilesAllKind(sSC1PIntroAlly1FighterDemoDesc.fkind);
+        }
+        ftManagerSetupFilesAllKind(sc1PIntroGetDuoFkind(0, nFTKindMario));
+        ftManagerSetupFilesAllKind(sc1PIntroGetDuoFkind(1, nFTKindLuigi));
         break;
         
     case nSC1PGameStageZako:
@@ -2207,7 +2519,7 @@ void sc1PIntroSetupFighterFiles(s32 stage)
         break;
         
     default:
-        ftManagerSetupFilesAllKind(fkinds[stage]);
+        ftManagerSetupFilesAllKind(sc1PIntroGetCardFkind(stage, fkinds[stage]));
         break;
     }
 #ifdef PORT

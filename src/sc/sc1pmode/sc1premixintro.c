@@ -11,6 +11,9 @@
 #include "sc/sc1pmode/sc1premixintro.h"
 
 #define SC1PREMIX_INTRO_NAME_HEADER 0x10
+#define SC1PREMIX_INTRO_NAME_WIDTH_MARINA 0x2A
+#define SC1PREMIX_INTRO_NAME_WIDTH_BANJO 0x22
+#define SC1PREMIX_INTRO_NAME_WIDTH_CRASH 0x23
 
 static sb32 sc1PRemixIntroIsKnownKind(s32 fkind)
 {
@@ -38,6 +41,24 @@ intptr_t sc1PRemixIntroNameOffset(s32 fkind)
 sb32 sc1PRemixIntroNameIsInCardFile(s32 fkind)
 {
     return ((fkind == REMIX_ID_METAL) || (fkind == REMIX_ID_GDONKEY) || (fkind == REMIX_ID_BOSS)) ? TRUE : FALSE;
+}
+
+s32 sc1PRemixIntroNameWidth(s32 fkind)
+{
+    switch (fkind)
+    {
+    case REMIX_ID_MARINA:
+        return SC1PREMIX_INTRO_NAME_WIDTH_MARINA;
+
+    case REMIX_ID_BANJO:
+        return SC1PREMIX_INTRO_NAME_WIDTH_BANJO;
+
+    case REMIX_ID_CRASH:
+        return SC1PREMIX_INTRO_NAME_WIDTH_CRASH;
+
+    default:
+        return 0;
+    }
 }
 
 u32 sc1PRemixIntroAnnounceCall(s32 fkind)

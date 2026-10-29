@@ -19,6 +19,9 @@ extern intptr_t sc1PRemixIntroNameOffset(s32 fkind);
 /** TRUE when the name sprite of this fighter is in the card file (Metal Mario, Giant DK, Master Hand), FALSE for the names file. */
 extern sb32 sc1PRemixIntroNameIsInCardFile(s32 fkind);
 
+/** Width the name sprite is cut to so a long name shows only the short one ("Marina", "Banjo", "Crash"), or 0 to keep the sprite width. */
+extern s32 sc1PRemixIntroNameWidth(s32 fkind);
+
 /** Announcer call (FGM id) that says the name of the fighter. */
 extern u32 sc1PRemixIntroAnnounceCall(s32 fkind);
 
