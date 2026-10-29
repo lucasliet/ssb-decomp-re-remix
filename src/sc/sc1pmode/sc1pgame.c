@@ -4,6 +4,7 @@
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
+#include "sc/sc1pmode/sc1premixallstar.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
 #include <port_log.h>
 #endif
@@ -876,6 +877,32 @@ void sc1PGameSetGameEnd(void)
     sSC1PGameBonusStatInvincibleTimer = fp->star_invincible_tics;
 }
 
+#ifdef PORT
+extern char *getenv(const char *name);
+extern int atoi(const char *str);
+
+/* Test hook: SSB64_SPGAME_AUTOWIN=<tics> wins the stage that many tics after the start, as if the last enemy had fallen. */
+static void sc1PGameCheckAutoWin(void)
+{
+    static sb32 sIsWon;
+    const char *tics_env = getenv("SSB64_SPGAME_AUTOWIN");
+
+    if (gSCManagerBattleState->game_status != nSCBattleGameStatusGo)
+    {
+        sIsWon = FALSE;
+        return;
+    }
+    if ((tics_env == NULL) || (sIsWon != FALSE) || (gSCManagerBattleState->time_passed < (u32)atoi(tics_env)))
+    {
+        return;
+    }
+    sIsWon = TRUE;
+    sSC1PGameEnemyStocksRemaining = 0;
+
+    ifCommonAnnounceEndMessage();
+}
+#endif
+
 // 0x8018D200
 void sc1PGameFuncUpdate(void)
 {
@@ -883,6 +910,10 @@ void sc1PGameFuncUpdate(void)
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanDrawHud();
     sc1PRemixHrcRunUpdate();
+    sc1PRemixAllstarUpdate();
+#endif
+#ifdef PORT
+    sc1PGameCheckAutoWin();
 #endif
 
     if ((sSC1PGameIsStartStage == FALSE) && (gSCManagerBattleState->game_status == nSCBattleGameStatusGo))
@@ -1121,6 +1152,11 @@ void sc1PGameSetupStageAll(void)
     {
         stagesetup = sc1PRemix1PGetStage(gSCManagerSceneData.spgame_stage);
         comsetup = sc1PRemix1PGetComputer(gSCManagerSceneData.spgame_stage);
+    }
+    else if (sc1PRemixAllstarIsActive() != FALSE)
+    {
+        stagesetup = sc1PRemixAllstarGetStage(gSCManagerSceneData.spgame_stage);
+        comsetup = sc1PRemixAllstarGetComputer(gSCManagerSceneData.spgame_stage);
     }
 #endif
     s32 variations;
@@ -1714,7 +1750,11 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
 
         desc.stock_count = gSCManagerBattleState->players[player].stock_count;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        desc.damage = sc1PRemixAllstarPlayerDamage(player);
+#else
         desc.damage = 0;
+#endif
 
         desc.pkind = gSCManagerBattleState->players[player].pkind;
 
@@ -1748,7 +1788,12 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
 // 0x8018E598
 void sc1PGameSetPlayerInterfacePositions(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    /* The All-Star Rest Area has the player alone, and the table starts at two fighters. */
+    s32 *pos = dSC1PGameInterfaceCountPositions[((gSCManagerBattleState->pl_count + gSCManagerBattleState->cp_count) > 2) ? (gSCManagerBattleState->pl_count + gSCManagerBattleState->cp_count) - 2 : 0];
+#else
     s32 *pos = dSC1PGameInterfaceCountPositions[(gSCManagerBattleState->pl_count + gSCManagerBattleState->cp_count) - 2];
+#endif
     s32 player = gSCManagerSceneData.player;
     s32 i;
 
@@ -2591,6 +2636,10 @@ void sc1PGameFuncStart(void)
     {
         ifScreenFlashMakeInterface(sc1PRemix1PGetStage(gSCManagerSceneData.spgame_stage)->screenflash_alpha);
     }
+    else if (sc1PRemixAllstarIsActive() != FALSE)
+    {
+        ifScreenFlashMakeInterface(sc1PRemixAllstarGetStage(gSCManagerSceneData.spgame_stage)->screenflash_alpha);
+    }
     else
 #endif
     ifScreenFlashMakeInterface(dSC1PGameStageDesc[gSCManagerSceneData.spgame_stage].screenflash_alpha);
@@ -2698,7 +2747,11 @@ void sc1PGameFuncStart(void)
 
         desc.stock_count = gSCManagerBattleState->players[i].stock_count;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        desc.damage = sc1PRemixAllstarPlayerDamage(i);
+#else
         desc.damage = 0;
+#endif
 
         desc.pkind = gSCManagerBattleState->players[i].pkind;
 
@@ -3066,6 +3119,9 @@ check_smash:
         }
     }
 check_heavy_damage:
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixAllstarRecordPercent(gSCManagerBattleState->players[gSCManagerSceneData.player].stock_damage_all);
+#endif
 #if defined(REGION_US)
     if (gSCManagerBattleState->players[gSCManagerSceneData.player].stock_damage_all >= 200)
 #else
@@ -3084,7 +3140,11 @@ check_heavy_damage:
         // Pacifist
         gSCManagerSceneData.bonus_get_mask[0] |= SC1PGAME_BONUS_MASK0_PACIFIST;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((gSC1PManagerTotalFalls == 0) && (sc1PRemixAllstarIsActive() == FALSE))
+#else
     if (gSC1PManagerTotalFalls == 0)
+#endif
     {
         gSCManagerSceneData.bonus_get_mask[0] |= SC1PGAME_BONUS_MASK0_NOMISS;
     }
@@ -3377,7 +3437,11 @@ check_heavy_damage:
 #ifdef PORT
 skip_ally_friend_bonus:
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+        if ((gSC1PGameBonusBrosCalamity != FALSE) && (sc1PRemixAllstarIsActive() == FALSE))
+#else
         if (gSC1PGameBonusBrosCalamity != FALSE)
+#endif
         {
             // Bros. Calamity
             gSCManagerSceneData.bonus_get_mask[1] |= SC1PGAME_BONUS_MASK1_BROSCALAMITY;

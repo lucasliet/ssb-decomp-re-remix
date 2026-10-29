@@ -6,6 +6,7 @@
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
+#include "sc/sc1pmode/sc1premixallstar.h"
 #endif
 #ifdef PORT
 #include <mn/mncommon/mncongra.h>
@@ -307,6 +308,9 @@ void sc1PManagerUpdateScene(void)
     u16 this_mask;
     s32 bonus_stat_count;
     sb32 is_player_lose;
+#if defined(PORT) && defined(REGION_REMIX)
+    sb32 is_allstar_retry = FALSE;
+#endif
     u16 spgame_characters_complete;
     u32 bonus_stat_mask;
     s32 random;
@@ -449,6 +453,9 @@ void sc1PManagerUpdateScene(void)
 #endif
 
             is_player_lose = FALSE;
+#if defined(PORT) && defined(REGION_REMIX)
+            is_allstar_retry = FALSE;
+#endif
 
             switch (gSCManagerSceneData.spgame_stage)
             {
@@ -523,7 +530,7 @@ void sc1PManagerUpdateScene(void)
             gSCManagerSceneData.scene_curr = nSCKind1PIntro;
 
 #if defined(PORT) && defined(REGION_REMIX)
-            if ((sc1PRemixMultimanIsActive() == FALSE) && (sc1PRemixHrcIsActive() == FALSE))
+            if ((sc1PRemixMultimanIsActive() == FALSE) && (sc1PRemixHrcIsActive() == FALSE) && (sc1PRemixAllstarIsActive() == FALSE))
 #endif
             {
                 sc1PIntroStartScene();
@@ -625,6 +632,10 @@ void sc1PManagerUpdateScene(void)
                     }
 #endif
                     gSCManagerSceneData.spgame_stage--;
+#if defined(PORT) && defined(REGION_REMIX)
+                    is_allstar_retry = TRUE;
+                    sc1PRemixAllstarClearPercent();
+#endif
 
                     if (--sSC1PManagerLevelGuard == 0)
                     {
@@ -673,15 +684,27 @@ void sc1PManagerUpdateScene(void)
                 }
                 gSCManagerSceneData.bonus_count += bonus_stat_count;
 
-                syDmaLoadOverlay(&dSC1PManagerSubsysOverlay);
-                syDmaLoadOverlay(&dSC1PManager1PStageClearOverlay);
+#if defined(PORT) && defined(REGION_REMIX)
+                if (!((sc1PRemixAllstarIsActive() != FALSE) && (gSCManagerSceneData.spgame_stage == SC1PREMIX_ALLSTAR_STAGE_REST)))
+#endif
+                {
+                    syDmaLoadOverlay(&dSC1PManagerSubsysOverlay);
+                    syDmaLoadOverlay(&dSC1PManager1PStageClearOverlay);
 
-                gSCManagerSceneData.scene_prev = nSCKind1PGame;
-                gSCManagerSceneData.scene_curr = nSCKind1PStageClear;
+                    gSCManagerSceneData.scene_prev = nSCKind1PGame;
+                    gSCManagerSceneData.scene_curr = nSCKind1PStageClear;
 
-                sc1PStageClearStartScene();
-                SC1P_PORT_RESET_BAIL();
+                    sc1PStageClearStartScene();
+                    SC1P_PORT_RESET_BAIL();
+                }
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemixAllstarIsActive() != FALSE)
+            {
+                gSCManagerSceneData.spgame_stage = sc1PRemixAllstarStepStage(gSCManagerSceneData.spgame_stage, is_allstar_retry);
+                continue;
+            }
+#endif
             gSCManagerSceneData.spgame_stage++;
         }
         sc1PManagerTrySaveBackup(TRUE);

@@ -8,6 +8,7 @@
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixtugofwar.h"
 #include "gm/gmremixtwelvecb.h"
+#include "sc/sc1pmode/sc1premixallstar.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -117,6 +118,12 @@ void ftCommonDeadUpdateScore(FTStruct *this_fp)
         gSCManagerBattleState->players[this_fp->player].stock_count--;
 
         sc1PGameSetPlayerDefeatStats(this_fp->player, this_fp->team_order);
+#if defined(PORT) && defined(REGION_REMIX)
+        if (this_fp->pkind == nFTPlayerKindMan)
+        {
+            sc1PRemixAllstarClearPercent();
+        }
+#endif
     }
     if (gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_BONUS)
     {
