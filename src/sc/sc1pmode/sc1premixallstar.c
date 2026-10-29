@@ -15,6 +15,9 @@
 #include "sc/sc1pmode/sc1premixbonusexit.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 
+extern char *getenv(const char *name);
+extern int atoi(const char *str);
+
 #define SC1PREMIX_ALLSTAR_STAGE_ID_COUNT 256
 #define SC1PREMIX_ALLSTAR_EXIT_CLIP 0xE
 #define SC1PREMIX_ALLSTAR_EXIT_WAIT 1
@@ -86,6 +89,16 @@ void sc1PRemixAllstarRandomize(void)
 
         port_log("allstar: slot %d fkind=0x%02X gkind=0x%02X\n", (int)slot, (int)sSC1PRemixAllstarFkinds[slot], (int)sSC1PRemixAllstarGkinds[slot]);
     }
+#ifdef PORT
+    {
+        const char *progress_env = getenv("SSB64_ALLSTAR_PROGRESS");
+
+        if (progress_env != NULL)
+        {
+            sSC1PRemixAllstarProgress = atoi(progress_env);
+        }
+    }
+#endif
     sSC1PRemixAllstarIsReady = TRUE;
 }
 
