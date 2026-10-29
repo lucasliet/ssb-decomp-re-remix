@@ -1276,6 +1276,17 @@ void sc1PIntroSetKirbyTeamModelPartIDs(GObj *fighter_gobj, s32 fkind)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 id = fp->card_anim_frame_id;
     
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemix1PIsActive() != FALSE)
+    {
+        s32 power;
+        s32 hat;
+
+        sc1PRemix1PGetKirby(id, &power, &hat);
+        ftParamSetModelPartID(fighter_gobj, 6, hat);
+        return;
+    }
+#endif
     if (fkind == nFTKindKirby)
     {
         s32 modelpart_id = modelpart_ids[id];
@@ -2287,6 +2298,63 @@ s32 sc1PIntroGetFighterAllocsNum(s32 stage)
     return allocs_num[stage];
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define SC1PINTRO_REMIX_CALL_GIANT 0x3AF
+#define SC1PINTRO_REMIX_CALL_TEAM 0x3AE
+#define SC1PINTRO_REMIX_CALL_METAL_BROS 0x542
+#define SC1PINTRO_REMIX_GIANT_TO_NAME_TICS 0x2B
+#define SC1PINTRO_REMIX_NAME_WAIT_TICS 60
+
+static sb32 sSC1PIntroIsAnnouncedGiant;
+static sb32 sSC1PIntroIsAnnouncedTeam;
+static u32 sSC1PIntroGiantTic;
+
+static u32 sc1PIntroGetRemixCardCall(const SC1PRemix1PSlotCard *card)
+{
+    if ((sSC1PIntroStage == nSC1PGameStageMMario) && (sc1PRemix1PIsMetalBros() != FALSE))
+    {
+        return SC1PINTRO_REMIX_CALL_METAL_BROS;
+    }
+    return card->announcer_call;
+}
+
+static void sc1PIntroUpdateRemixVSAnnounce(const SC1PRemix1PSlotCard *card, u32 tic)
+{
+    u32 now = sySchedulerGetTicCount();
+
+    if (sSC1PIntroStage == nSC1PGameStageDonkey)
+    {
+        if ((sSC1PIntroIsAnnouncedGiant == FALSE) && ((tic + SC1PINTRO_REMIX_NAME_WAIT_TICS) < now))
+        {
+            func_800269C0_275C0(SC1PINTRO_REMIX_CALL_GIANT);
+
+            sSC1PIntroIsAnnouncedGiant = TRUE;
+            sSC1PIntroGiantTic = now;
+        }
+        if ((sSC1PIntroIsAnnouncedGiant != FALSE) && (sSC1PIntroIsAnnouncedVSFighterName == FALSE) && (now > (sSC1PIntroGiantTic + SC1PINTRO_REMIX_GIANT_TO_NAME_TICS)))
+        {
+            func_800269C0_275C0(sc1PIntroGetRemixCardCall(card));
+
+            sSC1PIntroIsAnnouncedVSFighterName = TRUE;
+        }
+        return;
+    }
+    if ((sSC1PIntroIsAnnouncedVSFighterName == FALSE) && ((tic + SC1PINTRO_REMIX_NAME_WAIT_TICS) < now))
+    {
+        func_800269C0_275C0(sc1PIntroGetRemixCardCall(card));
+
+        sSC1PIntroIsAnnouncedVSFighterName = TRUE;
+    }
+    if ((sSC1PIntroStage == nSC1PGameStageYoshi) && (sSC1PIntroIsAnnouncedTeam == FALSE) &&
+        (now > (tic + sc1PRemixIntroNameDelay(card->title_fkind) + SC1PINTRO_REMIX_NAME_WAIT_TICS)))
+    {
+        func_800269C0_275C0(SC1PINTRO_REMIX_CALL_TEAM);
+
+        sSC1PIntroIsAnnouncedTeam = TRUE;
+    }
+}
+#endif
+
 // 0x801345CC
 void sc1PIntroUpdateAnnounce(void)
 {
@@ -2369,6 +2437,13 @@ void sc1PIntroUpdateAnnounce(void)
 
             sSC1PIntroIsAnnouncedVersus = TRUE;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemix1PGetCard(sSC1PIntroStage) != NULL)
+        {
+            sc1PIntroUpdateRemixVSAnnounce(sc1PRemix1PGetCard(sSC1PIntroStage), tic);
+        }
+        else
+#endif
         if (((tic + 60) < sySchedulerGetTicCount()) && (sSC1PIntroIsAnnouncedVSFighterName == FALSE))
         {
             func_800269C0_275C0(vs_fighter_voices[sSC1PIntroStage]);
@@ -2415,6 +2490,10 @@ void sc1PIntroInitVars(void)
     sSC1PIntroIsAnnouncedFighterName = FALSE;
     sSC1PIntroIsAnnouncedVersus = FALSE;
     sSC1PIntroIsAnnouncedVSFighterName = FALSE;
+#if defined(PORT) && defined(REGION_REMIX)
+    sSC1PIntroIsAnnouncedGiant = FALSE;
+    sSC1PIntroIsAnnouncedTeam = FALSE;
+#endif
     
     sSC1PIntroUnk0x80135CF4 = 0;
     sc1PIntroTotalTimeTics = 0;
