@@ -36,7 +36,7 @@ f32 ifRemixStaminaDamageRatio(s32 damage)
     {
         return damage / IF_REMIX_STAMINA_DARKNESS_MAX;
     }
-    hitpoints = gmRemixStaminaGetTotalHP() + 1;
+    hitpoints = gmRemixStaminaRulesMaxHP(gmRemixStaminaGetTotalHP());
     darkness = (s32) (((damage / hitpoints) * IF_REMIX_STAMINA_DARKNESS_MAX) + 0.5F);
 
     return darkness / IF_REMIX_STAMINA_DARKNESS_MAX;

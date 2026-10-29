@@ -14,12 +14,7 @@
 #include "remix/remix_roster_data.h"
 
 /* Action.asm ids read by stamina_invis_prevent and egg_crash_prevent */
-#define FTREMIX_STAMINA_ACTION_DAMAGE_FLY_MID 0x034
-#define FTREMIX_STAMINA_ACTION_CAPTURE_PULLED 0x0AB
-#define FTREMIX_STAMINA_ACTION_CAPTURE_WAIT 0x0AC
-#define FTREMIX_STAMINA_ACTION_EGG_LAY 0x0B2
 #define FTREMIX_STAMINA_ACTION_FALCON_DIVE_PULLED 0x0B3
-#define FTREMIX_STAMINA_ACTION_THROWN_FOX_B 0x0BC
 
 /* Roy.asm DSP_G_Strong_End and DSP_A_Strong_End, read by stamina_invis_prevent for Roy only */
 #define FTREMIX_STAMINA_ROY_DSP_G_STRONG_END 0x0F2
@@ -61,12 +56,12 @@ static sb32 sFTRemixStaminaIsInvisibleExcludedAction(FTStruct *fp)
 {
     s32 status_id = fp->status_id;
 
-    if ((status_id == FTREMIX_STAMINA_ACTION_DAMAGE_FLY_MID) || (status_id == FTREMIX_STAMINA_ACTION_CAPTURE_PULLED) ||
-        (status_id == FTREMIX_STAMINA_ACTION_CAPTURE_WAIT))
+    if ((status_id == nFTCommonStatusDamageFlyN) || (status_id == nFTCommonStatusCapturePulled) ||
+        (status_id == nFTCommonStatusCaptureWait))
     {
         return TRUE;
     }
-    if ((status_id >= FTREMIX_STAMINA_ACTION_FALCON_DIVE_PULLED) && (status_id <= FTREMIX_STAMINA_ACTION_THROWN_FOX_B))
+    if (ftRemixStaminaStatusInRange(status_id, FTREMIX_STAMINA_ACTION_FALCON_DIVE_PULLED, nFTCommonStatusThrownFoxB))
     {
         return TRUE;
     }
@@ -104,7 +99,7 @@ sb32 ftRemixStaminaSkipsDeadWaitInit(FTStruct *fp)
     {
         return FALSE;
     }
-    return (fp->status_id == FTREMIX_STAMINA_ACTION_EGG_LAY) ? TRUE : FALSE;
+    return (fp->status_id == nFTCommonStatusYoshiEgg) ? TRUE : FALSE;
 }
 
 #endif

@@ -15,6 +15,7 @@
 #include <sc/sctypes.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
 
+/* Port deviation: the asm guards the stock with `slti 0xFF` on a signed byte, which never limits, so 127 wraps to -128 there. */
 #define GMREMIX_TUGOFWAR_STOCK_MAX 127
 
 extern s32 sIFCommonBattlePlace;
@@ -22,11 +23,6 @@ extern s32 sIFCommonBattlePlace;
 static s32 sGMRemixTugOfWarLastHit[GMCOMMON_PLAYERS_MAX];
 static s32 sGMRemixTugOfWarTeam[GMCOMMON_PLAYERS_MAX];
 static sb32 sGMRemixTugOfWarIs1v1 = FALSE;
-
-static sb32 gmRemixTugOfWarIsValidPort(s32 port)
-{
-    return (port >= 0) && (port < GMCOMMON_PLAYERS_MAX);
-}
 
 static void gmRemixTugOfWarResetPorts(void)
 {
@@ -79,11 +75,11 @@ static sb32 gmRemixTugOfWarRecordsHits(void)
 
 static void gmRemixTugOfWarSetLastHit(s32 victim_port, s32 attacker_port)
 {
-    if (gmRemixTugOfWarIsValidPort(victim_port) == FALSE)
+    if (gmRemixTugOfWarRulesIsValidPort(victim_port) == FALSE)
     {
         return;
     }
-    if (gmRemixTugOfWarIsValidPort(attacker_port) == FALSE)
+    if (gmRemixTugOfWarRulesIsValidPort(attacker_port) == FALSE)
     {
         return;
     }
@@ -130,7 +126,7 @@ void gmRemixTugOfWarRecordShieldBreak(FTStruct *victim)
     {
         return;
     }
-    if (gmRemixTugOfWarIsValidPort(attacker_port) == FALSE)
+    if (gmRemixTugOfWarRulesIsValidPort(attacker_port) == FALSE)
     {
         return;
     }
@@ -143,7 +139,7 @@ void gmRemixTugOfWarRecordShieldBreak(FTStruct *victim)
 
 s32 gmRemixTugOfWarGetLastHit(s32 victim_port)
 {
-    if (gmRemixTugOfWarIsValidPort(victim_port) == FALSE)
+    if (gmRemixTugOfWarRulesIsValidPort(victim_port) == FALSE)
     {
         return GMREMIX_TUGOFWAR_NO_PORT;
     }
@@ -160,13 +156,13 @@ static void gmRemixTugOfWarFixPlace(FTStruct *revived)
     {
         for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
         {
-            SCPlayerData *data = &gSCManagerBattleState->players[i];
+            SCPlayerData *player_data = &gSCManagerBattleState->players[i];
 
-            if ((i == revived->player) || (data->pkind == nFTPlayerKindNot))
+            if ((i == revived->player) || (player_data->pkind == nFTPlayerKindNot))
             {
                 continue;
             }
-            if ((data->team == revived->team) && (data->stock_count >= 0))
+            if ((player_data->team == revived->team) && (player_data->stock_count >= 0))
             {
                 return;
             }
@@ -177,29 +173,29 @@ static void gmRemixTugOfWarFixPlace(FTStruct *revived)
 
 static void gmRemixTugOfWarGiveStock(s32 port)
 {
-    SCPlayerData *data = &gSCManagerBattleState->players[port];
+    SCPlayerData *player_data = &gSCManagerBattleState->players[port];
     FTStruct *fp;
     s32 stock_before;
 
-    if (data->fighter_gobj == NULL)
+    if (player_data->fighter_gobj == NULL)
     {
         return;
     }
-    fp = ftGetStruct(data->fighter_gobj);
+    fp = ftGetStruct(player_data->fighter_gobj);
     stock_before = fp->stock_count;
 
     if (stock_before < GMREMIX_TUGOFWAR_STOCK_MAX)
     {
         fp->stock_count++;
     }
-    data->stock_count = fp->stock_count;
+    player_data->stock_count = fp->stock_count;
     port_log("tugofwar: stock credit to port %d, stock_count %d -> %d\n", (int)port, (int)stock_before, (int)fp->stock_count);
 
     if (gmRemixTugOfWarShouldRevive(stock_before) == FALSE)
     {
         return;
     }
-    ftCommonRebirthDownSetStatus(data->fighter_gobj);
+    ftCommonRebirthDownSetStatus(player_data->fighter_gobj);
     gmRemixTugOfWarFixPlace(fp);
 }
 
@@ -215,7 +211,7 @@ void gmRemixTugOfWarCreditKO(FTStruct *victim)
     }
     victim->shield_player = GMREMIX_TUGOFWAR_NO_PORT;
 
-    if (gmRemixTugOfWarIsValidPort(victim->damage_player) != FALSE)
+    if (gmRemixTugOfWarRulesIsValidPort(victim->damage_player) != FALSE)
     {
         koer_port = victim->damage_player;
         koer_team = sGMRemixTugOfWarTeam[koer_port];
@@ -226,7 +222,7 @@ void gmRemixTugOfWarCreditKO(FTStruct *victim)
     {
         sGMRemixTugOfWarLastHit[victim->player] = GMREMIX_TUGOFWAR_NO_PORT;
     }
-    if ((gmRemixTugOfWarIsValidPort(credit_port) != FALSE) && (credit_port != victim->player))
+    if ((gmRemixTugOfWarRulesIsValidPort(credit_port) != FALSE) && (credit_port != victim->player))
     {
         gmRemixTugOfWarGiveStock(credit_port);
     }

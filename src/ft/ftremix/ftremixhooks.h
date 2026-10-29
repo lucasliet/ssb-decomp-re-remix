@@ -642,4 +642,16 @@ sb32 ftRemixStaminaIsOutOfStock(FTStruct *fp);
 sb32 ftRemixStaminaIsBlastRedeath(FTStruct *fp);
 sb32 ftRemixStaminaRebirthSleeps(FTStruct *fp);
 
+#if defined(PORT) && defined(REGION_REMIX)
+
+/**
+ * TRUE when `status_id` lies in the inclusive range [first, last].
+ */
+static inline sb32 ftRemixStaminaStatusInRange(s32 status_id, s32 first, s32 last)
+{
+    return (status_id >= first) && (status_id <= last);
+}
+
+#endif
+
 #endif

@@ -26,7 +26,7 @@ int gmRemixTugOfWarPickCreditPort(int victim_team, int koer_team, int koer_port,
 
 int gmRemixTugOfWarShouldRevive(int stock_count_before)
 {
-    return (stock_count_before < 0) ? 1 : 0;
+    return (stock_count_before == -1) ? 1 : 0;
 }
 
 #endif

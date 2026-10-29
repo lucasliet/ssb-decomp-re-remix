@@ -30,14 +30,6 @@ enum
 };
 
 /**
- * TRUE when `status_id` lies in the inclusive range [first, last].
- */
-static sb32 ftRemixStaminaStatusInRange(s32 status_id, s32 first, s32 last)
-{
-    return (status_id >= first) && (status_id <= last);
-}
-
-/**
  * TRUE for the dead statuses the asm lets play out: DeadD (0x000) to ScreenKOWait (0x004). ScreenKOWait has the value
  * of nFTCommonStatusSleep in the decomp.
  */
@@ -64,11 +56,12 @@ static sb32 ftRemixStaminaIsDownStatus(s32 status_id)
 }
 
 /**
- * TRUE for the cliff statuses the asm lets play out: CliffCatch to CliffEscapeSlow2 (0x054 to 0x063).
+ * TRUE for the cliff statuses the asm lets play out: CliffCatch to CliffEscapeSlow1 (0x054 to 0x062). The _cliff loop of
+ * Stamina.asm stops when its counter reaches CliffEscapeSlow2 before testing it.
  */
 static sb32 ftRemixStaminaIsCliffStatus(s32 status_id)
 {
-    return ftRemixStaminaStatusInRange(status_id, nFTCommonStatusCliffCatch, nFTCommonStatusCliffEscapeSlow2);
+    return ftRemixStaminaStatusInRange(status_id, nFTCommonStatusCliffCatch, nFTCommonStatusCliffEscapeSlow1);
 }
 
 /**

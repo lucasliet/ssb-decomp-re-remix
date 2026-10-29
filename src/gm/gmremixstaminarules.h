@@ -13,6 +13,13 @@
 extern int gmRemixStaminaRulesTotalHP(int hp);
 
 /**
+ * Hit points shown in the menu for Stamina: total_hp + 1, the counter that the damage rules count down from.
+ *
+ * total_hp: value from gmRemixStaminaRulesTotalHP.
+ */
+extern int gmRemixStaminaRulesMaxHP(int total_hp);
+
+/**
  * TRUE when `percent` is above `total_hp`, the test that KOs a fighter and makes it out of HP in Stamina.
  *
  * percent: damage percent of the fighter, or the percent it would reach with the damage of this frame.

@@ -13,7 +13,7 @@
  * Ports are the controller ports (0..3); a port value of GMREMIX_TUGOFWAR_NO_PORT means nobody.
  */
 
-#define GMREMIX_TUGOFWAR_NO_PORT (-1)
+#define GMREMIX_TUGOFWAR_NO_PORT GMREMIX_TUGOFWARRULES_NO_PORT
 
 /**
  * TugOfWar.asm setup_: resets the last hits and the teams of the ports, clears the shield player of each fighter and

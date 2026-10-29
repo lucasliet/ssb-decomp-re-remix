@@ -107,13 +107,14 @@ void mnRemixVSStaminaMakeRuleValue(GObj *rule_value_gobj, void *file, s32 rule)
 {
     SYColorRGB white = { 0xFF, 0xFF, 0xFF };
     SObj *sobj;
+    Sprite *rule_sprite = lbRelocGetFileData(Sprite*, file, MNREMIX_VSSTAMINA_RULE_OFFSET);
 
     if (rule == nMNVSModeRuleStamina)
     {
-        mnRemixVSStaminaMakeSObj(rule_value_gobj, lbRelocGetFileData(Sprite*, file, MNREMIX_VSSTAMINA_RULE_OFFSET), 176.0F, 78.0F, white);
+        mnRemixVSStaminaMakeSObj(rule_value_gobj, rule_sprite, 176.0F, 78.0F, white);
         return;
     }
-    sobj = mnRemixVSStaminaMakeSObj(rule_value_gobj, lbRelocGetFileData(Sprite*, file, MNREMIX_VSSTAMINA_RULE_OFFSET), 165.0F, 78.0F, white);
+    sobj = mnRemixVSStaminaMakeSObj(rule_value_gobj, rule_sprite, 165.0F, 78.0F, white);
     mnRemixVSStaminaSetScale(sobj, MNREMIX_VSSTAMINA_TEAM_SCALE);
 
     sobj = mnRemixVSStaminaMakeSObj(rule_value_gobj, lbRelocGetFileData(Sprite*, file, llMNVSModeTeamTextSprite), 224.0F, 78.0F, white);
