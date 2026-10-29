@@ -634,7 +634,7 @@ void sc1PManagerUpdateScene(void)
                     gSCManagerSceneData.spgame_stage--;
 #if defined(PORT) && defined(REGION_REMIX)
                     is_allstar_retry = TRUE;
-                    sc1PRemixAllstarClearPercent();
+                    sc1PRemixAllstarOnContinue();
 #endif
 
                     if (--sSC1PManagerLevelGuard == 0)

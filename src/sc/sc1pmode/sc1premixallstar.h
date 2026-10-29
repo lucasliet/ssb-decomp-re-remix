@@ -76,8 +76,11 @@ extern s32 sc1PRemixAllstarPlayerDamage(s32 player);
 /** Keeps the percent of the human fighter at the end of a match (record_percent). */
 extern void sc1PRemixAllstarRecordPercent(s32 percent);
 
-/** Zeroes the kept percent, when the human loses a stock or continues (clear_percent, clear_percent_continue). */
-extern void sc1PRemixAllstarClearPercent(void);
+/** The human lost a stock: the kept percent is zero and the run is in limbo until the next fighter is made (clear_percent, _ko_save). */
+extern void sc1PRemixAllstarOnPlayerKo(void);
+
+/** The human continued after losing: the kept percent is zero and the limbo is over (clear_percent_continue). */
+extern void sc1PRemixAllstarOnContinue(void);
 
 /** Places the Rest Area hearts a run still has (rest_area_setup): three, minus the ones already used. */
 extern void sc1PRemixAllstarSetupRestArea(void);

@@ -35,6 +35,7 @@ static s32 sSC1PRemixAllstarProgress;
 static sb32 sSC1PRemixAllstarIsReady;
 static sb32 sSC1PRemixAllstarIsLeaving;
 static s32 sSC1PRemixAllstarPercent;
+static sb32 sSC1PRemixAllstarIsLimbo;
 static s32 sSC1PRemixAllstarHearts;
 static s32 sSC1PRemixAllstarFinalCostumes[SC1PREMIX_ALLSTAR_FINAL_MEMBERS];
 static const f32 dSC1PRemixAllstarHeartX[SC1PREMIX_ALLSTAR_HEARTS] = { -1200.0F, -800.0F, -400.0F };
@@ -65,6 +66,7 @@ void sc1PRemixAllstarRandomize(void)
     sSC1PRemixAllstarIsLeaving = FALSE;
     sSC1PRemixAllstarProgress = 0;
     sSC1PRemixAllstarPercent = 0;
+    sSC1PRemixAllstarIsLimbo = FALSE;
     sSC1PRemixAllstarHearts = 0;
 
     if (sc1PRemixModeIs(SC1PREMIX_MODE_ALLSTAR) == FALSE)
@@ -223,6 +225,8 @@ s32 sc1PRemixAllstarPlayerDamage(s32 player)
     {
         return 0;
     }
+    sSC1PRemixAllstarIsLimbo = FALSE;
+
     return sSC1PRemixAllstarPercent;
 }
 
@@ -230,14 +234,24 @@ void sc1PRemixAllstarRecordPercent(s32 percent)
 {
     if (sc1PRemixAllstarIsActive() != FALSE)
     {
-        sSC1PRemixAllstarPercent = percent;
+        sSC1PRemixAllstarPercent = (sSC1PRemixAllstarIsLimbo != FALSE) ? 0 : percent;
         port_log("allstar: percent %d recorded\n", (int)percent);
     }
 }
 
-void sc1PRemixAllstarClearPercent(void)
+void sc1PRemixAllstarOnPlayerKo(void)
+{
+    if (sc1PRemixAllstarIsActive() != FALSE)
+    {
+        sSC1PRemixAllstarPercent = 0;
+        sSC1PRemixAllstarIsLimbo = TRUE;
+    }
+}
+
+void sc1PRemixAllstarOnContinue(void)
 {
     sSC1PRemixAllstarPercent = 0;
+    sSC1PRemixAllstarIsLimbo = FALSE;
 }
 
 void sc1PRemixAllstarSetupRestArea(void)

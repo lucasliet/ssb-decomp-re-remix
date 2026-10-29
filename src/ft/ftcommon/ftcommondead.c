@@ -121,7 +121,7 @@ void ftCommonDeadUpdateScore(FTStruct *this_fp)
 #if defined(PORT) && defined(REGION_REMIX)
         if (this_fp->pkind == nFTPlayerKindMan)
         {
-            sc1PRemixAllstarClearPercent();
+            sc1PRemixAllstarOnPlayerKo();
         }
 #endif
     }
