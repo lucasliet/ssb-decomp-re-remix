@@ -14,6 +14,8 @@
 #include "if/ifremixstaminahud.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
+#include "sc/sc1pmode/sc1premixmode.h"
+#include "sc/sc1pmode/sc1premixmodename.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -3143,7 +3145,13 @@ void ifCommonBattlePauseMakeSObjsAll(GObj *interface_gobj)
         ifCommonBattlePauseDecalMakeSObjID(interface_gobj, i);
     }
     // If we're in Bonus Practice, display "L: RETRY" in the bottom left corner
+#if defined(PORT) && defined(REGION_REMIX)
+    /* SinglePlayerModes.asm _reset_button: Bonus 3, Multi-Man and Cruel Multi-Man show the retry legend of the bonus practice */
+    if (((gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) && (gSCManagerSceneData.scene_prev != nSCKind1PGame)) ||
+        (sc1PRemixModeIs(SC1PREMIX_MODE_BONUS3) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_MULTIMAN) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_CRUEL) != FALSE))
+#else
     if ((gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) && (gSCManagerSceneData.scene_prev != nSCKind1PGame)) 
+#endif
     {
         // WARNING: This needs to be updated in case the pause menu icon array is expanded
         for (i = 12; i < ARRAY_COUNT(dIFCommonBattlePauseDecalsSpriteData); i++)
