@@ -9,6 +9,8 @@
 #include <sc/scmanager.h>
 #include <sc/scene.h>
 #include <sys/utils.h>
+#include <lb/library.h>
+#include <lb/lbbackup.h>
 #include "sc/sc1pmode/sc1premixbonusexit.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmoderules.h"
@@ -89,10 +91,39 @@ void sc1PRemixMultimanOnEnemyKo(void)
     port_log("multiman: enemy KO, kos=%d player_ko=%d\n", (int)sSC1PRemixMultimanKos.kos, (int)sSC1PRemixMultimanKos.is_player_ko);
 }
 
+static u16* sc1PRemixMultimanRecordSlot(s32 fkind)
+{
+    if ((fkind < 0) || (fkind >= ARRAY_COUNT(gSCManagerBackupData.spgame_records)))
+    {
+        return NULL;
+    }
+    if (sc1PRemixModeIs(SC1PREMIX_MODE_CRUEL) != FALSE)
+    {
+        return &gSCManagerBackupData.spgame_records[fkind].cruel_kos;
+    }
+    return &gSCManagerBackupData.spgame_records[fkind].multiman_kos;
+}
+
+/* _ko_save: the run is kept when its KOs pass the record of the fighter, once the fighter loses its stock. */
+static void sc1PRemixMultimanSaveRecord(void)
+{
+    u16 *record = sc1PRemixMultimanRecordSlot(gSCManagerSceneData.fkind);
+
+    if ((record == NULL) || (sSC1PRemixMultimanKos.kos <= (s32)*record))
+    {
+        return;
+    }
+    *record = (u16)sSC1PRemixMultimanKos.kos;
+    lbBackupWrite();
+
+    port_log("multiman: record saved, fkind=%d kos=%d\n", (int)gSCManagerSceneData.fkind, (int)*record);
+}
+
 void sc1PRemixMultimanOnPlayerKo(void)
 {
     sc1PRemixMultimanKosSetPlayerKo(&sSC1PRemixMultimanKos);
     port_log("multiman: player KO, kos=%d\n", (int)sSC1PRemixMultimanKos.kos);
+    sc1PRemixMultimanSaveRecord();
 }
 
 s32 sc1PRemixMultimanGetKos(void)

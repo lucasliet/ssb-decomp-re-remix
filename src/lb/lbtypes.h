@@ -250,6 +250,8 @@ struct LBBackup1PRecord
 	ub8 is_spgame_complete;	    // Whether character has completed 1P Game or not
 #if defined(PORT) && defined(REGION_REMIX)
 	u32 hrc_distance;           // Home-Run Contest record in tenths of a foot (Character.HRC_HIGH_SCORE_TABLE)
+	u16 multiman_kos;           // Multi-Man record (Character.MULTIMAN_HIGH_SCORE_TABLE)
+	u16 cruel_kos;              // Cruel Multi-Man record (Character.CRUEL_HIGH_SCORE_TABLE)
 #endif
 };
 
