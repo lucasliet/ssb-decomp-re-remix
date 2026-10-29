@@ -8,6 +8,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "it/itremix/itremixspawn.h"
 #include "if/ifremixhud.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "sc/sc1pmode/sc1ptrainingremix.h"
 #endif
 #include <gr/ground.h>
 #include <if/interface.h>
@@ -562,6 +563,9 @@ sb32 sc1PTrainingModeUpdateResetOption(void)
 	if (gSYControllerDevices[gSCManagerSceneData.player].button_tap & A_BUTTON)
 	{
 		sSC1PTrainingModeMenu.exit_or_reset = 1;
+#if defined(PORT) && defined(REGION_REMIX)
+		sc1PTrainingRemixOnReset();
+#endif
 
 		func_800266A0_272A0();
 		func_800269C0_275C0(nSYAudioFGMTrainingSel2);
@@ -646,6 +650,21 @@ sb32 sc1PTrainingModeCheckLagTic(void)
 	return FALSE;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define SC1PTRAINING_QUICK_RESET_FGM 0xA2
+
+/* Training.asm advance_frame_ _quick_reset: the reset of the pause menu without the menu. */
+static void sc1PTrainingModeQuickReset(void)
+{
+	sSC1PTrainingModeMenu.exit_or_reset = 1;
+
+	sc1PTrainingRemixOnReset();
+	func_800266A0_272A0();
+	func_800269C0_275C0(SC1PTRAINING_QUICK_RESET_FGM);
+	syTaskmanSetLoadScene();
+}
+#endif
+
 // 0x8018D9F0
 void sc1PTrainingModeUpdateAll(void)
 {
@@ -660,9 +679,19 @@ void sc1PTrainingModeUpdateAll(void)
 		break;
 	}
 #if defined(PORT) && defined(REGION_REMIX)
-	sb32 is_skip_advance = sc1PTrainingModeCheckLagTic();
+	sb32 is_skip_advance;
 
-	is_skip_advance = ftRemixSpeedTrainingRunFrames(sSC1PTrainingModeMenu.speed_menu_option == nSC1PTrainingModeMenuSpeedFull, is_skip_advance);
+	if (sc1PTrainingRemixPollDpad() != FALSE)
+	{
+		sc1PTrainingModeQuickReset();
+	}
+	is_skip_advance = sc1PTrainingModeCheckLagTic();
+
+	if (sc1PTrainingRemixIsFrameHeld() != FALSE)
+	{
+		is_skip_advance = TRUE;
+	}
+	else is_skip_advance = ftRemixSpeedTrainingRunFrames(sSC1PTrainingModeMenu.speed_menu_option == nSC1PTrainingModeMenuSpeedFull, is_skip_advance);
 
 	if (is_skip_advance == FALSE)
 #else
@@ -680,6 +709,9 @@ void sc1PTrainingModeUpdateAll(void)
 void sc1PTrainingModeFuncUpdate(void)
 {
 	sc1PTrainingModeUpdateAll();
+#if defined(PORT) && defined(REGION_REMIX)
+	sc1PTrainingRemixDrawHud();
+#endif
 }
 
 // 0x8018DA98
@@ -688,6 +720,9 @@ void sc1PTrainingModeInitVars(void)
 	s32 dummy;
 	s32 player;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	sc1PTrainingRemixStartScene((sSC1PTrainingModeMenu.exit_or_reset != 0) ? TRUE : FALSE);
+#endif
 	sSC1PTrainingModeBattleState = dSCManagerDefaultBattleState;
 	gSCManagerBattleState = &sSC1PTrainingModeBattleState;
 
