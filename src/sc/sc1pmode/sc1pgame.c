@@ -2789,6 +2789,9 @@ void sc1PGameFuncStart(void)
     ifCommonPlayerStockInitInterface();
     sc1PGameInitTeamStockDisplay();
     sc1PGameSetGameStatusWait();
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixAllstarSetupRestArea();
+#endif
 
     if ((gSCManagerSceneData.spgame_stage == nSC1PGameStageMMario) || (gSCManagerSceneData.spgame_stage == nSC1PGameStageZako))
     {

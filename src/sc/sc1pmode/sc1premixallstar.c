@@ -7,6 +7,7 @@
 #include <port_log.h>
 #include <ft/fighter.h>
 #include <if/ifcommon.h>
+#include <it/itmanager.h>
 #include <mp/mpdef.h>
 #include <sys/utils.h>
 #include <sc/scene.h>
@@ -21,6 +22,8 @@ extern int atoi(const char *str);
 #define SC1PREMIX_ALLSTAR_STAGE_ID_COUNT 256
 #define SC1PREMIX_ALLSTAR_EXIT_CLIP 0xE
 #define SC1PREMIX_ALLSTAR_EXIT_WAIT 1
+#define SC1PREMIX_ALLSTAR_HEARTS 3
+#define SC1PREMIX_ALLSTAR_HEART_Y 300.0F
 
 static s32 sSC1PRemixAllstarFkinds[SC1PREMIX_ALLSTAR_FIGHTER_COUNT];
 static s32 sSC1PRemixAllstarGkinds[SC1PREMIX_ALLSTAR_FIGHTER_COUNT];
@@ -28,6 +31,8 @@ static s32 sSC1PRemixAllstarProgress;
 static sb32 sSC1PRemixAllstarIsReady;
 static sb32 sSC1PRemixAllstarIsLeaving;
 static s32 sSC1PRemixAllstarPercent;
+static s32 sSC1PRemixAllstarHearts;
+static const f32 dSC1PRemixAllstarHeartX[SC1PREMIX_ALLSTAR_HEARTS] = { -1200.0F, -800.0F, -400.0F };
 static SC1PGameStage sSC1PRemixAllstarStages[SC1PREMIX_1P_STAGE_COUNT];
 static SC1PGameComputer sSC1PRemixAllstarComputers[SC1PREMIX_1P_STAGE_COUNT];
 
@@ -55,6 +60,7 @@ void sc1PRemixAllstarRandomize(void)
     sSC1PRemixAllstarIsLeaving = FALSE;
     sSC1PRemixAllstarProgress = 0;
     sSC1PRemixAllstarPercent = 0;
+    sSC1PRemixAllstarHearts = 0;
 
     if (sc1PRemixModeIs(SC1PREMIX_MODE_ALLSTAR) == FALSE)
     {
@@ -227,6 +233,37 @@ void sc1PRemixAllstarRecordPercent(s32 percent)
 void sc1PRemixAllstarClearPercent(void)
 {
     sSC1PRemixAllstarPercent = 0;
+}
+
+void sc1PRemixAllstarSetupRestArea(void)
+{
+    Vec3f pos;
+    Vec3f vel;
+    s32 i;
+
+    if ((sc1PRemixAllstarIsActive() == FALSE) || (gSCManagerSceneData.spgame_stage != SC1PREMIX_ALLSTAR_STAGE_REST))
+    {
+        return;
+    }
+    vel.x = vel.y = vel.z = 0.0F;
+
+    pos.y = SC1PREMIX_ALLSTAR_HEART_Y;
+    pos.z = 0.0F;
+
+    for (i = sSC1PRemixAllstarHearts; i < SC1PREMIX_ALLSTAR_HEARTS; i++)
+    {
+        pos.x = dSC1PRemixAllstarHeartX[i];
+
+        itManagerMakeItemSetupCommon(NULL, nITKindHeart, &pos, &vel, ITEM_FLAG_PARENT_DEFAULT);
+    }
+}
+
+void sc1PRemixAllstarOnHeartUsed(void)
+{
+    if ((sc1PRemixAllstarIsActive() != FALSE) && (gSCManagerSceneData.spgame_stage == SC1PREMIX_ALLSTAR_STAGE_REST))
+    {
+        sSC1PRemixAllstarHearts++;
+    }
 }
 
 s32 sc1PRemixAllstarStepStage(s32 stage, sb32 is_retry)

@@ -79,6 +79,12 @@ extern void sc1PRemixAllstarRecordPercent(s32 percent);
 /** Zeroes the kept percent, when the human loses a stock or continues (clear_percent, clear_percent_continue). */
 extern void sc1PRemixAllstarClearPercent(void);
 
+/** Places the Rest Area hearts a run still has (rest_area_setup): three, minus the ones already used. */
+extern void sc1PRemixAllstarSetupRestArea(void);
+
+/** Counts a heart the human used in the Rest Area (heart_counter). */
+extern void sc1PRemixAllstarOnHeartUsed(void);
+
 /** Stage value past the last stage of the 1P game, which ends the run. */
 #define SC1PREMIX_ALLSTAR_STAGE_END 14
 

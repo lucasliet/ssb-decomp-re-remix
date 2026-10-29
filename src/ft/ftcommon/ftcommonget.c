@@ -3,6 +3,7 @@
 #ifdef REGION_REMIX
 #include "it/itremix/itremix.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "sc/sc1pmode/sc1premixallstar.h"
 #endif
 #include <sc/scene.h>
 
@@ -113,6 +114,9 @@ void ftCommonLightGetProcDamage(GObj *fighter_gobj)
                 {
                     gSC1PGameBonusHeartCount++;
                 }
+#if defined(PORT) && defined(REGION_REMIX)
+                sc1PRemixAllstarOnHeartUsed();
+#endif
                 break;
 
             case nITKindHammer:
