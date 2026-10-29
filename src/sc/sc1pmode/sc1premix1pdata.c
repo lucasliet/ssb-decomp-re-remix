@@ -22,10 +22,8 @@
 #define SC1PREMIX_1P_MODEL_SCALES (SC1PREMIX_1P_ANNOUNCER_CALLS + (SC1PREMIX_1P_PATH_COUNT * 4))
 #define SC1PREMIX_1P_NAME_TEXTURES (SC1PREMIX_1P_MODEL_SCALES + (SC1PREMIX_1P_PATH_COUNT * 4))
 
-void sc1PRemix1PDataReadStage(s32 index, SC1PGameStage *stage)
+static void sc1PRemix1PDataReadStageAt(u32 addr, SC1PGameStage *stage)
 {
-    u32 addr = REMIX_SYM_SinglePlayerModes__MATCH_SETTINGS_PART1 + (index * SC1PREMIX_1P_STAGE_STRIDE);
-
     stage->screenflash_alpha = remix_ram_image_read_byte(addr + 0x0);
     stage->gkind = remix_ram_image_read_byte(addr + 0x1);
     stage->item_toggles = remix_ram_image_read_word(addr + 0x4);
@@ -37,9 +35,18 @@ void sc1PRemix1PDataReadStage(s32 index, SC1PGameStage *stage)
     stage->ally_behavior = remix_ram_image_read_byte(addr + 0xD);
 }
 
-void sc1PRemix1PDataReadComputer(s32 index, SC1PGameComputer *computer)
+void sc1PRemix1PDataReadStage(s32 index, SC1PGameStage *stage)
 {
-    u32 addr = REMIX_SYM_SinglePlayerModes__MATCH_SETTINGS_PART2 + (index * SC1PREMIX_1P_COMPUTER_STRIDE);
+    sc1PRemix1PDataReadStageAt(REMIX_SYM_SinglePlayerModes__MATCH_SETTINGS_PART1 + (index * SC1PREMIX_1P_STAGE_STRIDE), stage);
+}
+
+void sc1PRemix1PDataReadAllstarStage(s32 index, SC1PGameStage *stage)
+{
+    sc1PRemix1PDataReadStageAt(REMIX_SYM_SinglePlayerModes__ALLSTAR_MATCH_SETTINGS_PART1 + (index * SC1PREMIX_1P_STAGE_STRIDE), stage);
+}
+
+static void sc1PRemix1PDataReadComputerAt(u32 addr, SC1PGameComputer *computer)
+{
     s32 i;
 
     computer->is_team_attack = remix_ram_image_read_byte(addr + 0);
@@ -52,6 +59,16 @@ void sc1PRemix1PDataReadComputer(s32 index, SC1PGameComputer *computer)
         computer->ally_level[i] = remix_ram_image_read_byte(addr + 12 + i);
         computer->ally_handicap[i] = remix_ram_image_read_byte(addr + 17 + i);
     }
+}
+
+void sc1PRemix1PDataReadComputer(s32 index, SC1PGameComputer *computer)
+{
+    sc1PRemix1PDataReadComputerAt(REMIX_SYM_SinglePlayerModes__MATCH_SETTINGS_PART2 + (index * SC1PREMIX_1P_COMPUTER_STRIDE), computer);
+}
+
+void sc1PRemix1PDataReadAllstarComputer(s32 index, SC1PGameComputer *computer)
+{
+    sc1PRemix1PDataReadComputerAt(REMIX_SYM_SinglePlayerModes__ALLSTAR_MATCH_SETTINGS_PART2 + (index * SC1PREMIX_1P_COMPUTER_STRIDE), computer);
 }
 
 static void sc1PRemix1PDataReadFighterAt(u32 addr, SC1PRemix1PFighter *fighter)

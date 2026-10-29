@@ -9,6 +9,7 @@
 #ifdef REGION_REMIX
 #include "gm/gmremixpractice.h"
 #include "sc/sc1pmode/sc1premix1p.h"
+#include "sc/sc1pmode/sc1premixallstar.h"
 #endif
 #ifdef PORT
 extern char *getenv(const char *name);
@@ -3690,6 +3691,7 @@ void mnPlayers1PGameFuncRun(GObj *gobj)
 				sMNPlayers1PGameIsStart = TRUE;
 #ifdef REGION_REMIX
 				sc1PRemix1PRandomize();
+				sc1PRemixAllstarRandomize();
 #endif
 
 				mnPlayers1PGamePauseSlotProcesses();

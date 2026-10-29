@@ -85,6 +85,45 @@ void sc1PRemix1PPickDistinct(SC1PRemix1PRandom rand, int count, int *picks, int 
     }
 }
 
+static int sc1PRemixAllstarPickSlot(SC1PRemix1PRandom rand, const int stage_options[SC1PREMIX_ALLSTAR_FIGHTER_COUNT][SC1PREMIX_1P_STAGE_OPTIONS],
+                                    int stage_count, int *is_stage_used, int *is_fighter_used, int *stage)
+{
+    int is_blocked[SC1PREMIX_ALLSTAR_FIGHTER_COUNT];
+    int fighter;
+    int i;
+
+    for (i = 0; i < SC1PREMIX_ALLSTAR_FIGHTER_COUNT; i++)
+    {
+        is_blocked[i] = is_fighter_used[i];
+    }
+    while ((fighter = sc1PRemix1PPickFighter(rand, is_blocked, SC1PREMIX_ALLSTAR_FIGHTER_COUNT)) >= 0)
+    {
+        *stage = sc1PRemix1PPickStage(rand, stage_options[fighter], is_stage_used, stage_count);
+
+        if (*stage >= 0)
+        {
+            is_fighter_used[fighter] = 1;
+            return fighter;
+        }
+    }
+    fighter = sc1PRemix1PPickFighter(rand, is_fighter_used, SC1PREMIX_ALLSTAR_FIGHTER_COUNT);
+    *stage = stage_options[fighter][0];
+
+    return fighter;
+}
+
+void sc1PRemixAllstarPickOrder(SC1PRemix1PRandom rand, const int stage_options[SC1PREMIX_ALLSTAR_FIGHTER_COUNT][SC1PREMIX_1P_STAGE_OPTIONS],
+                               int stage_count, int *is_stage_used, int *order, int *stages)
+{
+    int is_fighter_used[SC1PREMIX_ALLSTAR_FIGHTER_COUNT] = { 0 };
+    int slot;
+
+    for (slot = 0; slot < SC1PREMIX_ALLSTAR_FIGHTER_COUNT; slot++)
+    {
+        order[slot] = sc1PRemixAllstarPickSlot(rand, stage_options, stage_count, is_stage_used, is_fighter_used, &stages[slot]);
+    }
+}
+
 int sc1PRemix1PPickBoss(SC1PRemix1PRandom rand)
 {
     return rand(SC1PREMIX_1P_BOSS_COUNT);

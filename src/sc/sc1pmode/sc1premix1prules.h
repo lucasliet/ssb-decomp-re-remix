@@ -67,6 +67,24 @@ extern int sc1PRemix1PPickBoss(SC1PRemix1PRandom rand);
  */
 extern int sc1PRemix1PPickSonicStage(SC1PRemix1PRandom rand);
 
+/** Fighters of the All-Star run: the 18 Remix fighters and the 12 vanilla ones. */
+#define SC1PREMIX_ALLSTAR_FIGHTER_COUNT 30
+
+/**
+ * Orders the All-Star run (SinglePlayerModes.asm allstar_randomization): every fighter of the pool once, each on one of its three
+ * stages that no earlier slot took. The asm retries the stage forever when the three are taken; here the slot goes to another fighter
+ * and, when no fighter that is left has a free stage, to a random one on its first stage, which is the only place a stage repeats.
+ *
+ * @param rand Random source.
+ * @param stage_options Stage ids of the three options of each fighter of the pool.
+ * @param stage_count Entries of is_stage_used.
+ * @param is_stage_used Flags per stage id, updated.
+ * @param order Receives the pool index of the fighter of each slot (SC1PREMIX_ALLSTAR_FIGHTER_COUNT entries).
+ * @param stages Receives the stage id of each slot.
+ */
+extern void sc1PRemixAllstarPickOrder(SC1PRemix1PRandom rand, const int stage_options[SC1PREMIX_ALLSTAR_FIGHTER_COUNT][SC1PREMIX_1P_STAGE_OPTIONS],
+                                      int stage_count, int *is_stage_used, int *order, int *stages);
+
 #endif
 
 #endif

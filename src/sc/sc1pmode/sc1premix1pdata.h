@@ -62,6 +62,12 @@ extern void sc1PRemix1PDataReadStage(s32 index, SC1PGameStage *stage);
 /** Reads a line of the Remix CPU settings (MATCH_SETTINGS_PART2), which stands in for dSC1PGameComputerDesc. @param index 0 to SC1PREMIX_1P_STAGE_COUNT - 1. */
 extern void sc1PRemix1PDataReadComputer(s32 index, SC1PGameComputer *computer);
 
+/** Reads a line of the All-Star stage table (ALLSTAR_MATCH_SETTINGS_PART1). @param index 0 to SC1PREMIX_1P_STAGE_COUNT - 1. */
+extern void sc1PRemix1PDataReadAllstarStage(s32 index, SC1PGameStage *stage);
+
+/** Reads a line of the All-Star CPU settings (ALLSTAR_MATCH_SETTINGS_PART2). @param index 0 to SC1PREMIX_1P_STAGE_COUNT - 1. */
+extern void sc1PRemix1PDataReadAllstarComputer(s32 index, SC1PGameComputer *computer);
+
 /** Reads a fighter of the pool. @param index 0 to SC1PREMIX_1P_POOL_COUNT - 1. */
 extern void sc1PRemix1PDataReadFighter(s32 index, SC1PRemix1PFighter *fighter);
 
