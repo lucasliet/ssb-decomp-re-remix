@@ -1040,6 +1040,18 @@ void scManagerRunLoop(sb32 arg)
 				}
 			}
 #if defined(PORT) && defined(REGION_REMIX)
+			{
+				s32 cpu_level = remix_debug_env_int("SSB64_VS_CPU_LEVEL", -1);
+				s32 level_player;
+
+				for (level_player = 0; (cpu_level >= 0) && (level_player < ARRAY_COUNT(gSCManagerTransferBattleState.players)); level_player++)
+				{
+					if (gSCManagerTransferBattleState.players[level_player].pkind == nFTPlayerKindCom)
+					{
+						gSCManagerTransferBattleState.players[level_player].level = cpu_level;
+					}
+				}
+			}
 			if (remix_debug_env_int("SSB64_VS_TEAMS", 0) != 0)
 			{
 				s32 team_player;

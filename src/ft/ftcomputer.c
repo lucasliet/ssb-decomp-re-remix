@@ -6,7 +6,12 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixfields.h"
+#include "ft/ftremix/ftremixaitables.h"
 #include "remix/remix_roster_data.h" /* REMIX_ID_*: a Remix id is also its port fkind */
+#include "ft/ftremix/ftremixaicombat.h"
+#include "ft/ftremix/ftremixairecovery.h"
+#include "ft/ftremix/ftremixaiprevent.h"
+#include "ft/ftremix/ftremixaicommands.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -3500,6 +3505,15 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                             this_fp->input.cp.stick_range.x = (this_fp->joints[nFTPartsJointTopN]->translate.vec.f.x < com->target_pos.x) ? (I_CONTROLLER_RANGE_MAX / 2) : -(I_CONTROLLER_RANGE_MAX / 2);
                             p_command++;
                             break;
+#if defined(PORT) && defined(REGION_REMIX)
+                        case FTREMIX_AI_STICK_AUTOFULL_AWAY:
+                        case FTREMIX_AI_STICK_AUTOHALF_AWAY:
+                        case FTREMIX_AI_STICK_FORWARDS:
+                        case FTREMIX_AI_STICK_BACKWARDS:
+                            this_fp->input.cp.stick_range.x = ftRemixAiStickXFromCode(this_fp, *p_command);
+                            p_command++;
+                            break;
+#endif
                         }
                         break;
 
@@ -3672,6 +3686,12 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                     ftComputerSetControlPKThunder(this_fp);
                     break;
 
+#if defined(PORT) && defined(REGION_REMIX)
+                case FTREMIX_AI_COMMAND_CUSTOM:
+                    p_command = ftRemixAiRunCustomCommand(this_fp, p_command);
+                    break;
+#endif
+
                 case FTCOMPUTER_COMMAND_END:
                     com->input_wait = 0;
                     com->p_command = NULL;
@@ -3681,6 +3701,20 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
             com->p_command = p_command;
         }
     }
+}
+
+/* Remix ids (>= 0x31) come from the Remix image; vanilla ids use dFTComputerPlayerInputScripts. */
+static u8 *ftComputerGetInputScript(s32 index)
+{
+#if defined(PORT) && defined(REGION_REMIX)
+    u8 *remix_script = ftRemixAiGetInputScript(index);
+
+    if (remix_script != NULL)
+    {
+        return remix_script;
+    }
+#endif
+    return dFTComputerPlayerInputScripts[index];
 }
 
 // 0x80132564
@@ -3694,7 +3728,7 @@ void ftComputerSetCommandWaitShort(FTStruct *fp, s32 index)
     }
     else com->input_wait = ((syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - fp->level)) + ((FTCOMPUTER_LEVEL_MAX - fp->level) / 2) + 1.0F);
     
-    com->p_command = dFTComputerPlayerInputScripts[index];
+    com->p_command = ftComputerGetInputScript(index);
 }
 
 // 0x80132758
@@ -3703,7 +3737,7 @@ void ftComputerSetCommandImmediate(FTStruct *fp, s32 index)
     FTComputer *com = &fp->computer;
 
     com->input_wait = 1;
-    com->p_command = dFTComputerPlayerInputScripts[index];
+    com->p_command = ftComputerGetInputScript(index);
 }
 
 // 0x80132778
@@ -3717,7 +3751,7 @@ void ftComputerSetCommandWaitLong(FTStruct *fp, s32 index)
     }
     else com->input_wait = ((syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - fp->level)) + (FTCOMPUTER_LEVEL_MAX - fp->level) + 1.0F);
     
-    com->p_command = dFTComputerPlayerInputScripts[index];
+    com->p_command = ftComputerGetInputScript(index);
 }
 
 // 0x8013295C
@@ -3811,6 +3845,13 @@ sb32 ftComputerCheckFindTarget(FTStruct *this_fp)
 sb32 ftComputerCheckEvadeDistance(FTStruct *this_fp)
 {
     GObj *other_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
+
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiCombatEvadeIsSuppressed(this_fp))
+    {
+        return FALSE;
+    }
+#endif
 
     while (other_gobj != NULL)
     {
@@ -3996,7 +4037,13 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
     this_tvel_base = -this_fp->attr->tvel_base;
     this_gravity = this_fp->attr->gravity;
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+    comattack = ftRemixAiGetAttackList(this_fp->fkind, this_fp->level);
+    if (comattack == NULL)
+    {
+        comattack = (FTComputerAttack *)port_fighter_computer_attack_list(this_fp->fkind);
+    }
+#elif defined(PORT)
     comattack = (FTComputerAttack *)port_fighter_computer_attack_list(this_fp->fkind);
 #else
     comattack = dFTComputerAttackList[this_fp->fkind];
@@ -4484,6 +4531,12 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                     {
                         return FALSE;
                     }
+                }
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+                if (ftRemixAiPreventAttack(this_fp, input_kinds[i]))
+                {
+                    return FALSE;
                 }
 #endif
 
@@ -5175,7 +5228,15 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                             return;
                         }
                     }
+#if defined(PORT) && defined(REGION_REMIX)
+                    if
+                    (
+                        (com->objective == nFTComputerObjectiveRecover) &&
+                        (!(com->is_attempt_specialhi_recovery) || ftRemixAiRecoveryAllowsUpBRepeat(fp))
+                    )
+#else
                     if ((com->objective == nFTComputerObjectiveRecover) && !(com->is_attempt_specialhi_recovery))
+#endif
                     {
                         if ((fp->fkind != nFTKindYoshi) && (fp->fkind != nFTKindPurin))
                         {
@@ -5830,6 +5891,12 @@ sb32 ftComputerCheckSetEvadeTarget(FTStruct *this_fp)
 // 0x80136A20
 sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiCombatChargeIsSkipped(fp))
+    {
+        return FALSE;
+    }
+#endif
     switch (fp->fkind)
     {
     case nFTKindDonkey:
@@ -6333,7 +6400,11 @@ s32 ftComputerProcDefault(GObj *fighter_gobj)
         com->objective = nFTComputerObjectiveEvade;
         return TRUE;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((fp->fkind != nFTKindMMario) && (fp->fkind != nFTKindGDonkey) && !ftRemixAiCombatProjectileIgnored(fp))
+#else
     if ((fp->fkind != nFTKindMMario) && (fp->fkind != nFTKindGDonkey))
+#endif
     {
         if (func_ovl3_80135B78(fp) != FALSE)
         {
