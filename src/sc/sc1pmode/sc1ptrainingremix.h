@@ -29,6 +29,19 @@ extern sb32 sc1PTrainingRemixIsFrameHeld(void);
 /** Draws the reset count. */
 extern void sc1PTrainingRemixDrawHud(void);
 
+/** Remix standard items the Item row of the pause menu adds after the vanilla ones (Item.asm extend_training_mode_item_menu_). */
+#define SC1PTRAININGREMIX_ITEM_COUNT 13
+
+/**
+ * Item kind that a menu entry past the vanilla ones spawns (_get_selected_item_id: the entry number plus 0x1C).
+ *
+ * @param entry Entry number counted from the first custom one, 0 to SC1PTRAININGREMIX_ITEM_COUNT - 1.
+ */
+extern s32 sc1PTrainingRemixGetItemKind(s32 entry);
+
+/** Draws the name of a custom item entry at the Item row of the pause menu. @param entry As in sc1PTrainingRemixGetItemKind. @return Width of the text. */
+extern s32 sc1PTrainingRemixDrawItemName(s32 entry);
+
 #endif
 
 #endif

@@ -474,7 +474,11 @@ sb32 sc1PTrainingModeUpdateItemOption(void)
 	Vec3f pos;
 	Vec3f vel;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PTrainingModeCheckUpdateOptionID(&sSC1PTrainingModeMenu.item_menu_option, nSC1PTrainingModeMenuItemEnumStart, nSC1PTrainingModeMenuItemEnumCount + SC1PTRAININGREMIX_ITEM_COUNT) != FALSE)
+#else
 	if (sc1PTrainingModeCheckUpdateOptionID(&sSC1PTrainingModeMenu.item_menu_option, nSC1PTrainingModeMenuItemEnumStart, nSC1PTrainingModeMenuItemEnumCount) != FALSE)
+#endif
 	{
 		sc1PTrainingModeUpdateItemOptionSprite();
 		sc1PTrainingModeUpdateScroll();
@@ -500,6 +504,13 @@ sb32 sc1PTrainingModeUpdateItemOption(void)
 				pos.y += 200.0F;
 				pos.z = 0.0F;
 
+#if defined(PORT) && defined(REGION_REMIX)
+				if (sSC1PTrainingModeMenu.item_menu_option >= nSC1PTrainingModeMenuItemEnumCount)
+				{
+					itManagerMakeItemSetupCommon(NULL, sc1PTrainingRemixGetItemKind(sSC1PTrainingModeMenu.item_menu_option - nSC1PTrainingModeMenuItemEnumCount), &pos, &vel, ITEM_FLAG_PARENT_DEFAULT);
+				}
+				else
+#endif
 				itManagerMakeItemSetupCommon(NULL, sSC1PTrainingModeMenu.item_menu_option + (nITKindUtilityStart - 1), &pos, &vel, ITEM_FLAG_PARENT_DEFAULT);
 				func_800269C0_275C0(nSYAudioFGMMenuSelect);
 				sSC1PTrainingModeMenu.item_spawn_wait = 8;
@@ -711,6 +722,11 @@ void sc1PTrainingModeFuncUpdate(void)
 	sc1PTrainingModeUpdateAll();
 #if defined(PORT) && defined(REGION_REMIX)
 	sc1PTrainingRemixDrawHud();
+
+	if ((gSCManagerBattleState->game_status == nSCBattleGameStatusPause) && (sSC1PTrainingModeMenu.item_menu_option >= nSC1PTrainingModeMenuItemEnumCount))
+	{
+		sc1PTrainingRemixDrawItemName(sSC1PTrainingModeMenu.item_menu_option - nSC1PTrainingModeMenuItemEnumCount);
+	}
 #endif
 }
 
@@ -1435,6 +1451,18 @@ void sc1PTrainingModeUpdateItemOptionSprite(void)
 {
 	SObj *sobj = SObjGetStruct(sSC1PTrainingModeMenu.item_option_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sSC1PTrainingModeMenu.item_menu_option >= nSC1PTrainingModeMenuItemEnumCount)
+	{
+		/* a custom item has no name sprite: the none sprite stands for it, hidden and as wide as its name */
+		sobj->sprite = *sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.menu_option_sprites, nSC1PTrainingModeMenuItemNone + nSC1PTrainingModeMenuOptionSpriteItemStart);
+		sobj->sprite.attr |= SP_HIDDEN;
+		sobj->sprite.width = sc1PTrainingRemixDrawItemName(sSC1PTrainingModeMenu.item_menu_option - nSC1PTrainingModeMenuItemEnumCount);
+		sobj->pos.x = 191 - (sobj->sprite.width / 2);
+		sobj->pos.y = 85.0F;
+		return;
+	}
+#endif
 	sobj->sprite = *sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.menu_option_sprites, sSC1PTrainingModeMenu.item_menu_option + nSC1PTrainingModeMenuOptionSpriteItemStart);
 
 #if defined(REGION_US)
