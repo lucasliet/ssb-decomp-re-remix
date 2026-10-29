@@ -265,6 +265,10 @@ static void sc1PRemix1PLogPath(void)
         port_log("remix1p: stage %d gkind=0x%02X fkind=0x%02X,0x%02X count=%d\n", (int)i, (int)sSC1PRemix1PStages[i].gkind,
                  (int)sSC1PRemix1PStages[i].fkind[0], (int)sSC1PRemix1PStages[i].fkind[1], (int)sSC1PRemix1PStages[i].opponent_count);
     }
+    for (i = 0; i <= SC1PREMIX_1P_KIRBY_RANDOM_COUNT; i++)
+    {
+        port_log("remix1p: kirby %d power=0x%02X hat=0x%02X\n", (int)i, (int)sSC1PRemix1PKirbyPowers[i], (int)sSC1PRemix1PKirbyHats[i]);
+    }
 }
 
 sb32 sc1PRemix1PIsActive(void)

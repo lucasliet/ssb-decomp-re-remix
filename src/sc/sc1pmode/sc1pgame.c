@@ -61,6 +61,22 @@ u8 dSC1PGameKirbyTeamCopyKinds[/* */] =
     nFTKindPikachu
 };
 
+#if defined(PORT) && defined(REGION_REMIX)
+static s32 sc1PGameGetKirbyTeamCopy(s32 variation)
+{
+    s32 power;
+    s32 hat;
+
+    if (sc1PRemix1PIsActive() == FALSE)
+    {
+        return dSC1PGameKirbyTeamCopyKinds[variation];
+    }
+    sc1PRemix1PGetKirby(variation, &power, &hat);
+
+    return power;
+}
+#endif
+
 // 0x80192808
 f32 dSC1PGameZoomEyeX[/* */] = { -15.0F, 0.0F, 15.0F, 30.0F, 45.0F, 60.0F };
 
@@ -1442,7 +1458,11 @@ void sc1PGameSetupStageAll(void)
 #endif
 
             sSC1PGamePlayerSetups[player].team_order = sSC1PGameCurrentEnemyVariation;
+#if defined(PORT) && defined(REGION_REMIX)
+            sSC1PGamePlayerSetups[player].copy_kind = sc1PGameGetKirbyTeamCopy(sSC1PGameCurrentEnemyVariation);
+#else
             sSC1PGamePlayerSetups[player].copy_kind = dSC1PGameKirbyTeamCopyKinds[sSC1PGameCurrentEnemyVariation];
+#endif
             sSC1PGamePlayerSetups[player].mapobj_kind = i + nMPMapObjKind1PGameEnemyStart;
 
             sSC1PGamePlayerSetups[player].camera_frame_mul = 0.3F;
@@ -1604,6 +1624,13 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
             break;
 
         case nSC1PGameStageKirby:
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemix1PIsActive() != FALSE)
+            {
+                sSC1PGamePlayerSetups[player].copy_kind = sc1PGameGetKirbyTeamCopy(sSC1PGameCurrentEnemyVariation);
+                break;
+            }
+#endif
             sSC1PGamePlayerSetups[player].copy_kind = 
             (sSC1PGameCurrentEnemyVariation == SC1PGAME_STAGE_KIRBY_VARIATIONS_COUNT)  ? 
                                                         gSC1PManagerKirbyTeamFinalCopy :
