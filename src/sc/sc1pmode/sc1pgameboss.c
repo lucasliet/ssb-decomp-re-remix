@@ -4,6 +4,9 @@
 #include <sc/scene.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1premix1p.h"
+#endif
 
 #ifdef PORT
 extern void portFixupMObjSub(void *mobjsub);
@@ -1039,7 +1042,12 @@ void sc1PGameBossSetBossPlayer(void)
 
     for (player = 0; player < ARRAY_COUNT(gSCManagerBattleState->players); player++)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        if ((gSCManagerBattleState->players[player].fkind == nFTKindBoss) ||
+            (sc1PRemix1PIsFinalBoss(gSCManagerBattleState->players[player].fkind, gSCManagerBattleState->players[player].team) != FALSE))
+#else
         if (gSCManagerBattleState->players[player].fkind == nFTKindBoss)
+#endif
         {
             sSC1PGameBossMain.bossplayer = player;
         }

@@ -6,6 +6,10 @@
 #include <sys/rdp.h>
 #include <reloc_data.h>
 #include <sys/audio.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "mn/mn1pmode/mnremix1pmode.h"
+#include "remix/remix_player_panel.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 #ifdef PORT
 #include "fighter_registry.h"
@@ -1031,6 +1035,12 @@ void mnPlayers1PGameContinueInitVars(void)
 // 0x80133990 - real
 void mnPlayers1PGameContinueUnused0x80133990(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    /* SinglePlayerModes.asm game_over_end: the next 1P menu opens on its first page and the human's size does not carry over. */
+    gMNRemix1PModePage = MNREMIX_1PMODE_PAGE_1;
+
+    remix_panel_set(REMIX_PANEL_SIZE, gSCManagerSceneData.player, 0);
+#endif
     return;
 }
 

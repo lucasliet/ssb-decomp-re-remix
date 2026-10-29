@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "mn/mnvsmode/mnremixvsstats.h"
+#include "sc/sc1pmode/sc1premix1p.h"
 #endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -69,6 +70,10 @@ sb32 ftCommonSpecialHiCheckInterruptCommon(GObj *fighter_gobj)
     if ((fp->input.pl.button_tap & fp->input.button_mask_b) && (attr->is_have_specialhi) && (fp->input.pl.stick_range.y >= FTCOMMON_SPECIALHI_STICK_RANGE_MIN))
     {
 #ifdef REGION_REMIX
+        if (sc1PRemix1PBlocksCpuUpSpecial(fp->fkind, (fp->pkind != nFTPlayerKindMan) ? TRUE : FALSE) != FALSE)
+        {
+            return FALSE;
+        }
         mnRemixVSStatsCountSpecial(fp->player, nMNRemixVSStatsSpecialUp);
 #endif
 #ifdef PORT

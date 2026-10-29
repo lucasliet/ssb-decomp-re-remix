@@ -1,6 +1,9 @@
 #include <ft/fighter.h>
 #ifdef PORT
 #include <sc/sc1pmode/sc1pgame.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1premix1p.h"
+#endif
 #include <sc/scmanager.h>
 #include <sys/debug.h>
 #endif
@@ -215,6 +218,55 @@ void ftBossCommonSetDefaultLineID(GObj *fighter_gobj)
     mpCollisionGetLineIDsTypeCount(nMPLineKindFloor, 1, &fp->passive_vars.boss.p->default_line_id);
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define FTBOSS_REMIX_GIGA_DEFEAT_STATUS 0x27
+
+/* giga_change_action_: Giga Bowser has no Master Hand dead statuses, it goes intangible and holds a damage pose. */
+static void ftBossCommonSetGigaDefeatStatus(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+
+    fp->special_hitstatus = nGMHitStatusNone;
+    fp->star_hitstatus = nGMHitStatusNone;
+    fp->hitstatus = nGMHitStatusNone;
+    fp->knockback_resist_passive = 0.0F;
+    fp->knockback_resist_status = 0.0F;
+
+    ftCommonDeadAddDeadSFXSoundQueue(fp->attr->dead_fgm_ids[0]);
+    ftMainSetStatus(fighter_gobj, FTBOSS_REMIX_GIGA_DEFEAT_STATUS, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+}
+
+// 0x801586A0
+void ftBossCommonUpdateDamageStats(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    s32 status_id = fp->status_id;
+    sb32 is_giga = sc1PRemix1PIsFinalBoss(fp->fkind, fp->team);
+    s32 hit_points = (is_giga != FALSE) ? sc1PRemix1PBossHitPoints() : 300;
+
+    if ((status_id != nFTBossStatusDeadLeft) && (status_id != nFTBossStatusDeadCenter) && (status_id != nFTBossStatusDeadRight))
+    {
+        if (fp->percent_damage >= hit_points)
+        {
+            sc1PGameBossDefeatInitInterface(fighter_gobj);
+
+            if (is_giga != FALSE)
+            {
+                ftBossCommonSetGigaDefeatStatus(fighter_gobj);
+            }
+            else if (fp->lr == -1)
+            {
+                ftBossDeadLeftSetStatus(fighter_gobj);
+            }
+            else ftBossDeadRightSetStatus(fighter_gobj);
+        }
+        else if ((fp->percent_damage >= 200) && (is_giga == FALSE))
+        {
+            fp->passive_vars.boss.p->wait_div = 1.5F;
+        }
+    }
+}
+#else
 // 0x801586A0
 void ftBossCommonUpdateDamageStats(GObj *fighter_gobj)
 {
@@ -239,3 +291,4 @@ void ftBossCommonUpdateDamageStats(GObj *fighter_gobj)
         }
     }
 }
+#endif

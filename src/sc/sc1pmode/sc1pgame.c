@@ -1254,6 +1254,12 @@ void sc1PGameSetupStageAll(void)
     switch (gSCManagerSceneData.spgame_stage)
     {
     case nSC1PGameStageBoss:
+#if defined(PORT) && defined(REGION_REMIX)
+        /* _final_stage_spawn: the final stage of Remix 1P spawns the player as on any other stage. */
+        sSC1PGamePlayerSetups[gSCManagerSceneData.player].is_skip_entry = (sc1PRemix1PIsActive() != FALSE) ? FALSE : TRUE;
+        break;
+
+#endif
     case nSC1PGameStageBonus3:
         sSC1PGamePlayerSetups[gSCManagerSceneData.player].is_skip_entry = TRUE;
         break;
@@ -2016,6 +2022,13 @@ void sc1PGameWaitThreadUpdate(GObj *gobj)
         break;
 
     case nSC1PGameStageBoss:
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemix1PIsActive() != FALSE)
+        {
+            sc1PGameWaitStageCommonUpdate();
+            break;
+        }
+#endif
         sc1PGameWaitStageBossUpdate();
         break;
     }
@@ -2456,6 +2469,9 @@ void sc1PGameBossDefeatInterfaceProcUpdate(void)
     syAudioStopBGMAll();
     ifCommonBattleEndPlaySoundQueue();
     func_800269C0_275C0(nSYAudioFGMExplodeL);
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemix1PIsActive() == FALSE)
+#endif
     func_800269C0_275C0(nSYAudioVoiceBossDead);
     func_800269C0_275C0(nSYAudioFGMBossDefeatL);
 

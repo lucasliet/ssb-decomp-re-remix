@@ -16,6 +16,7 @@ extern void port_dump_backtrace(void);
 #include "ft/ftremix/ftremixcommand.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premix1p.h"
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"
 #include "it/itremix/itremixfranklinbadge.h"
@@ -4326,7 +4327,11 @@ void ftMainProcParams(GObj *fighter_gobj)
         {
             fp->proc_trap(fighter_gobj);
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        if ((fp->fkind != nFTKindBoss) && (sc1PRemix1PIsFinalBoss(fp->fkind, fp->team) == FALSE))
+#else
         if (fp->fkind != nFTKindBoss)
+#endif
         {
             switch (fp->damage_kind)
             {

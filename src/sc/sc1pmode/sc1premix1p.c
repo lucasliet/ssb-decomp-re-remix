@@ -16,6 +16,9 @@
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmodename.h"
 
+extern char *getenv(const char *name);
+extern int atoi(const char *str);
+
 #define SC1PREMIX_1P_STAGE_ID_COUNT 256
 #define SC1PREMIX_1P_DUO_SLOT 4
 #define SC1PREMIX_1P_TEAM_SLOT 1
@@ -24,6 +27,9 @@
 #define SC1PREMIX_1P_BOSS_SLOT 10
 #define SC1PREMIX_1P_KIRBY_RANDOM_COUNT 7
 #define SC1PREMIX_1P_VERY_HARD_LEVEL 10
+#define SC1PREMIX_1P_BOSS_HP_EASY 200
+#define SC1PREMIX_1P_BOSS_HP_NORMAL 250
+#define SC1PREMIX_1P_BOSS_HP_VERY_HARD 300
 #define SC1PREMIX_1P_KIRBY_MAGIC_HAT_POWER 0x1C
 #define SC1PREMIX_1P_KIRBY_MAGIC_HAT 0x25
 
@@ -360,6 +366,45 @@ void sc1PRemix1PGetKirby(s32 slot, s32 *power, s32 *hat)
 s32 sc1PRemix1PPolygonKind(void)
 {
     return SC1PREMIX_1P_POLYGON_FIRST + sc1PRemix1PRandom(SC1PREMIX_1P_POLYGON_LAST - SC1PREMIX_1P_POLYGON_FIRST + 1);
+}
+
+sb32 sc1PRemix1PIsFinalBoss(s32 fkind, s32 team)
+{
+    if ((sc1PRemix1PIsActive() == FALSE) || (gSCManagerSceneData.spgame_stage != nSC1PGameStageBoss))
+    {
+        return FALSE;
+    }
+    return ((fkind == REMIX_ID_GBOWSER) && (team == nSCBattleTeamIDCom)) ? TRUE : FALSE;
+}
+
+sb32 sc1PRemix1PBlocksCpuUpSpecial(s32 fkind, sb32 is_cpu)
+{
+    if ((sc1PRemix1PIsActive() == FALSE) || (is_cpu == FALSE))
+    {
+        return FALSE;
+    }
+    return ((fkind == REMIX_ID_PIANO) || (fkind == REMIX_ID_FOX) || (fkind == REMIX_ID_FALCO)) ? TRUE : FALSE;
+}
+
+s32 sc1PRemix1PBossHitPoints(void)
+{
+#ifdef PORT
+    const char *hit_points_env = getenv("SSB64_REMIX_1P_BOSS_HP");
+
+    if (hit_points_env != NULL)
+    {
+        return atoi(hit_points_env);
+    }
+#endif
+    if (gSCManagerBackupData.spgame_difficulty < nSC1PGameDifficultyNormal)
+    {
+        return SC1PREMIX_1P_BOSS_HP_EASY;
+    }
+    if (gSCManagerBackupData.spgame_difficulty < nSC1PGameDifficultyVeryHard)
+    {
+        return SC1PREMIX_1P_BOSS_HP_NORMAL;
+    }
+    return SC1PREMIX_1P_BOSS_HP_VERY_HARD;
 }
 
 sb32 sc1PRemix1PIsDuoPartnerFirst(void)

@@ -60,6 +60,15 @@ extern void sc1PRemix1PGetKirby(s32 slot, s32 *power, s32 *hat);
 /** Random Remix polygon, repeats allowed (polygon_selection_match). */
 extern s32 sc1PRemix1PPolygonKind(void);
 
+/** TRUE for the Giga Bowser CPU of the final stage of Remix 1P, which takes the damage and defeat path of Master Hand. @param fkind Fighter kind. @param team Battle team. */
+extern sb32 sc1PRemix1PIsFinalBoss(s32 fkind, s32 team);
+
+/** TRUE when a CPU of this kind may not start its grounded up special in Remix 1P (_giga_usp_prevent: Mad Piano, Fox and Falco). @param fkind Fighter kind. @param is_cpu TRUE for a CPU. */
+extern sb32 sc1PRemix1PBlocksCpuUpSpecial(s32 fkind, sb32 is_cpu);
+
+/** Damage Giga Bowser takes before it is defeated: 200 on Very Easy and Easy, 250 on Normal and Hard, 300 on Very Hard (giga_stamina_check_). */
+extern s32 sc1PRemix1PBossHitPoints(void);
+
 /** TRUE when the Star Fox line is a duo whose partner loads first (`duo_spawn`). */
 extern sb32 sc1PRemix1PIsDuoPartnerFirst(void);
 
