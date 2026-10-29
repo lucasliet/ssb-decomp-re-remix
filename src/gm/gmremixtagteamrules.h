@@ -14,6 +14,15 @@
 extern int gmRemixTagTeamRulesGetSlot(int stocks_set, int stocks_left, int queue_max);
 
 /**
+ * Queue slot a stock icon shows (TagTeam.asm show_all_icons_): the HUD lists the queue in reverse, the rightmost icon is the
+ * current fighter (base_slot) and the leftmost one is the last character of the queue. Clamped to 0 to queue_max - 1.
+ *
+ * base_slot: queue slot of the current fighter. icon_count: icons on the HUD. position: icon, 0 for the leftmost.
+ * queue_max: length of the queue, GMREMIX_TAGTEAM_QUEUE_MAX in the caller.
+ */
+extern int gmRemixTagTeamRulesIconSlot(int base_slot, int icon_count, int position, int queue_max);
+
+/**
  * TRUE (1) when the queue character of the slot is another fighter than the current one, so the fighter must be swapped.
  *
  * queue_fkind: fkind of the queue slot. current_fkind: fkind of the fighter that lost the stock.

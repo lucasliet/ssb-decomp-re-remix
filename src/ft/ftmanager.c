@@ -957,6 +957,15 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
         ftParamSetModelPartDefaultID(fighter_gobj, 19, 0);
         break;
 
+#ifdef REGION_REMIX
+    /* A recycled FTStruct (Tag Team swap) keeps the previous fighter's boomerang pointer, and the dead status destroys it */
+    case REMIX_ID_YLINK:
+    case REMIX_ID_ELINK:
+    case REMIX_ID_JLINK:
+        fp->passive_vars.link.boomerang_gobj = NULL;
+        break;
+#endif
+
     case nFTKindPurin:
     case nFTKindNPurin:
         fp->passive_vars.purin.unk_0x0 = 0;

@@ -11,6 +11,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
 #include "gm/gmremixmusictitle.h"
+#include "gm/gmremixtagteam.h"
 #include "if/ifremixstaminahud.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
@@ -1137,6 +1138,9 @@ void ifCommonPlayerStockMultiProcDisplay(GObj *interface_gobj)
                 {
                     if (stock_order < stock_count)
                     {
+#if defined(PORT) && defined(REGION_REMIX)
+                        if (gmRemixTagTeamApplyStockIcon(lt_sobj, player, stock_order, stock_count) == FALSE)
+#endif
 #ifdef PORT
                         {
                             FTSprites *_spr = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
@@ -1279,6 +1283,14 @@ void ifCommonPlayerStockMultiMakeInterface(s32 player)
     }
 #endif
 }
+
+#if defined(PORT) && defined(REGION_REMIX)
+void ifCommonPlayerStockPrepareSprite(Sprite *sprite)
+{
+    ifCommonPortFixupSpriteFull(sprite);
+    sprite->attr = SP_TEXSHUF | SP_TRANSPARENT;
+}
+#endif
 
 // 0x8010FF24
 void ifCommonPlayerStockSingleProcDisplay(GObj *interface_gobj)
@@ -1434,6 +1446,12 @@ void ifCommonPlayerStockStealMakeInterface(s32 thief, s32 stolen)
             }
 #else
             sobj->sprite.LUT = fp->attr->sprites->stock_luts[fp->costume];
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+            if (gmRemixTagTeamStealStock(thief, stolen, sobj) != FALSE)
+            {
+                sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
+            }
 #endif
 
             sIFCommonPlayerStealInterface[thief].steal_pos_x = ((gIFCommonPlayerInterface.player_pos_x[stolen] + dIFCommonPlayerStocksIconOffsetsX[stolen]) - (s32)(sobj->sprite.width * 0.5F));

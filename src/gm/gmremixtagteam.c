@@ -15,6 +15,7 @@
 #include <wp/weapon.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixtagteam.h"
+#include "gm/gmremixtagteamicons.h"
 #include "gm/gmremixtagteamrules.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_modes.h"
@@ -25,7 +26,17 @@ typedef struct GMRemixTagTeamSlot
     s32 costume;
 } GMRemixTagTeamSlot;
 
+typedef struct GMRemixTagTeamStolen
+{
+    s32 port;
+    s32 slot;
+} GMRemixTagTeamStolen;
+
 static GMRemixTagTeamSlot sGMRemixTagTeamQueues[GMCOMMON_PLAYERS_MAX][GMREMIX_TAGTEAM_QUEUE_MAX];
+
+/* Queue slot a port took from a teammate (stolen_stocks) and times a port had a stock stolen (stolen_count). */
+static GMRemixTagTeamStolen sGMRemixTagTeamStolen[GMCOMMON_PLAYERS_MAX];
+static s32 sGMRemixTagTeamStolenCount[GMCOMMON_PLAYERS_MAX];
 
 sb32 gmRemixTagTeamIsActive(void)
 {
@@ -48,6 +59,29 @@ static s32 gmRemixTagTeamGetCostume(s32 port, s32 fkind)
     return 0;
 }
 
+static void gmRemixTagTeamResetStolen(void)
+{
+    s32 port;
+
+    for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
+    {
+        sGMRemixTagTeamStolen[port].port = -1;
+        sGMRemixTagTeamStolen[port].slot = 0;
+        sGMRemixTagTeamStolenCount[port] = 0;
+    }
+}
+
+/* The icons of the slots past the stocks set are never shown, so their characters are not read. */
+static void gmRemixTagTeamResolveIcons(s32 port)
+{
+    s32 slot;
+
+    for (slot = 0; (slot < GMREMIX_TAGTEAM_QUEUE_MAX) && (slot <= gSCManagerBattleState->stocks); slot++)
+    {
+        gmRemixTagTeamIconsSet(port, slot, sGMRemixTagTeamQueues[port][slot].fkind, sGMRemixTagTeamQueues[port][slot].costume);
+    }
+}
+
 void gmRemixTagTeamSetup(void)
 {
     s32 port;
@@ -57,6 +91,9 @@ void gmRemixTagTeamSetup(void)
     {
         return;
     }
+    gmRemixTagTeamResetStolen();
+    gmRemixTagTeamIconsReset();
+
     for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
     {
         SCPlayerData *data = &gSCManagerBattleState->players[port];
@@ -83,13 +120,63 @@ void gmRemixTagTeamSetup(void)
                  (int)sGMRemixTagTeamQueues[port][1].fkind, (int)sGMRemixTagTeamQueues[port][2].fkind,
                  (int)sGMRemixTagTeamQueues[port][3].fkind, (int)sGMRemixTagTeamQueues[port][4].fkind,
                  (int)sGMRemixTagTeamQueues[port][5].fkind);
+        gmRemixTagTeamResolveIcons(port);
     }
 }
 
-/* The slot of the port's current stock: the stocks set minus the stocks left (the asm adds the stolen and LAST offsets). */
-static s32 gmRemixTagTeamGetSlot(FTStruct *fp)
+/* The slot of the port's current stock: the stocks set minus the stocks left and the stolen ones (the asm adds the LAST offset). */
+static s32 gmRemixTagTeamGetSlotOfPort(s32 port, s32 stocks_left)
 {
-    return gmRemixTagTeamRulesGetSlot(gSCManagerBattleState->stocks, fp->stock_count, GMREMIX_TAGTEAM_QUEUE_MAX);
+    return gmRemixTagTeamRulesGetSlot(gSCManagerBattleState->stocks, stocks_left + sGMRemixTagTeamStolenCount[port],
+                                      GMREMIX_TAGTEAM_QUEUE_MAX);
+}
+
+/* load_next_char_: a port that took a stock from a teammate plays the character of that stock. */
+static GMRemixTagTeamSlot* gmRemixTagTeamGetQueueSlot(FTStruct *fp)
+{
+    GMRemixTagTeamStolen *stolen = &sGMRemixTagTeamStolen[fp->player];
+
+    if (stolen->port >= 0)
+    {
+        return &sGMRemixTagTeamQueues[stolen->port][stolen->slot];
+    }
+    return &sGMRemixTagTeamQueues[fp->player][gmRemixTagTeamGetSlotOfPort(fp->player, fp->stock_count)];
+}
+
+sb32 gmRemixTagTeamApplyStockIcon(SObj *sobj, s32 port, s32 position, s32 icon_count)
+{
+    GMRemixTagTeamStolen *stolen = &sGMRemixTagTeamStolen[port];
+    s32 base_slot;
+
+    if (gmRemixTagTeamIsActive() == FALSE)
+    {
+        return FALSE;
+    }
+    if ((stolen->port >= 0) && (position == (icon_count - 1)))
+    {
+        return gmRemixTagTeamIconsApply(sobj, stolen->port, stolen->slot);
+    }
+    base_slot = gmRemixTagTeamGetSlotOfPort(port, gSCManagerBattleState->players[port].stock_count);
+
+    return gmRemixTagTeamIconsApply(sobj, port, gmRemixTagTeamRulesIconSlot(base_slot, icon_count, position, GMREMIX_TAGTEAM_QUEUE_MAX));
+}
+
+sb32 gmRemixTagTeamStealStock(s32 thief, s32 stolen_port, SObj *sobj)
+{
+    s32 slot;
+
+    if (gmRemixTagTeamIsActive() == FALSE)
+    {
+        return FALSE;
+    }
+    slot = gmRemixTagTeamRulesGetSlot(gSCManagerBattleState->stocks, sGMRemixTagTeamStolenCount[stolen_port],
+                                      GMREMIX_TAGTEAM_QUEUE_MAX);
+    sGMRemixTagTeamStolen[thief].port = stolen_port;
+    sGMRemixTagTeamStolen[thief].slot = slot;
+    sGMRemixTagTeamStolenCount[stolen_port]++;
+    port_log("tagteam: port %d steals queue slot %d of port %d\n", (int)thief, (int)slot, (int)stolen_port);
+
+    return gmRemixTagTeamIconsApply(sobj, stolen_port, slot);
 }
 
 static void gmRemixTagTeamMoveOwnership(GObj *old_gobj, GObj *new_gobj)
@@ -153,7 +240,7 @@ GObj* gmRemixTagTeamLoadNextFighter(GObj *fighter_gobj)
     {
         return fighter_gobj;
     }
-    slot = &sGMRemixTagTeamQueues[fp->player][gmRemixTagTeamGetSlot(fp)];
+    slot = gmRemixTagTeamGetQueueSlot(fp);
 
     if (gmRemixTagTeamRulesNeedsSwap(slot->fkind, fp->fkind) == 0)
     {

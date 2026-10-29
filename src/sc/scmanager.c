@@ -1040,6 +1040,19 @@ void scManagerRunLoop(sb32 arg)
 				}
 			}
 #if defined(PORT) && defined(REGION_REMIX)
+			if (remix_debug_env_int("SSB64_VS_TEAMS", 0) != 0)
+			{
+				s32 team_player;
+
+				gSCManagerTransferBattleState.is_team_battle = TRUE;
+
+				for (team_player = 0; team_player < ARRAY_COUNT(gSCManagerTransferBattleState.players); team_player++)
+				{
+					gSCManagerTransferBattleState.players[team_player].team = (team_player < 2) ? 0 : 1;
+					gSCManagerTransferBattleState.players[team_player].player = gSCManagerTransferBattleState.players[team_player].team;
+					gSCManagerTransferBattleState.players[team_player].color = (team_player < 2) ? 0 : 1;
+				}
+			}
 			{
 				s32 stamina_hp = remix_debug_env_int("SSB64_VS_STAMINA", -1);
 

@@ -24,6 +24,17 @@ int gmRemixTagTeamRulesGetSlot(int stocks_set, int stocks_left, int queue_max)
     return (slot < queue_max) ? slot : (queue_max - 1);
 }
 
+int gmRemixTagTeamRulesIconSlot(int base_slot, int icon_count, int position, int queue_max)
+{
+    int slot = base_slot + (icon_count - 1 - position);
+
+    if (slot < 0)
+    {
+        slot = 0;
+    }
+    return (slot < queue_max) ? slot : (queue_max - 1);
+}
+
 int gmRemixTagTeamRulesNeedsSwap(int queue_fkind, int current_fkind)
 {
     return (queue_fkind != current_fkind) ? 1 : 0;

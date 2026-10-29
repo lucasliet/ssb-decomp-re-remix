@@ -40,6 +40,10 @@ extern void ifCommonPlayerStockSingleMakeInterface(s32 player);
 extern void ifCommonPlayerStockStealProcUpdate(GObj *interface_gobj);
 extern void ifCommonPlayerStockStealMakeInterface(s32 thief, s32 stolen);
 extern void ifCommonPlayerStockInitInterface(void);
+#if defined(PORT) && defined(REGION_REMIX)
+/** Does for a stock icon sprite what ifCommonPlayerStockMultiMakeInterface does for the fighters of the match (byte order, bitmaps, attributes). */
+extern void ifCommonPlayerStockPrepareSprite(Sprite *sprite);
+#endif
 extern void ifCommonPlayerMagnifyGetPosition(f32 player_pos_x, f32 player_pos_y, Vec2f *magnify_pos);
 extern void ifCommonPlayerMagnifyUpdateRender(Gfx **dls, s32 color_id, f32 ulx, f32 uly);
 extern void ifCommonPlayerMagnifyUpdateViewport(Gfx **dls, FTStruct *fp);
