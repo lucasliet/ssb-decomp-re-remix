@@ -9,10 +9,8 @@
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixstockmode.h"
+#include "gm/gmremixtimedstockrules.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
-
-#define GMREMIX_MODE_SCORE_STOCK_SHIFT 12
-#define GMREMIX_MODE_SCORE_TUG_STOCK_SHIFT 24
 
 sb32 gmRemixTimedStockIsActive(void)
 {
@@ -21,11 +19,7 @@ sb32 gmRemixTimedStockIsActive(void)
 
 sb32 gmRemixTimedStockIsTimeUp(void)
 {
-    if (gSCManagerTransferBattleState.time_limit == SCBATTLE_TIMELIMIT_INFINITE)
-    {
-        return FALSE;
-    }
-    return (gSCManagerTransferBattleState.time_remain == 0) ? TRUE : FALSE;
+    return (gmRemixTimedStockRulesIsTimeUp(gSCManagerTransferBattleState.time_limit, gSCManagerTransferBattleState.time_remain, SCBATTLE_TIMELIMIT_INFINITE) != 0) ? TRUE : FALSE;
 }
 
 sb32 gmRemixTimedStockUsesTimeScore(void)
@@ -44,17 +38,11 @@ s32 gmRemixTimedStockScore(s32 player)
 
     if (gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR) != FALSE)
     {
-        stocks_left = data->stock_count + 1;
-
-        return (stocks_left << GMREMIX_MODE_SCORE_TUG_STOCK_SHIFT) + ((data->score - data->falls) << GMREMIX_MODE_SCORE_STOCK_SHIFT) - data->stock_damage_all;
+        return gmRemixTimedStockRulesTugScore(data->stock_count, data->score, data->falls, data->stock_damage_all);
     }
     stocks_left = gmRemixStockModeCount(player, gSCManagerTransferBattleState.stocks) - data->falls + 1;
 
-    if (stocks_left == 0)
-    {
-        return 0;
-    }
-    return (stocks_left << GMREMIX_MODE_SCORE_STOCK_SHIFT) - data->stock_damage_all;
+    return gmRemixTimedStockRulesStockScore(stocks_left, data->stock_damage_all);
 }
 
 sb32 gmRemixTimedStockAllowsSuddenDeath(void)

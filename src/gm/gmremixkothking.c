@@ -11,6 +11,7 @@
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixkothdraw.h"
 #include "gm/gmremixkothking.h"
+#include "gm/gmremixkothrules.h"
 #include "gm/gmremixkothstate.h"
 
 extern void *func_800269C0_275C0(u16 id);
@@ -32,49 +33,36 @@ static sb32 gmRemixKothHoldsEnemy(FTStruct *fp)
 /* Fills the on-hill state of every fighter and returns the king candidate of track_score_ (-1 none, -2 contested). */
 static s32 gmRemixKothFindKing(sb32 on_hill[GMCOMMON_PLAYERS_MAX], sb32 eligible[GMCOMMON_PLAYERS_MAX])
 {
+    GMRemixKothRulesFighter entries[GMCOMMON_PLAYERS_MAX];
+    s32 ports[GMCOMMON_PLAYERS_MAX];
+    int is_eligible[GMCOMMON_PLAYERS_MAX];
     GObj *fighter_gobj;
-    s32 candidate = GMREMIX_KOTH_NO_KING;
+    s32 count = 0;
+    s32 i;
 
-    for (fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter]; fighter_gobj != NULL; fighter_gobj = fighter_gobj->link_next)
+    for (fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter]; (fighter_gobj != NULL) && (count < GMCOMMON_PLAYERS_MAX); fighter_gobj = fighter_gobj->link_next)
     {
         FTStruct *fp = ftGetStruct(fighter_gobj);
 
-        if (gmRemixKothIsOnHill(fp) == FALSE)
-        {
-            continue;
-        }
-        on_hill[fp->player] = TRUE;
+        entries[count].is_on_hill = (gmRemixKothIsOnHill(fp) != FALSE) ? 1 : 0;
+        entries[count].holds_enemy = (gmRemixKothHoldsEnemy(fp) != FALSE) ? 1 : 0;
+        entries[count].key = gmRemixKothGetKey(fp);
+        ports[count] = fp->player;
+        count++;
+    }
+    s32 candidate = gmRemixKothRulesCandidate(entries, count, is_eligible);
 
-        if (gmRemixKothHoldsEnemy(fp) != FALSE)
-        {
-            candidate = GMREMIX_KOTH_CONTESTED;
-            continue;
-        }
-        eligible[fp->player] = TRUE;
-
-        if (candidate == GMREMIX_KOTH_NO_KING)
-        {
-            candidate = gmRemixKothGetKey(fp);
-        }
-        else if (candidate != gmRemixKothGetKey(fp))
-        {
-            candidate = GMREMIX_KOTH_CONTESTED;
-        }
+    for (i = 0; i < count; i++)
+    {
+        on_hill[ports[i]] = (entries[i].is_on_hill != 0) ? TRUE : on_hill[ports[i]];
+        eligible[ports[i]] = (is_eligible[i] != 0) ? TRUE : eligible[ports[i]];
     }
     return candidate;
 }
 
 static void gmRemixKothSetKing(s32 candidate)
 {
-    if (candidate != GMREMIX_KOTH_CONTESTED)
-    {
-        if (gGMRemixKoth.contested_buffer != 0)
-        {
-            gGMRemixKoth.contested_buffer--;
-            candidate = GMREMIX_KOTH_CONTESTED;
-        }
-    }
-    else gGMRemixKoth.contested_buffer = GMREMIX_KOTH_CONTESTED_BUFFER;
+    candidate = gmRemixKothRulesSettle(candidate, &gGMRemixKoth.contested_buffer, GMREMIX_KOTH_CONTESTED_BUFFER);
 
     if (candidate == gGMRemixKoth.king)
     {
