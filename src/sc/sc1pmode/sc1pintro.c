@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1premixintro.h"
+#endif
 #include <sc/scene.h>
 #include <sys/video.h>
 #include <sys/rdp.h>
@@ -658,6 +661,15 @@ s32 sc1PIntroGetAlliesNum(s32 stage)
     }
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+static Sprite* sc1PIntroGetFighterNameSprite(s32 fkind)
+{
+    void *file = (sc1PRemixIntroNameIsInCardFile(fkind) != FALSE) ? sSC1PIntroFiles[0] : sSC1PIntroFiles[1];
+
+    return lbRelocGetFileData(Sprite*, file, sc1PRemixIntroNameOffset(fkind));
+}
+
+#endif
 // 0x80132668
 void sc1PIntroMakeName(s32 stage)
 {
@@ -699,7 +711,11 @@ void sc1PIntroMakeName(s32 stage)
     sSC1PIntroNameGObj = gobj = gcMakeGObjSPAfter(0, NULL, 19, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
     
+#if defined(PORT) && defined(REGION_REMIX)
+    sobj = lbCommonMakeSObjForGObj(gobj, sc1PIntroGetFighterNameSprite(sSC1PIntroPlayerFighterDemoDesc.fkind));
+#else
     sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[1], name_offsets[sSC1PIntroPlayerFighterDemoDesc.fkind]));
+#endif
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -723,7 +739,11 @@ void sc1PIntroMakeName(s32 stage)
         sobj->sprite.green = 0xFF;
         sobj->sprite.blue = 0xFF;
         
+#if defined(PORT) && defined(REGION_REMIX)
+        sobj = lbCommonMakeSObjForGObj(gobj, sc1PIntroGetFighterNameSprite(sSC1PIntroAlly1FighterDemoDesc.fkind));
+#else
         sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[1], name_offsets[sSC1PIntroAlly1FighterDemoDesc.fkind]));
+#endif
         
         sobj->sprite.attr &= ~SP_FASTCOPY;
         sobj->sprite.attr |= SP_TRANSPARENT;
@@ -734,7 +754,11 @@ void sc1PIntroMakeName(s32 stage)
         
         if (sc1PIntroGetAlliesNum(stage) == 2)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            sobj = lbCommonMakeSObjForGObj(gobj, sc1PIntroGetFighterNameSprite(sSC1PIntroAlly2FighterDemoDesc.fkind));
+#else
             sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[1], name_offsets[sSC1PIntroAlly2FighterDemoDesc.fkind]));
+#endif
             
             sobj->sprite.attr &= ~SP_FASTCOPY;
             sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1777,6 +1801,9 @@ void sc1PIntroMakeFighterCamera(s32 fkind, s32 cobj_id)
 
     syRdpSetViewport(&cobj->viewport, 10.0F, 10.0F, 310.0F, 230.0F);
     
+#if defined(PORT) && defined(REGION_REMIX)
+    fkind = sc1PRemixIntroPreviewKind(fkind);
+#endif
     sc1PIntroGetFighterCObjDesc(&cobj_desc, fkind, cobj_id);
     
     gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sSC1PIntroFiles[0], camanim_joints[fkind]), 0.0F);
@@ -2006,7 +2033,9 @@ void sc1PIntroUpdateAnnounce(void)
         50,
         50
     };
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+    u32 tic = sc1PRemixIntroNameDelay(sSC1PIntroPlayerFighterDemoDesc.fkind) + 1;
+#elif defined(PORT)
     /* synths reach this on bonus/boss stages where tic is unused; clamp the OOB read */
     u32 tic = announce_wait_tics[(u32)sSC1PIntroPlayerFighterDemoDesc.fkind < ARRAY_COUNT(announce_wait_tics) ? sSC1PIntroPlayerFighterDemoDesc.fkind : 0] + 1;
 #else
@@ -2017,7 +2046,11 @@ void sc1PIntroUpdateAnnounce(void)
     {
         if ((sySchedulerGetTicCount() >= 2) && (sSC1PIntroIsAnnouncedFighterName == FALSE))
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            func_800269C0_275C0(sc1PRemixIntroAnnounceCall(sSC1PIntroPlayerFighterDemoDesc.fkind));
+#else
             func_800269C0_275C0(fighter_voices[sSC1PIntroPlayerFighterDemoDesc.fkind]);
+#endif
 
             sSC1PIntroIsAnnouncedFighterName = TRUE;
         }

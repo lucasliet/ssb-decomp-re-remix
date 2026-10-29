@@ -3625,6 +3625,16 @@ void mnPlayers1PGameSetSceneData(void)
 	else gSCManagerSceneData.fkind = nFTKindNull;
 
 	gSCManagerSceneData.costume = sMNPlayers1PGameSlot.costume;
+#ifdef PORT
+	{
+		const char *fkind_env = getenv("SSB64_SPGAME_FKIND");
+		if (fkind_env != NULL)
+		{
+			gSCManagerSceneData.fkind = (s32)atoi(fkind_env);
+			gSCManagerSceneData.costume = 0;
+		}
+	}
+#endif
 
 	lbBackupWrite();
 }
