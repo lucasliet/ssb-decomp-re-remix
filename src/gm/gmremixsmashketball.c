@@ -15,6 +15,8 @@
 #include <sys/objman.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixsmashketballscore.h"
+#include "gm/gmremixsmashketballstate.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_debug.h"
 #include "remix/remix_modes.h"
@@ -23,33 +25,11 @@
 #define GMREMIX_SMASHKETBALL_BALL_WAIT_FRAMES 0x135
 #define GMREMIX_SMASHKETBALL_BALL_Y 2048.0F
 #define GMREMIX_SMASHKETBALL_GOLDEN_BALL_Y 5632.0F
-#define GMREMIX_SMASHKETBALL_GOLDEN_POINTS 3
-#define GMREMIX_SMASHKETBALL_FGM_BASKET 0x118
-#define GMREMIX_SMASHKETBALL_FGM_CHEER 0x272
-#define GMREMIX_SMASHKETBALL_FGM_GROAN 0x267
 #define GMREMIX_SMASHKETBALL_FGM_END_BUZZER 0x431
 #define GMREMIX_SMASHKETBALL_CHANT_STREAK 3
 #define GMREMIX_SMASHKETBALL_SPAWN_Y 5.0F
 
 extern void *func_800269C0_275C0(u16 id);
-extern GObj* efManagerDeadExplodeMakeEffect(Vec3f *pos, s32 player, u32 type);
-
-typedef struct GMRemixSmashketballState
-{
-    s32 frames;
-    sb32 is_ended;
-    sb32 spawn_golden;
-    s32 home_team;
-    s32 away_team;
-    s32 scores[GMCOMMON_PLAYERS_MAX];
-    s32 team_scores[GMCOMMON_PLAYERS_MAX];
-    s32 winner_scores[GMCOMMON_PLAYERS_MAX];
-    s32 teammates[GMCOMMON_PLAYERS_MAX];
-    s32 consecutive_baskets[GMCOMMON_PLAYERS_MAX];
-} GMRemixSmashketballState;
-
-/* Smashketball.winner_score_distribution: index 0 is an attributed basket, index N the unattributed share of a team of N. */
-static const s32 dGMRemixSmashketballWinnerDistribution[GMCOMMON_PLAYERS_MAX] = { 6, 6, 3, 2 };
 
 /* Smashketball.spawn_table: home team left to right 2, 0, 1; away team right to left 3, 1, 0. */
 static const s32 dGMRemixSmashketballSpawnTable[GMCOMMON_PLAYERS_MAX] = { 2, 0, 1, 3 };
@@ -57,7 +37,7 @@ static const s32 dGMRemixSmashketballSpawnTable[GMCOMMON_PLAYERS_MAX] = { 2, 0, 
 /* Spawn.asm 5A and D1 neutral spawns: slots S1 to S4 (x), the same on both stages. */
 static const f32 dGMRemixSmashketballSpawnX[GMCOMMON_PLAYERS_MAX] = { -3042.0F, 3042.0F, -1615.0F, 1615.0F };
 
-static GMRemixSmashketballState sGMRemixSmashketball;
+GMRemixSmashketballState gGMRemixSmashketball;
 
 sb32 gmRemixSmashketballIsActive(void)
 {
@@ -78,7 +58,7 @@ sb32 gmRemixSmashketballIsSoccer(void)
 
 sb32 gmRemixSmashketballIsGolden(void)
 {
-    return sGMRemixSmashketball.spawn_golden;
+    return gGMRemixSmashketball.spawn_golden;
 }
 
 s32 gmRemixSmashketballGetStage(void)
@@ -88,7 +68,7 @@ s32 gmRemixSmashketballGetStage(void)
 
 s32 gmRemixSmashketballGetWinnerScore(s32 port)
 {
-    return sGMRemixSmashketball.winner_scores[port];
+    return gGMRemixSmashketball.winner_scores[port];
 }
 
 /* SSB64_SMASH_GOAL=<score> replaces the CSS goal, so the smoke tests can finish a match quickly. */
@@ -140,118 +120,6 @@ s32 gmRemixSmashketballGetSpawnSlot(s32 player)
     return slots[player];
 }
 
-static void gmRemixSmashketballFindTeams(void)
-{
-    GObj *fighter_gobj;
-
-    sGMRemixSmashketball.home_team = GMREMIX_SMASHKETBALL_NO_TEAM;
-    sGMRemixSmashketball.away_team = GMREMIX_SMASHKETBALL_NO_TEAM;
-
-    for (fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter]; fighter_gobj != NULL; fighter_gobj = fighter_gobj->link_next)
-    {
-        s32 team = ftGetStruct(fighter_gobj)->team;
-
-        sGMRemixSmashketball.teammates[team]++;
-
-        if (sGMRemixSmashketball.home_team == GMREMIX_SMASHKETBALL_NO_TEAM)
-        {
-            sGMRemixSmashketball.home_team = team;
-        }
-        else if (team != sGMRemixSmashketball.home_team)
-        {
-            sGMRemixSmashketball.away_team = team;
-        }
-    }
-}
-
-static s32 gmRemixSmashketballGetTeamScore(s32 team)
-{
-    return (team != GMREMIX_SMASHKETBALL_NO_TEAM) ? sGMRemixSmashketball.team_scores[team] : 0;
-}
-
-/* Unattributed basket: every fighter of the scoring team shares winner score points by team size. */
-static void gmRemixSmashketballShareWinnerScore(s32 team, s32 points)
-{
-    GObj *fighter_gobj;
-    s32 share = dGMRemixSmashketballWinnerDistribution[sGMRemixSmashketball.teammates[team]] * points;
-
-    for (fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter]; fighter_gobj != NULL; fighter_gobj = fighter_gobj->link_next)
-    {
-        FTStruct *fp = ftGetStruct(fighter_gobj);
-
-        if (fp->team == team)
-        {
-            sGMRemixSmashketball.winner_scores[fp->player] += share;
-        }
-    }
-}
-
-/* Attributed basket: the owner scores for the player and for the team, and keeps a streak. Returns the crowd sound. */
-static s32 gmRemixSmashketballScoreOwner(FTStruct *owner_fp, s32 points)
-{
-    s32 port = owner_fp->player;
-    s32 i;
-
-    for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
-    {
-        if (i != port)
-        {
-            sGMRemixSmashketball.consecutive_baskets[i] = 0;
-        }
-    }
-    sGMRemixSmashketball.consecutive_baskets[port]++;
-    sGMRemixSmashketball.scores[port] += points;
-    sGMRemixSmashketball.winner_scores[port] += dGMRemixSmashketballWinnerDistribution[0] * points;
-
-    return GMREMIX_SMASHKETBALL_FGM_CHEER;
-}
-
-static void gmRemixSmashketballPlayScoreEffects(GObj *ball_gobj, FTStruct *owner_fp, s32 side, s32 crowd_fgm)
-{
-    Vec3f pos;
-    s32 type = (gmRemixSmashketballIsSoccer() != FALSE) ? (2 - side) : 0;
-
-    itRemixBasketballGetPosition(ball_gobj, &pos);
-    efManagerDeadExplodeMakeEffect(&pos, (owner_fp != NULL) ? owner_fp->player : 0, type);
-    func_800269C0_275C0(GMREMIX_SMASHKETBALL_FGM_BASKET);
-
-    if (crowd_fgm != 0)
-    {
-        func_800269C0_275C0(crowd_fgm);
-    }
-}
-
-/* _scored: the left hoop credits the Away team, the right one the Home team. */
-static void gmRemixSmashketballScore(GObj *ball_gobj, s32 side)
-{
-    s32 team = (side < 0) ? sGMRemixSmashketball.away_team : sGMRemixSmashketball.home_team;
-    s32 points = (itRemixBasketballIsGoldenBall(ball_gobj) != FALSE) ? GMREMIX_SMASHKETBALL_GOLDEN_POINTS : 1;
-    GObj *owner_gobj = itGetStruct(ball_gobj)->owner_gobj;
-    FTStruct *owner_fp = (owner_gobj != NULL) ? ftGetStruct(owner_gobj) : NULL;
-    s32 crowd_fgm = 0;
-
-    if (team == GMREMIX_SMASHKETBALL_NO_TEAM)
-    {
-        return;
-    }
-    sGMRemixSmashketball.team_scores[team] += points;
-
-    if ((owner_fp == NULL) || (owner_fp->team != team))
-    {
-        gmRemixSmashketballShareWinnerScore(team, points);
-
-        if (owner_fp != NULL)
-        {
-            crowd_fgm = GMREMIX_SMASHKETBALL_FGM_GROAN;
-        }
-    }
-    else crowd_fgm = gmRemixSmashketballScoreOwner(owner_fp, points);
-
-    gmRemixSmashketballPlayScoreEffects(ball_gobj, owner_fp, side, crowd_fgm);
-    port_log("smashketball: score home %d away %d\n", (int)gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.home_team),
-             (int)gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.away_team));
-}
-
 /* SSB64_SMASH_BALL_X=<x> drops the ball at that x, so the smoke tests can send it through a hoop. */
 static GObj* gmRemixSmashketballSpawnBall(void)
 {
@@ -259,12 +127,12 @@ static GObj* gmRemixSmashketballSpawnBall(void)
     Vec3f vel;
 
     pos.x = (f32)remix_debug_env_int("SSB64_SMASH_BALL_X", 0);
-    pos.y = (sGMRemixSmashketball.spawn_golden != FALSE) ? GMREMIX_SMASHKETBALL_GOLDEN_BALL_Y : GMREMIX_SMASHKETBALL_BALL_Y;
+    pos.y = (gGMRemixSmashketball.spawn_golden != FALSE) ? GMREMIX_SMASHKETBALL_GOLDEN_BALL_Y : GMREMIX_SMASHKETBALL_BALL_Y;
     pos.z = 0.0F;
     vel.x = vel.y = vel.z = 0.0F;
 
     itRemixBasketballMakeItem(NULL, &pos, &vel, 0);
-    sGMRemixSmashketball.spawn_golden = FALSE;
+    gGMRemixSmashketball.spawn_golden = FALSE;
 
     return itRemixBasketballFind();
 }
@@ -273,8 +141,8 @@ static GObj* gmRemixSmashketballSpawnBall(void)
 static void gmRemixSmashketballCheckMatchEnd(void)
 {
     s32 goal = gmRemixSmashketballGetGoal();
-    s32 home = gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.home_team);
-    s32 away = gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.away_team);
+    s32 home = gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.home_team);
+    s32 away = gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.away_team);
 
     if (gSCManagerSceneData.is_suddendeath != FALSE)
     {
@@ -291,7 +159,7 @@ static void gmRemixSmashketballCheckMatchEnd(void)
     {
         return;
     }
-    sGMRemixSmashketball.is_ended = TRUE;
+    gGMRemixSmashketball.is_ended = TRUE;
     func_800269C0_275C0(GMREMIX_SMASHKETBALL_FGM_END_BUZZER);
     ifCommonAnnounceEndMessage();
 }
@@ -301,16 +169,16 @@ static void gmRemixSmashketballProcUpdate(GObj *gobj)
     GObj *ball_gobj;
     s32 side;
 
-    gmRemixSmashketballBoardUpdate(gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.home_team),
-                                   gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.away_team));
+    gmRemixSmashketballBoardUpdate(gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.home_team),
+                                   gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.away_team));
 
-    if ((gSCManagerBattleState->game_status != nSCBattleGameStatusGo) || (sGMRemixSmashketball.is_ended != FALSE))
+    if ((gSCManagerBattleState->game_status != nSCBattleGameStatusGo) || (gGMRemixSmashketball.is_ended != FALSE))
     {
         return;
     }
-    sGMRemixSmashketball.frames++;
+    gGMRemixSmashketball.frames++;
 
-    if (sGMRemixSmashketball.frames < GMREMIX_SMASHKETBALL_BALL_WAIT_FRAMES)
+    if (gGMRemixSmashketball.frames < GMREMIX_SMASHKETBALL_BALL_WAIT_FRAMES)
     {
         return;
     }
@@ -333,8 +201,8 @@ static void gmRemixSmashketballProcUpdate(GObj *gobj)
 
 sb32 gmRemixSmashketballPrepareSuddenDeath(void)
 {
-    s32 home = gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.home_team);
-    s32 away = gmRemixSmashketballGetTeamScore(sGMRemixSmashketball.away_team);
+    s32 home = gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.home_team);
+    s32 away = gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.away_team);
     s32 i;
 
     if (home != away)
@@ -377,20 +245,20 @@ void gmRemixSmashketballSetup(void)
     {
         return;
     }
-    sGMRemixSmashketball.frames = 0;
-    sGMRemixSmashketball.is_ended = FALSE;
-    sGMRemixSmashketball.spawn_golden = FALSE;
+    gGMRemixSmashketball.frames = 0;
+    gGMRemixSmashketball.is_ended = FALSE;
+    gGMRemixSmashketball.spawn_golden = FALSE;
 
     for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
     {
         if (gSCManagerSceneData.is_suddendeath == FALSE)
         {
-            sGMRemixSmashketball.scores[i] = 0;
-            sGMRemixSmashketball.team_scores[i] = 0;
-            sGMRemixSmashketball.winner_scores[i] = 0;
+            gGMRemixSmashketball.scores[i] = 0;
+            gGMRemixSmashketball.team_scores[i] = 0;
+            gGMRemixSmashketball.winner_scores[i] = 0;
         }
-        sGMRemixSmashketball.teammates[i] = 0;
-        sGMRemixSmashketball.consecutive_baskets[i] = 0;
+        gGMRemixSmashketball.teammates[i] = 0;
+        gGMRemixSmashketball.consecutive_baskets[i] = 0;
     }
     gmRemixSmashketballFindTeams();
 
