@@ -9,6 +9,7 @@
 #include <port_log.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixtugofwar.h"
+#include "gm/gmremixtugofwarrules.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
@@ -149,19 +150,6 @@ s32 gmRemixTugOfWarGetLastHit(s32 victim_port)
     return sGMRemixTugOfWarLastHit[victim_port];
 }
 
-s32 gmRemixTugOfWarPickCreditPort(s32 victim_team, s32 koer_team, s32 koer_port, s32 last_hit_port)
-{
-    if (gmRemixTugOfWarIsValidPort(koer_port) == FALSE)
-    {
-        return last_hit_port;
-    }
-    if (koer_team != victim_team)
-    {
-        return koer_port;
-    }
-    return last_hit_port;
-}
-
 /* TugOfWar.asm update_sIFCommonBattlePlace_: a revived fighter undoes the place step of its elimination, unless a teammate
  * still had stocks (in teams the team had not been eliminated). */
 static void gmRemixTugOfWarFixPlace(FTStruct *revived)
@@ -242,11 +230,6 @@ void gmRemixTugOfWarCreditKO(FTStruct *victim)
     {
         gmRemixTugOfWarGiveStock(credit_port);
     }
-}
-
-sb32 gmRemixTugOfWarShouldRevive(s32 stock_count_before)
-{
-    return (stock_count_before < 0) ? TRUE : FALSE;
 }
 
 #endif

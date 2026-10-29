@@ -5,6 +5,7 @@
 
 #include <ssb_types.h>
 #include <ft/fttypes.h>
+#include "gm/gmremixtugofwarrules.h"
 
 /*
  * Smash Remix Tug of War (TugOfWar.asm): a Timed Stock match where each KO also gives the KOer one more stock. The last
@@ -38,24 +39,6 @@ extern void gmRemixTugOfWarRecordShieldBreak(FTStruct *victim);
  * its team (TugOfWar.asm credit_stock_to_koer_ R2).
  */
 extern s32 gmRemixTugOfWarGetLastHit(s32 victim_port);
-
-/**
- * Pure choice of the port that gets the stock of a KO. The KOer gets it when it is on another team than the victim;
- * otherwise (same team, or no KOer) the last hit of the victim gets it.
- *
- * victim_team: team of the fighter that was KO'd.
- * koer_team, koer_port: team and port of the KOer, koer_port GMREMIX_TUGOFWAR_NO_PORT when there is no KOer.
- * last_hit_port: last hit of the victim, from gmRemixTugOfWarGetLastHit.
- *
- * Returns the port to credit, or GMREMIX_TUGOFWAR_NO_PORT when nobody can be credited.
- */
-extern s32 gmRemixTugOfWarPickCreditPort(s32 victim_team, s32 koer_team, s32 koer_port, s32 last_hit_port);
-
-/**
- * TRUE when a stock credited to a fighter brings it back from elimination. `stock_count_before` is the FTStruct stock
- * count before the credit, which runs out at -1 (fttypes.h), so an eliminated fighter goes from -1 to 0.
- */
-extern sb32 gmRemixTugOfWarShouldRevive(s32 stock_count_before);
 
 /**
  * TugOfWar.asm credit_stock_to_koer_ and credit_stock_when_no_koer_: called from ftCommonDeadUpdateScore before the victim
