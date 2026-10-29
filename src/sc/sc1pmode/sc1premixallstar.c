@@ -9,6 +9,7 @@
 #include <if/ifcommon.h>
 #include <it/itmanager.h>
 #include <mp/mpdef.h>
+#include "remix/remix_roster_data.h"
 #include <sys/utils.h>
 #include <sc/scene.h>
 #include "sc/sc1pmode/sc1premixallstar.h"
@@ -23,6 +24,9 @@ extern int atoi(const char *str);
 #define SC1PREMIX_ALLSTAR_EXIT_CLIP 0xE
 #define SC1PREMIX_ALLSTAR_EXIT_WAIT 1
 #define SC1PREMIX_ALLSTAR_HEARTS 3
+#define SC1PREMIX_ALLSTAR_FINAL_FIGHTERS 3
+#define SC1PREMIX_ALLSTAR_COSTUME_COUNT 6
+#define SC1PREMIX_ALLSTAR_VANILLA_COSTUME_COUNT 4
 #define SC1PREMIX_ALLSTAR_HEART_Y 300.0F
 
 static s32 sSC1PRemixAllstarFkinds[SC1PREMIX_ALLSTAR_FIGHTER_COUNT];
@@ -32,6 +36,7 @@ static sb32 sSC1PRemixAllstarIsReady;
 static sb32 sSC1PRemixAllstarIsLeaving;
 static s32 sSC1PRemixAllstarPercent;
 static s32 sSC1PRemixAllstarHearts;
+static s32 sSC1PRemixAllstarFinalCostumes[SC1PREMIX_ALLSTAR_FINAL_MEMBERS];
 static const f32 dSC1PRemixAllstarHeartX[SC1PREMIX_ALLSTAR_HEARTS] = { -1200.0F, -800.0F, -400.0F };
 static SC1PGameStage sSC1PRemixAllstarStages[SC1PREMIX_1P_STAGE_COUNT];
 static SC1PGameComputer sSC1PRemixAllstarComputers[SC1PREMIX_1P_STAGE_COUNT];
@@ -266,6 +271,33 @@ void sc1PRemixAllstarOnHeartUsed(void)
     }
 }
 
+s32 sc1PRemixAllstarFinalFkind(s32 member)
+{
+    return sc1PRemixAllstarGetFkind(SC1PREMIX_ALLSTAR_FINAL_PROGRESS + (member % SC1PREMIX_ALLSTAR_FINAL_FIGHTERS));
+}
+
+s32 sc1PRemixAllstarFinalCostume(s32 member)
+{
+    return ((member >= 0) && (member < SC1PREMIX_ALLSTAR_FINAL_MEMBERS)) ? sSC1PRemixAllstarFinalCostumes[member] : 0;
+}
+
+void sc1PRemixAllstarPrepareFinal(void)
+{
+    s32 member;
+    s32 costume;
+
+    for (member = 0; member < SC1PREMIX_ALLSTAR_FINAL_MEMBERS; member++)
+    {
+        costume = sc1PRemixAllstarRandom(SC1PREMIX_ALLSTAR_COSTUME_COUNT);
+
+        if ((sc1PRemixAllstarFinalFkind(member) < REMIX_ID_BOSS) && (costume >= SC1PREMIX_ALLSTAR_VANILLA_COSTUME_COUNT))
+        {
+            costume = sc1PRemixAllstarRandom(SC1PREMIX_ALLSTAR_VANILLA_COSTUME_COUNT);
+        }
+        sSC1PRemixAllstarFinalCostumes[member] = costume;
+    }
+}
+
 s32 sc1PRemixAllstarStepStage(s32 stage, sb32 is_retry)
 {
     s32 type;
@@ -282,6 +314,10 @@ s32 sc1PRemixAllstarStepStage(s32 stage, sb32 is_retry)
 
         sc1PRemixAllstarPatchMatch(type);
 
+        if (type == SC1PREMIX_ALLSTAR_STAGE_FINAL)
+        {
+            sc1PRemixAllstarPrepareFinal();
+        }
         return type;
     }
     sc1PRemixAllstarAdvance();

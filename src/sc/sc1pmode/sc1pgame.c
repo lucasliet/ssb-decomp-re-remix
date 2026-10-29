@@ -1484,6 +1484,15 @@ void sc1PGameSetupStageAll(void)
             }
             else kind++;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemixAllstarIsActive() != FALSE)
+        {
+            for (i = 0; i < stagesetup->opponent_count; i++)
+            {
+                sSC1PGameEnemyVariations[i] = sc1PRemixAllstarFinalFkind(i);
+            }
+        }
+#endif
         sSC1PGameCurrentEnemyVariation = 0;
 
         for (i = 0; i < SC1PGAME_STAGE_MAX_OPPONENT_COUNT; i++)
@@ -1500,6 +1509,12 @@ void sc1PGameSetupStageAll(void)
             sc1PGameSetupEnemyPlayer(stagesetup, comsetup, player, 0);
 
             gSCManagerBattleState->players[player].fkind = sSC1PGameEnemyVariations[sSC1PGameCurrentEnemyVariation];
+#if defined(PORT) && defined(REGION_REMIX)
+            if (sc1PRemixAllstarIsActive() != FALSE)
+            {
+                gSCManagerBattleState->players[player].costume = sc1PRemixAllstarFinalCostume(sSC1PGameCurrentEnemyVariation);
+            }
+#endif
 
             sSC1PGamePlayerSetups[player].mapobj_kind = i + nMPMapObjKind1PGameEnemyStart;
             sSC1PGamePlayerSetups[player].team_order = sSC1PGameCurrentEnemyVariation;
@@ -1704,6 +1719,10 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
             if (sc1PRemixMultimanIsActive() != FALSE)
             {
                 gSCManagerBattleState->players[player].fkind = sc1PRemixMultimanPolygonKind();
+            }
+            if (sc1PRemixAllstarIsActive() != FALSE)
+            {
+                gSCManagerBattleState->players[player].costume = sc1PRemixAllstarFinalCostume(sSC1PGameCurrentEnemyVariation);
             }
 #endif
             break;
@@ -2666,6 +2685,27 @@ void sc1PGameFuncStart(void)
 #if defined(PORT) && defined(REGION_REMIX)
         polygon_first = (sc1PRemix1PIsActive() != FALSE) ? SC1PREMIX_1P_POLYGON_FIRST : nFTKindNStart;
         polygon_last = (sc1PRemix1PIsActive() != FALSE) ? SC1PREMIX_1P_POLYGON_LAST : nFTKindNEnd;
+
+        if (sc1PRemixAllstarIsActive() != FALSE)
+        {
+            /* The All-Star final team is the last three fighters of the run, which load by kind. */
+            for (i = 0; i < 3; i++)
+            {
+                ftManagerSetupFilesAllKind(sc1PRemixAllstarFinalFkind(i));
+            }
+            largest_size = 0;
+
+            for (i = 0; i < 3; i++)
+            {
+                if (largest_size < port_fighter_data(sc1PRemixAllstarFinalFkind(i))->file_anim_size)
+                {
+                    largest_size = port_fighter_data(sc1PRemixAllstarFinalFkind(i))->file_anim_size;
+                }
+            }
+            polygon_first = polygon_last + 1;
+        }
+        else
+        {
 #else
         polygon_first = nFTKindNStart;
         polygon_last = nFTKindNEnd;
@@ -2690,6 +2730,9 @@ void sc1PGameFuncStart(void)
             }
 #endif
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        }
+#endif
         for (i = 0; i < (ARRAY_COUNT(gSCManagerBattleState->players) + ARRAY_COUNT(sSC1PGamePlayerSetups)) / 2; i++)
         {
             if (gSCManagerBattleState->players[i].pkind == nFTPlayerKindNot)

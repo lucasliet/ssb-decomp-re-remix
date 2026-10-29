@@ -85,6 +85,18 @@ extern void sc1PRemixAllstarSetupRestArea(void);
 /** Counts a heart the human used in the Rest Area (heart_counter). */
 extern void sc1PRemixAllstarOnHeartUsed(void);
 
+/** The final team has this many members, the last three fighters of the order taking turns. */
+#define SC1PREMIX_ALLSTAR_FINAL_MEMBERS 24
+
+/** Rolls the costumes of the final team (_nSC1PGameStageAllstarFinal_): a random one of six, four at most for the vanilla fighters. */
+extern void sc1PRemixAllstarPrepareFinal(void);
+
+/** Fighter kind of a member of the final team. @param member 0 to SC1PREMIX_ALLSTAR_FINAL_MEMBERS - 1. */
+extern s32 sc1PRemixAllstarFinalFkind(s32 member);
+
+/** Costume of a member of the final team. @param member 0 to SC1PREMIX_ALLSTAR_FINAL_MEMBERS - 1. */
+extern s32 sc1PRemixAllstarFinalCostume(s32 member);
+
 /** Stage value past the last stage of the 1P game, which ends the run. */
 #define SC1PREMIX_ALLSTAR_STAGE_END 14
 
