@@ -10,19 +10,16 @@
 #include <sc/scmanager.h>
 #include <sys/objman.h>
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixsmashketballrules.h"
 #include "gm/gmremixsmashketballscore.h"
 #include "gm/gmremixsmashketballstate.h"
 
-#define GMREMIX_SMASHKETBALL_GOLDEN_POINTS 3
 #define GMREMIX_SMASHKETBALL_FGM_BASKET 0x118
 #define GMREMIX_SMASHKETBALL_FGM_CHEER 0x272
 #define GMREMIX_SMASHKETBALL_FGM_GROAN 0x267
 
 extern void *func_800269C0_275C0(u16 id);
 extern GObj* efManagerDeadExplodeMakeEffect(Vec3f *pos, s32 player, u32 type);
-
-/* Smashketball.winner_score_distribution: index 0 is an attributed basket, index N the unattributed share of a team of N. */
-static const s32 dGMRemixSmashketballWinnerDistribution[GMCOMMON_PLAYERS_MAX] = { 6, 6, 3, 2 };
 
 void gmRemixSmashketballFindTeams(void)
 {
@@ -36,28 +33,20 @@ void gmRemixSmashketballFindTeams(void)
         s32 team = ftGetStruct(fighter_gobj)->team;
 
         gGMRemixSmashketball.teammates[team]++;
-
-        if (gGMRemixSmashketball.home_team == GMREMIX_SMASHKETBALL_NO_TEAM)
-        {
-            gGMRemixSmashketball.home_team = team;
-        }
-        else if (team != gGMRemixSmashketball.home_team)
-        {
-            gGMRemixSmashketball.away_team = team;
-        }
+        gmRemixSmashketballRulesRecordTeam(&gGMRemixSmashketball.home_team, &gGMRemixSmashketball.away_team, team);
     }
 }
 
 s32 gmRemixSmashketballGetTeamScore(s32 team)
 {
-    return (team != GMREMIX_SMASHKETBALL_NO_TEAM) ? gGMRemixSmashketball.team_scores[team] : 0;
+    return gmRemixSmashketballRulesTeamScore(team, gGMRemixSmashketball.team_scores);
 }
 
 /* Unattributed basket: every fighter of the scoring team shares winner score points by team size. */
 static void gmRemixSmashketballShareWinnerScore(s32 team, s32 points)
 {
     GObj *fighter_gobj;
-    s32 share = dGMRemixSmashketballWinnerDistribution[gGMRemixSmashketball.teammates[team]] * points;
+    s32 share = gmRemixSmashketballRulesWinnerShare(gGMRemixSmashketball.teammates[team], points);
 
     for (fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter]; fighter_gobj != NULL; fighter_gobj = fighter_gobj->link_next)
     {
@@ -74,18 +63,10 @@ static void gmRemixSmashketballShareWinnerScore(s32 team, s32 points)
 static s32 gmRemixSmashketballScoreOwner(FTStruct *owner_fp, s32 points)
 {
     s32 port = owner_fp->player;
-    s32 i;
 
-    for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
-    {
-        if (i != port)
-        {
-            gGMRemixSmashketball.consecutive_baskets[i] = 0;
-        }
-    }
-    gGMRemixSmashketball.consecutive_baskets[port]++;
+    gmRemixSmashketballRulesRecordBasket(gGMRemixSmashketball.consecutive_baskets, port);
     gGMRemixSmashketball.scores[port] += points;
-    gGMRemixSmashketball.winner_scores[port] += dGMRemixSmashketballWinnerDistribution[0] * points;
+    gGMRemixSmashketball.winner_scores[port] += gmRemixSmashketballRulesWinnerShare(GMREMIX_SMASHKETBALL_RULES_ATTRIBUTED_SHARE, points);
 
     return GMREMIX_SMASHKETBALL_FGM_CHEER;
 }
@@ -108,10 +89,12 @@ static void gmRemixSmashketballPlayScoreEffects(GObj *ball_gobj, FTStruct *owner
 /* _scored: the left hoop credits the Away team, the right one the Home team. */
 void gmRemixSmashketballScore(GObj *ball_gobj, s32 side)
 {
-    s32 team = (side < 0) ? gGMRemixSmashketball.away_team : gGMRemixSmashketball.home_team;
-    s32 points = (itRemixBasketballIsGoldenBall(ball_gobj) != FALSE) ? GMREMIX_SMASHKETBALL_GOLDEN_POINTS : 1;
+    s32 team = gmRemixSmashketballRulesScoringTeam(side, gGMRemixSmashketball.home_team,
+                                                   gGMRemixSmashketball.away_team);
+    s32 points = gmRemixSmashketballRulesBasketPoints(itRemixBasketballIsGoldenBall(ball_gobj) != FALSE);
     GObj *owner_gobj = itGetStruct(ball_gobj)->owner_gobj;
     FTStruct *owner_fp = (owner_gobj != NULL) ? ftGetStruct(owner_gobj) : NULL;
+    s32 owner_team = (owner_fp != NULL) ? owner_fp->team : GMREMIX_SMASHKETBALL_NO_TEAM;
     s32 crowd_fgm = 0;
 
     if (team == GMREMIX_SMASHKETBALL_NO_TEAM)
@@ -120,7 +103,7 @@ void gmRemixSmashketballScore(GObj *ball_gobj, s32 side)
     }
     gGMRemixSmashketball.team_scores[team] += points;
 
-    if ((owner_fp == NULL) || (owner_fp->team != team))
+    if (gmRemixSmashketballRulesIsOwnerScoring(owner_fp != NULL, owner_team, team) == 0)
     {
         gmRemixSmashketballShareWinnerScore(team, points);
 

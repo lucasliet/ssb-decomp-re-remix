@@ -15,6 +15,7 @@
 #include <wp/weapon.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixtagteam.h"
+#include "gm/gmremixtagteamrules.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_modes.h"
 
@@ -26,13 +27,6 @@ typedef struct GMRemixTagTeamSlot
 
 static GMRemixTagTeamSlot sGMRemixTagTeamQueues[GMCOMMON_PLAYERS_MAX][GMREMIX_TAGTEAM_QUEUE_MAX];
 
-/* Fighters of the Remix CSS grid a Random slot can pick, in Remix id (the same list as the port menu). */
-static const u8 dGMRemixTagTeamRandomFighters[] =
-{
-    0x3F, 0x20, 0x04, 0x00, 0x02, 0x05, 0x03, 0x07, 0x1E, 0x3B, 0x40, 0x1F, 0x0B, 0x06, 0x08,
-    0x01, 0x09, 0x0A, 0x1D, 0x3E, 0x41, 0x48, 0x21, 0x49, 0x34, 0x37, 0x38, 0x39, 0x3A, 0x44
-};
-
 sb32 gmRemixTagTeamIsActive(void)
 {
     return gmRemixModeIs(MNREMIX_VSMODE_TAG_TEAM);
@@ -40,7 +34,7 @@ sb32 gmRemixTagTeamIsActive(void)
 
 static s32 gmRemixTagTeamPickRandomFighter(void)
 {
-    return dGMRemixTagTeamRandomFighters[syUtilsRandIntRange(ARRAY_COUNT(dGMRemixTagTeamRandomFighters))];
+    return gmRemixTagTeamRulesRandomFighter(syUtilsRandIntRange(gmRemixTagTeamRulesRandomCount()));
 }
 
 static s32 gmRemixTagTeamGetCostume(s32 port, s32 fkind)
@@ -95,13 +89,7 @@ void gmRemixTagTeamSetup(void)
 /* The slot of the port's current stock: the stocks set minus the stocks left (the asm adds the stolen and LAST offsets). */
 static s32 gmRemixTagTeamGetSlot(FTStruct *fp)
 {
-    s32 slot = gSCManagerBattleState->stocks - fp->stock_count;
-
-    if (slot < 0)
-    {
-        slot = 0;
-    }
-    return (slot < GMREMIX_TAGTEAM_QUEUE_MAX) ? slot : (GMREMIX_TAGTEAM_QUEUE_MAX - 1);
+    return gmRemixTagTeamRulesGetSlot(gSCManagerBattleState->stocks, fp->stock_count, GMREMIX_TAGTEAM_QUEUE_MAX);
 }
 
 static void gmRemixTagTeamMoveOwnership(GObj *old_gobj, GObj *new_gobj)
@@ -167,7 +155,7 @@ GObj* gmRemixTagTeamLoadNextFighter(GObj *fighter_gobj)
     }
     slot = &sGMRemixTagTeamQueues[fp->player][gmRemixTagTeamGetSlot(fp)];
 
-    if (slot->fkind == fp->fkind)
+    if (gmRemixTagTeamRulesNeedsSwap(slot->fkind, fp->fkind) == 0)
     {
         return fighter_gobj;
     }

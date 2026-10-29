@@ -8,6 +8,7 @@
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixstamina.h"
+#include "gm/gmremixstaminarules.h"
 
 sb32 gGMRemixStaminaRule = FALSE;
 s32 gGMRemixStaminaHP = GMREMIX_STAMINA_HP_DEFAULT;
@@ -25,7 +26,7 @@ sb32 gmRemixStaminaIsActive(void)
 
 s32 gmRemixStaminaGetTotalHP(void)
 {
-    return gGMRemixStaminaHP - 1;
+    return gmRemixStaminaRulesTotalHP(gGMRemixStaminaHP);
 }
 
 sb32 gmRemixStaminaIsDefeated(s32 player)

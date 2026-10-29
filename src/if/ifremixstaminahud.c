@@ -6,6 +6,7 @@
 
 #include "if/ifremixstaminahud.h"
 #include "gm/gmremixstamina.h"
+#include "gm/gmremixstaminarules.h"
 
 #define IF_REMIX_STAMINA_DARKNESS_MAX 300.0F
 
@@ -15,19 +16,11 @@
  */
 s32 ifRemixStaminaDisplayValue(s32 damage)
 {
-    s32 hitpoints_left;
-
     if (!gmRemixStaminaIsActive())
     {
         return damage;
     }
-    hitpoints_left = gmRemixStaminaGetTotalHP() + 1 - damage;
-
-    if (hitpoints_left < 0)
-    {
-        return 0;
-    }
-    return hitpoints_left;
+    return gmRemixStaminaRulesHPLeft(gmRemixStaminaGetTotalHP(), damage);
 }
 
 /**

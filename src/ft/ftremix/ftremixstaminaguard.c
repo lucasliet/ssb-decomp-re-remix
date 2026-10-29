@@ -10,6 +10,7 @@
 
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixstamina.h"
+#include "gm/gmremixstaminarules.h"
 #include "remix/remix_roster_data.h"
 
 /* Action.asm ids read by stamina_invis_prevent and egg_crash_prevent */
@@ -33,7 +34,7 @@ sb32 ftRemixStaminaIsOutOfHP(FTStruct *fp)
     {
         return FALSE;
     }
-    return (fp->percent_damage > gmRemixStaminaGetTotalHP()) ? TRUE : FALSE;
+    return gmRemixStaminaRulesIsOverTotal(fp->percent_damage, gmRemixStaminaGetTotalHP()) ? TRUE : FALSE;
 }
 
 /**
@@ -42,11 +43,14 @@ sb32 ftRemixStaminaIsOutOfHP(FTStruct *fp)
  */
 sb32 ftRemixStaminaArmorIsZeroed(FTStruct *fp)
 {
+    s32 total_hp;
+
     if (gmRemixStaminaIsActive() == FALSE)
     {
         return FALSE;
     }
-    return ((fp->percent_damage + fp->damage_queue) > gmRemixStaminaGetTotalHP()) ? TRUE : FALSE;
+    total_hp = gmRemixStaminaGetTotalHP();
+    return gmRemixStaminaRulesIsOverTotal(fp->percent_damage + fp->damage_queue, total_hp) ? TRUE : FALSE;
 }
 
 /**

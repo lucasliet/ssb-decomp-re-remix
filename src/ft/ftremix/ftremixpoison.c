@@ -11,6 +11,7 @@
 #include <gm/gmremixcolscripts.h>
 #include <gm/gmremixpanel.h>
 #include <gm/gmremixstamina.h>
+#include <gm/gmremixstaminarules.h>
 #include <gm/gmremixtoggle.h>
 #include <it/itremix/itremixcloakingdevice.h>
 #include <sc/scmanager.h>
@@ -132,7 +133,7 @@ static sb32 ftRemixPoisonIsStaminaDefeated(FTStruct *fp)
  */
 static s32 ftRemixPoisonStaminaCap(s32 percent)
 {
-    if (gmRemixStaminaIsActive() && (percent > gmRemixStaminaGetTotalHP()))
+    if (gmRemixStaminaIsActive() && gmRemixStaminaRulesIsOverTotal(percent, gmRemixStaminaGetTotalHP()))
     {
         return gmRemixStaminaGetTotalHP();
     }

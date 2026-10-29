@@ -13,6 +13,7 @@
 #include "ft/ftparam.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixstamina.h"
+#include "gm/gmremixstaminarules.h"
 
 /* Stamina.asm stamina_ko_: "Custom Red Flicker id (hard coded)", a Remix colanim id past the vanilla GMColAnimKind list */
 #define FTREMIX_STAMINA_KO_RED_FLICKER_COLANIM 0x66
@@ -51,14 +52,14 @@ s32 ftRemixStaminaStoredDamage(FTStruct *fp, s32 damage)
     }
     total_hp = gmRemixStaminaGetTotalHP();
 
-    if (fp->percent_damage + damage <= total_hp)
+    if (gmRemixStaminaRulesIsOverTotal(fp->percent_damage + damage, total_hp) == FALSE)
     {
         return damage;
     }
     gmRemixStaminaSetDefeated(fp->player);
     ftRemixStaminaKO(fp);
 
-    return total_hp + 1 - fp->percent_damage;
+    return gmRemixStaminaRulesDamageToFinish(total_hp, fp->percent_damage);
 }
 
 #endif
