@@ -36,6 +36,14 @@ extern SC1PGameStage* sc1PRemix1PGetStage(s32 stage_index);
  */
 extern void sc1PRemix1PSetupEnemy(s32 player);
 
+/**
+ * CPU level of the stage being set up (_opponent_cpu): level 10 on Very Hard. The asm tests the stage flag against a register it already
+ * overwrote, so none of its stage exceptions ever matches and every stage gets level 10; the other difficulties keep the table level.
+ *
+ * @param level Level the stage table gives for the chosen difficulty.
+ */
+extern s32 sc1PRemix1PEnemyLevel(s32 level);
+
 /** CPU settings of a stage of the Remix path (levels, handicaps, team attack, item rate); NULL when Remix 1P is not active. */
 extern SC1PGameComputer* sc1PRemix1PGetComputer(s32 stage_index);
 

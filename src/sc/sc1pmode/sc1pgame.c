@@ -1070,6 +1070,9 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
 {
     s32 level = comsetup->enemy_level[gSCManagerBackupData.spgame_difficulty];
 
+#if defined(PORT) && defined(REGION_REMIX)
+    level = sc1PRemix1PEnemyLevel(level);
+#endif
     level -= gSC1PManagerLevelDrop;
 
     if (level <= 0)

@@ -23,6 +23,7 @@
 #define SC1PREMIX_1P_TINY_TEAM_SLOT 9
 #define SC1PREMIX_1P_BOSS_SLOT 10
 #define SC1PREMIX_1P_KIRBY_RANDOM_COUNT 7
+#define SC1PREMIX_1P_VERY_HARD_LEVEL 10
 #define SC1PREMIX_1P_KIRBY_MAGIC_HAT_POWER 0x1C
 #define SC1PREMIX_1P_KIRBY_MAGIC_HAT 0x25
 
@@ -319,6 +320,15 @@ void sc1PRemix1PSetupEnemy(s32 player)
         return;
     }
     sc1PRemix1PClearSizes();
+}
+
+s32 sc1PRemix1PEnemyLevel(s32 level)
+{
+    if ((sc1PRemix1PIsActive() == FALSE) || (gSCManagerBackupData.spgame_difficulty != nSC1PGameDifficultyVeryHard))
+    {
+        return level;
+    }
+    return SC1PREMIX_1P_VERY_HARD_LEVEL;
 }
 
 SC1PGameComputer* sc1PRemix1PGetComputer(s32 stage_index)
