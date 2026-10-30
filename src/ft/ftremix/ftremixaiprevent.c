@@ -66,6 +66,18 @@ static sb32 ftRemixAiPreventConkerGrenade(FTStruct *fp, s32 input_kind)
 }
 
 /**
+ * Crash DSP and USP on a soft platform (Crash/Crash.asm:716, PREVENT_ATTACK.ROUTINE.CRASH). The asm reads the surface
+ * halfword at N64 0x00F6 and tests 0x4000, which is MAP_VERTEX_COLL_PASS in the port's coll_data.floor_flags.
+ * REMIX-VERIFY: that N64 offset is inferred from the flag value, not checked against the N64 FTStruct layout.
+ */
+static sb32 ftRemixAiPreventCrashSoftPlatform(FTStruct *fp, s32 input_kind)
+{
+    sb32 is_soft_platform = (fp->coll_data.floor_flags & MAP_VERTEX_COLL_PASS) != 0;
+
+    return ftRemixAiPreventRulesCrashSoftPlatformVeto(input_kind, is_soft_platform);
+}
+
+/**
  * Dispatches the PREVENT_ATTACK routine that the fighter kind's Attacks.asm registers. Duplicate registrations were
  * resolved by include order: Falco keeps FALCO_NSP, DSamus keeps SONIC_DSP.
  */
@@ -95,9 +107,9 @@ static sb32 ftRemixAiPreventRoutine(FTStruct *fp, s32 input_kind)
         return ftRemixAiPreventRulesIsInput(input_kind, FTREMIX_AI_PREVENT_INPUT_NSPG);
     case REMIX_ID_CONKER:
         return ftRemixAiPreventConkerGrenade(fp, input_kind);
+    case REMIX_ID_CRASH:
+        return ftRemixAiPreventCrashSoftPlatform(fp, input_kind);
     /*
-     * REMIX-TODO(AI): Crash (PREVENT CRASH, Crash/Crash.asm:716) vetoes DSP and USP on a soft platform, which reads the
-     * surface halfword at N64 0x00F6. No port field or ftremixfields mapping exists for it yet.
      * REMIX-TODO(AI): Banjo, DrLuigi, DrMario, Marth, Peach, Piano and Roy use the vanilla MARIO routine (0x801334EC) and
      * Ganondorf and DragonKing the vanilla YOSHI_FALCON routine (0x80133510). Their code is not in the smashremix source
      * and needs the ROM disassembly before porting. Mewtwo, Lanky, NFalco, NMarina, Sheik, NSheik and NGanondorf use

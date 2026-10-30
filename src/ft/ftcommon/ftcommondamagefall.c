@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixaiteching.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -31,7 +34,11 @@ void ftCommonDamageFallProcMap(GObj *fighter_gobj)
         {
             ftCommonCliffCatchSetStatus(fighter_gobj);
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        else if (ftRemixAiTechIsHandled(fighter_gobj) == FALSE)
+#else
         else if ((ftCommonPassiveStandCheckInterruptDamage(fighter_gobj) == FALSE) && (ftCommonPassiveCheckInterruptDamage(fighter_gobj) == FALSE))
+#endif
         {
             ftCommonDownBounceSetStatus(fighter_gobj);
         }

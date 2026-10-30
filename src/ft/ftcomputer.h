@@ -13,6 +13,7 @@ extern void ftComputerUpdateInputs(FTStruct *this_fp);
 extern void ftComputerSetCommandWaitShort(FTStruct *fp, s32 index);
 extern void ftComputerSetCommandImmediate(FTStruct *fp, s32 index);
 extern void ftComputerSetCommandWaitLong(FTStruct *fp, s32 index);
+extern u8 *ftComputerGetInputScript(s32 index);
 extern sb32 ftComputerCheckFindTarget(FTStruct *this_fp);
 extern sb32 ftComputerCheckEvadeDistance(FTStruct *this_fp);
 extern FTStruct* ftComputerWaitGetTarget(FTStruct *this_fp);

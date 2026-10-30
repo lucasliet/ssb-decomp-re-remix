@@ -36,4 +36,22 @@ float ftRemixAiRecoveryClampTargetX(float target_x, float left_blastzone, float 
     return target_x;
 }
 
+/** Wolf USP actions 0xE3, 0xE4, 0xE6 and 0xE8 (fix_remix_recovery, _wolf). */
+int ftRemixAiRecoveryIsWolfUspAction(int action)
+{
+    return (action == 0xE3) || (action == 0xE4) || (action == 0xE6) || (action == 0xE8);
+}
+
+/** A negative charge_action means the fighter has no NSP charge recovery, so it never matches. */
+int ftRemixAiRecoveryIsNspChargeAction(int action, int charge_action)
+{
+    return (charge_action >= 0) && (action == charge_action);
+}
+
+/** The vanilla Pikachu branch is kept in classic mode and when the improved AI is off (fix_remix_recovery, _pikachu). */
+int ftRemixAiRecoveryKeepsPikachuVanilla(int is_classic_mode, int improved_ai)
+{
+    return (is_classic_mode != 0) || (improved_ai == 0);
+}
+
 #endif

@@ -9,12 +9,36 @@
 #include "ft/ftremix/ftremixaitables.h"
 #include "remix/remix_roster_data.h" /* REMIX_ID_*: a Remix id is also its port fkind */
 #include "ft/ftremix/ftremixaicombat.h"
+#include "ft/ftremix/ftremixaispecials.h"
 #include "ft/ftremix/ftremixairecovery.h"
 #include "ft/ftremix/ftremixaiprevent.h"
 #include "ft/ftremix/ftremixaicommands.h"
+#include "ft/ftremix/ftremixaisize.h"
+#include "ft/ftremix/ftremixaicloud.h"
+#include "ft/ftremix/ftremixailevel.h"
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixailv10.h"
+#include "ft/ftremix/ftremixaipostprocess.h"
+#endif
+#include "ft/ftremix/ftremixairoll.h"
+#include "ft/ftremix/ftremixailongrange.h"
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixaimovement.h"
+#include "ft/ftremix/ftremixaiprediction.h"
+#endif
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
+#endif
+
+#if defined(PORT) && defined(REGION_REMIX)
+#define FTCOMPUTER_LEVEL_CLAMPED(fp) ftRemixAiClampedLevel(fp)
+#define FTCOMPUTER_WALK_STOP_WAIT(fp) ftRemixAiWalkStopThreshold(fp)
+#define FTCOMPUTER_COLL_SIZE_BASE(fp) ftRemixAiNearCollisionScale(fp)
+#else
+#define FTCOMPUTER_LEVEL_CLAMPED(fp) ((fp)->level)
+#define FTCOMPUTER_WALK_STOP_WAIT(fp) ((-(fp)->level * 2) + 18)
+#define FTCOMPUTER_COLL_SIZE_BASE(fp) 1.0F
 #endif
 
 // // // // // // // // // // // //
@@ -3594,7 +3618,11 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                             if
                             (
                                 (
+#if defined(PORT) && defined(REGION_REMIX)
+                                    (ftRemixAiUspIsFoxFamily(this_fp) == FALSE) ||
+#else
                                     (this_fp->fkind != nFTKindFox) ||
+#endif
                                     (
                                         (this_fp->status_id != nFTFoxStatusSpecialHiStart) &&
                                         (this_fp->status_id != nFTFoxStatusSpecialAirHiStart) &&
@@ -3604,6 +3632,10 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                                 ) 
                                 &&
                                 (dist_y < 0)
+#if defined(PORT) && defined(REGION_REMIX)
+                                &&
+                                (ftRemixAiUspIsCloudAction(this_fp) == FALSE)
+#endif
                             )
                             {
                                 stick_range_y = dist_y = 0.0F;
@@ -3698,13 +3730,16 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                     return;
                 }
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixAiCloudRecoveryInput(this_fp);
+#endif
             com->p_command = p_command;
         }
     }
 }
 
 /* Remix ids (>= 0x31) come from the Remix image; vanilla ids use dFTComputerPlayerInputScripts. */
-static u8 *ftComputerGetInputScript(s32 index)
+u8 *ftComputerGetInputScript(s32 index)
 {
 #if defined(PORT) && defined(REGION_REMIX)
     u8 *remix_script = ftRemixAiGetInputScript(index);
@@ -3724,9 +3759,9 @@ void ftComputerSetCommandWaitShort(FTStruct *fp, s32 index)
 
     if (fp->ga == nMPKineticsGround)
     {
-        com->input_wait = ((2.0F * (syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - fp->level))) + ((FTCOMPUTER_LEVEL_MAX - fp->level) * 2) + 1.0F);
+        com->input_wait = ((2.0F * (syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp)))) + ((FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp)) * 2) + 1.0F);
     }
-    else com->input_wait = ((syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - fp->level)) + ((FTCOMPUTER_LEVEL_MAX - fp->level) / 2) + 1.0F);
+    else com->input_wait = ((syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp))) + ((FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp)) / 2) + 1.0F);
     
     com->p_command = ftComputerGetInputScript(index);
 }
@@ -3747,9 +3782,9 @@ void ftComputerSetCommandWaitLong(FTStruct *fp, s32 index)
 
     if (fp->ga == nMPKineticsGround)
     {
-        com->input_wait = ((4 * (syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - fp->level))) + ((FTCOMPUTER_LEVEL_MAX - fp->level) * 4) + 1.0F);
+        com->input_wait = ((4 * (syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp)))) + ((FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp)) * 4) + 1.0F);
     }
-    else com->input_wait = ((syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - fp->level)) + (FTCOMPUTER_LEVEL_MAX - fp->level) + 1.0F);
+    else com->input_wait = ((syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp))) + (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(fp)) + 1.0F);
     
     com->p_command = ftComputerGetInputScript(index);
 }
@@ -3782,6 +3817,9 @@ sb32 ftComputerCheckFindTarget(FTStruct *this_fp)
                 (
                     (other_fp->status_id >= nFTCommonStatusWait) &&
                     (
+#if defined(PORT) && defined(REGION_REMIX)
+                        ftRemixAiMovementTargetsOffstage(this_fp) ||
+#endif
                         (
                             (func_ovl2_800F8FFC(&other_fp->joints[nFTPartsJointTopN]->translate.vec.f) != FALSE) &&
                             (other_pos_x <= gMPCollisionBounds.current.right) &&
@@ -3811,6 +3849,9 @@ sb32 ftComputerCheckFindTarget(FTStruct *this_fp)
                     {
                         com->target_pos.x = other_pos_x;
                         com->target_pos.y = other_pos_y;
+#if defined(PORT) && defined(REGION_REMIX)
+                        ftRemixAiMovementClampTarget(this_fp, &com->target_pos);
+#endif
                         com->target_user = other_fp;
 
                         distance = square_xy;
@@ -3867,7 +3908,11 @@ sb32 ftComputerCheckEvadeDistance(FTStruct *this_fp)
                 f32 other_y = (other_joint->translate.vec.f.y + other_fp->physics.vel_air.x * 3.0F);
                 f32 sqrt_xy = sqrtf(SQUARE(this_joint->translate.vec.f.y - other_y) + SQUARE(this_joint->translate.vec.f.x - other_x));
 
+#if defined(PORT) && defined(REGION_REMIX)
+                if (ftRemixAiEvadeCountsEnemyInvulnerable(this_fp, other_fp) && (sqrt_xy < 1500.0F))
+#else
                 if ((other_fp->star_hitstatus == nGMHitStatusInvincible) && (sqrt_xy < 1500.0F))
+#endif
                 {
                     return TRUE;
                 }
@@ -3977,6 +4022,9 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
     s32 this_predict_frame;
     s32 attack_count;
     f32 detect_far_y;
+#if defined(PORT) && defined(REGION_REMIX)
+    f32 size_detect_scale;
+#endif
     FTComputerAttack *comattack;
     Vec3f this_detect_pos;
     f32 predict_adjust_y;
@@ -4017,7 +4065,7 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
     this_pos_x = this_fp->joints[nFTPartsJointTopN]->translate.vec.f.x;
     this_pos_y = this_fp->joints[nFTPartsJointTopN]->translate.vec.f.y;
 
-    damage_coll_size_mul = (((syUtilsRandFloat() - 0.5F) * (FTCOMPUTER_LEVEL_MAX - this_fp->level)) * 0.1F) + 1.0F;
+    damage_coll_size_mul = (((syUtilsRandFloat() - 0.5F) * (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(this_fp))) * 0.1F) + FTCOMPUTER_COLL_SIZE_BASE(this_fp);
 
     hurtbox_detect_width = target_fp->damage_coll_size.x * damage_coll_size_mul;
     hurtbox_detect_height = target_fp->damage_coll_size.y * damage_coll_size_mul;
@@ -4067,6 +4115,12 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
         {
             continue;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        else if (!ftRemixAiPredictionCandidateAllowed(this_fp, comattack->input_kind))
+        {
+            continue;
+        }
+#endif
         else
         {
             predict_pos_x = ((target_pos_x + (target_vel_x * comattack->hit_start_frame)) - (this_pos_x + (this_vel_x * comattack->hit_start_frame))) * this_fp->lr;
@@ -4099,6 +4153,9 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                 else predict_pos_y = ((((comattack->hit_start_frame * target_vel_y) + target_pos_y) - ((target_gravity * SQUARE(target_predict_frame)) * 0.5F)) + (target_tvel_base * (comattack->hit_start_frame - target_predict_frame))) - predict_adjust_y;
             }
             else predict_pos_y = ((comattack->hit_start_frame * target_vel_y) + target_pos_y) - predict_adjust_y;
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixAiPredictAttackPosition(this_fp, target_fp, hit_frame, &predict_pos_x, &predict_pos_y);
+#endif
 
             if (this_fp->lr > 0)
             {
@@ -4113,6 +4170,13 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
             detect_near_y = comattack->detect_near_y;
             detect_far_y = comattack->detect_far_y;
 
+#if defined(PORT) && defined(REGION_REMIX)
+            size_detect_scale = ftRemixAiSizeDetectScale(this_fp);
+            detect_near_x *= size_detect_scale;
+            detect_far_x *= size_detect_scale;
+            detect_near_y *= size_detect_scale;
+            detect_far_y *= size_detect_scale;
+#endif
             if (this_fp->fkind == nFTKindGDonkey)
             {
                 detect_near_x *= 1.4F;
@@ -4422,6 +4486,9 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
             {
                 detect_ranges_x[i] *= 0.25F;
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            if (!ftRemixAiSkipRepeatedInputCheck(this_fp))
+#endif
             switch (input_kinds[i])
             {
             case nFTComputerInputStickNButtonA:
@@ -4509,7 +4576,11 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                 {
                     com->input_repeat_count++;
 
+#if defined(PORT) && defined(REGION_REMIX)
+                    if (ftRemixAiInputRepeatLimitHit(this_fp, com))
+#else
                     if (com->input_repeat_count >= 4)
+#endif
                     {
                         ftComputerSetCommandImmediate(this_fp, nFTComputerInputMoveAutoStickTiltHiReleaseZ);
 
@@ -4624,7 +4695,11 @@ sb32 ftComputerCheckSetTargetEdgeRight(FTStruct *fp, sb32 is_find_edge_target)
     u16 *line_ids;
     s32 i;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((fp->physics.vel_air.y >= 0.0F) && (ftRemixAiSkipsUpwardDriftTarget(fp) == FALSE))
+#else
     if (fp->physics.vel_air.y >= 0.0F)
+#endif
     {
         com->target_pos.x = fp->joints[nFTPartsJointTopN]->translate.vec.f.x - 500.0F;
         com->target_pos.y = fp->joints[nFTPartsJointTopN]->translate.vec.f.y;
@@ -4718,7 +4793,11 @@ sb32 ftComputerCheckSetTargetEdgeLeft(FTStruct *fp, sb32 is_find_edge_target)
     u16 *line_ids;
     s32 i;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((fp->physics.vel_air.y >= 0.0F) && (ftRemixAiSkipsUpwardDriftTarget(fp) == FALSE))
+#else
     if (fp->physics.vel_air.y >= 0.0F)
+#endif
     {
         com->target_pos.x = fp->joints[nFTPartsJointTopN]->translate.vec.f.x + 500.0F;
         com->target_pos.y = fp->joints[nFTPartsJointTopN]->translate.vec.f.y;
@@ -5221,7 +5300,11 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                             (fp->status_id == nFTCommonStatusJumpB)        ||
                             (fp->status_id == nFTCommonStatusFall)         ||
                             (fp->status_id == nFTCommonStatusDamageFall)   ||
+#if defined(PORT) && defined(REGION_REMIX)
+                            ftRemixAiCanJumpWhileFalling(fp)
+#else
                             (fp->status_id == nFTCommonStatusFallSpecial)
+#endif
                         )
                         {
                             ftComputerSetCommandImmediate(fp, nFTComputerInputMoveAutoStickTiltHiReleaseZ);
@@ -5280,8 +5363,13 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                             )
                             {
                                 // Fast fall?
-                                ftComputerSetCommandWaitShort(fp, nFTComputerInputStickND1MoveAutoSmashLw);
-                                return;
+#if defined(PORT) && defined(REGION_REMIX)
+                                if (ftRemixAiMovementFastfallPermitted(fp))
+#endif
+                                {
+                                    ftComputerSetCommandWaitShort(fp, nFTComputerInputStickND1MoveAutoSmashLw);
+                                    return;
+                                }
                             }
                         }
                     }
@@ -5388,7 +5476,11 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                 }
                 else ftComputerSetCommandImmediate(fp, nFTComputerInputMoveAuto);
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            else ftComputerSetCommandImmediate(fp, ftRemixAiMovementNeutralInput(fp));
+#else
             else ftComputerSetCommandImmediate(fp, nFTComputerInputMoveAuto);
+#endif
         }
         else if (fp->status_id != nFTCommonStatusDash)
         {
@@ -5398,12 +5490,20 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                 {
                     if (fp->status_id != nFTCommonStatusKneeBend)
                     {
+#if defined(PORT) && defined(REGION_REMIX)
+                        ftComputerSetCommandWaitShort(fp, ftRemixAiMovementShorthopInput(fp, nFTComputerInputMoveAutoStickTiltHiReleaseZ));
+#else
                         ftComputerSetCommandWaitShort(fp, nFTComputerInputMoveAutoStickTiltHiReleaseZ);
+#endif
                     }
                 }
                 else if (fp->coll_data.floor_flags & MAP_VERTEX_COLL_PASS)
                 {
+#if defined(PORT) && defined(REGION_REMIX)
+                    ftComputerSetCommandWaitShort(fp, ftRemixAiDownCommand(fp));
+#else
                     ftComputerSetCommandWaitShort(fp, nFTComputerInputStickND1MoveAutoSmashLw);
+#endif
                 }
             }
             else ftComputerSetCommandImmediate(fp, nFTComputerInputMoveAuto);
@@ -5900,6 +6000,9 @@ sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
     switch (fp->fkind)
     {
     case nFTKindDonkey:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_JDK:
+#endif
         if
         (
             (fp->status_id != nFTDonkeyStatusSpecialNStart)    &&
@@ -5943,6 +6046,14 @@ sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
         break;
 
     case nFTKindSamus:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_MTWO:
+    case REMIX_ID_DSAMUS:
+    case REMIX_ID_ESAMUS:
+    case REMIX_ID_JSAMUS:
+#endif
+        /* REMIX-TODO(AI): improve_remix_specials (AI.asm) also gives Sheik and Peppy needle or revolver charges (the
+         * Samus B press when needle ammo is below 6) and Bowser and GBowser the stick reset in USP. Not ported yet. */
         if
         (
             (fp->status_id != nFTSamusStatusSpecialNStart)     &&
@@ -6002,6 +6113,9 @@ sb32 ftComputerCheckTryCancelSpecialN(FTStruct *fp)
     {
     case nFTKindDonkey:
     case nFTKindGDonkey:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_JDK:
+#endif
         if
         (
             (fp->status_id == nFTDonkeyStatusSpecialNStart)                ||
@@ -6036,6 +6150,14 @@ sb32 ftComputerCheckTryCancelSpecialN(FTStruct *fp)
             return TRUE;
         }
         break;
+#if defined(PORT) && defined(REGION_REMIX)
+    default:
+        if (ftRemixAiSpecialsCancelChargeWithZ(fp))
+        {
+            return TRUE;
+        }
+        break;
+#endif
     }
     return FALSE;
 }
@@ -6061,7 +6183,7 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
         {
             action_wait *= 2;
         }
-        if (((FTCOMPUTER_LEVEL_MAX - this_fp->level) * 15) < action_wait)
+        if (((FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(this_fp)) * 15) < action_wait)
         {
             if (syUtilsRandFloat() < 0.4F)
             {
@@ -6075,7 +6197,11 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
 
                 return 0;
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            else ftComputerSetCommandWaitShort(this_fp, ftRemixAiCliffGetupCommand(this_fp));
+#else
             else ftComputerSetCommandWaitShort(this_fp, nFTComputerInputMoveAutoStickTiltHiReleaseZ);
+#endif
 
             return 0;
         }
@@ -6375,7 +6501,14 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
             case nFTCommonStatusOttotto:
                 com->appeal_attempt_frames = 0;
 
+#if defined(PORT) && defined(REGION_REMIX)
+                if (ftRemixAiTauntIsSuppressed(this_fp) == FALSE)
+                {
+                    ftComputerSetCommandWaitShort(this_fp, nFTComputerInputStickNButtonL);
+                }
+#else
                 ftComputerSetCommandWaitShort(this_fp, nFTComputerInputStickNButtonL);
+#endif
 
                 return 0;
             }
@@ -6659,7 +6792,11 @@ void ftComputerFollowObjectiveRecover(FTStruct *fp)
         func_ovl3_80134964(fp);
 
 #if defined(REGION_US)
+#if defined(PORT) && defined(REGION_REMIX)
+        if ((fp->fkind == nFTKindPikachu) && ftRemixAiRecoveryVanillaPikachuApplies(fp))
+#else
         if (fp->fkind == nFTKindPikachu)
+#endif
         {
             switch (fp->status_id)
             {
@@ -6672,6 +6809,14 @@ void ftComputerFollowObjectiveRecover(FTStruct *fp)
                 com->target_pos.y = fp->joints[nFTPartsJointTopN]->translate.vec.f.y;
                 break;
             }
+        }
+#endif
+
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixAiRecoveryWolfTarget(fp);
+        if (ftRemixAiRecoverySpecialCase(fp))
+        {
+            return;
         }
 #endif
 
@@ -6861,7 +7006,7 @@ s32 func_ovl3_8013837C(FTStruct *this_fp)
         com->fighter_follow_since = 1;
 
         // NOTE: This only trims the (syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - this_fp->level) * 4.0F) part to 8-bits.
-        com->fighter_follow_wait = (u8)(syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - this_fp->level) * 4.0F) + ((FTCOMPUTER_LEVEL_MAX - this_fp->level) * 16);
+        com->fighter_follow_wait = (u8)(syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(this_fp)) * 4.0F) + ((FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(this_fp)) * 16);
 
         if (com->behavior == nFTComputerBehaviorYoshiTeam)
         {
@@ -6972,7 +7117,7 @@ void func_ovl3_8013877C(FTStruct *this_fp)
         com->input_wait = 1;
         com->p_command = dFTComputerPlayerInputScripts[nFTComputerInputStickN];
 
-        if ((com->walk_stop_wait == ((-this_fp->level * 2) + 18)) && (this_fp->ga == nMPKineticsGround))
+        if ((com->walk_stop_wait == FTCOMPUTER_WALK_STOP_WAIT(this_fp)) && (this_fp->ga == nMPKineticsGround))
         {
             ftComputerCheckTryChargeSpecialN(this_fp);
 
@@ -7047,14 +7192,21 @@ sb32 func_ovl3_80138AA8(FTStruct *this_fp, sb32 is_delay)
     {
         if (com->unk_ftcom_0x35 == 0)
         {
-            com->unk_ftcom_0x35 = 2.0F * (syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - this_fp->level));
+            com->unk_ftcom_0x35 = 2.0F * (syUtilsRandFloat() * (FTCOMPUTER_LEVEL_MAX - FTCOMPUTER_LEVEL_CLAMPED(this_fp)));
         }
         if ((syUtilsRandFloat() < ((this_fp->level - 1) / 9.0F)) && (target_fp != NULL))
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            if (ftRemixAiSamusNspIsBlocked(this_fp, target_fp))
+            {
+                return FALSE;
+            }
+#else
             if ((target_fp->fkind == nFTKindNess) || (target_fp->fkind == nFTKindFox))
             {
                 return FALSE;
             }
+#endif
         }
         fkind = (this_fp->fkind == nFTKindKirby) ? this_fp->passive_vars.kirby.copy_id : this_fp->fkind;
 
@@ -7075,6 +7227,9 @@ sb32 func_ovl3_80138AA8(FTStruct *this_fp, sb32 is_delay)
                 return FALSE;
             }
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        fkind = ftRemixAiLongRangeSwitchKind(fkind);
+#endif
         switch (fkind)
         {
         case nFTKindLink:
@@ -7130,11 +7285,15 @@ sb32 func_ovl3_80138AA8(FTStruct *this_fp, sb32 is_delay)
             {
                 return FALSE;
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixAiLongRangeSetCommand(this_fp, is_delay);
+#else
             if (is_delay == FALSE)
             {
                 ftComputerSetCommandWaitLong(this_fp, nFTComputerInputStickSmashAutoXButtonB);
             }
             else ftComputerSetCommandWaitLong(this_fp, nFTComputerInputStickTiltAutoXNYD5SmashAutoXButtonB);
+#endif
 
             return TRUE;
         }
@@ -7290,7 +7449,11 @@ void ftComputerFollowObjectiveAttack(FTStruct *fp)
             }
             else var_a1 = TRUE;
 
+#if defined(PORT) && defined(REGION_REMIX)
+            if (com->target_dist < ((random * 300.0F) + ftRemixAiPredictionAttackViewBase(fp)))
+#else
             if (com->target_dist < ((random * 300.0F) + 1200.0F))
+#endif
             {
                 if (func_ovl3_80138EE4(fp) != FALSE)
                 {
@@ -7422,7 +7585,11 @@ void func_ovl3_801397F4(FTStruct *fp)
             }
             else var_a1 = TRUE;
 
+#if defined(PORT) && defined(REGION_REMIX)
+            if (com->target_dist < ((random * 300.0F) + ftRemixAiPredictionAttackViewBase(fp)))
+#else
             if (com->target_dist < ((random * 300.0F) + 1200.0F))
+#endif
             {
                 if (func_ovl3_80138EE4(fp) != FALSE)
                 {
@@ -7887,7 +8054,11 @@ void ftComputerProcessTrait(FTStruct *fp)
         {
             com->behavior_change_wait = (syUtilsRandFloat() * 900.0F) + 900.0F;
 
+#if defined(PORT) && defined(REGION_REMIX)
+            switch (ftRemixAiTraitRoll(fp))
+#else
             switch (syUtilsRandUShort() & 3)
+#endif
             {
             case 0:
                 com->behavior = nFTComputerBehaviorDefault;
@@ -7979,6 +8150,9 @@ void ftComputerProcessAll(GObj *fighter_gobj)
             ftComputerProcessTrait(fp);
             ftComputerProcessBehavior(fp);
             ftComputerProcessObjective(fp);
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixAiPostProcess(fp);
+#endif
         }
         ftComputerUpdateInputs(fp);
     }

@@ -3,6 +3,9 @@
 #include "ft/ftremix/ftremixhooks.h"
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixaiteching.h"
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixtugofwar.h"
 #endif
 #include <it/item.h>
@@ -301,8 +304,12 @@ void ftCommonDamageAirCommonProcMap(GObj *fighter_gobj)
         (mpCommonCheckFighterDamageCollision(fighter_gobj) != FALSE)        &&
         (ftCommonWallDamageCheckGoto(fighter_gobj) == FALSE)                &&
         (fp->status_vars.common.damage.coll_mask_curr & MAP_FLAG_FLOOR) &&
+#if defined(PORT) && defined(REGION_REMIX)
+        (ftRemixAiTechIsHandled(fighter_gobj) == FALSE)
+#else
         (ftCommonPassiveStandCheckInterruptDamage(fighter_gobj) == FALSE)   &&
         (ftCommonPassiveCheckInterruptDamage(fighter_gobj) == FALSE)
+#endif
     )
     {
         ftCommonDownBounceSetStatus(fighter_gobj);

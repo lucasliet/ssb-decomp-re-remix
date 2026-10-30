@@ -57,4 +57,13 @@ int ftRemixAiPreventRulesConkerGrenadeVeto(int input_kind, int grenade_word)
     return is_grenade_input && (grenade_word != 0);
 }
 
+/** Crash DSP and USP are vetoed on a soft platform; the other inputs are never vetoed by this rule. */
+int ftRemixAiPreventRulesCrashSoftPlatformVeto(int input_kind, int is_soft_platform)
+{
+    int is_crash_input;
+
+    is_crash_input = (input_kind == FTREMIX_AI_PREVENT_INPUT_DSPG) || (input_kind == FTREMIX_AI_PREVENT_INPUT_USPG);
+    return is_crash_input && (is_soft_platform != 0);
+}
+
 #endif

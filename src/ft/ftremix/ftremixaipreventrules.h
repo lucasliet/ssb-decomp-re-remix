@@ -9,8 +9,8 @@
 #define FTREMIX_AI_PREVENT_INPUT_NSPG 0x09
 #define FTREMIX_AI_PREVENT_INPUT_USPG 0x0D
 #define FTREMIX_AI_PREVENT_INPUT_DSPG 0x1B
-#define FTREMIX_AI_PREVENT_INPUT_WARIO_NSP_TOWARDS 0x42
-#define FTREMIX_AI_PREVENT_INPUT_WARIO_NSP_TOWARDS_JUMP 0x43
+#define FTREMIX_AI_PREVENT_INPUT_WARIO_NSP_TOWARDS 0x4D
+#define FTREMIX_AI_PREVENT_INPUT_WARIO_NSP_TOWARDS_JUMP 0x4E
 #define FTREMIX_AI_PREVENT_INPUT_SMASH_DSP 0x41
 #define FTREMIX_AI_PREVENT_CPU_LEVEL_LVL10 10
 
@@ -37,6 +37,12 @@ extern int ftRemixAiPreventRulesFoxUspVeto(int input_kind, int cpu_level);
  * grenade word with `beqz` (zero means available), so any non-zero word is a grenade in use.
  */
 extern int ftRemixAiPreventRulesConkerGrenadeVeto(int input_kind, int grenade_word);
+
+/**
+ * Crash: the grounded Down Special and Up Special are vetoed while Crash stands on a soft platform (the asm reads the
+ * surface flag 0x4000 of the fighter's floor flags).
+ */
+extern int ftRemixAiPreventRulesCrashSoftPlatformVeto(int input_kind, int is_soft_platform);
 
 #endif
 

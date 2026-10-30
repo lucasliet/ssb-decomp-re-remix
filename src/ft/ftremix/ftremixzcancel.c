@@ -10,6 +10,7 @@
 #include "enhancements/enhancements.h"
 #include <ft/fighter.h>
 #include <sys/utils.h>
+#include "ft/ftremix/ftremixaiteching.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -160,6 +161,10 @@ static s32 ftRemixZCancelResult(FTStruct *fp)
     s32 option = gmRemixToggle(z_cancel_opts);
     s32 window;
 
+    if (ftRemixAiShouldZCancel(fp))
+    {
+        return (option == FTREMIX_ZCANCEL_OPT_GLIDE) ? FTREMIX_ZCANCEL_RESULT_GLIDE : FTREMIX_ZCANCEL_RESULT_SUCCESS;
+    }
     if (option == FTREMIX_ZCANCEL_OPT_DISABLED)
     {
         return FTREMIX_ZCANCEL_RESULT_FAIL;

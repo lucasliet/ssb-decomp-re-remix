@@ -22,6 +22,15 @@ extern int ftRemixAiRecoveryUpBRepeatAllowed(int cpu_level, int is_classic_mode,
  */
 extern float ftRemixAiRecoveryClampTargetX(float target_x, float left_blastzone, float right_blastzone);
 
+/** TRUE for the Wolf USP actions (E3, E4, E6, E8) that aim the recovery target straight up (fix_remix_recovery). */
+extern int ftRemixAiRecoveryIsWolfUspAction(int action);
+
+/** TRUE when the CPU is in its NSP charge action of charge_action (a negative charge_action never matches). */
+extern int ftRemixAiRecoveryIsNspChargeAction(int action, int charge_action);
+
+/** TRUE when the vanilla Pikachu recovery branch runs: vanilla 1P/RTTF (classic mode) or the improved AI is off. */
+extern int ftRemixAiRecoveryKeepsPikachuVanilla(int is_classic_mode, int improved_ai);
+
 #endif
 
 #endif
