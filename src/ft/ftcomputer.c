@@ -19,12 +19,14 @@
 #if defined(PORT) && defined(REGION_REMIX)
 #include "ft/ftremix/ftremixailv10.h"
 #include "ft/ftremix/ftremixaipostprocess.h"
+#include "ft/ftremix/ftremixaiweight.h"
 #endif
 #include "ft/ftremix/ftremixairoll.h"
 #include "ft/ftremix/ftremixailongrange.h"
 #if defined(PORT) && defined(REGION_REMIX)
 #include "ft/ftremix/ftremixaimovement.h"
 #include "ft/ftremix/ftremixaiprediction.h"
+#include "gm/gmremixtoggle.h"
 #endif
 #endif
 #ifdef PORT
@@ -3474,7 +3476,11 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                     switch (command & FTCOMPUTER_COMMAND_OPCODE_MASK)
                     {
                     case FTCOMPUTER_COMMAND_BUTTON_A_PRESS:
+#if defined(PORT) && defined(REGION_REMIX)
+                        this_fp->input.cp.button_inputs |= ftRemixSingleButtonCpuAOrBPress(gmRemixToggle(single_button_mode), A_BUTTON);
+#else
                         this_fp->input.cp.button_inputs |= A_BUTTON;
+#endif
                         break;
 
                     case FTCOMPUTER_COMMAND_BUTTON_A_RELEASE:
@@ -3482,7 +3488,11 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                         break;
 
                     case FTCOMPUTER_COMMAND_BUTTON_B_PRESS:
+#if defined(PORT) && defined(REGION_REMIX)
+                        this_fp->input.cp.button_inputs |= ftRemixSingleButtonCpuAOrBPress(gmRemixToggle(single_button_mode), B_BUTTON);
+#else
                         this_fp->input.cp.button_inputs |= B_BUTTON;
+#endif
                         break;
 
                     case FTCOMPUTER_COMMAND_BUTTON_B_RELEASE:
@@ -3490,7 +3500,11 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                         break;
 
                     case FTCOMPUTER_COMMAND_BUTTON_Z_PRESS:
+#if defined(PORT) && defined(REGION_REMIX)
+                        this_fp->input.cp.button_inputs |= ftRemixSingleButtonCpuZOrLPress(gmRemixToggle(single_button_mode), Z_TRIG);
+#else
                         this_fp->input.cp.button_inputs |= Z_TRIG;
+#endif
                         break;
 
                     case FTCOMPUTER_COMMAND_BUTTON_Z_RELEASE:
@@ -3498,7 +3512,11 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                         break;
 
                     case FTCOMPUTER_COMMAND_BUTTON_L_PRESS:
+#if defined(PORT) && defined(REGION_REMIX)
+                        this_fp->input.cp.button_inputs |= ftRemixSingleButtonCpuZOrLPress(gmRemixToggle(single_button_mode), L_TRIG);
+#else
                         this_fp->input.cp.button_inputs |= L_TRIG;
+#endif
                         break;
 
                     case FTCOMPUTER_COMMAND_BUTTON_L_RELEASE:
@@ -4335,6 +4353,14 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                 )
                 {
                     input_kinds[attack_count] = comattack->input_kind;
+
+#if defined(PORT) && defined(REGION_REMIX)
+                    if (ftRemixAiWeightAttackOptionsApplies(this_fp))
+                    {
+                        detect_ranges_x[attack_count++] = ftRemixAiWeightAttackOption(this_fp, target_fp, comattack);
+                        continue;
+                    }
+#endif
 
                     switch (comattack->input_kind)
                     {
@@ -5441,6 +5467,9 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                     }
                 }
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixAiRecoveryClampWalkTargetX(fp);
+#endif
             ftComputerSetCommandImmediate(fp, nFTComputerInputMoveAuto);
             return;
         }
@@ -7415,6 +7444,10 @@ sb32 func_ovl3_80138EE4(FTStruct *fp)
                 return FALSE;
             }
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        return ftRemixAiStopRollSpam(fp, (com->target_pos.x < fp->joints[nFTPartsJointTopN]->translate.vec.f.x) ?
+                                         nFTComputerInputEscapeL : nFTComputerInputEscapeR);
+#else
         if (com->target_pos.x < fp->joints[nFTPartsJointTopN]->translate.vec.f.x)
         {
             ftComputerSetCommandWaitShort(fp, nFTComputerInputEscapeL);
@@ -7422,6 +7455,7 @@ sb32 func_ovl3_80138EE4(FTStruct *fp)
         else ftComputerSetCommandWaitShort(fp, nFTComputerInputEscapeR);
 
         return TRUE;
+#endif
     }
     return FALSE;
 }
@@ -7903,6 +7937,8 @@ void ftComputerFollowObjectiveRush(FTStruct *fp)
 }
 
 // 0x8013A38C
+/* REMIX-TODO(AI): cpu_di_ (AI.asm 6533-6812, hook at 0x8013A3C8) is not ported. It needs Training.entry_di_* and
+ * SinglePlayerModes flag symbols, the smash/slide DI tables (DI_* script ids not mapped in C) and the per-port combo state. */
 void ftComputerProcessObjective(FTStruct *fp)
 {
     FTComputer *com = &fp->computer;

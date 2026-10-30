@@ -617,7 +617,8 @@ void itRemixSuperMushroomProcTouch(FTStruct *fp, ITStruct *ip, GObj *item_gobj)
         return;
     }
     itRemixSuperMushroomInitRoutine(routine, fp, ip->kind);
-    routine_gobj = gcMakeGObjSPAfter(nGCCommonKindEffect, NULL, nGCCommonLinkIDEffect, GOBJ_PRIORITY_DEFAULT);
+    /* Not the effect link: ftParamRunProcEffect walks it and reads every user_data as an EFStruct (docs/bugs/remix_routine_gobjs_on_effect_link_2026-10-29.md) */
+    routine_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
     routine_gobj->user_data.p = routine;
     routine->routine_gobj = routine_gobj;
     gcAddGObjProcess(routine_gobj, itRemixSuperMushroomProcUpdate, nGCProcessKindFunc, 3);

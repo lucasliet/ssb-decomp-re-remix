@@ -151,7 +151,8 @@ static void itRemixCloakingDeviceStart(FTStruct *fp)
         return;
     }
     state->is_active = TRUE;
-    routine_gobj = gcMakeGObjSPAfter(nGCCommonKindEffect, NULL, nGCCommonLinkIDEffect, GOBJ_PRIORITY_DEFAULT);
+    /* Not the effect link: ftParamRunProcEffect walks it and reads every user_data as an EFStruct (docs/bugs/remix_routine_gobjs_on_effect_link_2026-10-29.md) */
+    routine_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
     routine_gobj->user_data.p = fp;
     gcAddGObjProcess(routine_gobj, itRemixCloakingDeviceProcUpdate, nGCProcessKindFunc, 3);
 }

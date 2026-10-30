@@ -19,6 +19,9 @@ sb32 ftRemixAiInputRepeatLimitHit(FTStruct *fp, FTComputer *com);
 /** shield_drop_: the input routine for a platform drop, SHIELD_DROP for an idle level 10 CPU, the vanilla drop otherwise. */
 s32 ftRemixAiDownCommand(FTStruct *fp);
 
+/** stop_roll_spam_: issues the roll `roll_command` or the Remix alternative, FALSE when the routine skips the turn. */
+sb32 ftRemixAiStopRollSpam(FTStruct *fp, s32 roll_command);
+
 #endif
 
 #endif

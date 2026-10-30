@@ -487,7 +487,7 @@ static void itRemixStopwatchActivate(void)
     {
         return;
     }
-    sITRemixStopwatchWatchGObj = gcMakeGObjSPAfter(nGCCommonKindEffect, itRemixStopwatchHandleActive, nGCCommonLinkIDEffect, GOBJ_PRIORITY_DEFAULT);
+    sITRemixStopwatchWatchGObj = gcMakeGObjSPAfter(nGCCommonKindInterface, itRemixStopwatchHandleActive, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
 }
 
 /* Stopwatch: pickup_stopwatch. PICKUP_ITEM_MAIN, then the shared tomato tail at 0x80145C4C. */

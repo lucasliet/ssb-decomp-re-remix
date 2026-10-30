@@ -16,6 +16,9 @@ sb32 ftRemixAiRecoveryAllowsUpBRepeat(FTStruct *fp);
 /** fix_remix_recovery: TRUE when the vanilla Pikachu recovery block runs for fp. */
 sb32 ftRemixAiRecoveryVanillaPikachuApplies(FTStruct *fp);
 
+/** fix_target_pos_x: clamps the walk target X inside the stage bounds when the improved AI is on. */
+void ftRemixAiRecoveryClampWalkTargetX(FTStruct *fp);
+
 /** fix_remix_recovery: the Wolf USP actions aim the recovery target straight up. */
 void ftRemixAiRecoveryWolfTarget(FTStruct *fp);
 

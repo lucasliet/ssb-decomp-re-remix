@@ -8,6 +8,8 @@
 #include <ft/fighter.h>
 #include <ft/ftcomputer.h>
 #include <gm/gmremixtoggle.h>
+#include <mp/mpdef.h>
+#include <mp/map.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "remix/remix_roster_data.h"
@@ -41,6 +43,22 @@ sb32 ftRemixAiRecoveryAllowsUpBRepeat(FTStruct *fp)
 sb32 ftRemixAiRecoveryVanillaPikachuApplies(FTStruct *fp)
 {
     return ftRemixAiRecoveryKeepsPikachuVanilla(ftRemixAiRecoveryIsClassicMode(), gmRemixToggle(improved_ai));
+}
+
+/**
+ * fix_target_pos_x (AI.asm, improved AI only): clamps the walk target X inside the stage map bounds shrunk by the padding.
+ * The bounds are map_bound_left and map_bound_right of the ground data (asm lh +0x7A and +0x78 of the pointer at 0x80131300).
+ * Only the X of the target is clamped. Remix 1P does not enable it (the asm reads the toggle only).
+ */
+void ftRemixAiRecoveryClampWalkTargetX(FTStruct *fp)
+{
+    MPGroundData *ground = gMPCollisionGroundData;
+
+    if ((gmRemixToggle(improved_ai) == FALSE) || (ground == NULL))
+    {
+        return;
+    }
+    fp->computer.target_pos.x = ftRemixAiRecoveryClampTargetX(fp->computer.target_pos.x, ground->map_bound_left, ground->map_bound_right);
 }
 
 /**

@@ -26,6 +26,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixtwelvecbhud.h"
 #include "gm/gmremixtoggle.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
@@ -2518,7 +2519,11 @@ sb32 mnPlayersVSCheckHandicapArrowInRangeAll(GObj *gobj, s32 cursor_player)
 		{
 			if (mnPlayersVSCheckHandicapArrowRInRange(gobj, player) != FALSE)
 			{
+#if defined(PORT) && defined(REGION_REMIX)
+				if (mnRemixVSCanRaiseArrowValue(sMNPlayersVSSlots[player].pkind, *value))
+#else
 				if (*value < 9)
+#endif
 				{
 					func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 					*value += 1;
@@ -3226,7 +3231,11 @@ void mnPlayersVSArrowThreadUpdate(GObj *gobj)
 			sobj->sprite.attr |= SP_TRANSPARENT;
 			sobj->user_data.s = 0;
 		}
+#if defined(PORT) && defined(REGION_REMIX)
+		if (mnRemixVSIsArrowRightLimit(sMNPlayersVSSlots[player].pkind, value))
+#else
 		if (value == 9)
+#endif
 		{
 			sobj = mnPlayersVSGetArrowSObj(gobj, 1);
 
@@ -3337,6 +3346,13 @@ void mnPlayersVSMakeHandicapLevelValue(s32 player)
 	sMNPlayersVSSlots[player].handicap_cpu_level_value = gobj = gcMakeGObjSPAfter(0, NULL, 28, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 35, GOBJ_PRIORITY_DEFAULT, ~0);
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (mnRemixVSIsCPULevelTens(sMNPlayersVSSlots[player].pkind, value))
+	{
+		mnRemixVSMakeCPULevelTens(gobj, player, sMNPlayersVSFiles[1]);
+		return;
+	}
+#endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[1], offsets[value]));
 	sobj->pos.x = (player * 69) + 67;
 	sobj->pos.y = 200.0F;
