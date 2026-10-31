@@ -31,7 +31,7 @@ sb32 gmRemixCameraHudHiddenOnGo(void)
  *
  * Camera.asm unpause_camera_ also destroys the Render groups 0xF and 0x10 (pause legend). Those groups are not common links
  * (vanilla links 15 and 16 are PlayerSelect and SceneCamera), and the port has no pause legend GObjs, so nothing is destroyed here.
- * REMIX-TODO(Render): destroy the pause legend GObjs here once they are ported.
+ * The pause legends (if/ifremixpauselegend.c) are labels put every pause frame, so they stop drawing with the pause.
  *
  * REMIX-TODO(SpecialZoom): unpause_camera_ also clears the magnifying glass while the Special Zoom is on (Zoom.zoom_type).
  */

@@ -26,6 +26,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixstockmode.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
@@ -5746,6 +5747,9 @@ void mnPlayersVSInitVars(void)
 	{
 		if (sMNPlayersVSIsResetPlayers != FALSE)
 		{
+#if defined(PORT) && defined(REGION_REMIX)
+			gmRemixStockModeResetLast();
+#endif
 			mnPlayersVSResetPlayer(i);
 			gSCManagerTransferBattleState.is_reset_players = FALSE;
 		}

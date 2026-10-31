@@ -11,6 +11,12 @@
  */
 extern s32 gmRemixStockModeCount(s32 player, s32 match_stocks);
 
+/* Forgets the stock count the Last mode stored (the CSS reset of css/StockMode.asm _check_reset). */
+extern void gmRemixStockModeResetLast(void);
+
+/* Restores the stored count from before the last Last match (GameEnd.asm salty runback). */
+extern void gmRemixStockModeSaltyRunbackLast(void);
+
 #endif
 
 #endif

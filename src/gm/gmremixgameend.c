@@ -7,6 +7,7 @@
 #include "gm/gmremixgameend.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixstockmode.h"
 #include <gr/grremix/grremixids.h>
 #include <mn/mndef.h>
 #include <sc/scdef.h>
@@ -79,6 +80,7 @@ static sb32 gmRemixGameEndStartSaltyRunback(void)
         syAudioPlayFGM(GMREMIX_GAMEEND_SALTY_SONG_FGM);
     }
     sGMRemixGameEndIsSaltyRunback = TRUE;
+    gmRemixStockModeSaltyRunbackLast();
 
     return TRUE;
 }
@@ -147,8 +149,9 @@ static sb32 gmRemixGameEndShowFullResults(void)
 /**
  * @param kind sMNVSResultsKind.
  * @return The time layout for the stock kinds when full results are on, otherwise kind unchanged.
- * REMIX-TODO(results-mode-rows): the extra rows of GameEnd.asm add_row_to_results_ (VsRemixMenu.asm:1007: KOTH time,
- * Smasketball score and goals) are not ported, so those modes show only the vanilla rows.
+ * The extra rows (KOTH time, Smashketball baskets) take their values from gmremixgameendrows.h and the numbers from
+ * gmremixgameendrowsrules.h. REMIX-TODO(results-mode-rows): mnvsresults.c does not draw them yet (VsRemixMenu.asm:1007
+ * add_row_to_results_), so those modes show only the vanilla rows until that hook is wired.
  */
 s32 gmRemixGameEndResultsDrawKind(s32 kind)
 {

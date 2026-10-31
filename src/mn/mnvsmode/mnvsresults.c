@@ -21,6 +21,8 @@ extern void port_log(const char *fmt, ...);
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixgameend.h"
+#include "gm/gmremixgameendrows.h"
+#include "gm/gmremixgameendrowsrules.h"
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
@@ -2370,6 +2372,16 @@ void mnVSResultsDrawResultsTimeRoyal(GObj *gobj)
 	{
 		mnVSResultsMakePointsRow();
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixGameEndRowsHasRow() != FALSE)
+	{
+		if (sMNVSResultsTotalTimeTics == 310)
+		{
+			mnVSResultsMakePlaceRow(gmRemixGameEndRowsPlaceY(124, TRUE));
+		}
+	}
+	else
+#endif
 	if (sMNVSResultsTotalTimeTics == 290)
 	{
 		mnVSResultsMakePlaceRow(124);
@@ -2422,6 +2434,16 @@ void mnVSResultsDrawResultsTimeTeam(GObj *gobj)
 	{
 		mnVSResultsMakePointsRow();
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixGameEndRowsHasRow() != FALSE)
+	{
+		if (sMNVSResultsTotalTimeTics == 310)
+		{
+			mnVSResultsMakePlaceRow(gmRemixGameEndRowsPlaceY(124, TRUE));
+		}
+	}
+	else
+#endif
 	if (sMNVSResultsTotalTimeTics == 290)
 	{
 		mnVSResultsMakePlaceRow(124);
@@ -3399,6 +3421,27 @@ void func_ovl31_801388A4(void)
 	return;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/** Draws the King of the Hill and Smashketball row once its time has come, in the slot of the vanilla layout (GameEnd.asm add_row_to_results_). */
+static void mnVSResultsDrawRemixRow(void)
+{
+	f32 column_x[GMCOMMON_PLAYERS_MAX];
+	sb32 is_present[GMCOMMON_PLAYERS_MAX];
+	s32 i;
+
+	if ((gmRemixGameEndRowsHasRow() == FALSE) || (sMNVSResultsTotalTimeTics < 290))
+	{
+		return;
+	}
+	for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
+	{
+		is_present[i] = sMNVSResultsIsPresent[i];
+		column_x[i] = (is_present[i] != FALSE) ? mnVSResultsGetColumnX(i) : 0.0F;
+	}
+	gmRemixGameEndRowsDraw(GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, column_x, is_present);
+}
+#endif
+
 // 0x801388AC
 void mnVSResultsFuncRun(GObj *gobj)
 {
@@ -3410,6 +3453,7 @@ void mnVSResultsFuncRun(GObj *gobj)
 #if defined(PORT) && defined(REGION_REMIX)
 	gmRemixTwelveCBHudDrawResults();
 	mnRemixVSStatsViewRun(sMNVSResultsTotalTimeTics, sMNVSResultsAllowExitWait);
+	mnVSResultsDrawRemixRow();
 #endif
 
 	if (sMNVSResultsTotalTimeTics == sMNVSResultsDrawWallpaperTic)

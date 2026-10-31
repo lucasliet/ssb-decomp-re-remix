@@ -14,6 +14,7 @@
 #include "gm/gmremixtagteam.h"
 #include "gm/gmremixmagnify.h"
 #include "if/ifremixstaminahud.h"
+#include "if/ifremixpauselegend.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixmode.h"
@@ -3197,7 +3198,7 @@ void ifCommonBattlePauseMakeInterface(s32 player)
 
     ifCommonBattlePausePlayerNumMakeSObj(interface_gobj, player);
 #ifdef REGION_REMIX
-    /* REMIX-TODO(Render): Pause.asm disable_hud_ hides Render groups 0xE to 0x10 after ifCommonBattlePauseMakeSObjsAll (asm 0x80113E04). The groups hold the R legend, camera legend and pause track title, which the port does not draw, so there is no GObj to hide yet */
+    ifRemixPauseLegendReset();
 #endif
     ifCommonBattlePauseMakeSObjsAll(interface_gobj);
 }
@@ -3386,8 +3387,9 @@ void ifCommonBattlePauseUpdateInterface(void)
         s32 stick_y = gSYControllerDevices[sIFCommonBattlePausePlayer].stick_range.y;
 
 #ifdef REGION_REMIX
-        /* REMIX-TODO(BGM): Pause.asm set_alternate_music_ (entry_play_music) and REMIX-TODO(Render): check_toggle_hud_press_
-         * (entry_disable_hud) and check_legend_toggle_press_ are not ported yet */
+        /* REMIX-TODO(BGM): Pause.asm set_alternate_music_ (entry_play_music) is not ported yet: it needs the stage track
+         * state (BGM.current_track, BGM.default_track) that the port does not read */
+        ifRemixPauseLegendUpdate(button_tap, button_hold);
         if (ftRemixPauseKeepsSceneCamera())
         {
             sIFCommonBattlePauseCameraEyeXOrigin = gGMCameraPauseCameraEyeX;

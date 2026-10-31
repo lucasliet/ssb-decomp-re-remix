@@ -21,4 +21,23 @@ int mnRemixCpuLevelUnitsDigit(int level)
     return level % 10;
 }
 
+int mnRemixHandicapCanRaise(int value)
+{
+    return (value < MNREMIX_HANDICAP_MAX) ? 1 : 0;
+}
+
+int mnRemixHandicapNeedsIcon(int value)
+{
+    return (value >= MNREMIX_CPU_LEVEL_MAX) ? 1 : 0;
+}
+
+int mnRemixHandicapIconIndex(int value)
+{
+    if (value < MNREMIX_CPU_LEVEL_MAX)
+    {
+        return -1;
+    }
+    return value - MNREMIX_CPU_LEVEL_MAX;
+}
+
 #endif

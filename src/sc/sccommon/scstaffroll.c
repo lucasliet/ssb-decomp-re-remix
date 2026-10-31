@@ -17,7 +17,7 @@ extern void *func_800269C0_275C0(u16 id);
 // 0x80135260
 s32 dSCStaffrollNameCharacters[/* */] =
 {
-/* REMIX-TODO(credits-glyphs): scroll glyphs 0x50-0x61 (digits, _ ! - / * ( ) @ ~) need Remix textures from Credits.asm add_new_character; the encoder in tools/gen_remix_credits.py maps them to spaces for now. */
+/* REMIX-TODO(credits-glyphs): scroll glyphs 0x50-0x61 (digits, _ ! - / * ( ) @ ~) are open. Credits.asm add_new_character gives size and offset, and the texture is in File.REMIX_CREDITS (0xDF1, reloc_misc/file_3569), but the offsets 0x7958-0x88B8 hit encoded name words, not texture bytes. tools/gen_remix_credits.py also maps these glyphs to spaces. See docs/remix/notes/f14_credits_left.md. */
 #ifdef REGION_REMIX
 	#include "credits/remix/staff.credits.encoded"
 #else
@@ -1472,7 +1472,7 @@ void scStaffrollFuncRun(GObj *gobj)
 			if (sSCStaffrollRollSpeed == 0.0037500001F)
 			{
 #ifdef REGION_REMIX
-				/* REMIX-TODO(credits-speed-assist): Remix's remix_credits_speed_assist_ (Credits.asm:1310) is not ported; it only slows the roll at the first Remix name when the 2nd player tag is "afk". */
+				/* REMIX-TODO(credits-speed-assist): open. Credits.asm:1310 (remix_credits_speed_assist_) simulates Start when the 2nd player tag is "afk", the name id is 0x55 (sSCStaffrollNameID) and the speed is not the normal one. The port keeps no custom tag names (src/if/ifremixplayertag.c), and the boot tag 2 is empty in remix.z64. See docs/remix/notes/f14_credits_left.md. */
 				sSCStaffrollRollSpeed = 0.11F;
 #else
 				sSCStaffrollRollSpeed = 0.049999997F;
