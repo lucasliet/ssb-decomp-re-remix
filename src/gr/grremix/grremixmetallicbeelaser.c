@@ -199,6 +199,10 @@ GObj *grRemixMetallicBeeLaserFire(GObj *bee_gobj)
     Vec3f spawn_pos;
     DObj *bee_joint = DObjGetStruct(bee_gobj);
 
+    if (*grRemixMetallicLaserFileRef() == NULL)
+    {
+        return NULL;
+    }
     spawn_pos.x = bee_joint->translate.vec.f.x + grRemixMetallicLaserSpawnOffsetX();
     spawn_pos.y = bee_joint->translate.vec.f.y + GRREMIX_METALLIC_LASER_SPAWN_OFFSET_Y;
     spawn_pos.z = 0.0F;

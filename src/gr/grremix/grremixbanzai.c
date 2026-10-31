@@ -1,6 +1,8 @@
 /**
  * grremixbanzai.c - Banzai Bill factory of Peach's Castle II. Ported from Hazards.asm banzai_bill_factory_
- * and the object creation of peach_castle_II_setup_.
+ * and the object creation of peach_castle_II_setup_. Unreachable in Remix 2.0.1, as in the asm: Stages.asm 3256 gives
+ * Peach's Castle II `function.CLONE`, so the stage runs the original Peach's Castle routine and nothing references
+ * peach_castle_II_setup_. The port of the dead code stays faithful and never runs.
  */
 
 #ifdef PORT
@@ -9,6 +11,8 @@
 #include "grremixhazards.h"
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbulletbill.h"
+#include "it/itremix/itremixrobotbee.h"
+#include "gr/grremix/grremixmetallic.h"
 #include "it/itmanager.h"
 #include "sc/sctypes.h"
 #include "sc/scmanager.h"
@@ -37,6 +41,9 @@ void grRemixBanzaiFactoryMake(void *stage_header)
 {
     sGRRemixBanzaiTimer = 0;
     itRemixBulletBillSetStageFile(stage_header);
+    /* Hazards.asm stores the Robot Bee file in the hazard words (0x801313F0) shared with Metallic Madness: the Robot Bee item reads it. */
+    *grRemixMetallicStageHeaderRef() = stage_header;
+    *grRemixMetallicLaserFileRef() = NULL;
     grRemixBanzaiMakeProcessGObj(grRemixBanzaiFactoryProcUpdate);
 }
 
@@ -100,22 +107,22 @@ static sb32 grRemixBanzaiRollSpawn(u32 timer)
 }
 
 /**
- * Spawns Banzai Bill at the origin, the coordinates of the asm banzai_bill_coordinates table, and starts its
- * animation tracks. The asm spawns through itManagerMakeItemSetupCommon as well.
- * REMIX-TODO(item id): the asm spawns Item.RobotBee.id (0x3B) with the Robot Bee item info; this port spawns
- * Bullet Bill (0x3D) as the task asked. Confirm the spawned kind in game, see docs/remix/notes/f7_hazard_banzai.md.
+ * Spawns Banzai Bill at the origin, the coordinates of the asm banzai_bill_coordinates table. As in the asm the item is a Robot Bee
+ * (Item.RobotBee.id 0x3B) that flies on the Banzai Bill animation tracks of the stage file (offsets 0x908 and 0x9B4). The
+ * banzai_bill_stage_setting_, main_ and destroy_ routines of Hazards.asm are not referenced anywhere in Remix, so the Robot Bee
+ * routines are the ones that run. The bee fires no laser here: the asm stores an uninitialised register as the laser file.
  */
 static void grRemixBanzaiSpawn(void)
 {
     Vec3f pos = { 0.0F, 0.0F, 0.0F };
     Vec3f vel = { 0.0F, 0.0F, 0.0F };
-    GObj *bullet_gobj;
+    GObj *bee_gobj;
 
-    bullet_gobj = itManagerMakeItemSetupCommon(NULL, ITREMIX_BULLETBILL_KIND, &pos, &vel, 0);
-    if (bullet_gobj != NULL)
+    bee_gobj = itManagerMakeItemSetupCommon(NULL, ITREMIX_ROBOTBEE_KIND, &pos, &vel, 0);
+    if (bee_gobj != NULL)
     {
-        itRemixLogEvent("bulletbill-spawn", ITREMIX_BULLETBILL_KIND);
-        itRemixBulletBillStartAnimation(bullet_gobj);
+        itRemixLogEvent("banzai-robotbee-spawn", ITREMIX_ROBOTBEE_KIND);
+        itRemixBulletBillStartAnimation(bee_gobj);
     }
 }
 
