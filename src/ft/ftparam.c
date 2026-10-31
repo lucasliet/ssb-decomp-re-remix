@@ -2,6 +2,7 @@
 #include "lb/lbremixgfx.h"
 #include "gm/gmremixcolscripts.h"
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixaccessibility.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnvsmode/mnremixvsstats.h"
 #endif
@@ -2155,16 +2156,20 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
     effect = NULL;
 
 #ifdef REGION_REMIX
+    gmRemixAccessibilityParamEffectBegin(ftGetStruct(fighter_gobj));
+
     if (lbRemixGfxIsNewEffect(effect_id))
     {
         s32 base_effect_id = lbRemixGfxPrepareEffect(effect_id);
 
         if (base_effect_id < 0)
         {
+            gmRemixAccessibilityParamEffectEnd();
             return NULL;
         }
         effect = ftParamMakeEffect(fighter_gobj, base_effect_id, joint_id, effect_pos, effect_scatter, lr, is_scale_pos, arg7);
         lbRemixGfxClearOverride();
+        gmRemixAccessibilityParamEffectEnd();
 
         return effect;
     }
@@ -2507,6 +2512,9 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
         efManagerFireSparkMakeEffect(fighter_gobj);
         break;
     }
+#ifdef REGION_REMIX
+    gmRemixAccessibilityParamEffectEnd();
+#endif
     return effect;
 }
 

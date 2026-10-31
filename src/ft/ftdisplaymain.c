@@ -3,6 +3,8 @@
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixenvcolor.h"
+#include "ft/ftremix/ftremixdkmode.h"
+#include "ft/ftremix/ftremixswordtrail.h"
 #endif
 #include <if/interface.h>
 #include <sc/scene.h>
@@ -428,6 +430,9 @@ void ftDisplayMainDrawAfterImage(FTStruct *fp)
     f32 scale;
     s32 alphainc;
     Vec3f spAC;
+#if defined(PORT) && defined(REGION_REMIX)
+    FTRemixSwordTrailDraw remix_trail_draw;
+#endif
 
     index = fp->afterimage.desc_id;
 
@@ -464,6 +469,20 @@ void ftDisplayMainDrawAfterImage(FTStruct *fp)
         vtx_dl = dFTDisplayMainAfterImageVertexDL;
         tri_dl = dFTDisplayMainAfterImageTriangleDL;
         break;
+#if defined(PORT) && defined(REGION_REMIX)
+    default:
+        ftRemixSwordTrailGetDraw(fp->afterimage.is_itemswing, &remix_trail_draw);
+        var_f20 = remix_trail_draw.start_dist;
+        var_f22 = remix_trail_draw.end_dist;
+        color1 = &remix_trail_draw.colour_1;
+        color2 = &remix_trail_draw.colour_2;
+        add_alpha = 0;
+        base_alpha = 0xFF;
+        rotate = F_CLC_DTOR32(30.0F);
+        vtx_dl = dFTDisplayMainAfterImageVertexDL;
+        tri_dl = dFTDisplayMainAfterImageTriangleDL;
+        break;
+#endif
     }
     base_p_vtx = p_vtx = (Vtx*)gSYTaskmanGraphicsHeap.ptr;
 
@@ -1001,6 +1020,14 @@ void ftDisplayMainDrawAll(GObj *fighter_gobj)
         case TRUE:
             ftDisplayMainDrawAfterImage(fp);
             break;
+#if defined(PORT) && defined(REGION_REMIX)
+        default:
+            if (ftRemixSwordTrailIsCustomId(fp->afterimage.is_itemswing))
+            {
+                ftDisplayMainDrawAfterImage(fp);
+            }
+            break;
+#endif
         }
     }
 }
@@ -1125,6 +1152,9 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
     Vec3f dist;
 
     fp = ftGetStruct(fighter_gobj);
+#if defined(PORT) && defined(REGION_REMIX)
+    ftRemixDKModeResizeHead(fp);
+#endif
     attr = fp->attr;
 
 #ifdef REGION_REMIX

@@ -12,6 +12,7 @@
 #include "if/ifremixannouncer.h"
 #include "gm/gmremixmusictitle.h"
 #include "gm/gmremixtagteam.h"
+#include "gm/gmremixmagnify.h"
 #include "if/ifremixstaminahud.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
@@ -1705,7 +1706,11 @@ void ifCommonPlayerMagnifyUpdateViewport(Gfx **dls, FTStruct *fp)
         magnify_x = ifmag->pos.x + gGMCameraStruct.viewport_center_x;
         magnify_y = gGMCameraStruct.viewport_center_y - ifmag->pos.y;
 
+#ifdef REGION_REMIX
+        gSPMatrix(dls[0]++, gmRemixMagnifyApplyCustomZoom(fp, &CObjGetStruct(gGCCurrentCamera)->xobjs[0]->mtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+#else
         gSPMatrix(dls[0]++, &CObjGetStruct(gGCCurrentCamera)->xobjs[0]->mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+#endif
 
         if (gIFCommonPlayerInterface.magnify_mode != 1)
         {

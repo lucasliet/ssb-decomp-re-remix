@@ -3,6 +3,7 @@
 #include <sc/sc1pmode/sc1pgameboss.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixids.h"
+#include "remix/remix_training.h"
 #include "sc/sc1pmode/sc1premixhrcclouds.h"
 #endif
 
@@ -367,7 +368,12 @@ void grWallpaperMakeBonus3(void)
 // 0x80104BDC
 void grWallpaperMakeDecideKind(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    /* Training.asm show_stage_bg_ (hook 0x80104BF4): the Stage Background entry takes the non-training branch. */
+    if ((gSCManagerSceneData.scene_curr == nSCKind1PTrainingMode) && (remix_training_get(REMIX_TRAINING_STAGE_BG) == 0))
+#else
     if (gSCManagerSceneData.scene_curr == nSCKind1PTrainingMode)
+#endif
     {
         sc1PTrainingModeLoadWallpaper();
         grWallpaperMakeStatic();

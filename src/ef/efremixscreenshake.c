@@ -9,6 +9,7 @@
 
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixaccessibility.h"
 
 #define EFREMIX_SCREENSHAKE_LIGHT 1
 #define EFREMIX_SCREENSHAKE_OFF 2
@@ -18,6 +19,10 @@ s32 efRemixQuakeSeverity(s32 severity)
 {
     s32 mode = gmRemixToggle(screenshake);
 
+    if (gmRemixAccessibilityIsQuakeSuppressed())
+    {
+        return -1;
+    }
     if (mode == EFREMIX_SCREENSHAKE_LIGHT)
     {
         return 0;

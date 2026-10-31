@@ -13,6 +13,7 @@ extern void port_coroutine_yield(void);
 #include <wp/wpmanager.h>
 #ifdef PORT
 #include "fighter_registry.h"
+#include "sc/sccommon/scremixvsdemo.h"
 #endif
 extern void *func_800269C0_275C0(u16 id);
 extern void func_800266A0_272A0(void);
@@ -536,6 +537,9 @@ s32 scAutoDemoGetFighterKind(s32 player)
 	{
 		return gSCManagerSceneData.demo_fkind[player];
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	return scRemixVsDemoPickNonFocusedFighter();
+#endif
 	fighter_mask = (gSCManagerBackupData.fighter_mask | LBBACKUP_CHARACTER_MASK_STARTER);
 
 	fighter_count1 = scAutoDemoGetFighterKindsNum(fighter_mask), 
@@ -567,7 +571,11 @@ void scAutoDemoInitDemo(void)
 	gSCManagerBattleState = &sSCAutoDemoBattleState;
 
 	gSCManagerBattleState->game_type = nSCBattleGameTypeDemo;
+#if defined(PORT) && defined(REGION_REMIX)
+	gSCManagerBattleState->gkind = scRemixVsDemoPickStage(dSCAutoDemoGroundOrder[gSCManagerSceneData.demo_gkind_order]);
+#else
 	gSCManagerBattleState->gkind = dSCAutoDemoGroundOrder[gSCManagerSceneData.demo_gkind_order];
+#endif
 
 	gSCManagerSceneData.demo_gkind_order++;
 

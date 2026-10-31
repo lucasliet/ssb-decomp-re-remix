@@ -1,3 +1,4 @@
+#include "sc/sccommon/scremixvsdemo.h"
 #include <mn/menu.h>
 #include <ft/fighter.h>
 #include <if/interface.h>
@@ -346,6 +347,9 @@ s32 mnTitleSetDemoFighterKinds(void)
 		gSCManagerSceneData.demo_fkind[1] = mnTitleGetShuffledFighterKind(unlocked_mask, gSCManagerSceneData.demo_mask_prev, syUtilsRandIntRange(non_recently_demoed_count));
 		gSCManagerSceneData.demo_mask_prev |= LBBACKUP_MASK_FIGHTER(gSCManagerSceneData.demo_fkind[1]);
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	scRemixVsDemoPickFocusFighters();
+#endif
 #ifdef PORT
 	gSCManagerSceneData.demo_fkind[0] = remix_debug_demo_fkind(0, gSCManagerSceneData.demo_fkind[0]);
 	gSCManagerSceneData.demo_fkind[1] = remix_debug_demo_fkind(1, gSCManagerSceneData.demo_fkind[1]);
