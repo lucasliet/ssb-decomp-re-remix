@@ -2,7 +2,7 @@
  * grremixstage.c - Remix stage tables and ground dispatch. See grremixstage.h.
  */
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "grremixstage.h"
 #include "grremixhazards.h"

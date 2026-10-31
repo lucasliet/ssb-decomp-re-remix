@@ -2,7 +2,7 @@
  * grremixblastzone.c - Remix blast zone toggles for the vanilla physics map. See ft/ftremix/ftremixhooks.h.
  */
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixtoggle.h"
 #include <ssb_types.h>

@@ -8,7 +8,7 @@
  * are listed in docs/remix/notes/item_Basketball.md.
  */
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"

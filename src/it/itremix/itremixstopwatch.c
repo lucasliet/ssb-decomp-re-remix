@@ -1,4 +1,4 @@
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixstopwatch.h"

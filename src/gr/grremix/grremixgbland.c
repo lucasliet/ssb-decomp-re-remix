@@ -2,7 +2,7 @@
  * grremixgbland.c - Game Boy Land music and startup beep (Hazards.asm gbland_setup, gb_music_). See grremixgbland.h.
  */
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixtoggle.h"
 #include "grremixgbland.h"

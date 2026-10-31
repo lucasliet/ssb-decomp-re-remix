@@ -2,7 +2,7 @@
  * grremixhazards.c - dispatch of the Remix hazard setups. See grremixhazards.h.
  */
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixtoggle.h"
 #include "grremixhazards.h"

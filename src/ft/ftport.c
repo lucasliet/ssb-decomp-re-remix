@@ -246,12 +246,16 @@ typedef struct PortSynthFtOwned
  * File offsets and the 0x80000000 "no script" sentinel pass through. */
 static intptr_t ftPortMapMotionOffset(u32 command_offset)
 {
-    void *script = remix_ram_image_resolve(command_offset);
+    void *script = NULL;
+
+#ifdef REGION_REMIX
+    script = remix_ram_image_resolve(command_offset);
 
     if (script == NULL)
     {
         script = ftRemixFindDemoScript(command_offset);
     }
+#endif
     if (script != NULL)
     {
         return (intptr_t)script;

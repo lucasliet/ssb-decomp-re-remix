@@ -2,7 +2,7 @@
  * grremixdreamland.c - Whispy Woods wind and downtime of Dream Land for the Remix Whispy Mode. See grremixdreamland.h.
  */
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixtoggle.h"
 #include "grremixdreamland.h"

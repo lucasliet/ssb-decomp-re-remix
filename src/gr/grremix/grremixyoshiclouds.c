@@ -2,7 +2,7 @@
  * grremixyoshiclouds.c - Yoshi's Island cloud hazards and platform movement gate. See grremixyoshiclouds.h.
  */
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixtoggle.h"
 #include "grremixyoshiclouds.h"
