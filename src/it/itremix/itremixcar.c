@@ -23,6 +23,7 @@
 #define ITREMIX_CAR_FILE_OFFSET 0xE0 /* asm FILE_OFFSET: item footer in the Onett header */
 #define ITREMIX_CAR_DAMAGE 20
 #define ITREMIX_CAR_ANGLE 16 /* asm 0x13C: horizontal hit */
+#define ITREMIX_CAR_MULTI 0xB4 /* asm 0x033E halfword at stage setting (Hazards.asm 6817), the pirhana flag */
 #define ITREMIX_CAR_SIZE 700.0F /* asm 0x442F0000 */
 #define ITREMIX_CAR_OFFSET_Y (-700.0F) /* asm 0xC42F0000 */
 #define ITREMIX_CAR_OFFSET_Z (-1200.0F) /* asm 0xC4960000 */
@@ -202,13 +203,11 @@ static void itRemixCarDrive(GObj *item_gobj)
 }
 
 /**
- * Car.blast_zone_ (ITStruct proc_dead): disables the hitbox, stops the car, moves the model back
- * to the spawn x and hides it.
- *
- * REMIX-TODO(vanilla 0x8016F8C0): the asm ends with a jump to the bomb/grenade routine at
- * 0x8016F8C0 (inside itProcessProcItemMain, not identified in the port). The car must survive
- * the blast zone to drive again, so the routine returns FALSE and the jump is not made.
- * REMIX-TODO(unnamed ITStruct 0x354): the asm stores the spawn y in 0x354 of the item struct.
+ * Car.blast_zone_ (ITStruct proc_dead, asm Hazards.asm 6870): disables the hitbox, stops the car, moves the model
+ * back to the spawn x and hides it. The asm's jump to 0x8016F8C0 is the "not destroyed" path after the proc_dead
+ * check of itProcessProcItemMain, so the routine returns FALSE and the car drives again.
+ * DEVIATION(no reader): the asm stores the spawn y in item_vars+4 (0x354, Hazards.asm 6874-6876). No Remix car
+ * routine reads it back, and the port keeps the spawn position in sITRemixCarSpawnPos.
  */
 static sb32 itRemixCarBlastZone(GObj *item_gobj)
 {
@@ -227,11 +226,9 @@ static sb32 itRemixCarBlastZone(GObj *item_gobj)
  * Car.stage_setting_ hitbox part: damage, size, angle, offsets, knockback and sound of the car.
  * The asm writes the same fields in the item struct without a named type.
  *
- * REMIX-TODO(unknown-halfword): the asm writes 0xB4 to the halfword at 0x33E (no named field).
- * REMIX-TODO(bitfield): the asm sets bit 0x10 of the byte at 0x158 (unnamed attack bitfield).
- * REMIX-TODO(bitfield): the asm sets bit 0x08 of the byte at 0x2D3 (unnamed ITStruct field).
+ * The asm's 0x33E, 0x158 bit 0x10 and 0x2D3 bit 0x08 are set in itRemixCarMakeItem.
  * REMIX-TODO(hitbox refresh): the asm zeroes the words at 0x1D0 (refresh timer), 0x1D4 (collision
- * flag) and 0x35C (no named field).
+ * flag) and 0x35C (no named field). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
  */
 static void itRemixCarApplyHitbox(ITStruct *ip)
 {
@@ -283,6 +280,9 @@ GObj* itRemixCarMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
     sITRemixCarState.display_list = joint->dl;
 
     itRemixCarApplyHitbox(ip);
+    ip->multi = ITREMIX_CAR_MULTI;
+    ip->attack_coll.can_rehit_shield = TRUE;
+    ip->is_allow_knockback = TRUE;
     ip->proc_dead = itRemixCarBlastZone;
 
     return item_gobj;

@@ -29,6 +29,24 @@ s32 ftRemixSizeScaleHitboxSize(FTStruct *fp, s32 size)
 }
 
 /**
+ * Rounds a damage product to the nearest integer with ties to even, as cvt.w.s does in the default rounding mode.
+ */
+s32 ftRemixRoundDamage(f32 scaled)
+{
+    f32 fraction;
+    s32 whole;
+
+    whole = (s32)scaled;
+    fraction = scaled - (f32)whole;
+
+    if ((fraction > 0.5F) || ((fraction == 0.5F) && ((whole & 1) != 0)))
+    {
+        whole++;
+    }
+    return whole;
+}
+
+/**
  * Damage of an attack hitbox for a fighter of another size (Size.asm fix_damage_, RAM 0x800DF34C).
  * Above size 1 the damage is multiplied by the giant factor, below size 1 by the poison factor, and the
  * product is rounded to the nearest integer with ties to even (cvt.w.s, default rounding mode).
@@ -38,24 +56,13 @@ s32 ftRemixSizeScaleDamage(FTStruct *fp, s32 damage)
 {
     f32 multiplier = ftRemixSizeGetMultiplier(fp->player);
     f32 factor;
-    f32 scaled;
-    f32 fraction;
-    s32 whole;
 
     if (multiplier == 1.0F)
     {
         return damage;
     }
     factor = (multiplier < 1.0F) ? FTREMIX_SIZE_DAMAGE_POISON_FACTOR : FTREMIX_SIZE_DAMAGE_GIANT_FACTOR;
-    scaled = (f32)damage * factor;
-    whole = (s32)scaled;
-    fraction = scaled - (f32)whole;
-
-    if ((fraction > 0.5F) || ((fraction == 0.5F) && ((whole & 1) != 0)))
-    {
-        whole++;
-    }
-    return whole;
+    return ftRemixRoundDamage((f32)damage * factor);
 }
 
 /**

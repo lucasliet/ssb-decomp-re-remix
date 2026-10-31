@@ -152,7 +152,7 @@ static ITStatusDesc sITRemixMrSaturnStatusDescs[nITRemixMrSaturnStatusEnumCount]
 static ITDesc sITRemixMrSaturnItemInfo =
 {
     ITREMIX_MRSATURN_KIND,                  /* Item.MrSaturn.id */
-    &gITManagerCommonData,                  /* item file 0xFB, see notes REMIX-TODO(file) */
+    &gITManagerCommonData,                  /* item file 0xFB: asm dw 0x8018D040 */
     ITREMIX_MRSATURN_FILE_OFFSET,           /* item footer offset */
 
     {

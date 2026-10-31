@@ -15,6 +15,8 @@
 #include <wp/wpmain.h>
 #include <wp/wpmanager.h>
 #include <wp/wpmap.h>
+#include <wp/wpmario/wpmariofireball.h>
+#include <wp/wpfox/wpfoxblaster.h>
 #include <ef/efmanager.h>
 #include "gr/grremix/grremixthunderball.h"
 #include "it/itremix/itremixcacodemon.h"
@@ -38,14 +40,13 @@ static sb32 grRemixThunderballProcUpdate(GObj *weapon_gobj)
 /** Thunderball.collision_ (proc_map): small smoke and destruction on a map collision. */
 static sb32 grRemixThunderballProcMap(GObj *weapon_gobj)
 {
-    WPStruct *wp = wpGetStruct(weapon_gobj);
-
     if (!wpMapTestAllCheckCollEnd(weapon_gobj))
     {
         return FALSE;
     }
-    /* REMIX-TODO(facing): asm passes 1.0 as the second argument of 0x800FF048; the facing is passed here as the Mario fireball does. */
-    efManagerDustLightMakeEffect(&DObjGetStruct(weapon_gobj)->translate.vec.f, wp->lr, 1.0F);
+    /* Hazards.asm 9175-9176: the second argument (lr slot) is the bit pattern of 1.0F, not the facing, so the effect never
+       takes the lr == +1 branch. The third argument is a2, which this routine does not set; 1.0F is kept (not verified). */
+    efManagerDustLightMakeEffect(&DObjGetStruct(weapon_gobj)->translate.vec.f, 0x3F800000, 1.0F);
 
     return TRUE;
 }
@@ -57,8 +58,8 @@ static sb32 grRemixThunderballProcHit(GObj *weapon_gobj)
 }
 
 /*
- * Descriptor of the Thunderball. The asm reflector and absorb routines are vanilla Fox and
- * Ness routines (0x80168748, 0x80168964) and are not ported.
+ * Descriptor of the Thunderball. The reflector and absorb procs are the vanilla Mario fireball reflector and the
+ * vanilla Fox blaster hit, the same routines the asm points at (0x80168748, 0x80168964).
  */
 WPDesc dWPRemixCacodemonThunderballWeaponDesc =
 {
@@ -77,8 +78,8 @@ WPDesc dWPRemixCacodemonThunderballWeaponDesc =
     NULL,                                   /* Proc Shield */
     NULL,                                   /* Proc Hop */
     NULL,                                   /* Proc Set-Off */
-    NULL,                                   /* REMIX-TODO(reflector): vanilla 0x80168748 */
-    NULL                                    /* REMIX-TODO(absorb): vanilla 0x80168964 */
+    wpMarioFireballProcReflector,           /* Proc Reflector (Hazards.asm thunderball_projectile_struct, 0x80168748) */
+    wpFoxBlasterProcHit                     /* Proc Absorb (Hazards.asm thunderball_projectile_struct, 0x80168964) */
 };
 
 void grRemixThunderballSetFile(void *file)

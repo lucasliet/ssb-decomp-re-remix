@@ -106,8 +106,8 @@ sb32 itRemixAnyStandardItemIsOn(void)
 /*
  * Item.asm clear_active_custom_items_ (called on every screen change to
  * CSS/VS/Training/VS Results): forget every per-item effect state so nothing
- * survives into the next scene. Poison state rides on the Super/Poison
- * mushroom state unification (REMIX-TODO, see item notes).
+ * survives into the next scene. REMIX-TODO(Poison): Poison.clear_poison_ (asm Poison.asm, clears
+ * poisoned_players) is not called here; the poison state is not ported yet.
  */
 void itRemixClearActiveItems(void)
 {

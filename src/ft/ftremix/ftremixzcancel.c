@@ -6,6 +6,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixbury.h"
 #include "gm/gmremixtoggle.h"
 #include "enhancements/enhancements.h"
 #include <ft/fighter.h>
@@ -83,8 +84,7 @@ static void ftRemixZCancelEgg(GObj *fighter_gobj)
     fp->is_invisible = TRUE;
 }
 
-/* ZCancel.asm _trip. REMIX-TODO(Tripping): Remix also sets the trip flag of the player (Tripping.asm), so the trip
- * recovers; sFTRemixTrippingFlag in ftremixtripping.c is static and has no setter yet. */
+/* ZCancel.asm _trip, Tripping.asm player_trip_flag store. */
 static void ftRemixZCancelTrip(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -92,6 +92,7 @@ static void ftRemixZCancelTrip(GObj *fighter_gobj)
     fp->status_vars.common.damage.hitstun_tics = FTREMIX_ZCANCEL_TRIP_HITSTUN_TICS;
     ftMainSetStatus(fighter_gobj, nFTCommonStatusDamageLw3, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     func_800269C0_275C0(FTREMIX_ZCANCEL_SFX_TRIPSTART);
+    ftRemixTrippingStoreZCancelFlag(fp->player);
 }
 
 /* Applies one punishment (ZCancel.asm jump_table). Returns TRUE when the punishment replaces the landing. */
@@ -118,7 +119,7 @@ static sb32 ftRemixZCancelPunishMode(GObj *fighter_gobj, s32 mode)
             ftCommonAppealSetStatus(fighter_gobj);
             return TRUE;
         case FTREMIX_ZCANCEL_PUNISH_BURY:
-            /* REMIX-TODO(Damage): Damage.bury_initial_ is not ported (see ftremixdamage.c). The landing is still skipped. */
+            ftRemixDamageBuryInitial(fighter_gobj);
             return TRUE;
         case FTREMIX_ZCANCEL_PUNISH_LAUGH_TRACK:
             func_800269C0_275C0(FTREMIX_ZCANCEL_SFX_LAUGH_TRACK);

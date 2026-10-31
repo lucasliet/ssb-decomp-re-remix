@@ -13,6 +13,7 @@
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixsmashketballstate.h"
 #include "it/itmain.h"
 #include "it/itmap.h"
 #include "it/itmanager.h"
@@ -410,8 +411,20 @@ static void itRemixBasketballSetupAttack(ITStruct *ip)
 }
 
 /**
+ * Basketball.set_golden_ (blast zone, ITStruct proc_dead 0x398): a ball that crosses a blast zone
+ * makes the next Smashketball ball golden and is destroyed (asm: set_golden_ returns TRUE).
+ * item_gobj: item object.
+ * Returns: TRUE (the item is destroyed).
+ */
+static sb32 itRemixBasketballBlastZone(GObj *item_gobj)
+{
+    (void) item_gobj;
+    gGMRemixSmashketball.spawn_golden = TRUE;
+    return TRUE;
+}
+
+/**
  * Basketball.stage_setting_ (after itManagerMakeItem): the spawn setup of the asm.
- * REMIX-TODO(blast wall): the asm stores set_golden_ at 0x398 for the blast zone; not ported.
  * item_gobj: item object.
  */
 static void itRemixBasketballSetup(GObj *item_gobj)
@@ -419,6 +432,7 @@ static void itRemixBasketballSetup(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
 
+    ip->proc_dead = itRemixBasketballBlastZone;
     itRemixBasketballSetupVars(item_gobj);
     itRemixBasketballSetupImage(item_gobj);
     itMainClearOwnerStats(item_gobj);
@@ -581,20 +595,24 @@ static void itRemixBasketballFireEndState(GObj *item_gobj)
 
 /**
  * Basketball.smoke_gfx_: the smoke timer counts down after the fire, one smoke every 4 frames.
- * REMIX-TODO(smoke gfx): the smoke effect (0x800FE9B4) is not ported.
+ * The smoke is efManagerFlameRandgcMakeEffect (asm 0x800FE9B4, called with only a0 = position set).
  * item_gobj: item object.
  */
 static void itRemixBasketballSmokeGfxStep(GObj *item_gobj)
 {
+    ITStruct *ip = itGetStruct(item_gobj);
     ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
     s32 gfx_timer = vars->gfx_timer;
 
-    (void) item_gobj;
     if (gfx_timer == 0)
     {
         return;
     }
     vars->gfx_timer -= 1;
+    if ((gfx_timer & 3) == 0)
+    {
+        efManagerFlameRandgcMakeEffect(ip->coll_data.p_translate);
+    }
 }
 
 /**
@@ -1129,6 +1147,7 @@ static void itRemixBasketballBarrelShoot(GObj *item_gobj)
     ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
 
     grJungleTaruCannAddAnimShoot(vars->barrel_gobj);
+    DObjGetStruct(item_gobj)->flags = DOBJ_FLAG_NONE;
     ip->attack_coll.attack_state = nGMAttackStateNew;
     ip->physics.vel_air.y = ITREMIX_BASKETBALL_BARREL_SPEED;
     vars->state_timer = ITREMIX_BASKETBALL_BARREL_REFRESH_TIMER;
@@ -1136,8 +1155,8 @@ static void itRemixBasketballBarrelShoot(GObj *item_gobj)
 }
 
 /**
- * Basketball.barrel_setup_: freezes the ball in the barrel at the barrel's centre.
- * REMIX-TODO(display): the asm hides the ball by writing DObj byte 0x54; not ported.
+ * Basketball.barrel_setup_: freezes the ball in the barrel at the barrel's centre and hides it
+ * (asm: DObj flags byte 0x54 = 2, DOBJ_FLAG_HIDDEN). The barrel shoot shows it again.
  * item_gobj: item object.
  */
 static void itRemixBasketballBarrelSetup(GObj *item_gobj)
@@ -1147,6 +1166,7 @@ static void itRemixBasketballBarrelSetup(GObj *item_gobj)
     DObj *joint = DObjGetStruct(item_gobj);
     DObj *barrel_joint = DObjGetStruct(vars->barrel_gobj);
 
+    joint->flags = DOBJ_FLAG_HIDDEN;
     ip->physics.vel_air.x = 0.0F;
     ip->physics.vel_air.y = 0.0F;
     ip->physics.vel_air.z = 0.0F;
@@ -1187,7 +1207,7 @@ static sb32 itRemixBasketballBarrelProcUpdate(GObj *item_gobj)
 
 /**
  * Basketball.respawn_main_ (proc_update, status 2): the ball waits, then it is destroyed so
- * Smashketball respawns it. REMIX-TODO(display): the asm hides the ball while it waits.
+ * Smashketball respawns it. The asm hides the ball on the first frame (DObj flags = DOBJ_FLAG_HIDDEN).
  * item_gobj: item object.
  * Returns: TRUE when the respawn time is over (the item is destroyed).
  */
@@ -1200,6 +1220,7 @@ static sb32 itRemixBasketballRespawnProcUpdate(GObj *item_gobj)
     vars->state_timer += 1;
     if (timer == 0)
     {
+        DObjGetStruct(item_gobj)->flags = DOBJ_FLAG_HIDDEN;
         ip->physics.vel_air.x = 0.0F;
         ip->physics.vel_air.y = 0.0F;
         ip->physics.vel_air.z = 0.0F;

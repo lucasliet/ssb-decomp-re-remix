@@ -176,6 +176,8 @@ GObj* itRemixPitfallMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flag
     joint->rotate.vec.f.z = 0.0F;
 
     itRemixPitfallApplySpawnHitbox(ip);
+    ip->multi = 0;
+    ip->is_unused_item_bool = TRUE;
     ip->arrow_gobj = ifCommonItemArrowMakeInterface(ip);
 
     return item_gobj;
@@ -227,15 +229,15 @@ static sb32 itRemixPitfallThrownProcMap(GObj *item_gobj)
  * REMIX-TODO(hazard): the asm destroys the pitfall on a hazardous floor (Surface clipping
  * flag, Toggles.entry_hazard_mode, SAFFRON_CITY exception). The port always buries it,
  * because the Surface clipping helper is not in the port yet.
- * REMIX-TODO(bitfield): the asm clears 2 bits of the byte at 0x2CE (ITStruct bitfield,
- * unnamed in ittypes.h).
- * REMIX-TODO(clang): the asm clears the clang bit of the halfword at 0x158 (no named field).
+ * The asm's 0x2CE mask 0xCF (times_landed) and clang bit 0x8000 of 0x158 (can_setoff) are cleared below.
  */
 static sb32 itRemixPitfallBeginBuried(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
 
     itMapSetGround(ip);
+    ip->times_landed = 0;
+    ip->attack_coll.can_setoff = FALSE;
     ip->physics.vel_air.x = 0.0F;
     ip->physics.vel_air.y = 0.0F;
     ip->physics.vel_air.z = 0.0F;
@@ -254,14 +256,13 @@ static sb32 itRemixPitfallBeginBuried(GObj *item_gobj)
  * REMIX-TODO(rumble): the asm calls ftParamMakeRumble when the planting player's
  * match_info entry (offset 0x78) is set. The asm passes the item struct where the
  * function takes an FTStruct, and the match_info field is not named, so it is skipped.
- * REMIX-TODO(bitfield): the asm sets bit 0x40 of the byte at 0x2CF (unnamed ITStruct field).
- * REMIX-TODO(unknown-halfword): the spawn routine zeroes the halfword at 0x33E (no named field).
  */
 static void itRemixPitfallStickToSurface(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
     DObj *joint = DObjGetStruct(item_gobj);
 
+    ip->is_attach_surface = TRUE;
     joint->dl = (Gfx *) ((u8 *) joint->dl + ITREMIX_PITFALL_DISPLAY_LIST_OFFSET);
     gcAddXObjForDObjFixed(joint, ITREMIX_PITFALL_BURY_GFX_KIND, 0);
     itMSBombAttachedUpdateSurface(item_gobj);
@@ -333,6 +334,7 @@ static void itRemixPitfallThrowInitial(GObj *item_gobj)
     ip->attack_coll.knockback_scale = ITREMIX_PITFALL_BASE_KB;
     ip->attack_coll.knockback_weight = ITREMIX_PITFALL_BASE_KB;
     ip->attack_coll.knockback_base = ITREMIX_PITFALL_BASE_KB;
+    ip->attack_coll.can_setoff = FALSE;
     itBombHeiCommonSetHitStatusNormal(item_gobj);
     itMainSetStatus(item_gobj, sITRemixPitfallStatusDescs, nITRemixPitfallStatusThrown);
 }

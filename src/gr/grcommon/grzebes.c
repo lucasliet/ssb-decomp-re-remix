@@ -265,7 +265,7 @@ GObj* grZebesMakeGround(void)
     GObj *acid_gobj;
 
 #ifdef REGION_REMIX
-    /* REMIX-TODO(camera): Hazards.asm planet_zebes_acid_ first copies the correct camera Y (0x8013EB1C -> 0x801313FC); no decomp name yet. */
+    /* REMIX-TODO(camera): Hazards.asm 172-175 copies the correct camera Y (0x8013EB1C -> 0x801313FC) before the hazard check. 0x801313FC is GRCommonGroundVarsZebes.acid_level_curr (offset 0xC) in the decomp layout, and no Remix reader of 0x801313FC was found, so it is not ported. */
     if (grRemixHazardToggleIsOn() == FALSE)
     {
         return NULL;

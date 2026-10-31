@@ -113,6 +113,13 @@ s32 ftRemixTrippingEnterStatus(FTStruct *fp, s32 status_id)
     return nFTCommonStatusDamageLw3;
 }
 
+/* ZCancel.asm _trip ends by setting player_trip_flag to 1 after the status change (its first store, meant to clear the flag,
+ * writes the port index but is overwritten). The flag keeps the hitstun of the trip alive, see ftRemixTrippingAllowsTurnStateReset. */
+void ftRemixTrippingStoreZCancelFlag(s32 player)
+{
+    sFTRemixTrippingFlag[player] = TRUE;
+}
+
 /* FALSE only while a ground trip is running; the turn state reset must then keep the hitstun
  * (Tripping.asm trip_turn_hitstun_retention_1/2 skip the store at 0x0B18). */
 sb32 ftRemixTrippingAllowsTurnStateReset(FTStruct *fp)

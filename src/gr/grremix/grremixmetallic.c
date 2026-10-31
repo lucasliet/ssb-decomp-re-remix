@@ -9,6 +9,7 @@
 #include "grremixhazards.h"
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixrobotbee.h"
+#include "it/itremix/itremixsupermushroom.h"
 #include "ft/fighter.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "it/itmanager.h"
@@ -82,13 +83,14 @@ s32 grRemixMetallicBeeFacing(void)
 
 /**
  * Shrinks the fighter on `port` to half size for the shrink duration (asm robot_bee_laser_hit_).
- * The asm also destroys an active Super Mushroom effect of that port; that is not ported yet.
+ * The asm also destroys an active Super Mushroom effect of that port without restoring the size (Hazards.asm
+ * robot_bee_laser_hit_, the same destroy as Lightning _zap_player).
  */
 void grRemixMetallicShrinkPlayer(s32 port)
 {
-    /* REMIX-TODO(SuperMushroom): asm robot_bee_laser_hit_ destroys the active shroom routine of the port (Item.SuperMushroom.player_shrooms); no accessor exists. */
     sGRRemixMetallicShrinkTimer[port] = GRREMIX_METALLIC_SHRINK_DURATION;
     ftRemixSizeSetMultiplier(port, GRREMIX_METALLIC_SHRUNK_MULTIPLIER);
+    itRemixSuperMushroomDestroyForPlayer(port);
 }
 
 /** Clears the bee timer, the facing and every shrink timer. */

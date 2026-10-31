@@ -205,7 +205,7 @@ static void itRemixSuperMushroomFreeRoutine(ITRemixSuperMushroomRoutine *routine
 static ITDesc sITRemixSuperMushroomItemInfo =
 {
     ITREMIX_SUPERMUSHROOM_KIND,             /* Item.SuperMushroom.id */
-    &gITManagerCommonData,                  /* item file 0xFB, see notes REMIX-TODO(file) */
+    &gITManagerCommonData,                  /* item file 0xFB (asm dw 0x8018D040 = gITManagerCommonData) */
     ITREMIX_SUPERMUSHROOM_FILE_OFFSET,      /* item footer offset */
 
     {

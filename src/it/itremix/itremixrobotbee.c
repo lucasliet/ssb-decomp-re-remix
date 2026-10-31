@@ -30,6 +30,7 @@
 #define ITREMIX_ROBOTBEE_HITBOX_KNOCKBACK_SCALE 0x25  /* asm kbs at 0x0140 */
 #define ITREMIX_ROBOTBEE_HITBOX_KNOCKBACK_BASE 0x50   /* asm bkb at 0x0148 */
 #define ITREMIX_ROBOTBEE_HITBOX_FGM 0x26              /* asm hitbox sound (medium kick) */
+#define ITREMIX_ROBOTBEE_MULTI 0xB4                   /* asm 0x033E halfword at stage setting (Hazards.asm 4844), the pirhana flag */
 
 extern void* func_800269C0_275C0(u16 id);
 
@@ -49,6 +50,7 @@ static void itRemixRobotBeeFireWindow(GObj *item_gobj);
 static void itRemixRobotBeeSfxTick(void);
 static void itRemixRobotBeeResetVars(void);
 static void itRemixRobotBeeSetupHitbox(ITStruct *ip);
+static sb32 itRemixRobotBeeBlastZone(GObj *item_gobj);
 
 /* asm item_info_array and item_state_table: state 0 main, state 1 main, state 2 explosion; the hurtbox hit destroys. */
 static ITDesc sITRemixRobotBeeDesc =
@@ -91,6 +93,10 @@ GObj* itRemixRobotBeeMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fla
     joint->translate.vec.f = origin;
     ip = itGetStruct(item_gobj);
     itRemixRobotBeeSetupHitbox(ip);
+    ip->multi = ITREMIX_ROBOTBEE_MULTI;
+    ip->attack_coll.can_rehit_shield = TRUE;
+    ip->is_allow_knockback = TRUE;
+    ip->proc_dead = itRemixRobotBeeBlastZone;
     return item_gobj;
 }
 
@@ -104,8 +110,8 @@ static void itRemixRobotBeeResetVars(void)
 
 /**
  * Enables the bee's hitbox and sets its damage, size, angle, knockback and sound (asm robot_bee_stage_setting_).
- * REMIX-TODO(ITStruct): the asm also sets unnamed item fields that are not ported: 0x158 |= 0x10, 0x33E = 0xB4,
- * 0x2D3 |= 0x08, 0x1D0 = 0 (hitbox refresh), 0x1D4 = 0 (collision flag), 0x35C = 0.
+ * The asm's 0x158 bit 0x10, 0x33E, 0x2D3 bit 0x08 and 0x398 are set in itRemixRobotBeeMakeItem.
+ * REMIX-TODO(ITStruct 0x1D0, 0x1D4, 0x35C): asm clears them (Hazards.asm 4873-4875). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
  */
 static void itRemixRobotBeeSetupHitbox(ITStruct *ip)
 {
@@ -166,12 +172,19 @@ static void itRemixRobotBeeSfxTick(void)
 
 /**
  * robot_bee_destroy_ (asm). Plays the badnik destroy sound and destroys the bee when a hurtbox hits it.
- * REMIX-TODO(blast zone): asm robot_bee_blast_zone_ destroys the bee at the blast zone through the item's
- * ITStruct 0x398 routine table, which is not wired to Remix blast walls.
  */
 static sb32 itRemixRobotBeeDestroyProcHurtbox(GObj *item_gobj)
 {
     func_800269C0_275C0(ITREMIX_ROBOTBEE_DESTROY_FGM);
+    return TRUE;
+}
+
+/**
+ * robot_bee_blast_zone_ (ITStruct proc_dead, asm Hazards.asm 4968): returns TRUE, so the bee is destroyed
+ * when it reaches a blast zone.
+ */
+static sb32 itRemixRobotBeeBlastZone(GObj *item_gobj)
+{
     return TRUE;
 }
 

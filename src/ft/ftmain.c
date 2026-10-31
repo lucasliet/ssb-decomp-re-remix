@@ -330,8 +330,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
             attack_id = ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->attack_id;
 
 #ifdef REGION_REMIX
-            /* REMIX-TODO(ChargeSmash): Size.asm fix_damage_ charged smash block (asm lines 477-527) is not ported. */
-            fp->attack_colls[attack_id].damage = ftRemixSizeScaleDamage(fp, ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->damage);
+            fp->attack_colls[attack_id].damage = ftRemixSizeScaleDamage(fp, ftRemixChargeSmashScaleDamage(fp, ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->damage));
 #else
             fp->attack_colls[attack_id].damage = ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->damage;
 #endif

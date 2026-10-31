@@ -16,19 +16,20 @@ extern void *func_800269C0_275C0(u16 id);
 #define GRREMIX_CASINO_BUMPER_BOUNCE_SCALE 1.1F
 /* Hazards.asm 4458: surface ids above 0x16 are the side bumpers */
 #define GRREMIX_CASINO_BUMPER_SURFACE_MIN 0x16
+#define GRREMIX_CASINO_SURFACE_BYTE_MASK 0xFF
 #define GRREMIX_CASINO_BUMPER_SFX 0x3D6
 
 /**
- * Surface id of the wall the fighter hit. REMIX-TODO(surface bytes): Hazards.asm reads the bitfield at 0xCE and the
- * surface bytes at 0x11F and 0x133 of the N64 fighter struct; this port reads the MPCollData wall masks instead.
+ * Surface id of the wall the fighter hit. Hazards.asm 4450-4455 reads the surface type byte, the low byte of the wall
+ * flags word (N64 offsets 0x11F and 0x133), selected by the collision mask at 0xCE (== left wall).
  */
 static u32 grRemixCasinoWallSurface(FTStruct *fp)
 {
     if (fp->coll_data.mask_curr == MAP_FLAG_LWALL)
     {
-        return fp->coll_data.lwall_flags & MAP_VERTEX_MAT_MASK;
+        return fp->coll_data.lwall_flags & GRREMIX_CASINO_SURFACE_BYTE_MASK;
     }
-    return fp->coll_data.rwall_flags & MAP_VERTEX_MAT_MASK;
+    return fp->coll_data.rwall_flags & GRREMIX_CASINO_SURFACE_BYTE_MASK;
 }
 
 /**

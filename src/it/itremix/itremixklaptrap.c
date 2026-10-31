@@ -31,6 +31,7 @@
 #define ITREMIX_KLAPTRAP_ANIM_JOINT_OFFSET 0x0908 /* asm animation track 1, relative to the Japes file */
 #define ITREMIX_KLAPTRAP_ANIM_MATERIAL_OFFSET 0x0E20 /* asm animation track 2 (materials) */
 #define ITREMIX_KLAPTRAP_CAMERA_TAG_HIDDEN 0 /* asm GObj 0x38: no camera tag matches, nothing is drawn */
+#define ITREMIX_KLAPTRAP_MULTI 0xB4 /* asm 0x033E halfword at spawn (Hazards.asm 1745), the pirhana flag */
 
 typedef struct ITRemixKlapTrapVars
 {
@@ -59,6 +60,7 @@ static void itRemixKlapTrapArmHitbox(GObj *item_gobj);
 static sb32 itRemixKlapTrapShouldSpawn(s32 timer_before);
 static void itRemixKlapTrapSetupHitbox(ITStruct *ip);
 static void itRemixKlapTrapSetupVars(ITStruct *ip, Vec3f *pos);
+static sb32 itRemixKlapTrapProcDead(GObj *item_gobj);
 
 /* asm item_info_array. p_file points at the Japes stage file, bound in itRemixKlapTrapSetStageFile. */
 static ITDesc sITRemixKlapTrapDesc =
@@ -175,7 +177,7 @@ static void itRemixKlapTrapSetupHitbox(ITStruct *ip)
     ip->attack_coll.knockback_base = ITREMIX_KLAPTRAP_HITBOX_KNOCKBACK;
     ip->attack_coll.knockback_scale = ITREMIX_KLAPTRAP_HITBOX_KNOCKBACK;
     ip->damage_coll.hitstatus = 0;
-    /* REMIX-TODO(ITStruct 0x1D0 hitbox refresh timer, 0x1D4 collision flag): asm clears them, fields not named yet */
+    /* REMIX-TODO(ITStruct 0x1D0, 0x1D4): asm clears them (Hazards.asm 1780-1781). They alias attack_pos[1].pos_prev.x/y (0x1C4 + 0xC); vanilla reads attack_pos[1] only when attack_count > 1, KlapTrap attack_count not verified. */
 }
 
 /** Stores the spawn position and clears the spawn-time state of the item vars. */
@@ -199,8 +201,9 @@ void itRemixKlapTrapSetStageFile(void *stage_file)
 }
 
 /**
- * KlapTrap SPAWN_ITEM (asm klaptrap_stage_setting_). The item is created with no owner;
- * the asm's stage-only flags (0x33E, 0x158, 0x2D3, 0x398) are REMIX-TODO until their ITStruct fields are named.
+ * KlapTrap SPAWN_ITEM (asm klaptrap_stage_setting_). The item is created with no owner. The asm's
+ * flags map to ITStruct fields: 0x33E = multi, 0x158 bit 0x10 = can_rehit_shield, 0x2D3 bit 0x08 =
+ * is_allow_knockback, 0x398 = proc_dead.
  */
 GObj* itRemixKlapTrapMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {
@@ -218,8 +221,10 @@ GObj* itRemixKlapTrapMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fla
 
     sITRemixKlapTrapVisibleCameraTag = item_gobj->camera_tag;
     itRemixKlapTrapSetVisible(item_gobj, FALSE);
-    /* REMIX-TODO(ITStruct 0x33E, 0x158 bit 0x10, 0x2D3 bit 0x08): raw flags of the Remix item, fields not named yet */
-    /* REMIX-TODO(ITStruct 0x398 blast zone slot): asm stores itRemixKlapTrapBlastZone here, not wired */
+    ip->multi = ITREMIX_KLAPTRAP_MULTI;
+    ip->attack_coll.can_rehit_shield = TRUE;
+    ip->is_allow_knockback = TRUE;
+    ip->proc_dead = itRemixKlapTrapProcDead;
     itRemixKlapTrapSetupVars(ip, pos);
     itRemixKlapTrapSetupHitbox(ip);
     joint->translate.vec.f = *pos;
@@ -228,18 +233,22 @@ GObj* itRemixKlapTrapMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fla
 }
 
 /**
- * KlapTrap blast zone (asm klaptrap_blast_zone_): disables the hitbox, returns the item to
- * its spawn x position and sends it to the bomb/grenade destroy path.
- * REMIX-TODO(vanilla 0x8016F8C0): the final jump to the bomb/grenade destroy routine and
- * the GObj 0x38 hide are not ported, so the callback is not registered yet.
+ * KlapTrap blast zone (ITStruct proc_dead, asm klaptrap_blast_zone_ Hazards.asm 1798). Disables the
+ * hitbox, returns the model to the spawn x, hides it and returns FALSE. The asm's final jump to
+ * 0x8016F8C0 lands after the proc_dead check of itProcessProcItemMain, so the item is not destroyed.
+ * The asm writes the spawn x and y into item_vars (0x350/0x354); kv->spawn_pos already holds them.
+ * The asm hides the item by clearing GObj 0x38 (camera_tag), done here by itRemixKlapTrapSetVisible.
  */
-void itRemixKlapTrapBlastZone(GObj *item_gobj)
+static sb32 itRemixKlapTrapProcDead(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
     ITRemixKlapTrapVars *kv = itRemixKlapTrapGetVars(ip);
 
     ip->attack_coll.attack_state = 0;
     DObjGetStruct(item_gobj)->translate.vec.f.x = kv->spawn_pos.x;
+    itRemixKlapTrapSetVisible(item_gobj, FALSE);
+
+    return FALSE;
 }
 
 /** Descriptor of KlapTrap (item id 0x3A) for the Remix item dispatch. */

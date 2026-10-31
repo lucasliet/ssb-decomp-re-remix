@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -15,8 +18,7 @@
 // // // // // // // // // // // //
 
 // 0x80153950
-/* REMIX-TODO(Size): Size.asm ness.nsp.adjust_pkfire_position_ (0x801539B4) scales the PK Fire spawn offset by the owner
- * multiplier. The asm register flow was not checked against a disassembly (no baserom), so it is not applied. */
+/* Size.asm ness.nsp.adjust_pkfire_position_ (0x801539B4): the X and Y spawn offsets are scaled by the owner multiplier. */
 void ftNessSpecialNProcAccessory(GObj *fighter_gobj) // PK Fire setup
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -34,8 +36,13 @@ void ftNessSpecialNProcAccessory(GObj *fighter_gobj) // PK Fire setup
 
         gmCollisionGetFighterPartsWorldPosition(fp->joints[FTNESS_PKFIRE_SPAWN_JOINT], &pos);
 
+#ifdef REGION_REMIX
+        pos.x += FTNESS_PKFIRE_SPAWN_OFF_X * fp->lr * ftRemixSizeGetMultiplier(fp->player);
+        pos.y += FTNESS_PKFIRE_SPAWN_OFF_Y * ftRemixSizeGetMultiplier(fp->player);
+#else
         pos.x += FTNESS_PKFIRE_SPAWN_OFF_X * fp->lr;
         pos.y += FTNESS_PKFIRE_SPAWN_OFF_Y;
+#endif
         pos.z = 0.0F;
 
         if (fp->ga == nMPKineticsAir)

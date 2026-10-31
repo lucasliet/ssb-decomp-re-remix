@@ -306,7 +306,7 @@ static void itRemixDekuNutExplode(GObj *item_gobj)
     /* DekuNut.asm _check_flash: the screen flash is drawn before the shake. */
     itRemixScreenFlashDekuNut();
     efManagerQuakeMakeEffect(ITREMIX_DEKUNUT_SHAKE_SEVERITY);
-    /* REMIX-TODO(unverified): asm stores 2 at DObj 0x54 here (hurtbox sound or state byte, not identified). Skipped. */
+    DObjGetStruct(item_gobj)->flags = DOBJ_FLAG_HIDDEN;   /* DekuNut.asm: DObj 0x0054 = 2 */
     ip->attack_coll.fgm_id = ITREMIX_DEKUNUT_HURTBOX_FGM;
     itRemixDekuNutSetDamageAll(item_gobj);
     itRemixDekuNutFlashSetStatus(item_gobj);

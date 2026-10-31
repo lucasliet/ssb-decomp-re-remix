@@ -33,6 +33,8 @@
 #define ITREMIX_CACODEMON_LOOP_START 0x3C /* spawn_timer value that starts the attack loop */
 #define ITREMIX_CACODEMON_TURN_RIGHT 0x106
 #define ITREMIX_CACODEMON_LOOP_RESTART 0x20C
+#define ITREMIX_CACODEMON_MULTI 0xB4 /* asm 0x033E halfword at stage setting (Hazards.asm 8719), the pirhana flag */
+#define ITREMIX_CACODEMON_HIT_RECORD_GROUP 7 /* asm 0x0E written to the first byte of each hit record (group_id) */
 
 enum itRemixCacodemonStatus
 {
@@ -156,8 +158,9 @@ static void itRemixCacodemonApplyHitbox(ITStruct *ip)
     ip->attack_coll.fgm_id = ITREMIX_CACODEMON_HIT_FGM;
     ip->attack_coll.knockback_scale = ITREMIX_CACODEMON_KB_SCALE;
     ip->attack_coll.knockback_base = ITREMIX_CACODEMON_KB_BASE;
-    /* REMIX-TODO(unnamed fields): asm also clears 0x158 bits, 0x1D4 (hitbox collision flag), 0x35C, sets 0x2D3 bit 0x08 and
-     * writes 0 to the knockback effect at 0x11C; the port has no named fields for them yet. */
+    /* REMIX-TODO(unnamed fields): asm also clears 0x1D4 (hitbox collision flag) and 0x35C, and writes 0 to the
+     * knockback effect at 0x11C; the port has no named fields for them yet. The 0x158 bits, 0x33E and 0x2D3 are set in
+     * itRemixCacodemonMakeItem. */
 }
 
 /** Cacodemon.stage_setting_ (SPAWN_ITEM): creates the item with its hitbox and blast zone routine. */
@@ -179,6 +182,16 @@ GObj* itRemixCacodemonMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fl
     vars->target_x_diff = 0.0F;
 
     itRemixCacodemonApplyHitbox(ip);
+    ip->multi = ITREMIX_CACODEMON_MULTI;
+    ip->attack_coll.can_setoff = FALSE;
+    ip->attack_coll.can_rehit_item = FALSE;
+    ip->attack_coll.can_rehit_fighter = FALSE;
+    ip->attack_coll.can_rehit_shield = FALSE;
+    ip->attack_coll.can_hop = FALSE;
+    ip->attack_coll.can_reflect = FALSE;
+    ip->attack_coll.can_shield = FALSE;
+    ip->attack_coll.motion_attack_id &= 0x1F; /* asm sb r0 to 0x158 also clears the top bit of motion_attack_id */
+    ip->is_allow_knockback = TRUE;
     ip->proc_dead = itRemixCacodemonProcDead;
     itMainSetStatus(item_gobj, sITRemixCacodemonStatusDescs, nITRemixCacodemonStatusMain);
 
@@ -194,7 +207,20 @@ static void itRemixCacodemonSetFacing(GObj *item_gobj, u32 dl_offset)
 /** Clears the four attack-record slots that the asm resets on each loop turn. */
 static void itRemixCacodemonResetHitRecords(ITStruct *ip)
 {
-    /* REMIX-TODO(hit records): asm resets the four active hitbox records and hit object pointers at 0x224..0x243 of the item. */
+    GMAttackRecord *record;
+    s32 i;
+
+    for (i = 0; i < GMATTACKREC_NUM_MAX; i++)
+    {
+        record = &ip->attack_coll.attack_records[i];
+        record->victim_gobj = NULL;
+        record->victim_flags.is_interact_hurt = FALSE;
+        record->victim_flags.is_interact_shield = FALSE;
+        record->victim_flags.is_interact_reflect = FALSE;
+        record->victim_flags.is_interact_absorb = FALSE;
+        record->victim_flags.group_id = ITREMIX_CACODEMON_HIT_RECORD_GROUP;
+        record->victim_flags.timer_rehit &= 0x1F; /* asm sb 0x0E at 0x0228 + 8*i: top bit of the byte cleared */
+    }
 }
 
 /** Shot frame test over sITRemixCacodemonShotFrames. */

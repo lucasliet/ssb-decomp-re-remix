@@ -249,6 +249,8 @@ void ftRemixSizeScaleLinkEffect(FTStruct *fp, GObj *effect_gobj);
  * the hitbox size, the hitbox damage and the passive knockback resist scaled by the size of the fighter */
 s32 ftRemixSizeScaleHitboxSize(FTStruct *fp, s32 size);
 s32 ftRemixSizeScaleDamage(FTStruct *fp, s32 damage);
+s32 ftRemixRoundDamage(f32 scaled);
+s32 ftRemixChargeSmashScaleDamage(FTStruct *fp, s32 damage);
 f32 ftRemixSizePassiveArmor(FTStruct *fp, f32 passive_resist);
 
 /* Size phase (c) entry, ftremix/ftremixsizeentry.c (Size.asm entry animation_ and arwing update_routine_): the entry
@@ -352,6 +354,7 @@ sb32 ftRemixJabLockInterruptDownStand(GObj *fighter_gobj);
 s32 ftRemixTrippingEnterStatus(FTStruct *fp, s32 status_id);
 sb32 ftRemixTrippingAllowsTurnStateReset(FTStruct *fp);
 sb32 ftRemixTrippingFinishDamage(GObj *fighter_gobj);
+void ftRemixTrippingStoreZCancelFlag(s32 player);
 
 /* Z-Cancel settings (ZCancel.asm, Practice.asm flash_on_z_cancel_), ftremix/ftremixzcancel.c: the landing of an aerial
  * attack, called by ftCommonAttackAirProcMap */

@@ -36,7 +36,7 @@ static void itRemixPsyduckSetup(GObj *item_gobj, Vec3f *pos);
 static ITDesc sITRemixPsyduckItemInfo =
 {
     ITREMIX_PSYDUCK_KIND,
-    &gITManagerCommonData,                  /* item file 0xFB, see notes REMIX-TODO(file) */
+    &gITManagerCommonData,                  /* item file 0xFB: asm dw 0x8018D040 */
     ITREMIX_PSYDUCK_FILE_OFFSET,
 
     {

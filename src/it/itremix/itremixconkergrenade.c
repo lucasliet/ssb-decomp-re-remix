@@ -4,7 +4,7 @@
  *
  * Remix item fields that the vanilla ITStruct does not name (0x01C4 to 0x01D4,
  * 0x0354) live in ITRemixConkerGrenadeVars inside item_vars. The notes file lists
- * the vanilla patches, REMIX-TODOs and uncertain offsets.
+ * the vanilla patches, open items and uncertain offsets.
  */
 
 #ifdef PORT
@@ -543,7 +543,7 @@ static void itRemixConkerGrenadeExplode(GObj *item_gobj)
 
     efManagerSparkleWhiteMultiExplodeMakeEffect(&joint->translate.vec.f);
     efManagerQuakeMakeEffect(1);
-    /* REMIX-TODO(DObj): asm 0x0054 of the first joint is set to 2 here; the DObj field is not named yet. */
+    joint->flags = DOBJ_FLAG_HIDDEN;   /* ConkerSpecial.asm: first joint 0x0054 = 2 */
 
     ip->attack_coll.fgm_id = ITREMIX_CONKER_GRENADE_EXPLOSION_FGM;
     itMainRefreshAttackColl(item_gobj);

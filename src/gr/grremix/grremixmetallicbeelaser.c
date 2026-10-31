@@ -12,6 +12,7 @@
 #include "wp/wpmanager.h"
 #include "wp/wpmap.h"
 #include "wp/wpvars.h"
+#include "wp/wpfox/wpfoxblaster.h"
 #include "ef/efmanager.h"
 #include <math.h>
 
@@ -45,7 +46,6 @@ static f32 grRemixMetallicLaserSpeedX(void);
  * Weapon descriptor of the laser (asm robot_bee_laser_projectile_struct). p_weapon is set per spawn to the laser
  * file pointer.
  * REMIX-TODO(transform): the asm word 0x0C (0x1C000000) that the Remix projectile struct copies from the Pikachu thunder is not decoded; the port uses a rotation matrix.
- * REMIX-TODO(vanilla addr 0x80168964): the asm absorb (psi magnet) routine is not ported, so the laser ignores absorb.
  */
 static const WPDesc sWPMetallicBeeLaserWeaponDesc =
 {
@@ -61,7 +61,7 @@ static const WPDesc sWPMetallicBeeLaserWeaponDesc =
     NULL,                                       /* hop (edge of shield): asm 0 */
     NULL,                                       /* setoff (clang): asm 0 */
     grRemixMetallicLaserProcReflector,
-    NULL                                        /* absorb (psi magnet): not ported */
+    wpFoxBlasterProcHit                         /* absorb (psi magnet): vanilla 0x80168964, Hazards.asm robot_bee_laser_projectile_struct */
 };
 
 /**

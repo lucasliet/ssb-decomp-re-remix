@@ -88,7 +88,7 @@ static void itRemixTurnipDroppedProc(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
 
-    /* REMIX-TODO(ITStruct): the asm also clears the "don't randomly despawn" bit at N64 0x2CE (mask 0x02). The decomp stores it in pickup_wait, which the next line overwrites, so the result is the same. */
+    /* REMIX-TODO(ITStruct 0x2CE mask 0x02): asm falling_initial_ (items/Turnip.asm 284-286) clears the "don't randomly despawn" bit. Not ported: the bit falls in times_thrown (0x02CA:4-6 in struct_offsets.txt), whose vanilla meaning for this item is not confirmed. */
     ip->pickup_wait = TURNIP_GROUND_TIMER;
     ip->damage_coll.hitstatus = nGMHitStatusNone;
     itMainSetStatus(item_gobj, sITRemixTurnipStatusDescs, nITRemixTurnipStatusFall);
@@ -260,7 +260,9 @@ GObj* itRemixTurnipMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags
     ip->attack_coll.angle = TURNIP_KB_ANGLE;
     ip->attack_coll.fgm_id = TURNIP_HIT_FGM;
     itRemixTurnipSetFace(item_gobj, itRemixTurnipRollFace());
-    /* REMIX-TODO(ITStruct): the asm also sets N64 0x398 (blast-wall routine slot), 0x33E (bomb flag) and 0x2D3 (bit 0x04). None of them has a named ITStruct field, so they are not written. */
+    /* asm stage_setting_ (items/Turnip.asm 168-169): clears the blast-wall slot 0x398 and the bomb flag 0x33E. */
+    ip->proc_dead = NULL;
+    ip->multi = 0;
     joint->rotate.vec.f.z = 0.0F;
     ip->arrow_gobj = ifCommonItemArrowMakeInterface(ip);
 

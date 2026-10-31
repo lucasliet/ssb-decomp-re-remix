@@ -27,6 +27,7 @@
 #define FTREMIX_CHARGE_SMASH_SHUFFLE_ELECTRIC 2     /* ChargeSmashAttacks.asm _shuffle: is_shuffle_electric = 2 */
 #define FTREMIX_CHARGE_SMASH_SHUFFLE_INDEX_MAX 4    /* ChargeSmashAttacks.asm _shuffle: shuffle_index_max = 4 */
 #define FTREMIX_CHARGE_SMASH_TOGGLE_UNLIMITED 0x2   /* Toggles.asm entry_charged_smashes value 2 */
+#define FTREMIX_CHARGE_SMASH_DAMAGE_PER_FRAME (0.4F / 60.0F) /* Size.asm fix_damage_ constant 0x3BDA740E, 0.4 / 60 */
 
 typedef enum FTRemixChargeSmashAction
 {
@@ -417,6 +418,24 @@ Vec2f ftRemixChargeSmashShufflePosition(FTStruct *fp)
         return dFTDisplayMainShufflePositions[fp->is_shuffle_electric][fp->shuffle_frame_index];
     }
     return sFTRemixChargeSmashShuffle[fp->shuffle_frame_index];
+}
+
+/**
+ * Damage of a charged smash hit (Size.asm fix_damage_, charged smash block, asm lines 477-527). While the player is charging,
+ * the damage is multiplied by 1 + charge time * 0.4 / 60 and rounded to the nearest integer. The Size factor is applied
+ * afterwards by ftRemixSizeScaleDamage, as in the asm.
+ */
+s32 ftRemixChargeSmashScaleDamage(FTStruct *fp, s32 damage)
+{
+    FTRemixChargeState *state = &sFTRemixChargeStates[fp->player];
+    f32 factor;
+
+    if (!gmRemixToggle(charged_smashes) || !ftRemixChargeSmashIsChargeable(fp) || (state->time == 0))
+    {
+        return damage;
+    }
+    factor = 1.0F + ((f32)state->time * FTREMIX_CHARGE_SMASH_DAMAGE_PER_FRAME);
+    return ftRemixRoundDamage((f32)damage * factor);
 }
 
 #endif

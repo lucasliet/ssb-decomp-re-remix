@@ -28,6 +28,7 @@
 #define ITREMIX_BULLETBILL_ATTACK_STATE_FRESH 1         /* ITAttackColl.attack_state: fresh hitbox */
 #define ITREMIX_BULLETBILL_ANIM_JOINT_OFFSET 0x0908     /* asm animation track 1, relative to the stage file top */
 #define ITREMIX_BULLETBILL_ANIM_MATERIAL_OFFSET 0x09B4  /* asm animation track 2 (materials) */
+#define ITREMIX_BULLETBILL_MULTI 0xB4                   /* asm 0x033E halfword at stage setting (Hazards.asm 8252), the pirhana flag */
 
 extern void* func_800269C0_275C0(u16 id);
 
@@ -38,6 +39,7 @@ static s32 sITRemixBulletBillLifeTimer;
 static sb32 itRemixBulletBillMainProcUpdate(GObj *item_gobj);
 static sb32 itRemixBulletBillDestroyProcHurtbox(GObj *item_gobj);
 static void itRemixBulletBillSetupHitbox(ITStruct *ip);
+static sb32 itRemixBulletBillBlastZone(GObj *item_gobj);
 
 /* asm item info of the Banzai Bill spawn: p_file is the stage header, which the footer at 0xE0 is read from. */
 static ITDesc sITRemixBulletBillDesc =
@@ -60,12 +62,13 @@ static ITDesc sITRemixBulletBillDesc =
 /**
  * banzai_bill_stage_setting_ (asm SPAWN_ITEM). Creates the bullet, arms its hitbox and starts its life timer at 0.
  * Returns the bullet GObj, or NULL when the item could not be made.
- * REMIX-TODO(ITStruct 0x33E, 0x158 bit 0x10, 0x2D3 bit 0x08, 0x1D0, 0x1D4, 0x35C): raw flags of the asm, fields not named yet.
- * REMIX-TODO(ITStruct 0x398 blast zone slot): asm stores banzai_bill_blast_zone_ there, not wired to the item yet.
+ * The asm's 0x158 bit 0x10, 0x33E, 0x2D3 bit 0x08 and 0x398 are set below.
+ * REMIX-TODO(ITStruct 0x1D0, 0x1D4, 0x35C): asm clears them (Hazards.asm 8281-8283). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
  */
 GObj* itRemixBulletBillMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {
     GObj *item_gobj;
+    ITStruct *ip;
 
     item_gobj = itManagerMakeItem(parent_gobj, &sITRemixBulletBillDesc, pos, vel, flags);
     if (item_gobj == NULL)
@@ -73,7 +76,12 @@ GObj* itRemixBulletBillMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 f
         return NULL;
     }
     sITRemixBulletBillLifeTimer = 0;
-    itRemixBulletBillSetupHitbox(itGetStruct(item_gobj));
+    ip = itGetStruct(item_gobj);
+    itRemixBulletBillSetupHitbox(ip);
+    ip->multi = ITREMIX_BULLETBILL_MULTI;
+    ip->attack_coll.can_rehit_shield = TRUE;
+    ip->is_allow_knockback = TRUE;
+    ip->proc_dead = itRemixBulletBillBlastZone;
     return item_gobj;
 }
 
@@ -113,6 +121,15 @@ static sb32 itRemixBulletBillMainProcUpdate(GObj *item_gobj)
 static sb32 itRemixBulletBillDestroyProcHurtbox(GObj *item_gobj)
 {
     func_800269C0_275C0(ITREMIX_BULLETBILL_DESTROY_FGM);
+    return TRUE;
+}
+
+/**
+ * banzai_bill_blast_zone_ (ITStruct proc_dead, asm Hazards.asm 8376): returns TRUE, so the bullet is destroyed
+ * when it reaches a blast zone.
+ */
+static sb32 itRemixBulletBillBlastZone(GObj *item_gobj)
+{
     return TRUE;
 }
 

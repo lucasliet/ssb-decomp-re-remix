@@ -72,7 +72,7 @@ static ITDesc sITRemixCloudInfoDesc =
     NULL,                                       /* p_file: Goemon file 7 (p_file_special2), set at spawn */
     0x40,                                       /* o_attributes: item footer offset */
     {
-        nGCMatrixKindTraRotRpyR,                /* REMIX-TODO: item_info_array 0x0C is unknown (0x1B000000 or 0x1C000000) */
+        nGCMatrixKindTraRotRpyR,                /* asm item_info_array 0x0C = 0x1B000000, the kind 0x1B of TraRotRpyR (objdef.h) */
         nGCMatrixKindNull,
         0
     },

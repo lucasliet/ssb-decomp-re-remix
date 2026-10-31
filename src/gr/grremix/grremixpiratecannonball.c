@@ -14,6 +14,7 @@
 #define GRREMIX_PIRATE_CANNONBALL_KIND 0x28 /* Projectile.id.PIRATELAND_CANNONBALL, marina/ftremixmarinadsp.c */
 #define GRREMIX_PIRATE_CANNONBALL_LIFETIME 999 /* properties duration; the animation end explodes it first */
 #define GRREMIX_PIRATE_CANNONBALL_SMOKE_INTERVAL 9
+#define GRREMIX_PIRATE_CANNONBALL_JOINT_ROTATION_Y 1.5707963F
 #define GRREMIX_PIRATE_CANNONBALL_EXPLOSION_TIMER 15
 #define GRREMIX_PIRATE_CANNONBALL_DAMAGE 25
 #define GRREMIX_PIRATE_CANNONBALL_SIZE 360.0F
@@ -78,8 +79,6 @@ static void grRemixPirateCannonballApplyTrack(GObj *weapon_gobj, AObjEvent32 *an
  * Creates a cannonball at spawn_pos. Returns NULL when the weapon pool is full (asm: 0x801655C8 returns 0).
  * REMIX-TODO(launch velocity): the properties struct sets speed 100 at angle 270 (ground and air), gravity 0. The
  * projectile system's angle and facing convention is not ported yet, so the cannonball starts at rest.
- * REMIX-TODO(camera): the asm sets the influence-camera flag (0x80 at 0x026C of the projectile special struct).
- * REMIX-TODO(joint rotation): the asm rotates the first joint to 90 degrees (Hazards.asm cannonball_stage_setting_).
  */
 GObj* grRemixPirateCannonballMake(Vec3f *spawn_pos, void *hitbox_file, AObjEvent32 *anim_track)
 {
@@ -94,8 +93,12 @@ GObj* grRemixPirateCannonballMake(Vec3f *spawn_pos, void *hitbox_file, AObjEvent
     }
     wp = wpGetStruct(weapon_gobj);
     wp->lifetime = GRREMIX_PIRATE_CANNONBALL_LIFETIME;
+    wp->is_camera_follow = TRUE;
     wp->physics.vel_air.x = 0.0F;
     wp->physics.vel_air.y = 0.0F;
+    /* Hazards.asm 4185-4193: the first joint is turned 90 degrees before the barrel animation is applied. The RAM float
+       at 0x8019CA80 is taken to be pi/2 from the asm comment; its bit pattern was not read. */
+    DObjGetStruct(weapon_gobj)->rotate.vec.f.y = GRREMIX_PIRATE_CANNONBALL_JOINT_ROTATION_Y;
     grRemixPirateCannonballApplyTrack(weapon_gobj, anim_track);
     grRemixPirateCannonballResetState();
 

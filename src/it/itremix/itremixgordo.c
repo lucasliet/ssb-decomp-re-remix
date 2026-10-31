@@ -4,7 +4,7 @@
  *
  * Remix item fields that the vanilla ITStruct does not name (0x01C4 to 0x01D4,
  * 0x033E, 0x0354, 0x0398) live in ITRemixGordoVars inside item_vars. The notes
- * file lists the vanilla patches, REMIX-TODOs and uncertain offsets.
+ * file lists the vanilla patches, open items and uncertain offsets.
  */
 
 #ifdef PORT
@@ -22,6 +22,11 @@
 #include <it/itmanager.h>
 #include <it/itmap.h>
 #include <mp/mpcommon.h>
+#include <gm/gmdef.h>
+#include <ft/ftparam.h>
+#include <sc/sctypes.h>
+#include <sc/scmanager.h>
+#include <sys/objman.h>
 #include "ft/ftremix/ftremix.h"
 
 extern void *func_800269C0_275C0(u16 id);
@@ -62,6 +67,8 @@ extern void *func_800269C0_275C0(u16 id);
 #define ITREMIX_GORDO_HITBOX_FRESH 1
 #define ITREMIX_GORDO_HITBOX_OFF 0
 #define ITREMIX_GORDO_FIGHTER_JOINT_LEFT_HAND 10 /* Remix asm offset 0x0910 = FTStruct.joints[10] */
+#define ITREMIX_GORDO_RUMBLE_ID 6
+#define ITREMIX_GORDO_RENDER_ROUTINE 0x2E
 
 enum itRemixGordoStatus
 {
@@ -294,6 +301,27 @@ static void itRemixGordoBeginResting(GObj *item_gobj)
     itMainSetStatus(item_gobj, sITRemixGordoStatusDescs, nITRemixGordoStatusResting);
 }
 
+/**
+ * Rumbles the fighter of the given port, as the surface stick does. Port of the rumble in
+ * Gordo.asm, which reads the fighter from gSCManagerBattleState (table 0x800A50E8) and skips
+ * port 4 (no player). Rumbles nothing when the port has no fighter.
+ */
+static void itRemixGordoRumblePlayer(u8 player)
+{
+    GObj *fighter_gobj;
+
+    if (player >= GMCOMMON_PLAYERS_MAX)
+    {
+        return;
+    }
+    fighter_gobj = gSCManagerBattleState->players[player].fighter_gobj;
+    if (fighter_gobj == NULL)
+    {
+        return;
+    }
+    ftParamMakeRumble(ftGetStruct(fighter_gobj), ITREMIX_GORDO_RUMBLE_ID, 0);
+}
+
 /** Gordo.stick_to_surface: attaches Gordo to the surface it hit and plays the stick sound. */
 static void itRemixGordoStickToSurface(GObj *item_gobj)
 {
@@ -313,7 +341,7 @@ static void itRemixGordoStickToSurface(GObj *item_gobj)
     joint->rotate.vec.f.z = saved_rotate_z;
     ip->is_attach_surface = TRUE;
 
-    /* REMIX-TODO(rumble): asm rumbles the fighter at port ip->player (not the owner) via the table at 0x800A50E8 */
+    itRemixGordoRumblePlayer(ip->player);
     ip->attack_coll.damage = ITREMIX_GORDO_SURFACE_STICK_DAMAGE;
     func_800269C0_275C0(ITREMIX_GORDO_FGM_SURFACE_STICK);
 }
@@ -338,7 +366,7 @@ GObj* itRemixGordoMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
     vars = itRemixGordoGetVars(item_gobj);
     ((DObj*)item_gobj->obj)->translate.vec.f.z = 0.0F;
     ip->multi = 0;
-    /* REMIX-TODO(gfx): asm calls 0x80008CC0 (render routine setup, a1 = 0x2E, a2 = 0); not identified in decomp */
+    gcAddXObjForDObjFixed(DObjGetStruct(item_gobj), ITREMIX_GORDO_RENDER_ROUTINE, 0);
     ip->attack_coll.can_rehit_shield = TRUE;
     ip->lifetime = 0;
     vars->unk_0x354 = 4;

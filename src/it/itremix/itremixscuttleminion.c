@@ -24,6 +24,7 @@
 #define ITREMIX_SCUTTLEMINION_HITBOX_KNOCKBACK_SCALE 0x25 /* asm kbs at 0x0140 */
 #define ITREMIX_SCUTTLEMINION_HITBOX_KNOCKBACK_BASE 0x50  /* asm bkb at 0x0148 */
 #define ITREMIX_SCUTTLEMINION_HITBOX_FGM 0x26         /* asm hitbox sound (medium kick) */
+#define ITREMIX_SCUTTLEMINION_MULTI 0xB4              /* asm 0x033E halfword at stage setting (Hazards.asm 7599), the pirhana flag */
 
 extern void* func_800269C0_275C0(u16 id);
 
@@ -33,6 +34,7 @@ static s32 sITRemixScuttleMinionLifeTimer;
 static sb32 itRemixScuttleMinionMainProcUpdate(GObj *item_gobj);
 static sb32 itRemixScuttleMinionDestroyProcHurtbox(GObj *item_gobj);
 static void itRemixScuttleMinionSetupHitbox(ITStruct *ip);
+static sb32 itRemixScuttleMinionBlastZone(GObj *item_gobj);
 
 /* asm item_info_array: word 0x1B000000 at 0x0C, file offset 0x40 at 0x08; state 0 main, hurtbox hit destroys. */
 static ITDesc sITRemixScuttleMinionDesc =
@@ -77,13 +79,18 @@ GObj* itRemixScuttleMinionMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u3
     joint->translate.vec.f = origin;
     ip = itGetStruct(item_gobj);
     itRemixScuttleMinionSetupHitbox(ip);
+    ip->multi = ITREMIX_SCUTTLEMINION_MULTI;
+    ip->attack_coll.can_rehit_shield = TRUE;
+    ip->is_allow_knockback = TRUE;
+    ip->proc_dead = itRemixScuttleMinionBlastZone;
     return item_gobj;
 }
 
 /**
  * Enables the minion's hitbox and sets its damage, size, angle, knockback and sound (asm minion_stage_setting_).
- * REMIX-TODO(ITStruct): the asm also sets unnamed item fields that are not ported: 0x158 |= 0x10, 0x2D3 |= 0x08,
- * 0x1D0 = 0 (hitbox refresh), 0x1D4 = 0 (collision flag), 0x35C = 0. The sfx timer at 0x44 = 0x30 is not read by minion_main_.
+ * The asm's 0x158 bit 0x10, 0x33E, 0x2D3 bit 0x08 and 0x398 are set in itRemixScuttleMinionMakeItem.
+ * REMIX-TODO(ITStruct 0x1D0, 0x1D4, 0x35C): asm clears them (Hazards.asm 7628-7630). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
+ * The sfx timer at 0x44 = 0x30 is not read by minion_main_.
  */
 static void itRemixScuttleMinionSetupHitbox(ITStruct *ip)
 {
@@ -113,12 +120,19 @@ static sb32 itRemixScuttleMinionMainProcUpdate(GObj *item_gobj)
 
 /**
  * minion_destroy_ (asm). Plays the badnik destroy sound and destroys the minion when a hurtbox hits it.
- * REMIX-TODO(blast zone): asm minion_blast_zone_ destroys the minion at the blast zone through the item's ITStruct
- * 0x398 routine table, which is not wired to Remix blast walls (same as the Robot Bee).
  */
 static sb32 itRemixScuttleMinionDestroyProcHurtbox(GObj *item_gobj)
 {
     func_800269C0_275C0(ITREMIX_SCUTTLEMINION_DESTROY_FGM);
+    return TRUE;
+}
+
+/**
+ * minion_blast_zone_ (ITStruct proc_dead, asm Hazards.asm 7723): returns TRUE, so the minion is destroyed
+ * when it reaches a blast zone.
+ */
+static sb32 itRemixScuttleMinionBlastZone(GObj *item_gobj)
+{
     return TRUE;
 }
 

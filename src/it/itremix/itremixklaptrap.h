@@ -17,6 +17,5 @@ GObj* itRemixKlapTrapMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fla
 void itRemixKlapTrapSetStageFile(void *stage_file);
 
 /** Blast zone callback (asm klaptrap_blast_zone_): sends the item back to its spawn point. */
-void itRemixKlapTrapBlastZone(GObj *item_gobj);
 
 #endif

@@ -3,8 +3,7 @@
  * laser minion from Dedede's down special. Port of items/WaddleDoo.asm.
  *
  * Routines ported from WaddleDoo.asm: waddle_doo_attack_initial,
- * waddle_doo_attack_main, star_stage_setting, beam_main. create_beam_star is
- * a stub (REMIX-TODO); see the notes file for what is still missing.
+ * waddle_doo_attack_main, star_stage_setting, beam_main. The notes file lists the deviations.
  */
 
 #ifdef PORT
@@ -29,6 +28,7 @@ extern alSoundEffect* func_800269C0_275C0(u16 id);
 
 #define ITREMIX_WADDLEDOO_STATE_ATTACK 4
 #define ITREMIX_WADDLEDOO_ATTACK_ANIM_FRAME 6
+#define ITREMIX_WADDLEDOO_SQUAT_ANIM_FRAME 5
 #define ITREMIX_WADDLEDOO_FGM_BEAM_INITIAL 0xDC
 #define ITREMIX_WADDLEDOO_FGM_BEAM_SHOOT 0x40
 #define ITREMIX_WADDLEDOO_COLANIM_FLASH 0x07
@@ -341,9 +341,9 @@ static void itRemixWaddleDooBeamInitial(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
 
-    ip->damage_coll.hitstatus = 0;              /* asm 0x0248 = hurtbox disabled; mapping uncertain, see notes */
+    ip->damage_coll.hitstatus = 0;              /* asm 0x0248 = damage_coll hurtbox state, set to none (same field as Basketball) */
     func_800269C0_275C0(ITREMIX_WADDLEDOO_FGM_BEAM_SHOOT);
-    /* REMIX-TODO(image): asm sets the image struct frame to ITREMIX_WADDLEDOO_ATTACK_ANIM_FRAME (jumping image) */
+    DObjGetStruct(item_gobj)->mobj->texture_id_curr = ITREMIX_WADDLEDOO_ATTACK_ANIM_FRAME;
 }
 
 /** Creates the star(s) for this frame of the charge phase. Port of the star branch of waddle_doo_attack_main. */
@@ -373,7 +373,6 @@ static sb32 itRemixWaddleDooAttackShoot(GObj *item_gobj, ITRemixWaddleDooVars *v
 {
     if (itGetStruct(item_gobj)->multi >= (ITREMIX_WADDLEDOO_BEAM_CHARGE_TIME + ITREMIX_WADDLEDOO_BEAM_SHOOT_TIME))
     {
-        /* REMIX-TODO(hitbox-flag): asm clears the hitbox collision flag at 0x01D4 on every exit path of waddle_doo_attack_main */
         itRemixWaddleDeeMinionWalkInitial(item_gobj);
         return FALSE;
     }
@@ -384,7 +383,7 @@ static sb32 itRemixWaddleDooAttackShoot(GObj *item_gobj, ITRemixWaddleDooVars *v
  * Waddle Doo beam update. Port of waddle_doo_attack_main (state 3 and 4 main).
  * Returns FALSE to keep the item alive, TRUE when it was freed.
  */
-static sb32 itRemixWaddleDooAttackProcUpdate(GObj *item_gobj)
+static sb32 itRemixWaddleDooAttackUpdate(GObj *item_gobj)
 {
     ITRemixWaddleDooVars *vars = itRemixWaddleDooGetVars(item_gobj);
 
@@ -402,6 +401,20 @@ static sb32 itRemixWaddleDooAttackProcUpdate(GObj *item_gobj)
 }
 
 /**
+ * Waddle Doo beam update proc for states 4 and 5. Port of the attack_main exits: every exit
+ * of waddle_doo_attack_main runs the shared _end_2 block that clears the hitbox collision
+ * flag (N64 0x01D4, ITRemixWaddleDeeVars.is_hitbox_collided).
+ */
+static sb32 itRemixWaddleDooAttackProcUpdate(GObj *item_gobj)
+{
+    ITRemixWaddleDooVars *vars = itRemixWaddleDooGetVars(item_gobj);
+    sb32 is_freed = itRemixWaddleDooAttackUpdate(item_gobj);
+
+    vars->minion.is_hitbox_collided = FALSE;
+    return is_freed;
+}
+
+/**
  * Starts the laser attack. Port of waddle_doo_attack_initial. Called by the WaddleDee
  * and ScuttleMinion ports.
  */
@@ -409,9 +422,12 @@ void itRemixWaddleDooAttackInitial(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
     ITRemixWaddleDooVars *vars = itRemixWaddleDooGetVars(item_gobj);
+    MObj *mobj = DObjGetStruct(item_gobj)->mobj;
 
     DObjGetStruct(item_gobj)->rotate.vec.f.z = 0.0F;
-    /* REMIX-TODO(image): asm sets the image frame to 5 (jump squat) and clears the animation pointers at 0x0090/0x0094 */
+    mobj->texture_id_curr = ITREMIX_WADDLEDOO_SQUAT_ANIM_FRAME;
+    mobj->aobj = NULL;
+    mobj->matanim_joint.event16 = NULL;
     ip->attack_coll.attack_state = 0;           /* asm 0x010C: hitbox disabled */
     ip->times_landed = 0;                       /* asm 0x02CE: andi 0xCF */
     ip->multi = 0;                              /* asm 0x033E */
@@ -424,7 +440,7 @@ void itRemixWaddleDooAttackInitial(GObj *item_gobj)
 
 /**
  * Beam star update. Port of beam_main, the Remix Waddle Doo beam projectile proc.
- * Only referenced once the beam WPDesc is ported (see the REMIX-TODO in itRemixWaddleDooCreateBeamStar).
+ * Referenced by the beam WPDesc (sITRemixWaddleDooBeamWeaponDesc).
  */
 static sb32 itRemixWaddleDooBeamProcUpdate(GObj *weapon_gobj)
 {
@@ -488,7 +504,7 @@ static sb32 itRemixWaddleDooBeamProcUpdate(GObj *weapon_gobj)
     dobj->translate.vec.f.y = y;
     wp->coll_data.pos_prev.x = x;
     wp->coll_data.pos_prev.y = y;
-    /* REMIX-TODO(beam-multihit): asm clears the already-hit player at 0x0214 so the star can rehit */
+    wp->attack_coll.attack_records[0].victim_gobj = NULL;   /* asm 0x0214: forget the hit player so the star can rehit */
 
     return FALSE;
 }

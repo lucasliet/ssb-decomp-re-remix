@@ -26,6 +26,8 @@ extern void *func_800269C0_275C0(u16 id);
 #define GRREMIX_BOWSER_BOMBS_PLAYERS 4
 #define GRREMIX_BOWSER_BOMBS_SPAWN_X 2988.0F
 #define GRREMIX_BOWSER_BOMBS_SPAWN_Y 512.0F
+/* Hazards.asm 1027-1041 (add_item_) writes the bottom ECB 0xC3D00000 (-416.0F) of the bomb item, the hover height */
+#define GRREMIX_BOWSER_BOMBS_HOVER_ECB_BOTTOM -416.0F
 #define GRREMIX_BOWSER_BOMBS_HEADER_FILE_ID 0x09B2 /* File.BOWSER_BOMB_HEADER: the RTTF bomb header with the Bowser hitbox */
 
 typedef struct GRRemixBowserBombSlot
@@ -109,7 +111,6 @@ static void grRemixBowserBombsSpawn(s32 side)
     vel.y = 0.0F;
     vel.z = 0.0F;
 
-    /* REMIX-TODO(items): add_item_ (Hazards.asm 0x0938) also sets the hover bottom ECB (0xC3D00000 = -416.0F); the port spawns the bomb without it. */
     bomb_gobj = itManagerMakeItemSetupCommon(NULL, nITKindTaruBomb, &pos, &vel, ITEM_FLAG_PARENT_GROUND);
     if (bomb_gobj == NULL)
     {
@@ -117,6 +118,7 @@ static void grRemixBowserBombsSpawn(s32 side)
         slot->respawn_timer = GRREMIX_BOWSER_BOMBS_RESPAWN_TIME;
         return;
     }
+    itGetStruct(bomb_gobj)->coll_data.map_coll.bottom = GRREMIX_BOWSER_BOMBS_HOVER_ECB_BOTTOM;
     slot->bomb_gobj = bomb_gobj;
     slot->flash_timer = GRREMIX_BOWSER_BOMBS_FLASH_TIME;
     slot->is_exploded = FALSE;

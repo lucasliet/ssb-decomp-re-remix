@@ -10,6 +10,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include <ft/fighter.h>
 #include <ft/fthammer.h>
+#include <ft/ftparam.h>
 #include <gm/gmremixpanel.h>
 #include <it/item.h>
 #include <it/itdef.h>
@@ -19,6 +20,7 @@
 
 #define FTREMIX_START_ITEM_RANDOM_INDEX 19
 #define FTREMIX_START_ITEM_HAMMER_TICS 0x2D0
+#define FTREMIX_START_ITEM_HAMMER_MIDI 0x2D /* Item.asm item pickup: argument of 0x800E7AFC, the hammer midi */
 #define FTREMIX_START_ITEM_BLUESHELL_KIND 0x30 /* Item.BlueShell.id */
 #define FTREMIX_START_ITEM_DEKUNUT_KIND 0x32 /* Item.DekuNut.id */
 /* Item.Pitfall.id: Item.asm add_item list (its start table comment says 0x33) */
@@ -108,8 +110,8 @@ static void ftRemixStartItemGive(GObj *fighter_gobj, s32 index)
     if (kind == nITKindHammer)
     {
         fp->hammer_tics = FTREMIX_START_ITEM_HAMMER_TICS;
-        /* REMIX-TODO(audio): Item.asm also plays the hammer midi 0x2D (0x800E7AFC) */
         ftHammerSetStatusHammerWait(fighter_gobj);
+        ftParamTryPlayItemMusic(FTREMIX_START_ITEM_HAMMER_MIDI);
     }
 }
 

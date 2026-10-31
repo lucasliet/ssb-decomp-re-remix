@@ -2,7 +2,10 @@
 
 #include "it/itremix/itremixlightning.h"
 #include "it/itremix/itremixsupermushroom.h"
+#include "it/itremix/itremixscreenflash.h"
+#include "it/itremix/itremixfranklinbadge.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include <gm/gmcamera.h>
 #include <it/item.h>
 #include <it/itcommon/ittomato.h>
 #include <ef/efmanager.h>
@@ -17,6 +20,7 @@
 #define ITREMIX_LIGHTNING_TIME 25
 #define ITREMIX_LIGHTNING_SFX_TIME 20 /* ITREMIX_LIGHTNING_TIME - zap_sfx_delay (5) */
 #define ITREMIX_LIGHTNING_SFX_FGM 0x00E8
+#define ITREMIX_LIGHTNING_FRANKLIN_REFLECT_FGM 0x041B /* asm lightning_zap_players_, franklin badge reflect sound */
 #define ITREMIX_LIGHTNING_SHRINK_RESET_TIME 0x01E0 /* written to every port slot before a zap */
 #define ITREMIX_LIGHTNING_SHRUNK_SIZE 0.5F /* lui t4, 0x3F00 in _zap_player */
 #define ITREMIX_LIGHTNING_SHRINK_TIME 600 /* lightning_shrink_timer, 10 seconds at 60 tics per second */
@@ -25,6 +29,11 @@
 #define ITREMIX_LIGHTNING_ACTION_REVIVE2 0x008 /* Remix Action.Revive2 */
 #define ITREMIX_LIGHTNING_ACTION_REVIVE_WAIT 0x009 /* Remix Action.ReviveWait */
 #define ITREMIX_LIGHTNING_PROCESS_PRIORITY 3
+#define ITREMIX_LIGHTNING_CAMERA_MODE_FLASH COBJ_FLAG_FILLCOLOR /* asm camera mode 2 */
+#define ITREMIX_LIGHTNING_CAMERA_MODE_DEFAULT COBJ_FLAG_DLBUFFERS /* asm camera mode 4 (default) */
+#define ITREMIX_LIGHTNING_CAMERA_BLUE 0x040433FF
+#define ITREMIX_LIGHTNING_CAMERA_WHITE 0xFFFFFFFF
+#define ITREMIX_LIGHTNING_CAMERA_WHITE_BIT 0x10 /* timer bit 4 selects white over dark blue */
 
 typedef struct ITRemixLightningRoutine
 {
@@ -45,7 +54,7 @@ static s32 sITRemixLightningShrinkTimers[MAXCONTROLLERS];
 static ITDesc sITRemixLightningItemInfo =
 {
     ITREMIX_LIGHTNING_KIND,                 /* Item.Lightning.id */
-    &gITManagerCommonData,                  /* item file 0xFB, see notes REMIX-TODO(file) */
+    &gITManagerCommonData,                  /* item file 0xFB (asm dw 0x8018D040 = gITManagerCommonData) */
     ITREMIX_LIGHTNING_FILE_OFFSET,          /* item footer offset */
 
     {
@@ -123,10 +132,36 @@ static void itRemixLightningStartRoutine(FTStruct *fp)
     gcAddGObjProcess(routine_gobj, itRemixLightningRoutineProcUpdate, nGCProcessKindFunc, ITREMIX_LIGHTNING_PROCESS_PRIORITY);
 }
 
+/* Lightning: aerial_main_ camera colour, with the fill mode unless Flash Guard is on (asm _set_draw_mode) */
+static void itRemixLightningSetCameraFlash(s32 timer)
+{
+    CObj *cobj = CObjGetStruct(gGMCameraGObj);
+
+    cobj->color = ((timer & ITREMIX_LIGHTNING_CAMERA_WHITE_BIT) != 0) ? ITREMIX_LIGHTNING_CAMERA_WHITE : ITREMIX_LIGHTNING_CAMERA_BLUE;
+    if (!ITREMIX_FLASH_GUARD_ON)
+    {
+        cobj->flags = ITREMIX_LIGHTNING_CAMERA_MODE_FLASH;
+    }
+}
+
+/* Lightning: pickup_lightning_ camera flash, white fill mode, skipped while Flash Guard is on */
+static void itRemixLightningStartCameraFlash(void)
+{
+    CObj *cobj;
+
+    if (ITREMIX_FLASH_GUARD_ON)
+    {
+        return;
+    }
+    cobj = CObjGetStruct(gGMCameraGObj);
+    cobj->flags = ITREMIX_LIGHTNING_CAMERA_MODE_FLASH;
+    cobj->color = ITREMIX_LIGHTNING_CAMERA_WHITE;
+}
+
 /* Lightning: aerial_main_ _end_lightning */
 static void itRemixLightningEndRoutine(ITRemixLightningRoutine *routine)
 {
-    /* REMIX-TODO(GFX): the asm also sets the camera draw mode back to 4 here. */
+    CObjGetStruct(gGMCameraGObj)->flags = ITREMIX_LIGHTNING_CAMERA_MODE_DEFAULT;
     gcEjectGObj(routine->routine_gobj);
     routine->routine_gobj = NULL;
     routine->owner_fp = NULL;
@@ -183,7 +218,17 @@ static void itRemixLightningZapPlayer(FTStruct *fp)
     sITRemixLightningShrinkTimers[fp->player] = ITREMIX_LIGHTNING_SHRINK_TIME;
     ftRemixSizeSetMultiplier(fp->player, ITREMIX_LIGHTNING_SHRUNK_SIZE);
     itRemixSuperMushroomDestroyForPlayer(fp->player);
-    /* REMIX-TODO(FranklinBadge): a Franklin Badge does not reflect the zap; every eligible player is zapped. */
+}
+
+/* Lightning: lightning_zap_players_ Franklin Badge check, after the zap checks. An active badge reflects the zap (FGM 0x041B). */
+static void itRemixLightningZapOrReflect(FTStruct *fp)
+{
+    if (itRemixFranklinBadgeIsActive(fp))
+    {
+        func_800269C0_275C0(ITREMIX_LIGHTNING_FRANKLIN_REFLECT_FGM);
+        return;
+    }
+    itRemixLightningZapPlayer(fp);
 }
 
 /* Lightning: aerial_main_ zap frame, then lightning_zap_players_ */
@@ -202,7 +247,7 @@ static void itRemixLightningZapPlayers(FTStruct *owner_fp)
         fp = ftGetStruct(fighter_gobj);
         if (itRemixLightningCanZap(owner_fp, fp))
         {
-            itRemixLightningZapPlayer(fp);
+            itRemixLightningZapOrReflect(fp);
         }
         fighter_gobj = fighter_gobj->link_next;
     }
@@ -238,7 +283,10 @@ static void itRemixLightningRoutineProcUpdate(GObj *routine_gobj)
         itRemixLightningEndRoutine(routine);
         return;
     }
-    /* REMIX-TODO(GFX): the asm sets the global camera draw colour (dark blue or white, bit 4 of the timer) and mode 2 here. */
+    else
+    {
+        itRemixLightningSetCameraFlash(routine->timer);
+    }
     routine->timer -= 1;
 }
 
@@ -274,9 +322,10 @@ static void itRemixLightningShrinkProcUpdate(GObj *shrink_gobj)
     }
 }
 
-/* Lightning: pickup_lightning_. The camera flash is not ported (REMIX-TODO(GFX)) */
+/* Lightning: pickup_lightning_. The camera flash starts with the routine, as in the asm. */
 static void itRemixLightningConsume(FTStruct *fp, GObj *item_gobj)
 {
+    itRemixLightningStartCameraFlash();
     itRemixLightningStartRoutine(fp);
     itRemixConsumeTomatoTail(fp, item_gobj);
 }

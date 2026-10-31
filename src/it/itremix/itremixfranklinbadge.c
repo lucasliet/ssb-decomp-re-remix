@@ -59,7 +59,7 @@ static FTSpecialColl sITRemixFranklinBadgeReflectColl =
 static ITDesc sITRemixFranklinBadgeItemInfo =
 {
     ITREMIX_FRANKLIN_KIND,
-    &gITManagerCommonData,                  /* item file 0xFB, see notes REMIX-TODO(file) */
+    &gITManagerCommonData,                  /* item file 0xFB (asm dw 0x8018D040 = gITManagerCommonData) */
     ITREMIX_FRANKLIN_FILE_OFFSET,
 
     {

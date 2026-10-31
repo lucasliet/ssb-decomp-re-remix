@@ -8,6 +8,10 @@
 #include "remix/remix_roster_data.h"
 
 extern void *func_800269C0_275C0(u16 id);
+extern u8 dEFManagerDamageNormalLightIDs[];
+
+#define WP_REMIX_CAPSULE_GFX_DR_MARIO 0x81 /* DR_MARIO_EFFECT_GFX_INST_ID, fireball.asm */
+#define WP_REMIX_CAPSULE_GFX_DR_LUIGI 0x97 /* DR_LUIGI_EFFECT_GFX_INST_ID, fireball.asm */
 
 #define WP_REMIX_CAPSULE_TYPE       4     /* Capsule.TYPE in fireball.asm (attack_coll.element) */
 #define WP_REMIX_BOOK_TYPE          3     /* Book.TYPE in fireball.asm (attack_coll.element) */
@@ -77,11 +81,41 @@ f32 wpRemixMarioFireballMinVel(WPStruct *wp, f32 vanilla_min_vel)
     return WP_REMIX_EGG_MIN_VEL_TOUCHING;
 }
 
-/* Normal hit GFX shared by capsule and book hits. */
+/* Normal hit GFX of book hits: the vanilla instruction id, fireball.asm hit_effect_ _book. */
 static void wpRemixMarioFireballNormalHitGfx(WPStruct *wp, Vec3f *pos)
 {
-    /* REMIX-TODO(GFX): the vanilla normal hit GFX instruction id (0x49) is used; Remix swaps it to 0x81 (Dr. Mario) or 0x97 (Dr. Luigi, fireball index DRL). */
     efManagerDamageNormalLightMakeEffect(pos, 0, wp->hit_normal_damage, FALSE);
+}
+
+/* Capsule hit GFX id: 0x97 (Dr. Luigi) when the effective character is DRL, else 0x81 (Dr. Mario). The asm flag
+ * (projectile 0x2A0) is set from the copied power of Kirby and from the fighter otherwise (fireball.asm _drl_check). */
+static u8 wpRemixMarioFireballCapsuleGfxId(WPStruct *wp)
+{
+    FTStruct *owner_fp;
+    s32 char_id;
+
+    if (wp->owner_gobj == NULL)
+    {
+        return WP_REMIX_CAPSULE_GFX_DR_MARIO;
+    }
+    owner_fp = ftGetStruct(wp->owner_gobj);
+    char_id = owner_fp->fkind;
+    if ((char_id == REMIX_ID_KIRBY) || (char_id == REMIX_ID_JKIRBY))
+    {
+        char_id = owner_fp->passive_vars.kirby.copy_id;
+    }
+    return (char_id == REMIX_ID_DRL) ? WP_REMIX_CAPSULE_GFX_DR_LUIGI : WP_REMIX_CAPSULE_GFX_DR_MARIO;
+}
+
+/* Capsule hit GFX: the asm writes the Dr. Mario or Dr. Luigi id into the normal hit table for this one call and
+ * restores the vanilla id after it (fireball.asm hit_effect_ _capsule, 0x8012DF20 is entry 0). */
+static void wpRemixMarioFireballCapsuleHitGfx(WPStruct *wp, Vec3f *pos)
+{
+    u8 vanilla_gfx_id = dEFManagerDamageNormalLightIDs[0];
+
+    dEFManagerDamageNormalLightIDs[0] = wpRemixMarioFireballCapsuleGfxId(wp);
+    efManagerDamageNormalLightMakeEffect(pos, 0, wp->hit_normal_damage, FALSE);
+    dEFManagerDamageNormalLightIDs[0] = vanilla_gfx_id;
 }
 
 /* Capsule and book hits play their own FGM and GFX and skip the vanilla sparkle. Returns FALSE for fireball and egg. */
@@ -93,7 +127,7 @@ sb32 wpRemixMarioFireballHitEffect(GObj *weapon_gobj)
     if (wp->attack_coll.element == WP_REMIX_CAPSULE_TYPE)
     {
         func_800269C0_275C0(WP_REMIX_CAPSULE_FGM);
-        wpRemixMarioFireballNormalHitGfx(wp, pos);
+        wpRemixMarioFireballCapsuleHitGfx(wp, pos);
         return TRUE;
     }
     if (wp->attack_coll.element == WP_REMIX_BOOK_TYPE)
