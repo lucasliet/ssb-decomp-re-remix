@@ -9,20 +9,20 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_roster_data.h"
 #include <ft/fighter.h>
+#include "sc/sc1pmode/sc1premixmode.h"
+#include "sc/sc1pmode/sc1premixmodename.h"
 
 /* Crash.asm Action.DSPWait and Action.DSPTurn, same values as nFTRemixCrashStatusDSPWait/Turn (ftremixcrashdsp.c) */
 #define FTREMIX_HITBOX_CRASH_DSP_WAIT 0xE6
 #define FTREMIX_HITBOX_CRASH_DSP_TURN 0xE7
 
 /*
- * REMIX-TODO(singleplayer): Hitbox.asm force_grab_immunity_ also makes Giga Bowser (REMIX_ID_GBOWSER) not
- * grabbable while SinglePlayerModes.singleplayer_mode_flag == REMIX_1P_ID (4). The Remix 1P mode flag is not
- * ported yet, so the Giga Bowser branch is skipped. It stays FALSE until that flag exists.
- *
  * REMIX-TODO(hitbox display): these Hitbox.asm patches are not ported. The fighter part of hitbox_mode_ and the
  * Model Display of Costumes.asm are in ftremixhitboxdisplay.c. The rest is debug display code, and
  * the display-list builders they edit are not ported yet. Default Remix toggles (Special Model Display and
  * Advanced Hurtbox Display, both FALSE) make most of them no-ops, except the display state writes.
+ * The Advanced Hurtbox color (grab_immunity_and_armor_frames_) needs the vanilla hurtbox color source (t5), which is
+ * not mapped yet (see docs/remix/notes/f14_hitbox_display.md).
  *   projectile_ (0x80167538), grab_immunity_and_armor_frames_ (0x800F279C, Advanced Hurtbox),
  *   make_hurtboxes_transparent_ (0x800F2830, 0x8017193C), make_hitboxes_transparent_ (0x800F33B0),
  *   add_reflect_absorb_hitboxes (0x800F3358, and the dw buffer sizes at 0x8013B9C8, 0x80138CC8,
@@ -33,11 +33,19 @@
  */
 
 /**
- * Returns TRUE when the fighter cannot be grabbed for reasons Hitbox.asm force_grab_immunity_ forces:
- * Crash while in Dragon Shot Pursuit wait or turn. Called from ftMainSearchFighterCatch for the victim.
+ * Returns TRUE when the fighter cannot be grabbed for reasons Hitbox.asm force_grab_immunity_ forces: Giga Bowser
+ * while the Remix 1P mode is active (singleplayer_mode_flag == 4, any controller, as the asm has no player type check),
+ * and Crash while in Dragon Shot Pursuit wait or turn. Called from ftMainSearchFighterCatch for the victim.
+ *
+ * @param fp The victim fighter struct.
+ * @return TRUE when the grab must not connect.
  */
 sb32 ftRemixForceGrabImmunity(FTStruct *fp)
 {
+    if (fp->fkind == REMIX_ID_GBOWSER)
+    {
+        return sc1PRemixModeIs(SC1PREMIX_MODE_REMIX_1P);
+    }
     if (fp->fkind != REMIX_ID_CRASH)
     {
         return FALSE;

@@ -92,7 +92,10 @@ void ftRemixHitboxDisplayApply(FTStruct *fp)
             fp->display_mode = nDBDisplayModeHitCollisionFill;
             break;
         case FTREMIX_HITBOX_DISPLAY_HITBOX_PLUS_MODEL:
-            fp->display_mode = nDBDisplayModeHitAttackOutline;
+            /* DEVIATION(render_hitbox_plus_model_ not ported): Hitbox.asm hitbox_mode_ (0x800F2BFC) keeps the fighter in
+             * state 0, so the model stays visible, and render_hitbox_plus_model_ (Hitbox.asm 0x800F2FD0) draws the hitbox
+             * over it. Until that overlay hook exists, the fighter shows only its model. */
+            fp->display_mode = nDBDisplayModeMaster;
             break;
         case FTREMIX_HITBOX_DISPLAY_ECB:
             fp->display_mode = nDBDisplayModeMapCollision;

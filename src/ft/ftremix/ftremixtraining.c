@@ -7,6 +7,7 @@
 #include <ft/fighter.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
 #include <ft/ftdef.h>
+#include <ft/ftparam.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include <sys/objman.h>
@@ -26,6 +27,7 @@
 
 static u8 sFTRemixTrainingShieldStatus[FTREMIX_TRAINING_PORTS];
 static u8 sFTRemixTrainingSpamTimer[FTREMIX_TRAINING_PORTS];
+static s32 sFTRemixTrainingAppliedPercent[FTREMIX_TRAINING_PORTS];
 
 /* AI.asm Training Spam Mode routines (1917-2010), the same byte stream the vanilla CPU parser reads. */
 static u8 sFTRemixTrainingScriptFTiltRight[] = { 0xA0, 0x28, 0xB0, 0x00, 0x01, 0xA0, 0x00, 0x10, 0xFF };
@@ -52,6 +54,7 @@ void ftRemixTrainingStartScene(void)
     {
         sFTRemixTrainingShieldStatus[port] = SC1PTRAININGRULES_STATUS_SHIELD;
         sFTRemixTrainingSpamTimer[port] = 0;
+        sFTRemixTrainingAppliedPercent[port] = remix_training_get(REMIX_TRAINING_PERCENT(port));
     }
 }
 
@@ -201,6 +204,28 @@ static void ftRemixTrainingApplyDiPractice(FTStruct *fp)
     fp->proc_lagupdate = ftCommonDamageCommonProcLagUpdate;
 }
 
+/**
+ * Percent entry (Training.asm set_percent_): when the menu value of a port changes, the fighter's percent is reset to zero and the new
+ * value is added, through the same damage update the asm uses (Character.add_percent_).
+ */
+static void ftRemixTrainingApplyPercent(FTStruct *fp)
+{
+    s32 wanted;
+
+    if (ftRemixTrainingIsValidPort(fp) == FALSE)
+    {
+        return;
+    }
+    wanted = remix_training_get(REMIX_TRAINING_PERCENT(fp->player));
+    if (wanted == sFTRemixTrainingAppliedPercent[fp->player])
+    {
+        return;
+    }
+    sFTRemixTrainingAppliedPercent[fp->player] = wanted;
+    ftParamUpdateDamage(fp, -fp->percent_damage);
+    ftParamUpdateDamage(fp, wanted);
+}
+
 void ftRemixTrainingUpdateFighters(void)
 {
     GObj *fighter_gobj;
@@ -215,6 +240,7 @@ void ftRemixTrainingUpdateFighters(void)
     {
         FTStruct *fp = ftGetStruct(fighter_gobj);
 
+        ftRemixTrainingApplyPercent(fp);
         if (is_di_on != FALSE)
         {
             ftRemixTrainingApplyDiPractice(fp);

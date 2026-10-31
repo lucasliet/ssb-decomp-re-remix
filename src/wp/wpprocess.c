@@ -1,6 +1,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixreflect.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixjapanfix_reflect.h"
 #endif
 #include <wp/weapon.h>
 #include <it/item.h>
@@ -580,7 +581,12 @@ next_check:
         }
         if (!(wp->is_static_damage))
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            /* Japan.asm reflect_ (hook 0x80166DD4): a J fighter reflects with 1.5 instead of the US 1.8. */
+            wp->attack_coll.damage = (wp->attack_coll.damage * ftRemixJapanFixReflectMul(wp->owner_gobj, WEAPON_REFLECT_MUL_DEFAULT)) + WEAPON_REFLECT_ADD_DEFAULT;
+#else
             wp->attack_coll.damage = (wp->attack_coll.damage * WEAPON_REFLECT_MUL_DEFAULT) + WEAPON_REFLECT_ADD_DEFAULT;
+#endif
 
             if (wp->attack_coll.damage > WEAPON_REFLECT_TIME_DEFAULT)
             {
