@@ -9,6 +9,7 @@
 #include <sys/controller.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <mn/mncommon/mnremixtimeouts.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
 #include "mn/mnmaps/mnremixemblem.h"
@@ -2770,7 +2771,7 @@ void mnMapsFuncRun(GObj *gobj)
 
 	if (sMNMapsTotalTimeTics >= 10)
 	{
-		if (sMNMapsTotalTimeTics == sMNMapsReturnTic)
+		if (mnRemixTimeoutsMenuReturns(sMNMapsTotalTimeTics, sMNMapsReturnTic))
 		{
 			gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
 			gSCManagerSceneData.scene_curr = nSCKindTitle;

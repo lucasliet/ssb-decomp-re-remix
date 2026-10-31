@@ -410,7 +410,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         if (!(fp->is_muted))
         {
 #ifdef REGION_REMIX
-            func_800269C0_275C0(ftRemixJapaneseMotionSoundFgm(fp, ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value));
+            func_800269C0_275C0(ftRemixJapaneseMotionSoundFgm(fp, ftRemixSFXReplaceMotionSound(ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value)));
 #else
             func_800269C0_275C0(ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value);
 #endif
@@ -2211,6 +2211,9 @@ void ftMainProcPhysicsMapDefault(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixOverlayColour(fighter_gobj);
+#endif
     if ((fp->capture_gobj == NULL || fp->is_catch_or_capture) && (fp->catch_gobj == NULL || !(fp->is_catch_or_capture)))
     {
         ftMainProcPhysicsMap(fighter_gobj);
@@ -5570,6 +5573,12 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         fp->proc_update = status_struct[status_struct_id].proc_update;
         fp->proc_interrupt = status_struct[status_struct_id].proc_interrupt;
         fp->proc_physics = status_struct[status_struct_id].proc_physics;
+#if defined(PORT) && defined(REGION_REMIX)
+        if (status_struct == dFTCommonNullStatusDescs)
+        {
+            ftRemixAerialFastFallSetPhysics(fp, status_struct_id);
+        }
+#endif
         fp->proc_map = status_struct[status_struct_id].proc_map;
         fp->proc_slope = mpCommonUpdateFighterSlopeContour;
         fp->proc_accessory = NULL;

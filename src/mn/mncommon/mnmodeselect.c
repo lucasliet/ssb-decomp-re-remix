@@ -6,6 +6,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <mn/mncommon/mnremixtimeouts.h>
 #ifdef PORT
 #include <sys/audio.h>
 extern void *func_800269C0_275C0(u16 id);
@@ -809,7 +810,7 @@ void mnModeSelectFuncRun(GObj *gobj)
     
     if (sMNModeSelectTotalTimeTics >= 10)
     {
-        if (sMNModeSelectTotalTimeTics == sMNModeSelectReturnTic)
+        if (mnRemixTimeoutsMenuReturns(sMNModeSelectTotalTimeTics, sMNModeSelectReturnTic))
         {
             gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
             gSCManagerSceneData.scene_curr = nSCKindTitle;

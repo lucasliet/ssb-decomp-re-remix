@@ -5,6 +5,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <mn/mncommon/mnremixtimeouts.h>
 #include <sys/audio.h>
 #ifdef REGION_REMIX
 #include "gm/gmremixpractice.h"
@@ -3654,7 +3655,7 @@ void mnPlayers1PGameFuncRun(GObj *gobj)
 {
 	sMNPlayers1PGameTotalTimeTics++;
 
-	if (sMNPlayers1PGameTotalTimeTics == sMNPlayers1PGameReturnTic)
+	if (mnRemixTimeoutsCSSReturns(sMNPlayers1PGameTotalTimeTics, sMNPlayers1PGameReturnTic))
 	{
 		gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
 		gSCManagerSceneData.scene_curr = nSCKindTitle;

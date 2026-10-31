@@ -6,6 +6,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <mn/mncommon/mnremixtimeouts.h>
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -1424,7 +1425,7 @@ void mnVSOptionsFuncRun(GObj *gobj)
     
     if (sMNVSOptionsTotalTimeTics >= 10)
     {
-        if (sMNVSOptionsTotalTimeTics == sMNVSOptionsReturnTic)
+        if (mnRemixTimeoutsVSReturns(sMNVSOptionsTotalTimeTics, sMNVSOptionsReturnTic))
         {
             gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
             gSCManagerSceneData.scene_curr = nSCKindTitle;

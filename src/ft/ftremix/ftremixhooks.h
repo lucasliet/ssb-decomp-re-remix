@@ -645,6 +645,15 @@ sb32 ftRemixStaminaIsOutOfStock(FTStruct *fp);
 sb32 ftRemixStaminaIsBlastRedeath(FTStruct *fp);
 sb32 ftRemixStaminaRebirthSleeps(FTStruct *fp);
 
+/* AerialAttackFastFall.asm, ftremix/ftremixaerialfastfall.c: Proc Physics of AttackAirN, F, B, Hi and Lw, set by
+ * ftMainSetStatus from dFTCommonNullStatusDescs */
+void ftRemixAerialFastFallPhysics(GObj *fighter_gobj);
+void ftRemixAerialFastFallSetPhysics(FTStruct *fp, s32 status_id);
+
+/* SkeletonMode, ftremix/ftremixskeleton.c (Skeleton.asm skeleton_mode_1_ and skeleton_mode_2_): the skeleton id the
+ * display path uses, 1 when the port's Skeleton panel option is on */
+s32 ftRemixSkeletonDisplayId(FTStruct *fp);
+
 #if defined(PORT) && defined(REGION_REMIX)
 
 /**
@@ -654,6 +663,15 @@ static inline sb32 ftRemixStaminaStatusInRange(s32 status_id, s32 first, s32 las
 {
     return (status_id >= first) && (status_id <= last);
 }
+
+/* SFXReplace.asm, ftremix/ftremixsfxreplace.c: the Flat Zone footstep, landing and hard landing sounds of PlayFGM motion
+ * events (ftMainParseMotionEvent, before ftRemixJapaneseMotionSoundFgm) and the down bounce sound
+ * (ftCommonDownBounceUpdateEffects) */
+u32 ftRemixSFXReplaceMotionSound(u32 value);
+u16 ftRemixSFXReplaceDownBounceSound(u16 fgm_id);
+
+/* Practice.asm overlay_colour_ (Color Overlays), ftremix/ftremixoverlay.c: called from ftMainProcPhysicsMapDefault */
+void ftRemixOverlayColour(GObj *fighter_gobj);
 
 #endif
 

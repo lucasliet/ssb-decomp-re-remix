@@ -7,6 +7,7 @@
 #include <sys/rdp.h>
 #include <sys/controller.h>
 #include <reloc_data.h>
+#include <mn/mncommon/mnremixtimeouts.h>
 #ifdef PORT
 #include <sys/audio.h>
 #endif
@@ -696,7 +697,7 @@ void mnDataFuncRun(GObj *gobj)
 
     if (sMNDataTotalTimeTics >= 10)
     {
-        if (sMNDataTotalTimeTics == sMNDataReturnTic)
+        if (mnRemixTimeoutsMenuReturns(sMNDataTotalTimeTics, sMNDataReturnTic))
         {
             gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
             gSCManagerSceneData.scene_curr = nSCKindTitle;

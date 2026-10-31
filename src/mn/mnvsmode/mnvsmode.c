@@ -6,6 +6,7 @@
 #include <sys/rdp.h>
 #include <sys/controller.h>
 #include <reloc_data.h>
+#include <mn/mncommon/mnremixtimeouts.h>
 #include <ft/ftparam.h>
 #include <sys/audio.h>
 #include "mn/mnvsmode/mnremixvsmode.h"
@@ -1496,7 +1497,7 @@ void mnVSModeMain(GObj *gobj)
 
     if (sMNVSModeTotalTimeTics >= 10)
     {
-        if (sMNVSModeTotalTimeTics == sMNVSModeReturnTic)
+        if (mnRemixTimeoutsVSReturns(sMNVSModeTotalTimeTics, sMNVSModeReturnTic))
         {
             gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
             gSCManagerSceneData.scene_curr = nSCKindTitle;

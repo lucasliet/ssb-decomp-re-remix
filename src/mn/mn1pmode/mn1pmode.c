@@ -10,6 +10,7 @@
 #include <sys/audio.h>
 extern void *func_800269C0_275C0(u16 id);
 #endif
+#include <mn/mncommon/mnremixtimeouts.h>
 #if defined(PORT) && defined(REGION_REMIX)
 #include "mn/mn1pmode/mnremix1pmode.h"
 #endif
@@ -791,7 +792,7 @@ void mn1PModeFuncRun(GObj *gobj)
 
     if (sMN1PModeTotalTimeTics >= 10)
     {
-        if (sMN1PModeTotalTimeTics == sMN1PModeReturnTic)
+        if (mnRemixTimeoutsMenuReturns(sMN1PModeTotalTimeTics, sMN1PModeReturnTic))
         {
             gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
             gSCManagerSceneData.scene_curr = nSCKindTitle;

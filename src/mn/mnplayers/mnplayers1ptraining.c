@@ -5,6 +5,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <mn/mncommon/mnremixtimeouts.h>
 #include <sys/audio.h>
 extern void *func_800269C0_275C0(u16 id);
 extern void func_80026738_27338(void *arg0);
@@ -3257,7 +3258,7 @@ void mnPlayers1PTrainingFuncRun(GObj *gobj)
 {
 	sMNPlayers1PTrainingTotalTimeTics++;
 
-	if (sMNPlayers1PTrainingTotalTimeTics == sMNPlayers1PTrainingReturnTic)
+	if (mnRemixTimeoutsCSSReturns(sMNPlayers1PTrainingTotalTimeTics, sMNPlayers1PTrainingReturnTic))
 	{
 		gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
 		gSCManagerSceneData.scene_curr = nSCKindTitle;

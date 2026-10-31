@@ -125,7 +125,11 @@ void ftCommonDownBounceUpdateEffects(GObj *fighter_gobj)
 
     ftParamMakeEffect(fighter_gobj, nEFKindImpactWave, nFTPartsJointTopN, NULL, NULL, fp->lr, FALSE, FALSE);
 #ifdef PORT
+#ifdef REGION_REMIX
+    func_800269C0_275C0(ftRemixSFXReplaceDownBounceSound((u16)port_fighter_down_bounce_fgm(fp->fkind)));
+#else
     func_800269C0_275C0((u16)port_fighter_down_bounce_fgm(fp->fkind));
+#endif
 #else
     func_800269C0_275C0(dFTCommonDataDownBounceSFX[fp->fkind]);
 #endif

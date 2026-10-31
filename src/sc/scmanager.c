@@ -22,6 +22,7 @@ extern void port_coroutine_yield(void);
 #include "mn/mncommon/mnremixgallery.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixstamina.h"
+#include "sc/scremixtournament.h"
 #endif
 #include <db/debug.h>
 #include <sys/debug.h>
@@ -864,6 +865,9 @@ void scManagerRunLoop(sb32 arg)
 	gSCManager1PGameBattleState   = 
 	gSCManagerTransferBattleState =
 	gSCManagerVSBattleState       = dSCManagerDefaultBattleState;
+#ifdef REGION_REMIX
+	scRemixTournamentApplyVSDefaults(&gSCManagerTransferBattleState);
+#endif
 
 	ftManagerSetupFileSize();
 	dSYAudioPublicSettings.unk31 = 72;

@@ -873,6 +873,12 @@ void ftDisplayMainDrawDefault(DObj *dobj)
     }
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define FTDISPLAYMAIN_SKELETON_ID(fp) ftRemixSkeletonDisplayId(fp)
+#else
+#define FTDISPLAYMAIN_SKELETON_ID(fp) ((fp)->colanim.skeleton_id)
+#endif
+
 // 0x800F21B4
 void ftDisplayMainDrawSkeleton(DObj *dobj)
 {
@@ -898,7 +904,7 @@ void ftDisplayMainDrawSkeleton(DObj *dobj)
         if ((parts != NULL) && (parts->joint_id >= nFTPartsJointCommonStart))
         {
             skeletons = PORT_RESOLVE(fp->attr->skeleton);
-            skeleton = &((FTSkeleton*)PORT_RESOLVE(skeletons[fp->colanim.skeleton_id]))[parts->joint_id - nFTPartsJointCommonStart];
+            skeleton = &((FTSkeleton*)PORT_RESOLVE(skeletons[FTDISPLAYMAIN_SKELETON_ID(fp)]))[parts->joint_id - nFTPartsJointCommonStart];
 
             switch (skeleton->flags & 0xF)
             {
@@ -962,9 +968,8 @@ void ftDisplayMainDrawSkeleton(DObj *dobj)
 }
 
 // 0x800F24A0
-/* REMIX-TODO(Skeleton): Skeleton.asm apply_skeleton_mode forces the skeleton draw path (0x0800) per port in skeleton_mode_1_ (0x800F24B0)
- * and skeleton_mode_2_ (0x800F2228). The port picks the path from fp->colanim.skeleton_id, which only the electrified colanim
- * script sets, and the forced path needs a skeleton_id the fighter does not have. The register meaning was not decoded. */
+/* Skeleton.asm skeleton_mode_1_ (0x800F24B0) and skeleton_mode_2_ (0x800F2228) force skeleton id 1 per port, through
+ * ftRemixSkeletonDisplayId (ftremix/ftremixskeleton.c). */
 void ftDisplayMainDrawAll(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -973,10 +978,10 @@ void ftDisplayMainDrawAll(GObj *fighter_gobj)
 
     if
     (
-        (fp->colanim.skeleton_id)                                                                   &&
+        (FTDISPLAYMAIN_SKELETON_ID(fp))                                                                   &&
         (attr->skeleton != 0)                                                                       &&
         (skeletons != NULL)                                                                         &&
-        (PORT_RESOLVE(skeletons[fp->colanim.skeleton_id]) != NULL)                                  &&
+        (PORT_RESOLVE(skeletons[FTDISPLAYMAIN_SKELETON_ID(fp)]) != NULL)                                  &&
         (fp->joints[(s32)skeletons[0]] != NULL)                                                     &&  // ???
         (fp->joints[(s32)skeletons[0]]->dl != NULL)                                                     // Hello???
     )
