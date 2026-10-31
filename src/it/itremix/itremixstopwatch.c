@@ -4,6 +4,8 @@
 #include "it/itremix/itremixstopwatch.h"
 #include "remix/remix_roster_data.h"
 #include "gm/gmremixcolscripts.h"
+#include "if/ifremixrectangle.h"
+#include "it/itremix/itremixstopwatchbgrules.h"
 #ifdef REGION_REMIX
 #include "gm/gmremixtoggle.h"
 #endif
@@ -26,6 +28,10 @@ extern void *func_800269C0_275C0(u16 id);
 #define ITREMIX_STOPWATCH_KIND 0x39
 #define ITREMIX_STOPWATCH_FILE_OFFSET 0x1120
 #define ITREMIX_STOPWATCH_MAX_PORTS 4
+#define ITREMIX_STOPWATCH_BG_ULX 10 /* Stopwatch.asm Render.draw_rectangle(0x0, 0xD, 10, 10, 300, 220, ...) */
+#define ITREMIX_STOPWATCH_BG_ULY 10
+#define ITREMIX_STOPWATCH_BG_WIDTH 300
+#define ITREMIX_STOPWATCH_BG_HEIGHT 220
 #define ITREMIX_STOPWATCH_BACKFIRE_TABLE_SIZE 20
 #define ITREMIX_STOPWATCH_FAST_TABLE_SIZE 20
 #define ITREMIX_STOPWATCH_SLOW_TABLE_SIZE 16
@@ -107,6 +113,7 @@ static const u8 sITRemixStopwatchSlowFrames[ITREMIX_STOPWATCH_SLOW_TABLE_SIZE * 
 static ITRemixStopwatchTimer sITRemixStopwatchTimers[ITREMIX_STOPWATCH_MAX_PORTS];
 static const ITRemixStopwatchTimer sITRemixStopwatchNoTimer = { 0 };
 static GObj *sITRemixStopwatchWatchGObj;
+static GObj *sITRemixStopwatchBgGObj;
 static s32 sITRemixStopwatchEngineTimer;
 static u8 sITRemixStopwatchWatchSpeed;
 static sb32 sITRemixStopwatchIsEndSfxPlaying;
@@ -309,6 +316,19 @@ static void itRemixStopwatchClockOut(FTStruct *owner_fp)
     }
 }
 
+/* Stopwatch: _random_engine_speed and _set_bg_color. The rectangle is made once and recoloured for every backfire. */
+static void itRemixStopwatchShowBackfireBackground(u8 speed)
+{
+    u32 color = itRemixStopwatchBgGetColor(speed);
+
+    if (sITRemixStopwatchBgGObj == NULL)
+    {
+        sITRemixStopwatchBgGObj = ifRemixRectangleMake(ITREMIX_STOPWATCH_BG_ULX, ITREMIX_STOPWATCH_BG_ULY, ITREMIX_STOPWATCH_BG_WIDTH, ITREMIX_STOPWATCH_BG_HEIGHT, color);
+        return;
+    }
+    ifRemixRectangleSetColor(sITRemixStopwatchBgGObj, color);
+}
+
 /* Stopwatch: backfire branch of pickup_stopwatch. Sets the game speed and the global engine timer. */
 static void itRemixStopwatchStartBackfire(void)
 {
@@ -318,7 +338,7 @@ static void itRemixStopwatchStartBackfire(void)
     sITRemixStopwatchIsPlayerAffected = TRUE;
     sITRemixStopwatchWatchSpeed = speed;
     sITRemixStopwatchEngineTimer = itRemixStopwatchBackfireDuration(speed);
-    /* REMIX-TODO(Render): backfire BG rectangle is not drawn (Render.draw_rectangle, colour 0xA1333399 under speed 7, else 0x0066AA77) */
+    itRemixStopwatchShowBackfireBackground(speed);
 }
 
 /* Stopwatch: pickup_stopwatch _end. Plays the backfire or normal pickup cue when a player was affected. */
@@ -354,7 +374,11 @@ static void itRemixStopwatchDestroy(GObj *watch_gobj)
     sITRemixStopwatchWatchGObj = NULL;
     itRemixStopwatchClearTimers();
     gcEjectGObj(watch_gobj);
-    /* REMIX-TODO(Render): the backfire BG rectangle is not freed (Render.DESTROY_OBJECT_) */
+    if (sITRemixStopwatchBgGObj != NULL)
+    {
+        ifRemixRectangleDestroy(sITRemixStopwatchBgGObj);
+        sITRemixStopwatchBgGObj = NULL;
+    }
 }
 
 /* Stopwatch: _play_end_sfx and _generate_white_circle_gfx. End cue once, then a circle at the player's ECB top. */
@@ -440,14 +464,20 @@ static sb32 itRemixStopwatchTickEngine(void)
     {
         return FALSE;
     }
-    /* REMIX-TODO(Render): the BG rectangle fade near the end (alpha steps every 4 frames under 240) is not drawn */
+    if (sITRemixStopwatchBgGObj != NULL)
+    {
+        ifRemixRectangleSetColor(sITRemixStopwatchBgGObj, itRemixStopwatchBgFadeColor(ifRemixRectangleGetColor(sITRemixStopwatchBgGObj), sITRemixStopwatchEngineTimer));
+    }
     sITRemixStopwatchEngineTimer -= 1;
     if (sITRemixStopwatchEngineTimer != 0)
     {
         return TRUE;
     }
     sITRemixStopwatchWatchSpeed = 0;
-    /* REMIX-TODO(Render): the BG rectangle is not made transparent */
+    if (sITRemixStopwatchBgGObj != NULL)
+    {
+        ifRemixRectangleSetColor(sITRemixStopwatchBgGObj, ITREMIX_STOPWATCH_BG_COLOR_CLEAR);
+    }
     if (sITRemixStopwatchIsEndSfxPlaying == FALSE)
     {
         func_800269C0_275C0(ITREMIX_STOPWATCH_FGM_BACKFIRE_TIMER_END);
@@ -728,7 +758,8 @@ void itRemixStopwatchClearActive(void)
     sITRemixStopwatchFunctionAbbr = FALSE;
     sITRemixStopwatchIsPlayerAffected = FALSE;
     sITRemixStopwatchIsEndSfxPlaying = FALSE;
-    /* REMIX-TODO(Render): the backfire BG rectangle reference is not cleared */
+    sITRemixStopwatchBgGObj = NULL;
+    ifRemixRectangleResetAll();
 }
 
 static ITDesc sITRemixStopwatchItemInfo =
