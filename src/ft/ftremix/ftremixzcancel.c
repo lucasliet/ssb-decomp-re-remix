@@ -13,6 +13,8 @@
 #include <sys/utils.h>
 #include "ft/ftremix/ftremixaiteching.h"
 #include "mn/mnvsmode/mnremixvsstats.h"
+#include "sc/scmanager.h"
+#include "sc/sctypes.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -139,13 +141,22 @@ static sb32 ftRemixZCancelPunishMode(GObj *fighter_gobj, s32 mode)
     }
 }
 
-/* ZCancel.asm _cruel_z_cancel. REMIX-TODO(HowToPlay): Remix skips the punishment on the how-to-play screen (screen id 3).
- * Returns TRUE when the punishment replaces the landing. */
+/**
+ * TRUE on the how-to-play screen. ZCancel.asm _cruel_z_cancel reads the first byte of the match info
+ * (gSCManagerBattleState->game_type) and compares it with 3, which is nSCBattleGameTypeExplain (scexplain.c).
+ */
+static sb32 ftRemixZCancelIsHowToPlay(void)
+{
+    return (gSCManagerBattleState->game_type == nSCBattleGameTypeExplain) ? TRUE : FALSE;
+}
+
+/* ZCancel.asm _cruel_z_cancel. Returns TRUE when the punishment replaces the landing. The how-to-play screen skips the
+ * punishment (asm branch to _end), so no random roll happens there either. */
 static sb32 ftRemixZCancelPunish(GObj *fighter_gobj)
 {
     s32 mode = gmRemixToggle(punish_on_failed_z_cancel);
 
-    if (mode == FTREMIX_ZCANCEL_PUNISH_OFF)
+    if ((mode == FTREMIX_ZCANCEL_PUNISH_OFF) || ftRemixZCancelIsHowToPlay())
     {
         return FALSE;
     }

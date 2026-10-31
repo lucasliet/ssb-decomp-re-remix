@@ -103,8 +103,9 @@ static sb32 grRemixScuttleMinionRollSpawn(u32 timer)
 /**
  * Spawns the minion at the stage origin (asm minion_coordinates, the spawn of 0x8016EA78 with item id 0x3E).
  * The asm does not start any animation track for the minion: its movement block is commented out.
- * REMIX-TODO(object id): the asm passes 0x03F5 in the first argument of 0x8016EA78 (parent_gobj in decomp), not a GObj.
- * The port passes NULL. Whether the minion reads its parent is not verified.
+ * DEVIATION(unreachable in Remix 2.0.1): the asm passes object id 0x03F5 as the first argument of 0x8016EA78
+ * (parent_gobj in decomp), and the port passes NULL. Hazards.asm 7338 (`b _end`) skips the whole minion setup, so the
+ * factory is never created, see GRREMIX_SCUTTLE_MINIONS_ENABLED in grremixscuttle.c.
  */
 static void grRemixScuttleMinionSpawn(void)
 {

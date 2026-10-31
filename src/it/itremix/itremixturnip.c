@@ -88,7 +88,9 @@ static void itRemixTurnipDroppedProc(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
 
-    /* REMIX-TODO(ITStruct 0x2CE mask 0x02): asm falling_initial_ (items/Turnip.asm 284-286) clears the "don't randomly despawn" bit. Not ported: the bit falls in times_thrown (0x02CA:4-6 in struct_offsets.txt), whose vanilla meaning for this item is not confirmed. */
+    /* DEVIATION(shared bit with times_thrown, no named flag): asm falling_initial_ (items/Turnip.asm 284-286) clears
+     * mask 0x02 of N64 0x2CE, the "don't randomly despawn" flag. The port maps N64 0x2CE to ITStruct 0x2CA, where the
+     * bit is the low bit of times_thrown (0x02CA:4-6). Clearing it would change the throw count, so it is not written. */
     ip->pickup_wait = TURNIP_GROUND_TIMER;
     ip->damage_coll.hitstatus = nGMHitStatusNone;
     itMainSetStatus(item_gobj, sITRemixTurnipStatusDescs, nITRemixTurnipStatusFall);

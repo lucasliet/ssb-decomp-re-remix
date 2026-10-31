@@ -8,4 +8,10 @@ GObj* itRemixBlueShellMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fl
 
 extern const ITRemixItemDesc dITRemixBlueShellItemDesc;
 
+/* Shared Blue Shell hit effect (BlueShell.asm hit_gfx_). Flashbang calls it with its own item object. */
+void itRemixBlueShellHitGfx(GObj *item_gobj);
+
+/* Fighter in first place of the match (BlueShell.asm get_player_in_first_). NULL when that port has no fighter. */
+GObj* itRemixBlueShellGetPlayerInFirst(void);
+
 #endif

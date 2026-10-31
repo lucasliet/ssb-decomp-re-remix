@@ -63,7 +63,7 @@ static ITDesc sITRemixBulletBillDesc =
  * banzai_bill_stage_setting_ (asm SPAWN_ITEM). Creates the bullet, arms its hitbox and starts its life timer at 0.
  * Returns the bullet GObj, or NULL when the item could not be made.
  * The asm's 0x158 bit 0x10, 0x33E, 0x2D3 bit 0x08 and 0x398 are set below.
- * REMIX-TODO(ITStruct 0x1D0, 0x1D4, 0x35C): asm clears them (Hazards.asm 8281-8283). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
+ * The asm's 0x1D0, 0x1D4 and 0x35C clears (Hazards.asm 8281-8283) are done in itRemixBulletBillSetupHitbox.
  */
 GObj* itRemixBulletBillMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {
@@ -101,6 +101,9 @@ static void itRemixBulletBillSetupHitbox(ITStruct *ip)
     attack_coll->knockback_scale = ITREMIX_BULLETBILL_HITBOX_KNOCKBACK_SCALE;
     attack_coll->knockback_base = ITREMIX_BULLETBILL_HITBOX_KNOCKBACK_BASE;
     attack_coll->fgm_id = ITREMIX_BULLETBILL_HITBOX_FGM;
+    attack_coll->attack_pos[1].pos_prev.x = 0.0F;
+    attack_coll->attack_pos[1].pos_prev.y = 0.0F;
+    ((s32 *) &ip->item_vars)[3] = 0; /* asm 0x35C = item_vars+0xC, the hit scratch word of the Remix hazards */
 }
 
 /**

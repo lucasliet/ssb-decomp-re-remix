@@ -10,6 +10,8 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixhooks.h"
+#include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #ifdef REGION_REMIX
 #include "if/ifremixannouncer.h"
@@ -20,6 +22,7 @@
 #include <ft/ftphysics.h>
 #include <gm/gmrumble.h>
 #include <mp/mpcommon.h>
+#include <sys/objanim.h>
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -72,13 +75,30 @@ typedef struct FTRemixCrashDSPStatusVars
     s32 move_timer_offset; /* 0x0B20: cadence offset of the dig dust and sfx */
 } FTRemixCrashDSPStatusVars;
 
-/* dig_gfx_main_: the vanilla effect update plus the smoke puff when the Dig GFX ends.
- * REMIX-TODO(Size): the Size.multiplier_table scale of the player is not applied. */
+/* Position of the player topjoint captured by DSPEnd (asm end_initial_ copies it to the Dig GFX GObj +0x4C..+0x54),
+ * indexed by player. The smoke puff of dig_gfx_main_ reads it, so the puff stays where the dig ended. */
+static Vec3f sFTRemixCrashDigEndPos[MAXCONTROLLERS];
+
+/* dig_gfx_main_ "handle scale" (asm 0x8000DF34 is gcPlayAnimAll): the owner's root DObj takes the Size multiplier
+ * of its port on every Dig GFX update. */
+static void ftRemixCrashDSPApplyDigSize(EFStruct *ep)
+{
+#ifdef REGION_REMIX
+    FTStruct *fp = ftGetStruct(ep->fighter_gobj);
+    DObj *fighter_root = DObjGetStruct(ep->fighter_gobj);
+    f32 multiplier = ftRemixSizeGetMultiplier(fp->player);
+
+    fighter_root->scale.vec.f.x = multiplier;
+    fighter_root->scale.vec.f.y = multiplier;
+    fighter_root->scale.vec.f.z = multiplier;
+#endif
+}
+
+/* dig_gfx_main_: the vanilla effect update plus the smoke puff when the Dig GFX ends. */
 static void ftRemixCrashDSPDigGfxProcUpdate(GObj *effect_gobj)
 {
     EFStruct *ep = efGetStruct(effect_gobj);
-    DObj *root;
-    DObj *topjoint;
+    FTStruct *fp = ftGetStruct(ep->fighter_gobj);
     Vec3f smoke_pos;
 
     if (ep->is_pause_effect)
@@ -86,14 +106,13 @@ static void ftRemixCrashDSPDigGfxProcUpdate(GObj *effect_gobj)
         return;
     }
     gcPlayAnimAll(effect_gobj);
+    ftRemixCrashDSPApplyDigSize(ep);
 
     if (effect_gobj->anim_frame > 0.0F)
     {
         return;
     }
-    root = DObjGetStruct(effect_gobj);
-    topjoint = (DObj *)root->user_data.p;
-    smoke_pos = topjoint->translate.vec.f;
+    smoke_pos = sFTRemixCrashDigEndPos[fp->player];
     smoke_pos.y += CRASH_DSP_DIG_SMOKE_OFFSET_Y;
     smoke_pos.z = 0.0F;
     efManagerDustHeavyDoubleMakeEffect(&smoke_pos, 1, 1.0F);
@@ -326,8 +345,22 @@ static void ftRemixCrashDSPDiveAirInitial(GObj *fighter_gobj)
     fp->physics.vel_air.y = CRASH_DSP_DIVE_AIR_Y_SPEED;
 }
 
-/* DSPWait: resets the topjoint rotation of the Dig GFX.
- * REMIX-TODO(animation): track_dig_wait is not applied (0x8000BD1C has no decomp name). */
+/* Resolves a Dig animation track (CrashDSP.track_dig_*) from the Remix RAM image. */
+static AObjEvent32 *ftRemixCrashDSPResolveTrack(u32 ram_addr)
+{
+    return (AObjEvent32 *)remix_ram_image_resolve(ram_addr);
+}
+
+/* Starts an animation track on the first joint of the Dig GFX, the body of the vanilla 0x8000BD1C call
+ * made by the asm with start frame 0. */
+static void ftRemixCrashDSPApplyDigTrack(GObj *dig_gfx, AObjEvent32 *track)
+{
+    DObj *root = (DObj *)dig_gfx->obj;
+
+    gcAddDObjAnimJoint(root->child, track, 0.0F);
+}
+
+/* DSPWait: resets the topjoint rotation of the Dig GFX and starts track_dig_wait. */
 static void ftRemixCrashDSPWaitInitial(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -342,12 +375,21 @@ static void ftRemixCrashDSPWaitInitial(GObj *fighter_gobj)
 
     root = (DObj *)dig_gfx->obj;
     root->rotate.vec.f.y = fp->joints[nFTPartsJointTopN]->rotate.vec.f.y;
+    ftRemixCrashDSPApplyDigTrack(dig_gfx, ftRemixCrashDSPResolveTrack(REMIX_SYM_CrashDSP__track_dig_wait));
 }
 
-/* DSPTurn. REMIX-TODO(animation): track_dig_turn is not applied to the Dig GFX. */
+/* DSPTurn: starts track_dig_turn on the Dig GFX. */
 static void ftRemixCrashDSPTurnInitial(GObj *fighter_gobj)
 {
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    GObj *dig_gfx = ftRemixCrashDSPVars(fp)->dig_gfx;
+
     ftRemixCrashDSPSetStatus(fighter_gobj, nFTRemixCrashStatusDSPTurn, 0.0F);
+    if (dig_gfx == NULL)
+    {
+        return;
+    }
+    ftRemixCrashDSPApplyDigTrack(dig_gfx, ftRemixCrashDSPResolveTrack(REMIX_SYM_CrashDSP__track_dig_turn));
 }
 
 /* DSPEnd: stops the Dig GFX from following the player and sets the fall
@@ -368,11 +410,10 @@ static void ftRemixCrashDSPEndInitial(GObj *fighter_gobj, sb32 is_slide_off)
     if (dig_gfx != NULL)
     {
         root = (DObj *)dig_gfx->obj;
-        /* REMIX-TODO(dig gfx): the asm also copies the topjoint translation to
-         * dig_gfx GObj +0x4C/+0x50/+0x54 (not named in the decomp); skipped.
-         * REMIX-TODO(animation): track_dig_end is not applied. */
+        sFTRemixCrashDigEndPos[fp->player] = fp->joints[nFTPartsJointTopN]->translate.vec.f;
         root->rotate.vec.f.y = fp->joints[nFTPartsJointTopN]->rotate.vec.f.y;
         root->xobjs[0]->unk05 = CRASH_DSP_DIG_GFX_END_XOBJ_UNK05;
+        ftRemixCrashDSPApplyDigTrack(dig_gfx, ftRemixCrashDSPResolveTrack(REMIX_SYM_CrashDSP__track_dig_end));
     }
 
     fp->physics.vel_air.y = is_slide_off ? CRASH_DSP_END_Y_SPEED_EDGE : CRASH_DSP_END_Y_SPEED;

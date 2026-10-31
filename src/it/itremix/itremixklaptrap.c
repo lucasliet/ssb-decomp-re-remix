@@ -177,7 +177,9 @@ static void itRemixKlapTrapSetupHitbox(ITStruct *ip)
     ip->attack_coll.knockback_base = ITREMIX_KLAPTRAP_HITBOX_KNOCKBACK;
     ip->attack_coll.knockback_scale = ITREMIX_KLAPTRAP_HITBOX_KNOCKBACK;
     ip->damage_coll.hitstatus = 0;
-    /* REMIX-TODO(ITStruct 0x1D0, 0x1D4): asm clears them (Hazards.asm 1780-1781). They alias attack_pos[1].pos_prev.x/y (0x1C4 + 0xC); vanilla reads attack_pos[1] only when attack_count > 1, KlapTrap attack_count not verified. */
+    /* asm 0x1D0/0x1D4 (Hazards.asm 1780-1781) are attack_pos[1].pos_prev.x/y, the hitbox refresh scratch. */
+    ip->attack_coll.attack_pos[1].pos_prev.x = 0.0F;
+    ip->attack_coll.attack_pos[1].pos_prev.y = 0.0F;
 }
 
 /** Stores the spawn position and clears the spawn-time state of the item vars. */

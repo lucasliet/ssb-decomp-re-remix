@@ -32,6 +32,7 @@
 #define ITREMIX_FRANKLIN_IDLE_ACTION 0x0A /* Action.Idle (Action.asm); a lower status id means the player is dead */
 #define ITREMIX_FRANKLIN_PROCESS_PRIORITY 1 /* fighter process priority, not stated in the asm: chosen, not verified */
 #define ITREMIX_FRANKLIN_REFLECT_FGM 0x041B /* asm reflect_initial_: FGM id for franklin badge reflect */
+#define ITREMIX_FRANKLIN_REFLECT_GFX_SCRIPT 5 /* asm reflect_gfx_: gfx id 5, the ledge grab green circle */
 
 typedef struct ITRemixFranklinBadgeState
 {
@@ -223,15 +224,32 @@ GObj* itRemixFranklinBadgeMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u3
 }
 
 /**
- * reflect_initial_. Sets the reflect flag and plays the reflect FGM. The routine is
- * the custom reflect action of the badge hitbox, which the reflect system must call.
- * REMIX-TODO(Reflect): that dispatch is not ported. REMIX-TODO(GFX): reflect_gfx_ is skipped.
+ * reflect_gfx_: green circle on the torso when the badge reflects (FranklinBadge.asm line 255, based on the yellow spark
+ * 0x80101630). Creates particle script 5 of the effect bank and moves it to the torso world position.
+ *
+ * @param fp Fighter whose torso joint places the circle.
+ */
+static void itRemixFranklinBadgeReflectGfx(FTStruct *fp)
+{
+    LBParticle *pc = lbParticleMakeCommon(gEFManagerParticleBankID, ITREMIX_FRANKLIN_REFLECT_GFX_SCRIPT);
+
+    if (pc == NULL)
+    {
+        return;
+    }
+    gmCollisionGetFighterPartsWorldPosition(fp->joints[ITREMIX_FRANKLIN_TORSO_JOINT], &pc->pos);
+}
+
+/**
+ * reflect_initial_. Sets the reflect flag, spawns the reflect circle and plays the reflect FGM. The custom reflect
+ * dispatch is ftmain.c through ftRemixReflectRunCustom (ftremixreflect.c), which calls this routine.
  */
 void itRemixFranklinBadgeReflectInitial(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
     fp->is_reflect = TRUE;
+    itRemixFranklinBadgeReflectGfx(fp);
     func_800269C0_275C0(ITREMIX_FRANKLIN_REFLECT_FGM);
 }
 

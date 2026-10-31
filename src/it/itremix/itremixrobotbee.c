@@ -111,7 +111,7 @@ static void itRemixRobotBeeResetVars(void)
 /**
  * Enables the bee's hitbox and sets its damage, size, angle, knockback and sound (asm robot_bee_stage_setting_).
  * The asm's 0x158 bit 0x10, 0x33E, 0x2D3 bit 0x08 and 0x398 are set in itRemixRobotBeeMakeItem.
- * REMIX-TODO(ITStruct 0x1D0, 0x1D4, 0x35C): asm clears them (Hazards.asm 4873-4875). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
+ * The asm's 0x1D0, 0x1D4 and 0x35C clears (Hazards.asm 4873-4875) are done at the end of this routine.
  */
 static void itRemixRobotBeeSetupHitbox(ITStruct *ip)
 {
@@ -125,6 +125,9 @@ static void itRemixRobotBeeSetupHitbox(ITStruct *ip)
     attack_coll->knockback_scale = ITREMIX_ROBOTBEE_HITBOX_KNOCKBACK_SCALE;
     attack_coll->knockback_base = ITREMIX_ROBOTBEE_HITBOX_KNOCKBACK_BASE;
     attack_coll->fgm_id = ITREMIX_ROBOTBEE_HITBOX_FGM;
+    attack_coll->attack_pos[1].pos_prev.x = 0.0F;
+    attack_coll->attack_pos[1].pos_prev.y = 0.0F;
+    ((s32 *) &ip->item_vars)[3] = 0; /* asm 0x35C = item_vars+0xC, the hit scratch word of the Remix hazards */
 }
 
 /**

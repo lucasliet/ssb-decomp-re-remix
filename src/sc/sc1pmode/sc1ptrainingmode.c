@@ -8,6 +8,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "it/itremix/itremixspawn.h"
 #include "if/ifremixhud.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixtraining.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
 #endif
 #include <gr/ground.h>
@@ -709,6 +710,9 @@ void sc1PTrainingModeUpdateAll(void)
 	if (sc1PTrainingModeCheckLagTic() == FALSE)
 #endif
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		ftRemixTrainingUpdateFighters();
+#endif
 		gcRunAll();
 	}
 	else gmCameraRunFuncCamera(gGMCameraGObj);

@@ -21,7 +21,7 @@
 #define GRREMIX_JAPES_WATER_Y -1000.0F /* asm 0xC47A0000 */
 #define GRREMIX_JAPES_WATER_SPEED 90.0F /* asm 0x42B40000 */
 #define GRREMIX_JAPES_WATER_PULL 0.0006F /* asm 0x3A1D4952, same multiplier as Whispy */
-#define GRREMIX_JAPES_WATER_BASE_X 0.0F /* REMIX-TODO(f20 never set in rushing_water): asm subtracts f20, assumed 0 */
+#define GRREMIX_JAPES_WATER_BASE_X 0.0F /* REMIX-TODO(f20 never set in rushing_water): asm subtracts f20, assumed 0. f20 is not written in Hazards.asm rushing_water (1870..1955); it is the callee-saved register the caller left, so its value is not proven */
 #define GRREMIX_JAPES_SPLASH_FGM 0x3D1 /* asm fgm id Splash */
 #define GRREMIX_JAPES_PLAYERS_NUM 4
 
@@ -70,15 +70,19 @@ static void grRemixJapesRushingWaterProcUpdate(GObj *water_gobj)
 
 /**
  * Splash on first entry below the water line, then pulls the fighter leftward while it is in a
- * valid action (status id from Wait on). The position is the fighter DObj translate, as in grJungle.
- * REMIX-TODO(verify): the asm reads the fighter location struct (player + 0x78); unverified equivalence.
+ * valid action (status id from Wait on). The position is FTStruct coll_data.p_translate (player + 0x78), the Vec3f
+ * that Hazards.asm rushing_water reads and writes.
  */
 static void grRemixJapesRushingWaterCheckFighter(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    Vec3f *pos = &DObjGetStruct(fighter_gobj)->translate.vec.f;
+    Vec3f *pos = fp->coll_data.p_translate;
     sb32 *is_under_water = &sGRRemixJapesUnderWater[fp->player];
 
+    if (pos == NULL)
+    {
+        return;
+    }
     if (pos->y > GRREMIX_JAPES_WATER_Y)
     {
         *is_under_water = FALSE;

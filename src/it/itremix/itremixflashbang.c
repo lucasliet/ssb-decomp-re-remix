@@ -3,7 +3,7 @@
  * Port of Item/Flashbang.asm (flashbang_* routines and item_info_array).
  *
  * Remix fields that the vanilla ITStruct does not name (0x01C4 to 0x01D4, 0x0354)
- * live in ITRemixFlashbangVars inside item_vars. The notes file lists the REMIX-TODO
+ * live in ITRemixFlashbangVars inside item_vars. The notes file lists the open
  * markers, the vanilla patches the port replaces and the uncertain offsets.
  */
 
@@ -12,6 +12,7 @@
 #include "it/itremix/itremixflashbang.h"
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixscreenflash.h"
+#include "it/itremix/itremixblueshell.h"
 #include <math.h>
 #include <ft/fighter.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
@@ -556,7 +557,7 @@ static void itRemixFlashbangExplode(GObj *item_gobj)
     itMainRefreshAttackColl(item_gobj);
     itRemixFlashbangSetExplosion(item_gobj);
     func_800269C0_275C0(ITREMIX_FLASHBANG_FGM);
-    /* REMIX-TODO(GFX): asm calls Item.BlueShell.hit_gfx_ with the item object; the shared routine has no port yet. */
+    itRemixBlueShellHitGfx(item_gobj);
 }
 
 /* flashbang_begin_explosion_ */

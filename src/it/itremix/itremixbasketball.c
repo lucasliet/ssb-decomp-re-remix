@@ -4,7 +4,7 @@
  *
  * Each routine names its Remix label in its doc comment. The asm keeps its state in GObj and
  * ITStruct slots that the decomp structs do not name (and that overlap vanilla fields), so the
- * state lives in one file-local struct instead. Mode globals, vanilla hooks and REMIX-TODO items
+ * state lives in one file-local struct instead. Mode globals, vanilla hooks and open items
  * are listed in docs/remix/notes/item_Basketball.md.
  */
 
@@ -346,7 +346,8 @@ static void itRemixBasketballSetAerial(GObj *item_gobj)
 
 /**
  * Basketball.setup_image_: texture index for a basketball or soccer ball.
- * The asm also swaps the DObj palette for soccer and golden balls (REMIX-TODO(palette)).
+ * SKIPPED(palette): Basketball.asm lines 139-145 write a palette address into the display list of the first joint for a
+ * soccer ball (golden or not). The port has no map from those addresses to a palette_id, so the palette is not swapped.
  * item_gobj: item object.
  */
 static void itRemixBasketballSetupImage(GObj *item_gobj)
@@ -751,7 +752,9 @@ static void itRemixBasketballUpdateGroundedMovement(GObj *item_gobj)
 
 /**
  * Basketball.main_ (aerial): spin, gravity (off while falling fast), spin again.
- * REMIX-TODO(barrel): the barrel entry check (check_basketball_barrel_collision_) is not ported.
+ * SKIPPED(barrel): check_basketball_barrel_collision_ (Basketball.asm line 909) jumps into the middle of the vanilla
+ * grJungleTaruCannCheckGetDamageKind (0x8010A018, grjungle.c) with the ball as its fighter argument. That entry point
+ * reads the argument as a fighter, so its result for a ball was not verified. Not ported.
  * item_gobj: item object.
  */
 static void itRemixBasketballUpdateAerialMovement(GObj *item_gobj)

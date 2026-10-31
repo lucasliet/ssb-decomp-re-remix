@@ -106,8 +106,8 @@ sb32 itRemixAnyStandardItemIsOn(void)
 /*
  * Item.asm clear_active_custom_items_ (called on every screen change to
  * CSS/VS/Training/VS Results): forget every per-item effect state so nothing
- * survives into the next scene. REMIX-TODO(Poison): Poison.clear_poison_ (asm Poison.asm, clears
- * poisoned_players) is not called here; the poison state is not ported yet.
+ * survives into the next scene. DEVIATION(Poison subsystem not ported, ROADMAP T2.x/M3): Item.asm:1577 calls
+ * Poison.clear_poison_ (Poison.asm:269, clears poisoned_players), which is not called here.
  */
 void itRemixClearActiveItems(void)
 {

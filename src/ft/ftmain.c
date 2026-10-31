@@ -15,6 +15,7 @@ extern void port_dump_backtrace(void);
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixcommand.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixtraining.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "it/itremix/itremix.h"
@@ -1520,6 +1521,9 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
 
             break;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixTrainingShieldBreakInput(this_fp);
+#endif
         if (pl->stick_range.x > I_CONTROLLER_RANGE_MAX)
         {
             pl->stick_range.x = I_CONTROLLER_RANGE_MAX;

@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <ft/fighter.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
+#include <ft/ftparam.h>
+#include <gm/gmremixcolscripts.h>
 #include <mp/mpcollision.h>
 #include <sys/obj.h>
 #include "gr/grremix/grremixcacodemonfactory.h"
@@ -27,23 +29,35 @@
 #define GRREMIX_SPAWNED_FEAR_CACODEMON_TOP_BIAS 0x7F8 /* asm: the Cacodemon file top is the pointer - 0x7F8 */
 #define GRREMIX_SPAWNED_FEAR_DOOM_ACID_CLIP 0x23 /* asm: clipping id of the doom acid surface, the byte at FTStruct 0xF7 */
 #define GRREMIX_SPAWNED_FEAR_KILL_PERCENT 666 /* asm: percent at which a grounded fighter on the acid is KO'd */
+#define GRREMIX_SPAWNED_FEAR_DOOM_ACID_COLANIM 0x79 /* asm: GFXRoutine.DOOM_ACID, the same colanim id as ftremixpoison.c */
 
 /* asm: Hazards.asm ACID_DURATION, ACID_DAMAGE and the poison type 0 (doom acid) */
 #define GRREMIX_SPAWNED_FEAR_POISON_DURATION 60
 #define GRREMIX_SPAWNED_FEAR_POISON_DAMAGE 3
 #define GRREMIX_SPAWNED_FEAR_POISON_TYPE 0
 
-/** Poison part of spawned_fear_acid_main_: refreshes the doom acid poison; the damage and GFX run in ftremixpoison.c. */
-static void grRemixSpawnedFearPoison(FTStruct *fp)
+/**
+ * Starts the doom acid colanim when no colour animation override is active (asm 0x0A28 is zero), then refreshes the
+ * doom acid poison. The damage and the rest of the GFX run in ftremixpoison.c.
+ */
+static void grRemixSpawnedFearPoison(GObj *fighter_gobj, FTStruct *fp)
 {
-    /* REMIX-TODO(GFX): asm sets the player's colanim pointer to DOOM_ACID right away when it is 0 (Hazards.asm 0x0A28); the port applies it on the next poison tick. */
+    if (gmRemixColScriptsGetOverride(fp->player) == 0)
+    {
+        gmRemixColScriptsSetOverride(fp->player, GRREMIX_SPAWNED_FEAR_DOOM_ACID_COLANIM);
+        ftParamCheckSetFighterColAnimID(fighter_gobj, GRREMIX_SPAWNED_FEAR_DOOM_ACID_COLANIM, 0);
+    }
     ftRemixPoisonSet(fp->player, GRREMIX_SPAWNED_FEAR_POISON_DURATION, GRREMIX_SPAWNED_FEAR_POISON_DAMAGE, GRREMIX_SPAWNED_FEAR_POISON_TYPE);
 }
 
-/** KO part of spawned_fear_acid_main_: the Remix overlay state is cleared and the fighter is KO'd. */
-static void grRemixSpawnedFearKnockOut(GObj *fighter_gobj)
+/**
+ * KO part of spawned_fear_acid_main_: the gfx routine (colanim override) is cleared, then the fighter is KO'd.
+ * REMIX-TODO(overlay): the asm also clears the Practice overlay fields 0x0A20, 0x0A24, 0x0A30 and 0x0A88 (Hazards.asm
+ * 8554..8558). ftremixoverlay.c has no clear function, and that file is outside this scope, so they are not cleared here.
+ */
+static void grRemixSpawnedFearKnockOut(GObj *fighter_gobj, FTStruct *fp)
 {
-    /* REMIX-TODO(overlay): asm clears the player's overlay routine and flag fields (0x0A20..0x0A30, 0x0A88) first. */
+    gmRemixColScriptsSetOverride(fp->player, 0);
     ftCommonDeadDownSetStatus(fighter_gobj);
 }
 
@@ -62,14 +76,14 @@ static void grRemixSpawnedFearCheckFighter(GObj *fighter_gobj)
     }
     if (fp->percent_damage < GRREMIX_SPAWNED_FEAR_KILL_PERCENT)
     {
-        grRemixSpawnedFearPoison(fp);
+        grRemixSpawnedFearPoison(fighter_gobj, fp);
         return;
     }
     if (fp->star_invincible_tics != 0)
     {
         return;
     }
-    grRemixSpawnedFearKnockOut(fighter_gobj);
+    grRemixSpawnedFearKnockOut(fighter_gobj, fp);
 }
 
 /** spawned_fear_acid_main_ (per-frame routine): checks every fighter standing on the doom acid. */

@@ -13,6 +13,8 @@
 #include "ft/ftremix/ftremixairecovery.h"
 #include "ft/ftremix/ftremixaiprevent.h"
 #include "ft/ftremix/ftremixaicommands.h"
+#include "ft/ftremix/ftremixtraining.h"
+#include "ft/ftremix/ftremixaidi.h"
 #include "ft/ftremix/ftremixaisize.h"
 #include "ft/ftremix/ftremixaicloud.h"
 #include "ft/ftremix/ftremixailevel.h"
@@ -7953,6 +7955,12 @@ void ftComputerProcessObjective(FTStruct *fp)
 
     if (com->proc_com(fp->fighter_gobj) != FALSE)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        if ((ftRemixAiCpuDiSetObjective(fp) != FALSE) || (ftRemixTrainingSpamSetObjective(fp) != FALSE))
+        {
+            return;
+        }
+#endif
         switch (com->objective)
         {
         case nFTComputerObjectiveStand:

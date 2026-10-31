@@ -14,6 +14,7 @@
 #include "ft/ftremix/ftremix.h"
 #include "ft/ftremix/ftremixfields.h"
 #include "remix/remix_symbols.h"
+#include "it/itremix/itremixcloakingdevice.h"
 #include <ft/ftchar/ftcaptain/ftcaptainfunctions.h>
 #include <ft/ftchar/ftyoshi/ftyoshifunctions.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
@@ -200,8 +201,10 @@ static void ftRemixDragonKingUSPDrain(FTStruct *fp)
     {
         return;
     }
-    /* REMIX-TODO(Item.CloakingDevice): Remix skips the damage when Item.CloakingDevice.cloaked_players[captured port]
-     * is set. That per-player table is not ported, so every captured player is treated as not cloaked. */
+    if (itRemixCloakingDeviceIsCloaked(captured_fp->player))
+    {
+        return;
+    }
     ftParamUpdateDamage(captured_fp, 1);
 }
 

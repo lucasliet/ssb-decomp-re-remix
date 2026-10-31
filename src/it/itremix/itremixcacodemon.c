@@ -158,9 +158,9 @@ static void itRemixCacodemonApplyHitbox(ITStruct *ip)
     ip->attack_coll.fgm_id = ITREMIX_CACODEMON_HIT_FGM;
     ip->attack_coll.knockback_scale = ITREMIX_CACODEMON_KB_SCALE;
     ip->attack_coll.knockback_base = ITREMIX_CACODEMON_KB_BASE;
-    /* REMIX-TODO(unnamed fields): asm also clears 0x1D4 (hitbox collision flag) and 0x35C, and writes 0 to the
-     * knockback effect at 0x11C; the port has no named fields for them yet. The 0x158 bits, 0x33E and 0x2D3 are set in
-     * itRemixCacodemonMakeItem. */
+    /* asm 0x11C is attack_coll.element (Hazards.asm 8736, 0 = punch); asm 0x1D4 is attack_pos[1].pos_prev.y. */
+    ip->attack_coll.element = 0;
+    ip->attack_coll.attack_pos[1].pos_prev.y = 0.0F;
 }
 
 /** Cacodemon.stage_setting_ (SPAWN_ITEM): creates the item with its hitbox and blast zone routine. */
@@ -176,6 +176,7 @@ GObj* itRemixCacodemonMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 fl
     }
     ip = itGetStruct(item_gobj);
     vars = ITREMIX_CACODEMON_VARS(ip);
+    ((s32 *) vars)[3] = 0; /* asm 0x35C = item_vars+0xC; cleared before target_gobj, which overlaps it on LP64 */
     vars->spawn_timer = 0;
     vars->loop_timer = 0;
     vars->target_gobj = NULL;

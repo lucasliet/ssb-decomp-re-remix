@@ -227,8 +227,7 @@ static sb32 itRemixCarBlastZone(GObj *item_gobj)
  * The asm writes the same fields in the item struct without a named type.
  *
  * The asm's 0x33E, 0x158 bit 0x10 and 0x2D3 bit 0x08 are set in itRemixCarMakeItem.
- * REMIX-TODO(hitbox refresh): the asm zeroes the words at 0x1D0 (refresh timer), 0x1D4 (collision
- * flag) and 0x35C (no named field). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
+ * The asm's 0x1D0, 0x1D4 and 0x35C clears (Hazards.asm 6854-6856) are done at the end of this routine.
  */
 static void itRemixCarApplyHitbox(ITStruct *ip)
 {
@@ -241,6 +240,9 @@ static void itRemixCarApplyHitbox(ITStruct *ip)
     ip->attack_coll.fgm_id = ITREMIX_CAR_HIT_FGM;
     ip->attack_coll.knockback_scale = ITREMIX_CAR_KNOCKBACK_SCALE;
     ip->attack_coll.knockback_base = ITREMIX_CAR_KNOCKBACK_BASE;
+    ip->attack_coll.attack_pos[1].pos_prev.x = 0.0F;
+    ip->attack_coll.attack_pos[1].pos_prev.y = 0.0F;
+    ((s32 *) &ip->item_vars)[3] = 0; /* asm 0x35C = item_vars+0xC, the hit scratch word of the Remix hazards */
 }
 
 /**

@@ -8,8 +8,11 @@
 #include <it/itprocess.h>
 #include <it/itcommon/itrshell.h>
 #include <it/itcommon/ittomato.h>
+#include "it/itremix/itremixblueshellrules.h"
 #include <ef/efmanager.h>
 #include <if/ifcommon.h>
+#include <sc/scmanager.h>
+#include <sc/sctypes.h>
 
 #define ITREMIX_BLUESHELL_KIND 0x30
 #define ITREMIX_BLUESHELL_FILE_OFFSET 0xE30
@@ -38,6 +41,7 @@
 #define ITREMIX_BLUESHELL_WALL_MASK 0x0021
 #define ITREMIX_BLUESHELL_SHIELD_FGM 0x0038
 #define ITREMIX_BLUESHELL_EXPLODE_FGM 0x0001
+#define ITREMIX_BLUESHELL_GAME_RULES_TIME 1
 
 enum itRemixBlueShellStatus
 {
@@ -69,7 +73,6 @@ static sb32 itRemixBlueShellGroundedProcUpdate(GObj *item_gobj);
 static void itRemixBlueShellGroundedGfx(GObj *item_gobj);
 static sb32 itRemixBlueShellGroundedHurtboxCollide(GObj *item_gobj);
 static sb32 itRemixBlueShellIdleHurtboxCollide(GObj *item_gobj);
-static void itRemixBlueShellHitGfx(GObj *item_gobj);
 static void itRemixBlueShellHoldProc(GObj *item_gobj);
 
 static ITStatusDesc sITRemixBlueShellStatusDescs[nITRemixBlueShellStatusEnumCount] =
@@ -431,7 +434,9 @@ static void itRemixBlueShellSetAerial(GObj *item_gobj)
     itMainSetStatus(item_gobj, sITRemixBlueShellStatusDescs, nITRemixBlueShellStatusAerial);
 }
 
-/* grounded_active_ (state 5 update). Homing toward the player in first is REMIX-TODO(player-in-first) */
+/* grounded_active_ (state 5 update). SKIPPED(player-in-first): the homing (target_player_, BlueShell.asm line 1349) caches the
+ * player in first in ITStruct offset 0x180 and refreshes it every 8 frames. The port has no named field for that slot, and
+ * itRemixBlueShellGetPlayerInFirst is the lookup it needs. */
 static sb32 itRemixBlueShellGroundedProcUpdate(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
@@ -462,7 +467,7 @@ static void itRemixBlueShellGroundedGfx(GObj *item_gobj)
     ip->owner_gobj = NULL;
     pos = dobj->translate.vec.f;
     pos.y += ip->attr->map_coll_bottom;
-    /* REMIX-TODO(gfx): asm spawns the custom pink smoke (custom_smoke_, particle 0x8A); the closest vanilla dust effect is used */
+    /* DEVIATION(pink smoke): BlueShell.asm custom_smoke_ (line 955) calls lbParticleMakeScriptID (0x800CE9E8) with script 0x8A and a bank id read from RAM 0x801313C4 (not in the port); the port uses the vanilla dust effect, so the smoke colour differs. See docs/remix/notes/f14_items_fx.md */
     efManagerDustLightMakeEffect(&pos, ip->lr, 1.0F);
     ip->item_vars.shell.dust_effect_int = ITREMIX_BLUESHELL_GFX_INTERVAL - 1;
 }
@@ -521,13 +526,18 @@ static sb32 itRemixBlueShellIdleHurtboxCollide(GObj *item_gobj)
     }
     ip->owner_gobj = ip->damage_gobj;
     ip->item_vars.shell.dust_effect_int = ITREMIX_BLUESHELL_DAMAGE_OWNER_WAIT;
-    /* REMIX-TODO(player-in-first): asm calls get_player_in_first_ here; not ported */
+    /* The asm calls get_player_in_first_ here (BlueShell.asm line 1336) but discards its result, so no port is needed */
 
     return FALSE;
 }
 
-/* hit_gfx_: white spark effect at the item position */
-static void itRemixBlueShellHitGfx(GObj *item_gobj)
+/**
+ * hit_gfx_: white spark effect at the item position (BlueShell.asm line 1126, based on red shell 0x8017A610). Shared with
+ * Flashbang, which calls it with its own item object. Sets the gfx timer to 8 frames.
+ *
+ * @param item_gobj Item whose DObj position and attributes place the spark.
+ */
+void itRemixBlueShellHitGfx(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
     Vec3f pos = DObjGetStruct(item_gobj)->translate.vec.f;
@@ -535,6 +545,60 @@ static void itRemixBlueShellHitGfx(GObj *item_gobj)
     pos.y += ip->attr->map_coll_bottom;
     efManagerShieldBreakMakeEffect(&pos);
     ip->item_vars.shell.dust_effect_int = ITREMIX_BLUESHELL_GFX_INTERVAL; /* UNCERTAIN: asm stores a leftover register */
+}
+
+/**
+ * Value that get_player_in_first_ compares for one port: the KO count in time mode, the Stamina value in Stamina, and the
+ * stock count otherwise (BlueShell.asm line 1433, offsets 0x14, 0x4C and 0x0B from each player).
+ *
+ * @param battle Match state, gSCManagerBattleState.
+ * @param port Port index 0..3.
+ * @param game_rules Match rules byte (asm match_info + 3).
+ * @return Value compared by the rules function.
+ */
+static s32 itRemixBlueShellGetPlayerValue(SCBattleState *battle, s32 port, s32 game_rules)
+{
+    if (game_rules == ITREMIX_BLUESHELL_GAME_RULES_TIME)
+    {
+        return battle->players[port].score;
+    }
+    if (itRemixBlueShellRulesIsStamina(game_rules))
+    {
+        return battle->players[port].stock_damage_all;
+    }
+    return battle->players[port].stock_count;
+}
+
+/**
+ * Fighter in first place, as get_player_in_first_ returns it. Port choice is the pure rule in itremixblueshellrules.c.
+ * The asm walks the fighter list for that port and falls back to the last fighter it saw; here the fighter of the port is
+ * read directly, so the fallback case returns NULL instead.
+ *
+ * @return Fighter GObj of the first place, NULL when that port has no fighter or the match state is missing.
+ */
+GObj* itRemixBlueShellGetPlayerInFirst(void)
+{
+    SCBattleState *battle = gSCManagerBattleState;
+    s32 game_rules;
+    s32 values[ITREMIX_BLUESHELL_RULES_PLAYERS];
+    s32 percents[ITREMIX_BLUESHELL_RULES_PLAYERS];
+    s32 is_present[ITREMIX_BLUESHELL_RULES_PLAYERS];
+    s32 port;
+
+    if (battle == NULL)
+    {
+        return NULL;
+    }
+    game_rules = battle->game_rules;
+    for (port = 0; port < ITREMIX_BLUESHELL_RULES_PLAYERS; port++)
+    {
+        values[port] = itRemixBlueShellGetPlayerValue(battle, port, game_rules);
+        percents[port] = battle->players[port].stock_damage_all;
+        is_present[port] = (battle->players[port].fighter_gobj != NULL);
+    }
+    port = itRemixBlueShellRulesFirstPort(itRemixBlueShellRulesIsStamina(game_rules), values, percents, is_present);
+
+    return battle->players[port].fighter_gobj;
 }
 
 #endif

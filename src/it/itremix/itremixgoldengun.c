@@ -98,7 +98,8 @@ static ITDesc sITRemixGoldenGunDesc =
  */
 static void itRemixGoldenGunRollTilt(void)
 {
-    /* REMIX-TODO(tilt): set rotate.vec.f.y from float 0x8018CD00 or 0x8018CD04, chosen by the low bit of the RNG value below. */
+    /* SKIPPED(tilt): GoldenGun.asm line 83 loads float 0x8018CD00 (or 0x8018CD04 at line 92) from vanilla item data that lies
+     * outside the Remix RAM image (base 0x80400000), and the asm has no immediate value. The store is not ported. */
     syUtilsRandUShort();
 }
 

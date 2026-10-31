@@ -24,6 +24,7 @@
 
 extern void ftCaptainSpecialHiProcInterrupt(GObj *fighter_gobj);
 extern void *func_800269C0_275C0(u16 id);
+extern void func_80026738_27338(void *fgm_handle);
 extern ITStatusDesc dFTRemixYoungLinkBombchuStatusDescs[];
 
 #define YLINK_USP_DIRECTION_FLAG 2                 /* temp variable 2 (motion_vars.flags.flag1) */
@@ -75,10 +76,34 @@ static void ftRemixYoungLinkBombchuUpdateDirection(GObj *item_gobj)
     joint->rotate.vec.f.y = (ip->lr < 0) ? BOMBCHU_PI : 0.0F;
 }
 
-/* Remix end_fgm_: stops the Bombchu's FGM. REMIX-TODO(ITStruct): the FGM handle lives at N64 0x1D0/0x1D4, which the decomp ITStruct does not declare, so no FGM is ever ended. */
+/* Bombchu item vars: the decomp linkbomb block, then the rolling FGM handle that Remix keeps at item+0x1D0. The asm
+ * also keeps the FGM id at item+0x1D4, but that is always the id of this same handle, so only the handle is stored. */
+typedef struct ITRemixYoungLinkBombchuVars
+{
+    ITFighterItemVarsLinkBomb linkbomb;
+    void *fgm_handle;
+} ITRemixYoungLinkBombchuVars;
+_Static_assert(sizeof(ITRemixYoungLinkBombchuVars) <= sizeof(((ITStruct*)0)->item_vars), "ITRemixYoungLinkBombchuVars must fit in ITStruct.item_vars");
+
+/* Rolling FGM handle of the Bombchu (Remix item+0x1D0), kept in item_vars after the linkbomb block. */
+static void **ftRemixYoungLinkBombchuFgmHandle(ITStruct *ip)
+{
+    return &((ITRemixYoungLinkBombchuVars *)&ip->item_vars)->fgm_handle;
+}
+
+/* Remix end_fgm_ (YoungLinkSpecial.asm:163-185): clears the Bombchu's FGM handle and ends that FGM. */
 static void ftRemixYoungLinkBombchuEndFgm(GObj *item_gobj)
 {
-    (void)item_gobj;
+    ITStruct *ip = itGetStruct(item_gobj);
+    void **fgm_handle = ftRemixYoungLinkBombchuFgmHandle(ip);
+    void *handle = *fgm_handle;
+
+    if (handle == NULL)
+    {
+        return;
+    }
+    *fgm_handle = NULL;
+    func_80026738_27338(handle);
 }
 
 /* Remix begin_falling_: moving Bombchu leaves the floor and falls. */
@@ -118,8 +143,7 @@ static void ftRemixYoungLinkBombchuBeginMoving(GObj *item_gobj)
     itMainSetStatus(item_gobj, dFTRemixYoungLinkBombchuStatusDescs, BOMBCHU_STATUS_MOVING);
     ip->pickup_wait |= BOMBCHU_PICKUP_WAIT_BONUS_DAMAGE;
     ftRemixYoungLinkBombchuUpdateDirection(item_gobj);
-    /* REMIX-TODO(ITStruct): the FGM handle returned here is not stored (see ftRemixYoungLinkBombchuEndFgm). */
-    func_800269C0_275C0(BOMBCHU_FGM_ID);
+    *ftRemixYoungLinkBombchuFgmHandle(ip) = func_800269C0_275C0(BOMBCHU_FGM_ID);
 }
 
 /* Remix resting_main_: the Bombchu on the floor, before it is picked up or touched. */
@@ -460,10 +484,8 @@ void ftRemixYoungLinkBombSetOwner(GObj *item_gobj, FTStruct *owner_fp)
     if (owner_fp->fkind == REMIX_ID_YLINK)
     {
         ip->proc_dead = ftRemixYoungLinkBombchuBlastZone;
+        *ftRemixYoungLinkBombchuFgmHandle(ip) = NULL;
     }
-    /* REMIX-TODO(ITStruct): Remix also clears its custom FGM handle slot at item+0x1D0. That slot has no decomp
-     * field (it overlays attack_coll.attack_pos), so the Bombchu rolling FGM cannot be ended early; see
-     * ftRemixYoungLinkBombchuEndFgm. */
 }
 
 /* Remix address -> port routine for every Young Link routine its action array or special tables reference. */

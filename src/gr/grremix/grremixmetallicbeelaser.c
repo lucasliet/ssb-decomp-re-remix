@@ -24,7 +24,7 @@
 #define GRREMIX_METALLIC_LASER_SPEED_Y -100.0F        /* asm 0xC2C8 */
 #define GRREMIX_METALLIC_LASER_SCALE_STEP 3.0F        /* asm 0x4040 (3.0F) */
 #define GRREMIX_METALLIC_LASER_SCALE_MIN (-WPBLASTER_CLAMP_SCALE_X) /* asm 0xC2555555, the same value as 160.0F / 3.0F */
-/* REMIX-TODO(vanilla RAM 0x8019CAA0): the asm reads the maximum X scale from this RAM float, not verified; the Fox blaster clamp is assumed. */
+/* DEVIATION(vanilla RAM 0x8019CAA0): asm robot_bee_laser_main_ loads the maximum X scale from this vanilla-overlay float; it lies below the Remix RAM image (0x80400000) so it cannot be read; the Fox blaster clamp is assumed. */
 #define GRREMIX_METALLIC_LASER_SCALE_MAX WPBLASTER_CLAMP_SCALE_X
 #define GRREMIX_METALLIC_PLAYER_OBJECT_ID nGCCommonKindFighter /* asm: object type 0x3E8 of the victim */
 
@@ -45,7 +45,9 @@ static f32 grRemixMetallicLaserSpeedX(void);
 /**
  * Weapon descriptor of the laser (asm robot_bee_laser_projectile_struct). p_weapon is set per spawn to the laser
  * file pointer.
- * REMIX-TODO(transform): the asm word 0x0C (0x1C000000) that the Remix projectile struct copies from the Pikachu thunder is not decoded; the port uses a rotation matrix.
+ * The transform word of the asm projectile struct is 0x1C000000 (Pikachu thunder value). Its top byte is the
+ * XObjTransformKind, 28 = nGCMatrixKindTraRotRpyRSca (objdef.h). The Sca kind is needed because the laser grows the
+ * DObj X scale.
  */
 static const WPDesc sWPMetallicBeeLaserWeaponDesc =
 {
@@ -53,7 +55,7 @@ static const WPDesc sWPMetallicBeeLaserWeaponDesc =
     GRREMIX_METALLIC_LASER_KIND,                /* Projectile.id.METALLICMADNESS_BEELASER */
     NULL,                                       /* set per spawn from grRemixMetallicLaserFileRef() */
     0,                                          /* asm hitbox offset 0 */
-    { nGCMatrixKindTraRotRpyR, 0, 0 },
+    { nGCMatrixKindTraRotRpyRSca, 0, 0 },
     grRemixMetallicLaserProcUpdate,
     grRemixMetallicLaserProcMap,
     grRemixMetallicLaserProcHit,

@@ -11,6 +11,9 @@
 #include <sc/sctypes.h>
 #include <sc/scmanager.h>
 #include <sys/utils.h>
+#include "sc/sc1pmode/sc1premix1p.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
+#include "remix/remix_training.h"
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixaiteching.h"
 #include "ft/ftremix/ftremixaiteachingrules.h"
@@ -30,31 +33,25 @@ static sb32 ftRemixAiIsTrainingScreen(void)
     return gSCManagerSceneData.scene_curr == nSCKind1PTrainingMode;
 }
 
-/*
- * REMIX-TODO(AI): the Single Button Mode toggle is not in the port yet (the asm reads Toggles.entry_single_button_mode).
- * Until it is, the mode is OFF, so no button mode blocks a CPU tech or Z-cancel.
- */
+/** Single Button Mode toggle value (the asm reads Toggles.entry_single_button_mode). */
 static s32 ftRemixAiSingleButtonMode(void)
 {
-    return 0;
+    return gmRemixToggle(single_button_mode);
 }
 
-/*
- * REMIX-TODO(AI): the Remix 1P flag (SinglePlayerModes.singleplayer_mode_flag == 4) has no port equivalent yet, see
- * ftremixhitbox.c. Until then Remix 1P uses the level and toggle rules only.
- */
+/** Remix 1P game (SinglePlayerModes.singleplayer_mode_flag == 4). */
 static sb32 ftRemixAiIsRemix1P(void)
 {
-    return FALSE;
+    return sc1PRemix1PIsActive();
 }
 
 /*
- * REMIX-TODO(AI): the off-stage flag (N64 FTStruct 0x18C, bit 0x4) has no mapped port field yet. Until it is mapped
- * every CPU is treated as on stage.
+ * Off-stage flag of the asm (`lh 0x018C` and mask 0x0004): the low byte of the halfword is FTStruct 0x018D, whose mask 0x04 is
+ * is_magnify_show, the flag the camera sets for a fighter shown by the magnifying glass because it is off screen.
  */
 static sb32 ftRemixAiIsOffStage(FTStruct *fp)
 {
-    return FALSE;
+    return (fp->is_magnify_show != FALSE) ? TRUE : FALSE;
 }
 
 /** Vanilla tech checks, the same two calls the replaced chain used, short-circuited the same way. */
@@ -62,6 +59,50 @@ static sb32 ftRemixAiTechVanilla(GObj *fighter_gobj)
 {
     return (ftCommonPassiveStandCheckInterruptDamage(fighter_gobj) != FALSE) ||
            (ftCommonPassiveCheckInterruptDamage(fighter_gobj) != FALSE);
+}
+
+/** Counts a CPU tech that did not happen (AI.asm random_teching_ _fail, VsStats.tech_miss_tracker). */
+static void ftRemixAiTechCountMiss(FTStruct *fp)
+{
+    mnRemixVSStatsCountTracker(fp->player, nMNRemixVSStatsTrackerTechMiss);
+}
+
+/** Starts a tech roll in the direction (forward or backward) the fighter faces. TRUE as the fighter teched. */
+static sb32 ftRemixAiTechStartRoll(GObj *fighter_gobj, s32 status_id)
+{
+    ftCommonPassiveStandSetStatus(fighter_gobj, status_id);
+
+    return TRUE;
+}
+
+/**
+ * Tech chosen by the Training menu (Training.entry_tech_behavior, AI.asm tech_option_table): 1 backward, 2 forward, 3 in place,
+ * 4 roll left and 5 roll right (relative to the facing, a fighter facing right rolls backward to the left), 6 none.
+ */
+static sb32 ftRemixAiTechByMenu(GObj *fighter_gobj, FTStruct *fp, s32 option)
+{
+    switch (option)
+    {
+    case FTREMIX_AI_TECH_MENU_BACKWARD:
+        return ftRemixAiTechStartRoll(fighter_gobj, nFTCommonStatusPassiveStandB);
+
+    case FTREMIX_AI_TECH_MENU_FORWARD:
+        return ftRemixAiTechStartRoll(fighter_gobj, nFTCommonStatusPassiveStandF);
+
+    case FTREMIX_AI_TECH_MENU_IN_PLACE:
+        ftCommonPassiveSetStatus(fighter_gobj);
+        return TRUE;
+
+    case FTREMIX_AI_TECH_MENU_LEFT:
+        return ftRemixAiTechStartRoll(fighter_gobj, (fp->lr == +1) ? nFTCommonStatusPassiveStandB : nFTCommonStatusPassiveStandF);
+
+    case FTREMIX_AI_TECH_MENU_RIGHT:
+        return ftRemixAiTechStartRoll(fighter_gobj, (fp->lr == +1) ? nFTCommonStatusPassiveStandF : nFTCommonStatusPassiveStandB);
+
+    default:
+        ftRemixAiTechCountMiss(fp);
+        return FALSE;
+    }
 }
 
 /** Rolls the improved tech and sets the status of the outcome. TRUE when the fighter teched. */
@@ -72,17 +113,17 @@ static sb32 ftRemixAiTechRoll(GObj *fighter_gobj, FTStruct *fp)
     switch (ftRemixAiTechRollOutcome(roll, ftRemixAiIsOffStage(fp)))
     {
     case FTREMIX_AI_TECH_OUTCOME_FORWARD:
-        ftCommonPassiveStandSetStatus(fighter_gobj, nFTCommonStatusPassiveStandF);
-        return TRUE;
+        return ftRemixAiTechStartRoll(fighter_gobj, nFTCommonStatusPassiveStandF);
 
     case FTREMIX_AI_TECH_OUTCOME_BACKWARD:
-        ftCommonPassiveStandSetStatus(fighter_gobj, nFTCommonStatusPassiveStandB);
-        return TRUE;
+        return ftRemixAiTechStartRoll(fighter_gobj, nFTCommonStatusPassiveStandB);
 
     case FTREMIX_AI_TECH_OUTCOME_IN_PLACE:
         ftCommonPassiveSetStatus(fighter_gobj);
         return TRUE;
     }
+    ftRemixAiTechCountMiss(fp);
+
     return FALSE;
 }
 
@@ -100,8 +141,7 @@ static sb32 ftRemixAiTechUsesRoll(FTStruct *fp)
 /**
  * random_teching_ (AI.asm): sandbags never tech. Humans keep the vanilla checks. Single Button Mode only restricts CPUs,
  * the comment in the asm says "don't let CPU tech". CPUs without the improved path keep the vanilla checks.
- * REMIX-TODO(AI): the failed tech counter (VsStats.tech_miss_tracker) is not ported, so misses are not counted.
- * REMIX-TODO(AI): the training menu tech option (Training.entry_tech_behavior) is not ported, so training CPUs roll.
+ * A CPU in Training follows the menu tech option unless it is Random.
  */
 sb32 ftRemixAiTechIsHandled(GObj *fighter_gobj)
 {
@@ -122,6 +162,10 @@ sb32 ftRemixAiTechIsHandled(GObj *fighter_gobj)
     if (ftRemixAiTechUsesRoll(fp) == FALSE)
     {
         return ftRemixAiTechVanilla(fighter_gobj);
+    }
+    if (ftRemixAiIsTrainingScreen() && (remix_training_get(REMIX_TRAINING_TECH) != 0))
+    {
+        return ftRemixAiTechByMenu(fighter_gobj, fp, remix_training_get(REMIX_TRAINING_TECH));
     }
     return ftRemixAiTechRoll(fighter_gobj, fp);
 }

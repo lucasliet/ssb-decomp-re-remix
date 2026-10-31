@@ -975,6 +975,21 @@ void scManagerRunLoop(sb32 arg)
 		 * the SSB64_DEMO_FKINDS override is applied here too. */
 		gSCManagerSceneData.demo_fkind[0] = remix_debug_demo_fkind(0, gSCManagerSceneData.demo_fkind[0]);
 		gSCManagerSceneData.demo_fkind[1] = remix_debug_demo_fkind(1, gSCManagerSceneData.demo_fkind[1]);
+#if defined(PORT) && defined(REGION_REMIX)
+		if ((remix_debug_train_fkind(0) >= 0) && (remix_debug_train_fkind(1) >= 0))
+		{
+			const char *stage_env = getenv("SSB64_VS_STAGE");
+
+			gSCManagerSceneData.player = 0;
+			gSCManagerSceneData.training_man_fkind = remix_debug_train_fkind(0);
+			gSCManagerSceneData.training_man_costume = 0;
+			gSCManagerSceneData.training_com_fkind = remix_debug_train_fkind(1);
+			gSCManagerSceneData.training_com_costume = 0;
+			gSCManagerSceneData.gkind = (stage_env != NULL) ? (u8)atoi(stage_env) : nGRKindPupupu;
+			gSCManagerSceneData.scene_curr = nSCKind1PTrainingMode;
+			gSCManagerSceneData.scene_prev = nSCKindPlayers1PTraining;
+		}
+#endif
 		if ((remix_debug_vs_fkind(0) >= 0) && (remix_debug_vs_fkind(1) >= 0))
 		{
 			int i;

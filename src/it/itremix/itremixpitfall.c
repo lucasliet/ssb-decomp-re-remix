@@ -226,9 +226,9 @@ static sb32 itRemixPitfallThrownProcMap(GObj *item_gobj)
  * Pitfall.begin_buried_: sticks the pitfall to the ground and switches to the buried
  * status. Returns TRUE when the item must be destroyed instead.
  *
- * REMIX-TODO(hazard): the asm destroys the pitfall on a hazardous floor (Surface clipping
- * flag, Toggles.entry_hazard_mode, SAFFRON_CITY exception). The port always buries it,
- * because the Surface clipping helper is not in the port yet.
+ * SKIPPED(hazard floor): Items/Pitfall.asm:375-390 destroys the pitfall on a hazardous floor (Surface.get_clipping_flag_
+ * with Toggles.entry_hazard_mode, SAFFRON_CITY exception). The port always buries it, because Surface.get_clipping_flag_
+ * has no decomp function yet.
  * The asm's 0x2CE mask 0xCF (times_landed) and clang bit 0x8000 of 0x158 (can_setoff) are cleared below.
  */
 static sb32 itRemixPitfallBeginBuried(GObj *item_gobj)
@@ -253,9 +253,9 @@ static sb32 itRemixPitfallBeginBuried(GObj *item_gobj)
  * Pitfall.stick_to_surface: attaches the model to the floor, sets the owner timer and
  * the grounded hurtbox, and plays the plant sound.
  *
- * REMIX-TODO(rumble): the asm calls ftParamMakeRumble when the planting player's
- * match_info entry (offset 0x78) is set. The asm passes the item struct where the
- * function takes an FTStruct, and the match_info field is not named, so it is skipped.
+ * SKIPPED(rumble): Items/Pitfall.asm:469-478 calls ftParamMakeRumble (0x800E806C) when the planting player's match_info
+ * entry at offset 0x78 is set. The asm passes the item struct where ftParamMakeRumble takes an FTStruct, and the
+ * match_info field is not named, so it is not ported.
  */
 static void itRemixPitfallStickToSurface(GObj *item_gobj)
 {

@@ -3,7 +3,7 @@
  * minion from Dedede's down special. Port of items/WaddleDee.asm.
  *
  * Waddle Doo (itremixwaddledoo.c) and Gordo reuse the routines exported in
- * itremixwaddledee.h. The owner minion slots are REMIX-TODO(Dedede); see
+ * itremixwaddledee.h. SKIPPED(Dedede minion slots): the owner minion pointers are not named in the port; see
  * docs/remix/notes/item_WaddleDee.md for every deviation.
  */
 

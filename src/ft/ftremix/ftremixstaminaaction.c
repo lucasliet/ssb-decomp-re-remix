@@ -12,6 +12,13 @@
 #include "gm/gmremixstamina.h"
 #include "mp/mpdef.h"
 #include "remix/remix_roster_data.h"
+#include "sc/scmanager.h"
+#include "sc/sc1pmode/sc1premix1p.h"
+
+/* Stamina.asm _remix branch: Giga Bowser HP by 1P difficulty (below Normal, Normal and Hard, Very Hard) */
+#define FTREMIX_STAMINA_GIGA_HP_LOW 200
+#define FTREMIX_STAMINA_GIGA_HP_MID 250
+#define FTREMIX_STAMINA_GIGA_HP_HIGH 300
 
 /* Action.asm DK Cargo (0xEB) to CargoThrowAir (0xF5). The decomp names are nFTDonkeyStatusThrowFWait and
  * nFTDonkeyStatusThrowAirFF (ft/ftchar/ftdonkey/ftdonkey.h). That header cannot be included here (it needs FTStatusDesc
@@ -142,15 +149,50 @@ static s32 ftRemixStaminaKOStatusFor(FTStruct *fp)
 }
 
 /**
+ * Giga Bowser HP of the 1P Remix stamina rule (Stamina.asm _remix): 200 below Normal difficulty, 250 for Normal and
+ * Hard, 300 for Very Hard. Reads the 1P difficulty of the save (0x800A493A in the asm).
+ */
+static s32 ftRemixStaminaGigaBowserTotalHP(void)
+{
+    u8 difficulty = gSCManagerBackupData.spgame_difficulty;
+
+    if (difficulty < nSC1PGameDifficultyNormal)
+    {
+        return FTREMIX_STAMINA_GIGA_HP_LOW;
+    }
+    if (difficulty < nSC1PGameDifficultyVeryHard)
+    {
+        return FTREMIX_STAMINA_GIGA_HP_MID;
+    }
+    return FTREMIX_STAMINA_GIGA_HP_HIGH;
+}
+
+/**
+ * TRUE when the fighter is a CPU Giga Bowser of the 1P Remix game whose percent is above its HP (Stamina.asm _remix
+ * branch). That branch runs outside VS mode, so the VS stamina rule does not apply to it.
+ */
+static sb32 ftRemixStaminaIsGigaBowserOutOfHP(FTStruct *fp)
+{
+    if (sc1PRemix1PIsActive() == FALSE)
+    {
+        return FALSE;
+    }
+    if ((fp->pkind != nFTPlayerKindCom) || (fp->fkind != REMIX_ID_GBOWSER))
+    {
+        return FALSE;
+    }
+    return (fp->percent_damage > ftRemixStaminaGigaBowserTotalHP()) ? TRUE : FALSE;
+}
+
+/**
  * Status a fighter goes to when `status_id` is requested by ftMainSetStatus (Stamina.asm stamina_ko_action).
  *
- * Returns `status_id` unchanged when the rule is off, the fighter is in HP, or the status is one the asm lets play out.
- * REMIX-TODO(stamina-gigabowser): the 1P Giga Bowser branch of stamina_ko_action (200, 250 or 300 HP by difficulty) is
- * not ported yet; it belongs to T6.2.
+ * Returns `status_id` unchanged when no stamina KO is pending (VS stamina rule or 1P Giga Bowser), or the status is one
+ * the asm lets play out.
  */
 s32 ftRemixStaminaKOStatus(FTStruct *fp, s32 status_id)
 {
-    if (ftRemixStaminaIsKOPending(fp) == FALSE)
+    if ((ftRemixStaminaIsKOPending(fp) == FALSE) && (ftRemixStaminaIsGigaBowserOutOfHP(fp) == FALSE))
     {
         return status_id;
     }

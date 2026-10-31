@@ -89,7 +89,7 @@ GObj* itRemixScuttleMinionMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u3
 /**
  * Enables the minion's hitbox and sets its damage, size, angle, knockback and sound (asm minion_stage_setting_).
  * The asm's 0x158 bit 0x10, 0x33E, 0x2D3 bit 0x08 and 0x398 are set in itRemixScuttleMinionMakeItem.
- * REMIX-TODO(ITStruct 0x1D0, 0x1D4, 0x35C): asm clears them (Hazards.asm 7628-7630). 0x1D0/0x1D4 alias attack_pos[1].pos_prev.x/y.
+ * The asm's 0x1D0, 0x1D4 and 0x35C clears (Hazards.asm 7628-7630) are done at the end of this routine.
  * The sfx timer at 0x44 = 0x30 is not read by minion_main_.
  */
 static void itRemixScuttleMinionSetupHitbox(ITStruct *ip)
@@ -104,6 +104,9 @@ static void itRemixScuttleMinionSetupHitbox(ITStruct *ip)
     attack_coll->knockback_scale = ITREMIX_SCUTTLEMINION_HITBOX_KNOCKBACK_SCALE;
     attack_coll->knockback_base = ITREMIX_SCUTTLEMINION_HITBOX_KNOCKBACK_BASE;
     attack_coll->fgm_id = ITREMIX_SCUTTLEMINION_HITBOX_FGM;
+    attack_coll->attack_pos[1].pos_prev.x = 0.0F;
+    attack_coll->attack_pos[1].pos_prev.y = 0.0F;
+    ((s32 *) &ip->item_vars)[3] = 0; /* asm 0x35C = item_vars+0xC, the hit scratch word of the Remix hazards */
 }
 
 /**

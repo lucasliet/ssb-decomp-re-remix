@@ -591,10 +591,9 @@ static void ftRemixLankyDSPCancelProcUpdate(GObj *fighter_gobj)
     }
     fp->tap_stick_x = vars->tap_stick_x;
     fp->tap_stick_y = vars->tap_stick_y;
-    /* REMIX-TODO(gobj-store): asm line 1981 (delay slot of 0x800DEE54) stores the
-     * merged buttons to the GObj at 0x1BE instead of the player struct. Not ported:
-     * the target is outside the port's fighter state, and the store is not a
-     * documented input path. */
+    /* LankySpecial.asm cancel_main_ (_change_action): the delay slot of the transition stores the merged buttons to the
+     * player struct at 0x1BE (input.pl.button_tap), the same value as the buffered buttons after this frame's OR. */
+    fp->input.pl.button_tap = vars->buffered_buttons;
     mpCommonSetFighterWaitOrFall(fighter_gobj);
 }
 

@@ -124,9 +124,10 @@ static void itRemixCloudSetFlashFlag(GObj *item_gobj, s32 timer)
     item_gobj->flags = (timer & 2) >> 1;
 }
 
-/* REMIX-TODO(Size): Size.asm item scope not ported. apply_size_to_animation_ (0x8003DE5C jump table, cloud joint scale) needs
+/* SKIPPED(Size): Size.asm item scope not ported. apply_size_to_animation_ (0x8003DE5C jump table, cloud joint scale) needs
  * the animation command interpreter, and render_routine_ (ECB scale of the cloud from its holder, wraps 0x80171F4C) needs the
- * item render wiring. The cloud keeps its vanilla scale and ECB at every size until both are ported. */
+ * item render wiring. The existing ftremixsize helpers scale the fighter top joint and ECB, not an item, so they do not fit.
+ * The cloud keeps its vanilla scale and ECB at every size until both are ported. */
 /* Cloud.asm stage_setting_: the spawn routine, called with Item.Cloud's desc from the Remix dispatcher. */
 GObj* itRemixCloudMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {
@@ -212,7 +213,7 @@ static void itRemixCloudPinToFeet(GObj *item_gobj)
     joint->translate.vec.f.z = 0;
     gmCollisionGetFighterPartsWorldPosition(fp->joints[0], &joint->translate.vec.f);
 
-    /* REMIX-TODO(uncertain): the asm reads the item DObj from s0, which this routine never sets. Using the item's own DObj here. */
+    /* UNCERTAIN: the asm reads the item DObj from s0, which this routine never sets. Using the item's own DObj here. */
     joint->rotate.vec.f.z = 0;
     cp->rotation_direction = 0;
 }
@@ -280,7 +281,7 @@ static void itRemixCloudCountLife(ITStruct *ip)
     cp->life_timer += 1;
 }
 
-/* cloud_blast_zone_: a bare return in Remix. Blast-wall code calls it through blast_zone_proc (REMIX-TODO(BlastWall)). */
+/* cloud_blast_zone_ (Cloud.asm line 282): a bare return in Remix, so the empty body is exact. The blast-wall code that calls it through blast_zone_proc is not part of this file. */
 static void itRemixCloudBlastZoneProc(GObj *item_gobj)
 {
 }

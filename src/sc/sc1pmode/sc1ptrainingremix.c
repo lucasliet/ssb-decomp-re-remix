@@ -13,6 +13,8 @@
 #include "remix/remix_symbols.h"
 #include "remix/remix_toggles.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
+#include "ft/ftremix/ftremixtraining.h"
+#include "remix/remix_training.h"
 
 #define SC1PTRAININGREMIX_DPAD_BUTTONS (U_JPAD | D_JPAD | L_JPAD | R_JPAD)
 #define SC1PTRAININGREMIX_MODEL_DISPLAY_COUNT 4
@@ -34,6 +36,7 @@ void sc1PTrainingRemixStartScene(sb32 is_reset)
 {
     sSC1PTrainingRemixIsFrozen = FALSE;
     sSC1PTrainingRemixIsAdvancing = FALSE;
+    ftRemixTrainingStartScene();
 
     if (is_reset == FALSE)
     {
@@ -73,9 +76,17 @@ sb32 sc1PTrainingRemixPollDpad(void)
     {
         return FALSE;
     }
+    if (remix_training_get(REMIX_TRAINING_DPAD) == REMIX_TRAINING_DPAD_OFF)
+    {
+        return FALSE;
+    }
     if (taps & L_JPAD)
     {
         return TRUE;
+    }
+    if (remix_training_get(REMIX_TRAINING_DPAD) == REMIX_TRAINING_DPAD_RESET_ONLY)
+    {
+        return FALSE;
     }
     if (taps & U_JPAD)
     {

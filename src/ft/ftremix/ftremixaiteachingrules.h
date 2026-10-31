@@ -17,6 +17,14 @@
 #define FTREMIX_AI_TECH_OUTCOME_FAIL 3
 #define FTREMIX_AI_ZCANCEL_CHANCE 95
 
+/* Training.entry_tech_behavior values above Random (string_table_tech_options). */
+#define FTREMIX_AI_TECH_MENU_BACKWARD 1
+#define FTREMIX_AI_TECH_MENU_FORWARD 2
+#define FTREMIX_AI_TECH_MENU_IN_PLACE 3
+#define FTREMIX_AI_TECH_MENU_LEFT 4
+#define FTREMIX_AI_TECH_MENU_RIGHT 5
+#define FTREMIX_AI_TECH_MENU_NONE 6
+
 /**
  * TRUE when a CPU uses the improved random tech roll instead of the vanilla tech checks (AI.asm random_teching_).
  * Training always uses it. Level 10 CPUs and Remix 1P use it on every screen except the excluded ones. Other CPUs

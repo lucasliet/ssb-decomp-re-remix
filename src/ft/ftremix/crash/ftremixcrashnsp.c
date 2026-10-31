@@ -10,9 +10,12 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixhooks.h"
+#include "fighter_registry.h"
 #include "remix/remix_symbols.h"
 #include <ef/efmanager.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
+#include <sys/objdisplay.h>
 #include <ft/ftmain.h>
 #include <ft/ftphysics.h>
 #include <mp/mpcommon.h>
@@ -83,11 +86,117 @@ static void ftRemixCrashNSPChangeStatus(GObj *fighter_gobj, s32 crash_status, s3
     ftMainSetStatus(fighter_gobj, status_id, frame, 1.0F, flags);
 }
 
-/* REMIX-TODO(GFX): create_spin_gfx_ (CrashSpecial.asm:862-887) and setup_spin_gfx_ (119-155) are not ported.
- * The spin GFX is an attached effect with the Crash/Kirby spin file, and its colour tables are per costume.
- * Without it the spin is invisible, but the moveset and physics still run. */
-static void ftRemixCrashNSPCreateSpinGFX(GObj *fighter_gobj)
+#define CRASH_NSP_KIRBY_SPIN_FILE_OFFSET 0x0CC4 /* asm create_spin_gfx_: Kirby reads the spin file at Crash file 7 + 0xCC4 */
+#define CRASH_NSP_SPIN_COSTUME_COUNT 7
+
+/* Spin GFX descriptor (spin_gfx_struct), Link's Up Special layout as in the Dig GFX. The file pointer is set per call. */
+static void *sFTRemixCrashNSPSpinKirbyFile;
+static EFDesc sFTRemixCrashNSPSpinGfxDesc =
 {
+    .flags = 0x06,
+    .dl_link = 0x0F,
+    .transform_types1 = { 0x50, 0x1A, 0x00 },
+    .transform_types2 = { 0x1C, 0x00, 0x00 },
+    .proc_update = efManagerHaveStructProcUpdate,
+    .proc_display = gcDrawDObjTreeForGObj,
+    .o_dobjsetup = 0x708,
+    .o_mobjsub = 0x838,
+    .o_anim_joint = 0x894,
+    .o_matanim_joint = 0x8B4
+};
+
+/* spin_gfx_table of CrashSpecial.asm: per costume, top prim, top env, bottom prim, bottom env. */
+static const u32 sFTRemixCrashNSPSpinColours[CRASH_NSP_SPIN_COSTUME_COUNT][4] =
+{
+    { 0xFFFFFFB0, 0xFF4E00FF, 0x42001FA0, 0x120015FF },
+    { 0xFFFFFFB0, 0xFF0000FF, 0x52002FA0, 0x220005FF },
+    { 0xFFFFFFB0, 0x60E800FF, 0x62002FA0, 0x120015FF },
+    { 0xFFFFFFB0, 0xB0D0FFFF, 0x003070A0, 0x00080FFF },
+    { 0xFFFFFFB0, 0xFFE000FF, 0x404040A0, 0x080808FF },
+    { 0xFFFFFFB0, 0x4C3020FF, 0x004058A0, 0x240008FF },
+    { 0xFFFFFFB0, 0xFF7400FF, 0x1F4200A0, 0x040F00FF }
+};
+
+/* kirby_spin_gfx_table of CrashSpecial.asm, same layout as sFTRemixCrashNSPSpinColours. */
+static const u32 sFTRemixCrashNSPKirbySpinColours[CRASH_NSP_SPIN_COSTUME_COUNT][4] =
+{
+    { 0xFF0000A0, 0xFFA5B480, 0xFFA5B4A0, 0xFF4E00C0 },
+    { 0xFF8000A0, 0xFFF00080, 0xFFFF00A0, 0xFF4E00C0 },
+    { 0x0000FFA0, 0x00F0FF80, 0x00F0FFA0, 0xFF4E00C0 },
+    { 0x804000A0, 0xFF000080, 0xFF0000A0, 0xFF4E00C0 },
+    { 0x008800A0, 0x00FF6080, 0x00FF60A0, 0xFF4E00C0 },
+    { 0x606060A0, 0xFFFFFF80, 0xFFFFFFA0, 0xFF4E00C0 },
+    { 0x904080A0, 0x1828A880, 0x1828A8A0, 0xFF4E00C0 }
+};
+
+/* Kirby and J Kirby use the Crash spin file at offset 0xCC4, Crash uses the file itself. */
+static void **ftRemixCrashNSPSpinFileHead(FTStruct *fp)
+{
+    FTData *crash_data = port_fighter_data(REMIX_ID_CRASH);
+
+    if ((fp->fkind == nFTKindKirby) || (fp->fkind == REMIX_ID_JKIRBY))
+    {
+        sFTRemixCrashNSPSpinKirbyFile = (u8 *)*crash_data->p_file_special2 + CRASH_NSP_KIRBY_SPIN_FILE_OFFSET;
+        return &sFTRemixCrashNSPSpinKirbyFile;
+    }
+    return crash_data->p_file_special2;
+}
+
+/* create_spin_gfx_ (CrashSpecial.asm:862-887) and the tail of Link's original function: creates the attached Spin GFX, NULL when no effect slot is free. */
+static GObj *ftRemixCrashNSPCreateSpinGFX(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    GObj *spin_gobj;
+    DObj *root;
+
+    sFTRemixCrashNSPSpinGfxDesc.file_head = ftRemixCrashNSPSpinFileHead(fp);
+    spin_gobj = efManagerMakeEffectNoForce(&sFTRemixCrashNSPSpinGfxDesc);
+    if (spin_gobj == NULL)
+    {
+        return NULL;
+    }
+    /* The asm jumps back into Link's efManagerLinkSpinAttackMakeEffect (0x80103398) after the creation, which finishes the effect. */
+    efGetStruct(spin_gobj)->fighter_gobj = fighter_gobj;
+    fp->proc_lagstart = ftParamProcPauseEffect;
+    fp->proc_lagend = ftParamProcResumeEffect;
+    root = DObjGetStruct(spin_gobj);
+    root->user_data.p = fp->joints[nFTPartsJointTopN];
+    root->rotate.vec.f.y = (fp->lr == +1) ? F_CLC_DTOR32(30.0F) : F_CLC_DTOR32(210.0F);
+
+    return spin_gobj;
+}
+
+/* setup_spin_gfx_ (CrashSpecial.asm:119-155): marks the fighter as having an attached effect, sets the Spin GFX
+ * primitive and environment colours from the costume table and sizes the effect by the owner multiplier. The
+ * asm also swaps the render routine to the Size one, which the port does once here (see ftremixsizefx2.c). */
+static void ftRemixCrashNSPSetupSpinGFX(FTStruct *fp, GObj *spin_gobj)
+{
+    s32 costume = (fp->costume < CRASH_NSP_SPIN_COSTUME_COUNT) ? fp->costume : 0;
+    const u32 *colours = (fp->fkind == REMIX_ID_CRASH) ? sFTRemixCrashNSPSpinColours[costume]
+                                                        : sFTRemixCrashNSPKirbySpinColours[costume];
+    DObj *top_joint = ((DObj *)spin_gobj->obj)->child;
+    DObj *bottom_joint = top_joint->child;
+
+    fp->is_effect_attach = TRUE;
+    top_joint->mobj->sub.primcolor.pack = colours[0];
+    top_joint->mobj->sub.envcolor.pack = colours[1];
+    bottom_joint->mobj->sub.primcolor.pack = colours[2];
+    bottom_joint->mobj->sub.envcolor.pack = colours[3];
+#ifdef REGION_REMIX
+    ftRemixSizeScaleLinkEffect(fp, spin_gobj);
+#endif
+}
+
+/* Creates the Spin GFX and sets it up when the effect was created (the asm branch on v0 after create_spin_gfx_). */
+static void ftRemixCrashNSPSpawnSpinGFX(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    GObj *spin_gobj = ftRemixCrashNSPCreateSpinGFX(fighter_gobj);
+
+    if (spin_gobj != NULL)
+    {
+        ftRemixCrashNSPSetupSpinGFX(fp, spin_gobj);
+    }
 }
 
 /* REMIX-TODO(Item): spin_detect_item_ (CrashSpecial.asm:264-329) and the item fling in ground_main_ and air_main_
@@ -288,7 +397,7 @@ static void ftRemixCrashNSPGroundInitial(GObj *fighter_gobj)
     ftRemixCrashNSPChangeStatus(fighter_gobj, nFTRemixCrashStatusNSPG, nFTRemixCrashKirbyStatusNSPG, 0.0F,
                                 FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
-    ftRemixCrashNSPCreateSpinGFX(fighter_gobj);
+    ftRemixCrashNSPSpawnSpinGFX(fighter_gobj);
     fp->proc_shield = ftRemixCrashNSPShieldHit;
     fp->physics.vel_air.x *= CRASH_NSP_INITIAL_GROUND_VEL_SCALE;
     fp->motion_vars.flags.flag0 = 0;
@@ -304,7 +413,7 @@ static void ftRemixCrashNSPAirInitial(GObj *fighter_gobj)
     ftRemixCrashNSPChangeStatus(fighter_gobj, nFTRemixCrashStatusNSPA, nFTRemixCrashKirbyStatusNSPA, 0.0F,
                                 FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
-    ftRemixCrashNSPCreateSpinGFX(fighter_gobj);
+    ftRemixCrashNSPSpawnSpinGFX(fighter_gobj);
     fp->proc_shield = ftRemixCrashNSPShieldHit;
     fp->physics.vel_air.x *= CRASH_NSP_INITIAL_AIR_VEL_SCALE;
     fp->motion_vars.flags.flag0 = 0;

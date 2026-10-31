@@ -2,8 +2,9 @@
  * ftremixdamage.c - Smash Remix damage types 7..0xC (.toolchain/pkgs/smashremix-src/src/Damage.asm add_damage_type).
  * The on-hit GFX (extend_on_hit_gfx_, 0x800E3FC4) and on-hit colour animation (extend_on_hit_routines_, 0x80140BCC)
  * jump tables route these ids here; the vanilla ids 0..6 keep the vanilla switches.
- * REMIX-TODO(Damage): the stun, bury and flashbang action changes (stun_damage_action_, stun_electric_action_,
- * prevent_wind_push_while_buried) are not ported: they need the bury, plunge and stun main routines.
+ * The stun, bury and flashbang action changes (stun_damage_action_, stun_electric_action_) are in ftremixdamagestun.c
+ * (ftRemixDamageGotoStunAction, ftRemixDamageUsesElectricStatus). prevent_wind_push_while_buried is in ftparam.c
+ * (ftParamSetVelPush).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
