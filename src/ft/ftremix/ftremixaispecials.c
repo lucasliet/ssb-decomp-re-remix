@@ -52,6 +52,19 @@ sb32 ftRemixAiSpecialsCancelChargeWithZ(FTStruct *fp)
     return TRUE;
 }
 
+/**
+ * improve_remix_specials (AI.asm _bowser): the grounded USP of Bowser and GBowser zeroes the CPU stick X (byte 0x1C8, the
+ * cp stick range), without changing the charge decision.
+ */
+void ftRemixAiSpecialsBowserUspStickReset(FTStruct *fp)
+{
+    if (ftRemixAiSpecialsIsBowserUspGround(fp->status_id) == FALSE)
+    {
+        return;
+    }
+    fp->input.cp.stick_range.x = 0;
+}
+
 /** Opponent is in the always group (Fox-like) or the Ness group (Ness, Lucas, JNess). */
 static sb32 ftRemixAiSpecialsIsAlwaysBlocking(s32 fkind)
 {

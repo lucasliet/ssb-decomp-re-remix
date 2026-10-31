@@ -36,6 +36,9 @@ typedef struct IFRemixComboMeter
  */
 s32 ifRemixComboHitsUpdate(IFRemixComboMeter *meters, s32 victim, s32 hit_count, s32 damage);
 
+/** Meter of a port (0-3) with its combo records, read by the VS stats page. */
+const IFRemixComboMeter *ifRemixComboMeterGetPort(s32 port);
+
 #endif
 
 #endif

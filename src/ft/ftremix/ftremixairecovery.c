@@ -18,6 +18,7 @@
 
 #define FTREMIX_AI_RECOVERY_WOLF_TARGET_Y 4000.0F
 #define FTREMIX_AI_RECOVERY_NO_CHARGE_ACTION -1
+#define FTREMIX_AI_RECOVERY_PRESS_B_COMMAND 0x09
 
 /**
  * Classic mode is the vanilla 1P/RTTF game type (AI.asm reads Global.match_info, GAMEMODE.CLASSIC). See the deviation
@@ -97,12 +98,37 @@ static s32 ftRemixAiRecoveryChargeActionOf(s32 fkind)
 }
 
 /**
+ * fix_remix_recovery (AI.asm, _banjo_flight): on frame 21 of Banjo Flight the CPU presses B. With no ground below it also
+ * sets the PRESS B command and skips the custom recovery. Returns TRUE when the frame is handled that way.
+ */
+static sb32 ftRemixAiRecoveryBanjoFlap(FTStruct *fp)
+{
+    if (ftRemixAiRecoveryIsBanjoFlapFrame(fp->status_id, fp->status_total_tics) == FALSE)
+    {
+        return FALSE;
+    }
+    fp->input.pl.button_tap |= B_BUTTON;
+    if (ftRemixAiRecoveryBanjoNeedsPressB(fp->coll_data.floor_line_id) == FALSE)
+    {
+        return FALSE;
+    }
+    ftComputerSetCommandWaitShort(fp, FTREMIX_AI_RECOVERY_PRESS_B_COMMAND);
+    return TRUE;
+}
+
+/**
  * fix_remix_recovery (AI.asm, the NSP charge cancel): a CPU in its charge action presses Z and skips the walk and the
  * custom recovery of this frame. Returns TRUE when the frame is handled that way.
  */
 sb32 ftRemixAiRecoverySpecialCase(FTStruct *fp)
 {
-    s32 charge_action = ftRemixAiRecoveryChargeActionOf(fp->fkind);
+    s32 charge_action;
+
+    if (fp->fkind == REMIX_ID_BANJO)
+    {
+        return ftRemixAiRecoveryBanjoFlap(fp);
+    }
+    charge_action = ftRemixAiRecoveryChargeActionOf(fp->fkind);
 
     if (ftRemixAiRecoveryIsNspChargeAction(fp->status_id, charge_action) == FALSE)
     {

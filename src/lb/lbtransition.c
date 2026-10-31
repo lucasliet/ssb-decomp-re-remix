@@ -189,9 +189,21 @@ LBTransitionDesc dLBTransitionDescs[/* */] =
         0
     },
 
-    /* REMIX-TODO(results-transition-remix-logo): Transitions.asm adds Smash Logo (file 0x1262, 0x3C80/0x4138) and
-     * Remix Logo (file 0x1366, 0xAB60/0xAF40). Those ids are above RELOC_FILE_COUNT (2132) in the port's reloc
-     * table, so lbRelocGetExternHeapFile cannot load them and they are not appended yet. */
+    // Smash Logo (Remix restored, Transitions.asm: file 1262, offsets 0x3C80/0x4138)
+    {
+        0x1262,
+        0x3C80,
+        0x4138,
+        0
+    },
+
+    // Remix Logo (Remix restored, Transitions.asm: file 1366, offsets 0xAB60/0xAF40)
+    {
+        0x1366,
+        0xAB60,
+        0xAF40,
+        0
+    },
 #endif
 };
 

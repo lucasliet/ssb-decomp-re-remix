@@ -6,7 +6,7 @@
 #include <lb/lbdef.h>
 
 #ifdef REGION_REMIX
-#define LB_TRANSITION_DESC_COUNT 13
+#define LB_TRANSITION_DESC_COUNT 15
 #else
 #define LB_TRANSITION_DESC_COUNT 11
 #endif

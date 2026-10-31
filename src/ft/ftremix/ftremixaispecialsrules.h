@@ -19,6 +19,9 @@ extern int ftRemixAiSpecialsSheikCancels(int action);
 /** TRUE when a Mewtwo action is a shadow ball charge the CPU cancels with Z (AI.asm improve_remix_charged_NSP_1, mewtwo). */
 extern int ftRemixAiSpecialsMewtwoCancels(int action);
 
+/** TRUE when a Bowser or GBowser action is the grounded up special whose stick X the CPU zeroes (AI.asm improve_remix_specials). */
+extern int ftRemixAiSpecialsIsBowserUspGround(int action);
+
 /**
  * TRUE when the Samus NSP is blocked by the opponent: the opponent always blocks it, or it blocks unless the own fighter
  * is Sheik (AI.asm improve_remix_charged_NSP_2).

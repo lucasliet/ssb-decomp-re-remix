@@ -28,6 +28,12 @@ extern int ftRemixAiRecoveryIsWolfUspAction(int action);
 /** TRUE when the CPU is in its NSP charge action of charge_action (a negative charge_action never matches). */
 extern int ftRemixAiRecoveryIsNspChargeAction(int action, int charge_action);
 
+/** TRUE when a Banjo fighter is in Banjo Flight (0xEF) at frame 21, the frame that presses B (fix_remix_recovery). */
+extern int ftRemixAiRecoveryIsBanjoFlapFrame(int action, int frame);
+
+/** TRUE when the clipping below is -1 (no ground), so Banjo presses B by command (fix_remix_recovery, _banjo_flight). */
+extern int ftRemixAiRecoveryBanjoNeedsPressB(int floor_line_id);
+
 /** TRUE when the vanilla Pikachu recovery branch runs: vanilla 1P/RTTF (classic mode) or the improved AI is off. */
 extern int ftRemixAiRecoveryKeepsPikachuVanilla(int is_classic_mode, int improved_ai);
 

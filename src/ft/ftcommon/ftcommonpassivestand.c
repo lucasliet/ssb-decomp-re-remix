@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "mn/mnvsmode/mnremixvsstats.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -11,6 +14,10 @@ void ftCommonPassiveStandSetStatus(GObj *fighter_gobj, s32 status_id)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    /* WallTeching.asm track_successful_roll (0x80144714): every passive stand counts as a successful tech roll */
+    mnRemixVSStatsCountTracker(fp->player, nMNRemixVSStatsTrackerTechSuccess);
+#endif
     if (fp->ga == nMPKineticsAir)
     {
         mpCommonSetFighterGround(fp);

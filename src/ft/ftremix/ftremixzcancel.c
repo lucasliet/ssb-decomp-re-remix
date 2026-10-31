@@ -12,6 +12,7 @@
 #include <ft/fighter.h>
 #include <sys/utils.h>
 #include "ft/ftremix/ftremixaiteching.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -155,8 +156,7 @@ static sb32 ftRemixZCancelPunish(GObj *fighter_gobj)
     return ftRemixZCancelPunishMode(fighter_gobj, mode);
 }
 
-/* ZCancel.asm _z_cancel_opts for a player (the CPU branch needs AI). REMIX-TODO(VsStats): the success and miss counters
- * of the VS stats are not ported. */
+/* ZCancel.asm _z_cancel_opts for a player (the CPU branch needs AI). */
 static s32 ftRemixZCancelResult(FTStruct *fp)
 {
     s32 option = gmRemixToggle(z_cancel_opts);
@@ -238,6 +238,22 @@ static void ftRemixZCancelFailedLanding(GObj *fighter_gobj)
     else ftCommonLandingAirNullSetStatus(fighter_gobj, F_PCT_TO_DEC(fp->motion_vars.flags.flag1));
 }
 
+/* ZCancel.asm _z_cancel_success and _z_cancel_miss: a Disabled setting counts nothing, the asm returns before the
+ * counters. Glide is a miss, as in the asm miss path. */
+static void ftRemixZCancelCountResult(FTStruct *fp, s32 result)
+{
+    if (gmRemixToggle(z_cancel_opts) == FTREMIX_ZCANCEL_OPT_DISABLED)
+    {
+        return;
+    }
+    if (result == FTREMIX_ZCANCEL_RESULT_SUCCESS)
+    {
+        mnRemixVSStatsCountTracker(fp->player, nMNRemixVSStatsTrackerZCancelSuccess);
+        return;
+    }
+    mnRemixVSStatsCountTracker(fp->player, nMNRemixVSStatsTrackerZCancelMiss);
+}
+
 /* ZCancel.asm _z_cancel_opts and _cruel_z_cancel: the landing of an aerial attack, called by ftCommonAttackAirProcMap when
  * the fighter lands. Auto Z-cancel (port enhancement) turns every miss into a normal landing. */
 void ftRemixZCancelAttackAirLanding(GObj *fighter_gobj)
@@ -251,6 +267,7 @@ void ftRemixZCancelAttackAirLanding(GObj *fighter_gobj)
         return;
     }
     result = ftRemixZCancelResult(fp);
+    ftRemixZCancelCountResult(fp, result);
     if ((result == FTREMIX_ZCANCEL_RESULT_SUCCESS) || port_enhancement_IsAutoZCancelEnabled())
     {
         ftRemixZCancelNormalLanding(fighter_gobj);

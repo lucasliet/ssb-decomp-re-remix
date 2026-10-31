@@ -3,6 +3,7 @@
 #include "gm/gmremixcolscripts.h"
 #include "gm/gmremixtoggle.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
 #endif
 #include <string.h>
 #include <ft/fighter.h>
@@ -1843,6 +1844,10 @@ void ftParamUpdateDamage(FTStruct *fp, s32 damage)
     {
         fp->percent_damage = 999;
     }
+#ifdef REGION_REMIX
+    /* VsStats.asm collect_stats_midmatch (run_collect_): highest current damage, recorded after the damage update */
+    mnRemixVSStatsRecordPercent(fp->player, fp->percent_damage);
+#endif
     gSCManagerBattleState->players[fp->player].stock_damage_all = fp->percent_damage;
 
     if (fp->item_gobj != NULL)

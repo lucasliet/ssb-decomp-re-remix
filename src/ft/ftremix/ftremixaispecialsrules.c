@@ -12,6 +12,7 @@
 #define FTREMIX_AI_SPECIALS_MTWO_SHADOW_CHARGE_AIR 0x0E2
 #define FTREMIX_AI_SPECIALS_KIRBY_SHADOW_CHARGE 0x14B
 #define FTREMIX_AI_SPECIALS_KIRBY_SHADOW_CHARGE_AIR 0x14E
+#define FTREMIX_AI_SPECIALS_BOWSER_USP_GROUND 0x0DE
 
 /** The asm checks DSamusNSPChargeAir twice; the second check is a copy of the first and changes nothing. */
 int ftRemixAiSpecialsDSamusCancels(int action)
@@ -32,6 +33,12 @@ int ftRemixAiSpecialsMewtwoCancels(int action)
 {
     return (action == FTREMIX_AI_SPECIALS_CHARGE_DF) || (action == FTREMIX_AI_SPECIALS_MTWO_SHADOW_CHARGE_AIR) ||
            (action == FTREMIX_AI_SPECIALS_KIRBY_SHADOW_CHARGE) || (action == FTREMIX_AI_SPECIALS_KIRBY_SHADOW_CHARGE_AIR);
+}
+
+/** Bowser and GBowser grounded up special (Bowser.Action.USPGround 0xDE): the stick X is zeroed (AI.asm improve_remix_specials). */
+int ftRemixAiSpecialsIsBowserUspGround(int action)
+{
+    return action == FTREMIX_AI_SPECIALS_BOWSER_USP_GROUND;
 }
 
 /** Opponent blocks: the always group, or the Ness group unless the own fighter is Sheik. */

@@ -14,6 +14,7 @@
 #include <gm/gmremixtoggle.h>
 #include <mp/mpcommon.h>
 #include "ft/ftremix/ftremixhooks.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
 
 /* WallTeching.asm 0x80141C04 hook: the update, physics and map routines of the tech, the interrupt routine is removed */
 static void ftRemixWallTechSetRoutines(FTStruct *fp)
@@ -36,7 +37,7 @@ sb32 ftRemixWallTechTryStart(GObj *fighter_gobj)
     }
     if (fp->tics_since_last_z >= FTCOMMON_PASSIVE_BUFFER_TICS_MAX)
     {
-        /* REMIX-TODO(VsStats): the tech_miss_tracker counter of the VS stats is not ported. */
+        mnRemixVSStatsCountTracker(fp->player, nMNRemixVSStatsTrackerTechMiss);
         return FALSE;
     }
     fp->physics.vel_damage_air.x = 0.0F;
@@ -45,7 +46,7 @@ sb32 ftRemixWallTechTryStart(GObj *fighter_gobj)
     ftMainSetStatus(fighter_gobj, nFTCommonStatusPassive, 0.0F, 2.0F, FTSTATUS_PRESERVE_NONE);
     ftRemixWallTechSetRoutines(fp);
 
-    /* REMIX-TODO(VsStats): the tech_success_tracker counter of the VS stats is not ported. */
+    mnRemixVSStatsCountTracker(fp->player, nMNRemixVSStatsTrackerTechSuccess);
     return TRUE;
 }
 

@@ -6,6 +6,8 @@
 #include "ft/ftcomputer.h"
 #include "ft/ftremix/ftremixailv10rules.h"
 #include "ft/ftremix/ftremixaipostprocess.h"
+#include "ft/ftremix/ftremixaipostsheik.h"
+#include "remix/remix_roster_data.h"
 
 /**
  * Tells if the CPU is about to run the given input script: the command pointer is compared with the script of the id,
@@ -82,6 +84,23 @@ static void ftRemixAiLv10CustomUsp(FTStruct *fp)
 }
 
 /**
+ * Per-fighter entries of Character.cpu_post_process (AI.asm 3867-3878), keyed by fkind. Only Sheik is ported.
+ * REMIX-TODO(AI): the other entries are not ported: Falco and Fox/JFox (Falco/AI/Attacks.asm, foxshared.asm), Captain
+ * Falcon/JFalcon (captainshared.asm), Link family (linkshared.asm), DK/JDK (dkshared.asm), Bowser, GBowser (Bowser/AI,
+ * GBowser/AI), Wario, Marth, Dedede, Wolf, Ganondorf, Mewtwo, Roy, Marina, DragonKing, Jigglypuff and Kirby families
+ * (jigglypuffkirbyshared.asm), Pikachu family (pikashared.asm:144), Yoshi/JYoshi (yoshishared.asm).
+ */
+static void ftRemixAiPostProcessFighter(FTStruct *fp)
+{
+    switch (fp->fkind)
+    {
+    case REMIX_ID_SHEIK:
+        ftRemixAiPostProcessSheik(fp);
+        break;
+    }
+}
+
+/**
  * Runs the generic sub-behaviours of cpu_post_process (AI.asm) for one CPU, in the asm order.
  */
 void ftRemixAiPostProcess(FTStruct *fp)
@@ -93,13 +112,7 @@ void ftRemixAiPostProcess(FTStruct *fp)
         ftRemixAiJumpCancelDashCommand(fp);
         ftRemixAiLv10CustomUsp(fp);
     }
-    /*
-     * REMIX-TODO(AI): the per-fighter cpu_post_process table (Character.cpu_post_process.table, AI.asm 3867-3878) is not
-     * ported. Fighters with an entry: Falco and Fox/JFox (Falco/AI/Attacks.asm, foxshared.asm), Captain Falcon/JFalcon
-     * (captainshared.asm), Link family (linkshared.asm), DK/JDK (dkshared.asm), Bowser, GBowser, Wario, Marth, Dedede,
-     * Wolf, Ganondorf, Mewtwo, Roy, Marina, Sheik (Sheik/AI/Attacks.asm: teleport steering), DragonKing, Jigglypuff and
-     * Kirby families (jigglypuffkirbyshared.asm), Pikachu family (pikashared.asm), Yoshi/JYoshi (yoshishared.asm).
-     */
+    ftRemixAiPostProcessFighter(fp);
 }
 
 #endif

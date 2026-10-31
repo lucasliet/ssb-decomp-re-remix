@@ -25,6 +25,7 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixtwelvecbhud.h"
+#include "mn/mnvsmode/mnremixvsstatsview.h"
 #endif
 
 // // // // // // // // // // // //
@@ -3408,6 +3409,7 @@ void mnVSResultsFuncRun(GObj *gobj)
 	sMNVSResultsTotalTimeTics++;
 #if defined(PORT) && defined(REGION_REMIX)
 	gmRemixTwelveCBHudDrawResults();
+	mnRemixVSStatsViewRun(sMNVSResultsTotalTimeTics, sMNVSResultsAllowExitWait);
 #endif
 
 	if (sMNVSResultsTotalTimeTics == sMNVSResultsDrawWallpaperTic)
@@ -3500,6 +3502,10 @@ void mnVSResultsFuncStart(void)
 {
 	LBRelocSetup rl_setup;
 	s32 i;
+
+#if defined(PORT) && defined(REGION_REMIX)
+	mnRemixVSStatsViewSetup();
+#endif
 
 #ifdef PORT
 	/* Issue #103: sMNVSResultsFighterGObjs and sMNVSResultsFigatreeHeaps are

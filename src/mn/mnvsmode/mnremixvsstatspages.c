@@ -1,0 +1,476 @@
+/*
+ * mnremixvsstatspages.c - layout of the two VS match stats pages (VsStats.asm setup_ page 1 and page 2, draw_line_,
+ * draw_underline_, draw_port_headers_). A row is one overlay label: the label, then one cell per active port. The overlay
+ * text is centred, so the cells are spaced by characters and line up only approximately with the asm right-aligned cells.
+ */
+
+#if defined(PORT) && defined(REGION_REMIX)
+
+#include <string.h>
+#include <ssb_types.h>
+#include <ft/fighter.h>
+#include <sc/scmanager.h>
+#include "gm/gmremixtoggle.h"
+#include "if/ifremixcombometer.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
+#include "mn/mnvsmode/mnremixvsstatspages.h"
+#include "remix/remix_hud_text.h"
+
+#define MNVSSTATS_PAGES_TEXT_SLOT_FIRST 4
+#define MNVSSTATS_PAGES_BAR_SLOT_BACKGROUND 0
+#define MNVSSTATS_PAGES_BAR_SLOT_FIRST 1
+#define MNVSSTATS_PAGES_FIRST_Y 30
+#define MNVSSTATS_PAGES_LINE_STEP 11
+#define MNVSSTATS_PAGES_GROUP_GAP 5
+#define MNVSSTATS_PAGES_UNDERLINE_ADJUST 1
+#define MNVSSTATS_PAGES_UNDERLINE_AFTER 3
+#define MNVSSTATS_PAGES_UNDERLINE_X 24.0F
+#define MNVSSTATS_PAGES_UNDERLINE_HEIGHT 1.0F
+#define MNVSSTATS_PAGES_UNDERLINE_RGBA 0xFFFFFFFF
+#define MNVSSTATS_PAGES_UNDERLINE_DAMAGE 75
+#define MNVSSTATS_PAGES_UNDERLINE_COMBO 68
+#define MNVSSTATS_PAGES_UNDERLINE_ZCANCEL 80
+#define MNVSSTATS_PAGES_UNDERLINE_TECH 58
+#define MNVSSTATS_PAGES_UNDERLINE_LEDGE 65
+#define MNVSSTATS_PAGES_UNDERLINE_SPECIAL 105
+#define MNVSSTATS_PAGES_STRIPE_X 23.0F
+#define MNVSSTATS_PAGES_STRIPE_WIDTH 266.0F
+#define MNVSSTATS_PAGES_STRIPE_HEIGHT 10.0F
+#define MNVSSTATS_PAGES_STRIPE_RGBA 0x40407040
+#define MNVSSTATS_PAGES_BACKGROUND_X 10.0F
+#define MNVSSTATS_PAGES_BACKGROUND_Y 10.0F
+#define MNVSSTATS_PAGES_BACKGROUND_WIDTH 300.0F
+#define MNVSSTATS_PAGES_BACKGROUND_HEIGHT 220.0F
+#define MNVSSTATS_PAGES_BACKGROUND_RGBA 0x000000B0
+#define MNVSSTATS_PAGES_CENTER_X 160.0F
+#define MNVSSTATS_PAGES_PORT_HEADER_X 208.0F
+#define MNVSSTATS_PAGES_PORT_HEADER_Y 20.0F
+#define MNVSSTATS_PAGES_TEXT_HEIGHT 8.0F
+#define MNVSSTATS_PAGES_TEXT_HALF_HEIGHT 4.0F
+#define MNVSSTATS_PAGES_WHITE 0xFFFFFFFF
+#define MNVSSTATS_PAGES_CELL_WIDTH 6
+#define MNVSSTATS_PAGES_INDENT 8
+#define MNVSSTATS_PAGES_NO_PORT (-1)
+#define MNVSSTATS_PAGES_DASH "-"
+#define MNVSSTATS_PAGES_NUMBER_LENGTH 12
+
+/* VsStats.asm p1..p4 row labels */
+static const char *const dMNVSStatsPagesPortNames[MN_REMIX_VS_STATS_PORT_COUNT] =
+{
+    "1P", "2P", "3P", "4P"
+};
+
+typedef struct MNRemixVSStatsCursor
+{
+    s32 y;
+    s32 text_slot;
+    s32 bar_slot;
+    sb32 stripe_on;
+} MNRemixVSStatsCursor;
+
+typedef enum MNRemixVSStatsValue
+{
+    nMNRemixVSStatsValueNone,
+    nMNRemixVSStatsValueDealtTo,
+    nMNRemixVSStatsValueTotalDealt,
+    nMNRemixVSStatsValueTotalTaken,
+    nMNRemixVSStatsValueHighestTaken,
+    nMNRemixVSStatsValueComboVS,
+    nMNRemixVSStatsValueMaxHitsTaken,
+    nMNRemixVSStatsValueMaxDamageTaken,
+    nMNRemixVSStatsValueZCancelPercent,
+    nMNRemixVSStatsValueZCancelSuccess,
+    nMNRemixVSStatsValueZCancelMiss,
+    nMNRemixVSStatsValueTechPercent,
+    nMNRemixVSStatsValueTechSuccess,
+    nMNRemixVSStatsValueTechMiss,
+    nMNRemixVSStatsValueLedgeGrabs,
+    nMNRemixVSStatsValueUpSpecial,
+    nMNRemixVSStatsValueNeutralSpecial,
+    nMNRemixVSStatsValueDownSpecial
+} MNRemixVSStatsValue;
+
+/* row: the port of a per-port row, or -1. dash: the column drawn as "-", or -1. ignore_port: the row is skipped unless this
+ * port is active, or -1. */
+typedef struct MNRemixVSStatsRow
+{
+    const char *label;
+    s32 indent;
+    MNRemixVSStatsValue value;
+    s32 row;
+    s32 dash;
+    s32 ignore_port;
+} MNRemixVSStatsRow;
+
+/** TRUE when the port has a fighter in the match (the asm port_check: a man or a CPU). */
+static sb32 mnRemixVSStatsPagesIsPortActive(s32 port)
+{
+    return gSCManagerTransferBattleState.players[port].pkind != nFTPlayerKindNot;
+}
+
+/**
+ * Value of a row cell. For the damage table row is the victim port and column the attacker port, for the combo table row
+ * is the victim as well; the other rows ignore row.
+ */
+static s32 mnRemixVSStatsPagesGetValue(MNRemixVSStatsValue value, s32 row, s32 column)
+{
+    const IFRemixComboMeter *meter = ifRemixComboMeterGetPort(column);
+
+    switch (value)
+    {
+    case nMNRemixVSStatsValueDealtTo:
+        return gSCManagerTransferBattleState.players[row].total_damage_players[column];
+    case nMNRemixVSStatsValueTotalDealt:
+        return gSCManagerTransferBattleState.players[column].total_damage_given;
+    case nMNRemixVSStatsValueTotalTaken:
+        return gSCManagerTransferBattleState.players[column].total_damage_all;
+    case nMNRemixVSStatsValueHighestTaken:
+        return mnRemixVSStatsGetHighestPercent(column);
+    case nMNRemixVSStatsValueComboVS:
+        return meter->highest_combo_vs[row];
+    case nMNRemixVSStatsValueMaxHitsTaken:
+        return meter->max_combo_hits;
+    case nMNRemixVSStatsValueMaxDamageTaken:
+        return meter->max_combo_damage;
+    case nMNRemixVSStatsValueZCancelPercent:
+        return mnRemixVSStatsGetTrackerPercent(column, nMNRemixVSStatsTrackerZCancelSuccess, nMNRemixVSStatsTrackerZCancelMiss);
+    case nMNRemixVSStatsValueZCancelSuccess:
+        return mnRemixVSStatsGetTracker(column, nMNRemixVSStatsTrackerZCancelSuccess);
+    case nMNRemixVSStatsValueZCancelMiss:
+        return mnRemixVSStatsGetTracker(column, nMNRemixVSStatsTrackerZCancelMiss);
+    case nMNRemixVSStatsValueTechPercent:
+        return mnRemixVSStatsGetTrackerPercent(column, nMNRemixVSStatsTrackerTechSuccess, nMNRemixVSStatsTrackerTechMiss);
+    case nMNRemixVSStatsValueTechSuccess:
+        return mnRemixVSStatsGetTracker(column, nMNRemixVSStatsTrackerTechSuccess);
+    case nMNRemixVSStatsValueTechMiss:
+        return mnRemixVSStatsGetTracker(column, nMNRemixVSStatsTrackerTechMiss);
+    case nMNRemixVSStatsValueLedgeGrabs:
+        return mnRemixVSStatsGetTracker(column, nMNRemixVSStatsTrackerLedgeGrab);
+    case nMNRemixVSStatsValueUpSpecial:
+        return mnRemixVSStatsGetSpecialCount(column, nMNRemixVSStatsSpecialUp);
+    case nMNRemixVSStatsValueNeutralSpecial:
+        return mnRemixVSStatsGetSpecialCount(column, nMNRemixVSStatsSpecialNeutral);
+    case nMNRemixVSStatsValueDownSpecial:
+        return mnRemixVSStatsGetSpecialCount(column, nMNRemixVSStatsSpecialDown);
+    default:
+        return 0;
+    }
+}
+
+/** Row of a per-port table: the label is the port name, the victim row is the port itself (the asm p1..p4 rows). */
+static MNRemixVSStatsRow mnRemixVSStatsPagesPortRow(s32 port, MNRemixVSStatsValue value)
+{
+    MNRemixVSStatsRow row;
+
+    row.label = dMNVSStatsPagesPortNames[port];
+    row.indent = MNVSSTATS_PAGES_INDENT;
+    row.value = value;
+    row.row = port;
+    row.dash = port;
+    row.ignore_port = port;
+    return row;
+}
+
+/** Row with one value per active port and no per-port meaning. */
+static MNRemixVSStatsRow mnRemixVSStatsPagesStatRow(const char *label, s32 indent, MNRemixVSStatsValue value)
+{
+    MNRemixVSStatsRow row;
+
+    row.label = label;
+    row.indent = indent;
+    row.value = value;
+    row.row = MNVSSTATS_PAGES_NO_PORT;
+    row.dash = MNVSSTATS_PAGES_NO_PORT;
+    row.ignore_port = MNVSSTATS_PAGES_NO_PORT;
+    return row;
+}
+
+/** Appends src to text from index used, cut at the overlay text length. Returns the new length. */
+static s32 mnRemixVSStatsPagesAppend(char *text, s32 used, const char *src)
+{
+    while ((*src != '\0') && (used < REMIX_HUD_TEXT_LENGTH - 1))
+    {
+        text[used++] = *src++;
+    }
+    text[used] = '\0';
+    return used;
+}
+
+/** Appends spaces to text from index used, up to count of them. Returns the new length. */
+static s32 mnRemixVSStatsPagesAppendSpaces(char *text, s32 used, s32 count)
+{
+    while ((count > 0) && (used < REMIX_HUD_TEXT_LENGTH - 1))
+    {
+        text[used++] = ' ';
+        count--;
+    }
+    text[used] = '\0';
+    return used;
+}
+
+/** Appends a cell right aligned in MNVSSTATS_PAGES_CELL_WIDTH characters. Returns the new length. */
+static s32 mnRemixVSStatsPagesAppendCell(char *text, s32 used, const char *cell)
+{
+    used = mnRemixVSStatsPagesAppendSpaces(text, used, MNVSSTATS_PAGES_CELL_WIDTH - (s32)strlen(cell));
+    return mnRemixVSStatsPagesAppend(text, used, cell);
+}
+
+/** Writes a decimal number, with a leading minus for a negative value, into out. */
+static void mnRemixVSStatsPagesFormatNumber(char *out, s32 value)
+{
+    char digits[MNVSSTATS_PAGES_NUMBER_LENGTH];
+    s32 count = 0;
+    s32 length = 0;
+    u32 magnitude = (value < 0) ? (u32)(-value) : (u32)value;
+
+    do
+    {
+        digits[count++] = (char)('0' + (magnitude % 10));
+        magnitude /= 10;
+    } while (magnitude != 0);
+
+    if (value < 0)
+    {
+        out[length++] = '-';
+    }
+    while (count > 0)
+    {
+        out[length++] = digits[--count];
+    }
+    out[length] = '\0';
+}
+
+/** Writes the label and the cells of the active ports into text, cut at the overlay text length. */
+static void mnRemixVSStatsPagesFormatRow(char *text, const MNRemixVSStatsRow *row)
+{
+    char number[MNVSSTATS_PAGES_NUMBER_LENGTH];
+    s32 column;
+    s32 used = mnRemixVSStatsPagesAppendSpaces(text, 0, row->indent);
+
+    used = mnRemixVSStatsPagesAppend(text, used, row->label);
+    for (column = 0; column < MN_REMIX_VS_STATS_PORT_COUNT; column++)
+    {
+        if (!mnRemixVSStatsPagesIsPortActive(column))
+        {
+            continue;
+        }
+        if (column == row->dash)
+        {
+            used = mnRemixVSStatsPagesAppendCell(text, used, MNVSSTATS_PAGES_DASH);
+            continue;
+        }
+        mnRemixVSStatsPagesFormatNumber(number, mnRemixVSStatsPagesGetValue(row->value, row->row, column));
+        used = mnRemixVSStatsPagesAppendCell(text, used, number);
+    }
+}
+
+/** Draws one label at the cursor slot. The overlay keeps it for the frame it was put in and the next one. */
+static void mnRemixVSStatsPagesPutText(MNRemixVSStatsCursor *cursor, const char *text, f32 x)
+{
+    remix_hud_text_put(cursor->text_slot, text, x, (f32)(cursor->y + MNVSSTATS_PAGES_TEXT_HALF_HEIGHT),
+                       MNVSSTATS_PAGES_WHITE, MNVSSTATS_PAGES_TEXT_HEIGHT);
+    cursor->text_slot++;
+}
+
+/** Striped background of every second row that has values (asm draw_line_ stripe_on flip). */
+static void mnRemixVSStatsPagesStripeRow(MNRemixVSStatsCursor *cursor)
+{
+    if (cursor->stripe_on)
+    {
+        remix_hud_bar_put(cursor->bar_slot, MNVSSTATS_PAGES_STRIPE_X, (f32)cursor->y, MNVSSTATS_PAGES_STRIPE_WIDTH,
+                          MNVSSTATS_PAGES_STRIPE_HEIGHT, 1.0F, MNVSSTATS_PAGES_STRIPE_RGBA, 0.0F);
+        cursor->bar_slot++;
+    }
+    cursor->stripe_on = !cursor->stripe_on;
+}
+
+/** Draws a row. A row whose ignore port is inactive is skipped without moving the cursor, as in the asm. */
+static void mnRemixVSStatsPagesDrawRow(MNRemixVSStatsCursor *cursor, const MNRemixVSStatsRow *row)
+{
+    char text[REMIX_HUD_TEXT_LENGTH];
+
+    if ((row->ignore_port != MNVSSTATS_PAGES_NO_PORT) && !mnRemixVSStatsPagesIsPortActive(row->ignore_port))
+    {
+        return;
+    }
+    if (row->value != nMNRemixVSStatsValueNone)
+    {
+        mnRemixVSStatsPagesStripeRow(cursor);
+    }
+    mnRemixVSStatsPagesFormatRow(text, row);
+    mnRemixVSStatsPagesPutText(cursor, text, MNVSSTATS_PAGES_CENTER_X);
+    cursor->y += MNVSSTATS_PAGES_LINE_STEP;
+}
+
+/** Draws a label-only header line (asm draw_header). */
+static void mnRemixVSStatsPagesDrawHeader(MNRemixVSStatsCursor *cursor, const char *label)
+{
+    mnRemixVSStatsPagesPutText(cursor, label, MNVSSTATS_PAGES_CENTER_X);
+    cursor->y += MNVSSTATS_PAGES_LINE_STEP;
+}
+
+/** Draws the white underline of a header (asm draw_underline_ with the y adjustment of the page setup). */
+static void mnRemixVSStatsPagesDrawUnderline(MNRemixVSStatsCursor *cursor, s32 width)
+{
+    cursor->y -= MNVSSTATS_PAGES_UNDERLINE_ADJUST;
+    remix_hud_bar_put(cursor->bar_slot, MNVSSTATS_PAGES_UNDERLINE_X, (f32)cursor->y, (f32)width,
+                      MNVSSTATS_PAGES_UNDERLINE_HEIGHT, 1.0F, MNVSSTATS_PAGES_UNDERLINE_RGBA, 0.0F);
+    cursor->bar_slot++;
+    cursor->y += MNVSSTATS_PAGES_UNDERLINE_AFTER;
+}
+
+/** Space between two sections (the asm "adjust y for cleaner spacing"). */
+static void mnRemixVSStatsPagesDrawGap(MNRemixVSStatsCursor *cursor)
+{
+    cursor->y += MNVSSTATS_PAGES_GROUP_GAP;
+}
+
+/** Draws the 1P to 4P headers of the active ports above the page (asm draw_port_headers_). */
+static void mnRemixVSStatsPagesDrawPortHeader(MNRemixVSStatsCursor *cursor)
+{
+    char text[REMIX_HUD_TEXT_LENGTH];
+    s32 column;
+    s32 used = 0;
+
+    text[0] = '\0';
+    for (column = 0; column < MN_REMIX_VS_STATS_PORT_COUNT; column++)
+    {
+        if (mnRemixVSStatsPagesIsPortActive(column))
+        {
+            used = mnRemixVSStatsPagesAppendCell(text, used, dMNVSStatsPagesPortNames[column]);
+        }
+    }
+    remix_hud_text_put(cursor->text_slot, text, MNVSSTATS_PAGES_PORT_HEADER_X, MNVSSTATS_PAGES_PORT_HEADER_Y,
+                       MNVSSTATS_PAGES_WHITE, MNVSSTATS_PAGES_TEXT_HEIGHT);
+    cursor->text_slot++;
+}
+
+/** Draws the victim rows of the damage table, one per port (asm draw_row p1..p4). */
+static void mnRemixVSStatsPagesDrawDealtRows(MNRemixVSStatsCursor *cursor)
+{
+    s32 port;
+
+    for (port = 0; port < MN_REMIX_VS_STATS_PORT_COUNT; port++)
+    {
+        MNRemixVSStatsRow row = mnRemixVSStatsPagesPortRow(port, nMNRemixVSStatsValueDealtTo);
+
+        mnRemixVSStatsPagesDrawRow(cursor, &row);
+    }
+}
+
+/** Draws the per-port rows of a combo table (asm draw_row with ComboMeter.combo_struct_p1). */
+static void mnRemixVSStatsPagesDrawPortRows(MNRemixVSStatsCursor *cursor, MNRemixVSStatsValue value)
+{
+    s32 port;
+
+    for (port = 0; port < MN_REMIX_VS_STATS_PORT_COUNT; port++)
+    {
+        MNRemixVSStatsRow row = mnRemixVSStatsPagesPortRow(port, value);
+
+        mnRemixVSStatsPagesDrawRow(cursor, &row);
+    }
+}
+
+/** Page 1 damage section: dealt to each port, total given, total taken and highest taken. */
+static void mnRemixVSStatsPagesDrawDamage(MNRemixVSStatsCursor *cursor)
+{
+    MNRemixVSStatsRow total_dealt = mnRemixVSStatsPagesStatRow("Total Dealt", 0, nMNRemixVSStatsValueTotalDealt);
+    MNRemixVSStatsRow total_taken = mnRemixVSStatsPagesStatRow("Total Taken", 0, nMNRemixVSStatsValueTotalTaken);
+    MNRemixVSStatsRow highest = mnRemixVSStatsPagesStatRow("Highest Taken", 0, nMNRemixVSStatsValueHighestTaken);
+
+    mnRemixVSStatsPagesDrawHeader(cursor, "Damage Stats");
+    mnRemixVSStatsPagesDrawUnderline(cursor, MNVSSTATS_PAGES_UNDERLINE_DAMAGE);
+    mnRemixVSStatsPagesDrawHeader(cursor, "Dealt to");
+    mnRemixVSStatsPagesDrawDealtRows(cursor);
+    mnRemixVSStatsPagesDrawRow(cursor, &total_dealt);
+    mnRemixVSStatsPagesDrawRow(cursor, &total_taken);
+    mnRemixVSStatsPagesDrawRow(cursor, &highest);
+}
+
+/** Page 1 combo section, only when the combo meter setting is on (asm _combo_stats_on_check). */
+static void mnRemixVSStatsPagesDrawCombo(MNRemixVSStatsCursor *cursor)
+{
+    MNRemixVSStatsRow max_hits = mnRemixVSStatsPagesStatRow("Max Hits Taken", 0, nMNRemixVSStatsValueMaxHitsTaken);
+    MNRemixVSStatsRow max_damage = mnRemixVSStatsPagesStatRow("Max Damage Taken", 0, nMNRemixVSStatsValueMaxDamageTaken);
+
+    mnRemixVSStatsPagesDrawGap(cursor);
+    mnRemixVSStatsPagesDrawHeader(cursor, "Combo Stats");
+    mnRemixVSStatsPagesDrawUnderline(cursor, MNVSSTATS_PAGES_UNDERLINE_COMBO);
+    mnRemixVSStatsPagesDrawHeader(cursor, "Longest Combo VS");
+    mnRemixVSStatsPagesDrawPortRows(cursor, nMNRemixVSStatsValueComboVS);
+    mnRemixVSStatsPagesDrawRow(cursor, &max_hits);
+    mnRemixVSStatsPagesDrawRow(cursor, &max_damage);
+}
+
+/** Page 1: damage stats, then combo stats when the combo meter is on. */
+static void mnRemixVSStatsPagesDrawPageOne(MNRemixVSStatsCursor *cursor)
+{
+    mnRemixVSStatsPagesDrawDamage(cursor);
+    if (gmRemixToggle(combo_meter) != FALSE)
+    {
+        mnRemixVSStatsPagesDrawCombo(cursor);
+    }
+}
+
+/** Page 2: Z-cancel, tech, ledge and special move stats (asm page 2 of setup_). */
+static void mnRemixVSStatsPagesDrawPageTwo(MNRemixVSStatsCursor *cursor)
+{
+    MNRemixVSStatsRow zcancel_percent = mnRemixVSStatsPagesStatRow("Success %", 0, nMNRemixVSStatsValueZCancelPercent);
+    MNRemixVSStatsRow zcancel_success = mnRemixVSStatsPagesStatRow("Successful", 8, nMNRemixVSStatsValueZCancelSuccess);
+    MNRemixVSStatsRow zcancel_miss = mnRemixVSStatsPagesStatRow("Missed", 8, nMNRemixVSStatsValueZCancelMiss);
+    MNRemixVSStatsRow tech_percent = mnRemixVSStatsPagesStatRow("Success %", 0, nMNRemixVSStatsValueTechPercent);
+    MNRemixVSStatsRow tech_success = mnRemixVSStatsPagesStatRow("Successful", 8, nMNRemixVSStatsValueTechSuccess);
+    MNRemixVSStatsRow tech_miss = mnRemixVSStatsPagesStatRow("Missed", 8, nMNRemixVSStatsValueTechMiss);
+    MNRemixVSStatsRow grabbed = mnRemixVSStatsPagesStatRow("Times grabbed", 0, nMNRemixVSStatsValueLedgeGrabs);
+    MNRemixVSStatsRow up = mnRemixVSStatsPagesStatRow("Up Specials used", 0, nMNRemixVSStatsValueUpSpecial);
+    MNRemixVSStatsRow neutral = mnRemixVSStatsPagesStatRow("Neutral Specials used", 0, nMNRemixVSStatsValueNeutralSpecial);
+    MNRemixVSStatsRow down = mnRemixVSStatsPagesStatRow("Down Specials used", 0, nMNRemixVSStatsValueDownSpecial);
+
+    mnRemixVSStatsPagesDrawHeader(cursor, "Z-Cancel Stats");
+    mnRemixVSStatsPagesDrawUnderline(cursor, MNVSSTATS_PAGES_UNDERLINE_ZCANCEL);
+    mnRemixVSStatsPagesDrawRow(cursor, &zcancel_percent);
+    mnRemixVSStatsPagesDrawRow(cursor, &zcancel_success);
+    mnRemixVSStatsPagesDrawRow(cursor, &zcancel_miss);
+
+    mnRemixVSStatsPagesDrawGap(cursor);
+    mnRemixVSStatsPagesDrawHeader(cursor, "Tech Stats");
+    mnRemixVSStatsPagesDrawUnderline(cursor, MNVSSTATS_PAGES_UNDERLINE_TECH);
+    mnRemixVSStatsPagesDrawRow(cursor, &tech_percent);
+    mnRemixVSStatsPagesDrawRow(cursor, &tech_success);
+    mnRemixVSStatsPagesDrawRow(cursor, &tech_miss);
+
+    mnRemixVSStatsPagesDrawGap(cursor);
+    mnRemixVSStatsPagesDrawHeader(cursor, "Ledge Stats");
+    mnRemixVSStatsPagesDrawUnderline(cursor, MNVSSTATS_PAGES_UNDERLINE_LEDGE);
+    mnRemixVSStatsPagesDrawRow(cursor, &grabbed);
+
+    mnRemixVSStatsPagesDrawGap(cursor);
+    mnRemixVSStatsPagesDrawHeader(cursor, "Special Move Stats");
+    mnRemixVSStatsPagesDrawUnderline(cursor, MNVSSTATS_PAGES_UNDERLINE_SPECIAL);
+    mnRemixVSStatsPagesDrawRow(cursor, &up);
+    mnRemixVSStatsPagesDrawRow(cursor, &neutral);
+    mnRemixVSStatsPagesDrawRow(cursor, &down);
+}
+
+void mnRemixVSStatsPagesDraw(s32 page)
+{
+    MNRemixVSStatsCursor cursor;
+
+    cursor.y = MNVSSTATS_PAGES_FIRST_Y;
+    cursor.text_slot = MNVSSTATS_PAGES_TEXT_SLOT_FIRST;
+    cursor.bar_slot = MNVSSTATS_PAGES_BAR_SLOT_FIRST;
+    cursor.stripe_on = FALSE;
+
+    remix_hud_bar_put(MNVSSTATS_PAGES_BAR_SLOT_BACKGROUND, MNVSSTATS_PAGES_BACKGROUND_X, MNVSSTATS_PAGES_BACKGROUND_Y,
+                      MNVSSTATS_PAGES_BACKGROUND_WIDTH, MNVSSTATS_PAGES_BACKGROUND_HEIGHT, 1.0F,
+                      MNVSSTATS_PAGES_BACKGROUND_RGBA, 0.0F);
+    mnRemixVSStatsPagesDrawPortHeader(&cursor);
+    if (page == 0)
+    {
+        mnRemixVSStatsPagesDrawPageOne(&cursor);
+        return;
+    }
+    mnRemixVSStatsPagesDrawPageTwo(&cursor);
+}
+
+#endif

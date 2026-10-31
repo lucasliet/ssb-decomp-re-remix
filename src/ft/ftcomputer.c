@@ -6074,6 +6074,13 @@ sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
         }
         break;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_BOWSER:
+    case REMIX_ID_GBOWSER:
+        ftRemixAiSpecialsBowserUspStickReset(fp);
+        break;
+#endif
+
     case nFTKindSamus:
 #if defined(PORT) && defined(REGION_REMIX)
     case REMIX_ID_MTWO:
@@ -6081,8 +6088,9 @@ sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
     case REMIX_ID_ESAMUS:
     case REMIX_ID_JSAMUS:
 #endif
-        /* REMIX-TODO(AI): improve_remix_specials (AI.asm) also gives Sheik and Peppy needle or revolver charges (the
-         * Samus B press when needle ammo is below 6) and Bowser and GBowser the stick reset in USP. Not ported yet. */
+        /* REMIX-TODO(AI): improve_remix_specials (AI.asm 0x80136B3C and 0x80136BF8 exits) also gives Sheik and Peppy needle
+         * or revolver charges (the Samus B press when needle ammo is below 6). Not ported: the two vanilla exits are not
+         * mapped to lines of this function. */
         if
         (
             (fp->status_id != nFTSamusStatusSpecialNStart)     &&

@@ -2,6 +2,10 @@
 
 #include "ft/ftremix/ftremixairecoveryrules.h"
 
+#define FTREMIX_AI_RECOVERY_BANJO_FLIGHT 0xEF
+#define FTREMIX_AI_RECOVERY_BANJO_FLAP_FRAME 21
+#define FTREMIX_AI_RECOVERY_NO_FLOOR_LINE (-1)
+
 /** Level 10 and the improved AI repeat up-B, vanilla 1P/RTTF never does. */
 int ftRemixAiRecoveryUpBRepeatAllowed(int cpu_level, int is_classic_mode, int improved_ai)
 {
@@ -46,6 +50,21 @@ int ftRemixAiRecoveryIsWolfUspAction(int action)
 int ftRemixAiRecoveryIsNspChargeAction(int action, int charge_action)
 {
     return (charge_action >= 0) && (action == charge_action);
+}
+
+/**
+ * Banjo Flight (0xEF) at frame 21 (fix_remix_recovery, _banjo_flight). The asm comment says frame 22, but the compare is
+ * with 21, which is the value that runs.
+ */
+int ftRemixAiRecoveryIsBanjoFlapFrame(int action, int frame)
+{
+    return (action == FTREMIX_AI_RECOVERY_BANJO_FLIGHT) && (frame == FTREMIX_AI_RECOVERY_BANJO_FLAP_FRAME);
+}
+
+/** No ground below (clipping -1) makes Banjo press B by command and skip the custom recovery (_banjo_flight). */
+int ftRemixAiRecoveryBanjoNeedsPressB(int floor_line_id)
+{
+    return floor_line_id == FTREMIX_AI_RECOVERY_NO_FLOOR_LINE;
 }
 
 /** The vanilla Pikachu branch is kept in classic mode and when the improved AI is off (fix_remix_recovery, _pikachu). */

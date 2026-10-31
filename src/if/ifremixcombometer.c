@@ -462,4 +462,13 @@ void ifRemixComboMeterHideForScore(s32 port)
     }
 }
 
+/**
+ * Meter of a port with its combo records (max hits and damage taken, highest combo dealt to each port). The VS stats page
+ * reads it after the match; the record lives in static storage until the next match setup.
+ */
+const IFRemixComboMeter *ifRemixComboMeterGetPort(s32 port)
+{
+    return &sIFRemixComboMeters[port];
+}
+
 #endif

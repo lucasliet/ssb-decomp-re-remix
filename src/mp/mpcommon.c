@@ -6,6 +6,7 @@
 #endif
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "mn/mnvsmode/mnremixvsstats.h"
 #endif
 
 // // // // // // // // // // // //
@@ -587,7 +588,8 @@ sb32 mpCommonRunFighterSpecialCollisions(MPCollData *coll_data, GObj *fighter_go
             }
 #ifdef REGION_REMIX
             ftRemixPeachLandingSetLedgeFlag(this_fp);
-            /* REMIX-TODO(VsStats): LedgeTrump.asm track_ledge_grabs_ (0x800DE688), the VS ledge grab count, is not ported */
+            /* LedgeTrump.asm track_ledge_grabs_ (0x800DE688): every ledge grab counts for the grabbing player */
+            mnRemixVSStatsCountTracker(this_fp->player, nMNRemixVSStatsTrackerLedgeGrab);
 #endif
             mpCommonSetFighterLandingParams(fighter_gobj);
 

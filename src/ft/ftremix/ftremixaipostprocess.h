@@ -9,7 +9,7 @@
 
 /**
  * Runs the Remix post process sub-behaviours of one CPU for this frame, in the asm order. The per-fighter post process
- * table is not ported yet (REMIX-TODO(AI) in ftremixaipostprocess.c).
+ * table has only the Sheik entry (ftremixaipostsheik.c); the others are REMIX-TODO(AI) in ftremixaipostprocess.c.
  */
 void ftRemixAiPostProcess(FTStruct *fp);
 
