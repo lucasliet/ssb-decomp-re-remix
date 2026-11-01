@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixgameend.h"
+#include "gm/gmremixgameendinputrules.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtoggle.h"
 #include "gm/gmremixstockmode.h"
@@ -26,10 +27,11 @@
 static sb32 sGMRemixGameEndIsSaltyRunback = FALSE;
 
 /**
- * Whether any controller port holds one of the buttons (GameEnd.asm uses Joypad.check_buttons_all_ with "match any").
+ * Whether any controller port holds exactly the combination (GameEnd.asm calls Joypad.check_buttons_all_ with "match any"
+ * false, whose comparison is held == mask for each of the four controllers).
  *
- * @param mask Button mask of the controller.
- * @return TRUE when at least one held button of the mask is pressed.
+ * @param mask Button mask of the combination.
+ * @return TRUE when one controller holds exactly the mask.
  */
 static sb32 gmRemixGameEndIsButtonHeld(u16 mask)
 {
@@ -37,7 +39,7 @@ static sb32 gmRemixGameEndIsButtonHeld(u16 mask)
 
     for (port = 0; port < ARRAY_COUNT(gSYControllerDevices); port++)
     {
-        if ((gSYControllerDevices[port].button_hold & mask) != 0)
+        if (gmRemixGameEndInputMatchesExactly(gSYControllerDevices[port].button_hold, mask) != 0)
         {
             return TRUE;
         }
