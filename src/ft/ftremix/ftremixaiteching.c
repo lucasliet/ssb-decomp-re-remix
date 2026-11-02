@@ -168,7 +168,10 @@ sb32 ftRemixAiTechIsHandled(GObj *fighter_gobj)
     }
     if (ftRemixAiIsTrainingScreen() && (remix_training_get(REMIX_TRAINING_TECH) != 0))
     {
-        return ftRemixAiTechByMenu(fighter_gobj, fp, remix_training_get(REMIX_TRAINING_TECH));
+        sb32 is_teched = ftRemixAiTechByMenu(fighter_gobj, fp, remix_training_get(REMIX_TRAINING_TECH));
+
+        port_log("SSB64: training tech: port %d teched %d status %d\n", (int)fp->player, (int)is_teched, (int)fp->status_id);
+        return is_teched;
     }
     return ftRemixAiTechRoll(fighter_gobj, fp);
 }
