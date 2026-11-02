@@ -337,8 +337,14 @@ LBBackupData dSCManagerDefaultBackupData =
 	0,												// Vertical screen adjust offset
 	0,												// Horizontal screen adjust offset
 	nFTKindMario,									// Last character viewed on Character Data menu
+#ifdef REGION_REMIX
+	/* Cheats.asm "Unlocks everything": the Remix default save is 0x7F / 0x0C90 (ROM 0x42B3B / 0x42B3C). */
+	LBBACKUP_UNLOCK_MASK_ALL,						// Mask of unlocked features
+	LBBACKUP_CHARACTER_MASK_UNLOCK,					// Mask of available characters
+#else
 	0,												// Mask of unlocked features
 	0,												// Mask of available characters
+#endif
 	nSC1PGameDifficultyEasy,						// Last 1P Game difficulty setting
 	2,												// Last 1P Game stocks setting
 

@@ -262,6 +262,11 @@ extern int port_cheat_unlock_soundtest(void);
 extern int port_cheat_unlock_itemswitch(void);
 
 void lbBackupApplyCheats(void) {
+#ifdef REGION_REMIX
+    /* Saves written before the Remix default (Cheats.asm unlock-all) still have Luigi, Ness, Jigglypuff and Falcon locked. */
+    gSCManagerBackupData.fighter_mask |= dSCManagerDefaultBackupData.fighter_mask;
+    gSCManagerBackupData.unlock_mask  |= dSCManagerDefaultBackupData.unlock_mask;
+#endif
     // If the master cheat is checked, unlock everything instantly
     if (port_cheat_unlock_all()) {
         gSCManagerBackupData.fighter_mask |= LBBACKUP_CHARACTER_MASK_ALL;
