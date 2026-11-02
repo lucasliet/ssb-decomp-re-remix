@@ -10,6 +10,9 @@
 
 #include "ft/ftremix/ftremixhooks.h"
 #include <ft/fighter.h>
+#include "it/itremix/itremixpwing.h"
+
+#define FTREMIX_SIZE_PWING_JUMP_SCALE 0.8F
 
 /** Walking speed (Size.asm adjust_player_walking_speed_, RAM 0x800D8A74, ftPhysicsSetGroundVelAbsStickRange). */
 f32 ftRemixSizeWalkingSpeed(FTStruct *fp, f32 vanilla_speed)
@@ -67,15 +70,27 @@ f32 ftRemixSizeJumpHeightBase(FTStruct *fp, f32 vanilla_base)
 }
 
 /**
- * Aerial jump height scale (Size.asm adjust_jumping_height_multiplier_2 at RAM 0x8013FE64 and
- * adjust_jumping_height_multiplier_kirby at RAM 0x80140014, ftCommonJumpAerialSetStatus and
- * ftCommonJumpAerialMultiSetStatus).
+ * Aerial jump height scale of the multi-jump fighters (Size.asm adjust_jumping_height_multiplier_kirby at RAM 0x80140014,
+ * ftCommonJumpAerialMultiSetStatus). Pwing does not change it.
  */
 f32 ftRemixSizeAerialJumpHeight(FTStruct *fp, f32 vanilla_height)
 {
-    /* REMIX-TODO(Pwing): Size.asm adjust_jumping_height_multiplier_2 scales this by 0.8 while
-     * Pwing.pwing_jump_flag is set. The port has no accessor for that flag yet. */
     return vanilla_height * ftRemixSizeAttrMultiplier(fp->player, FTREMIX_SIZE_COEF_SECOND_JUMPING_HEIGHT);
+}
+
+/**
+ * Aerial jump height scale of the single aerial jump (Size.asm adjust_jumping_height_multiplier_2 at RAM 0x8013FE64,
+ * ftCommonJumpAerialSetStatus), 0.8 times lower while the fighter jumps with Pwing (_check_pwing).
+ */
+f32 ftRemixSizeAerialJumpHeightSingle(FTStruct *fp, f32 vanilla_height)
+{
+    f32 height = ftRemixSizeAerialJumpHeight(fp, vanilla_height);
+
+    if (itRemixPwingIsJumping(fp) != FALSE)
+    {
+        height *= FTREMIX_SIZE_PWING_JUMP_SCALE;
+    }
+    return height;
 }
 
 #endif

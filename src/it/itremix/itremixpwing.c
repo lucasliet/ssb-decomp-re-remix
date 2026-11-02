@@ -136,6 +136,11 @@ static ITRemixPwingPlayer* itRemixPwingGetPlayer(FTStruct *fp)
     return &sITRemixPwingPlayers[fp->player];
 }
 
+sb32 itRemixPwingIsJumping(FTStruct *fp)
+{
+    return (itRemixPwingGetPlayer(fp)->jump_state != nITRemixPwingJumpNone) ? TRUE : FALSE;
+}
+
 /** Jumps the fighter has at its base count (asm: 2 for standard jumps, 4 for multi-jump characters). */
 static s32 itRemixPwingGetJumpsBase(FTStruct *fp)
 {

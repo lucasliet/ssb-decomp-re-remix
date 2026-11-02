@@ -239,6 +239,7 @@ f32 ftRemixSizeJumpSquatLength(FTStruct *fp, f32 vanilla_length);
 f32 ftRemixSizeJumpHeightMul(FTStruct *fp, f32 vanilla_mul);
 f32 ftRemixSizeJumpHeightBase(FTStruct *fp, f32 vanilla_base);
 f32 ftRemixSizeAerialJumpHeight(FTStruct *fp, f32 vanilla_height);
+f32 ftRemixSizeAerialJumpHeightSingle(FTStruct *fp, f32 vanilla_height);
 
 /* Size phase (c) effects, ftremix/ftremixsizefx2.c (Size.asm link.adjust_usp_projectile_size_ and adjust_usp_gfx_size_):
  * the Up Special weapon and effect scaled by the owner multiplier, set at spawn */
@@ -533,6 +534,7 @@ void ftRemixSpecialZoomFinalKnockback(FTStruct *fp, s32 damage_player_num);
 void ftRemixSpecialZoomCameraOffset(Vec3f *pos);
 void ftRemixSpecialZoomMakeWallpaper(void);
 sb32 ftRemixSpecialZoomSkipsObjectsUpdate(void);
+sb32 ftRemixSpecialZoomIsActive(void);
 
 /* Special Zoom helpers, gm/gmremixspecialzoomko.c (KO prediction, decisive stock) and gmremixspecialzoomattack.c (attacker
  * special moves) and gmremixspecialzoomwallpaper.c (background file, wallpaper camera and background object) */

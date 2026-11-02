@@ -33,13 +33,15 @@ sb32 gmRemixCameraHudHiddenOnGo(void)
  * (vanilla links 15 and 16 are PlayerSelect and SceneCamera), and the port has no pause legend GObjs, so nothing is destroyed here.
  * The pause legends (if/ifremixpauselegend.c) are labels put every pause frame, so they stop drawing with the pause.
  *
- * REMIX-TODO(SpecialZoom): unpause_camera_ also clears the magnifying glass while the Special Zoom is on (Zoom.zoom_type).
+ * The magnifying glass also stays off while a Special Zoom is on (Zoom.zoom_type, the _check_hud read of unpause_camera_).
  */
 sb32 gmRemixCameraRestorePauseHud(void)
 {
+    sb32 is_magnify_on = (ftRemixSpecialZoomIsActive() == FALSE) ? TRUE : FALSE;
+
     if ((ifRemixHudDisabledAll() == FALSE) && (gmRemixCameraIsScene() == FALSE))
     {
-        return TRUE;
+        return is_magnify_on;
     }
     ifCommonInterfaceSetGObjFlagsAll(GOBJ_FLAG_HIDDEN);
     return FALSE;

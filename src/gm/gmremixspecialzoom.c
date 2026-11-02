@@ -110,6 +110,12 @@ static void ftRemixSpecialZoomCameraZoomIn(GObj *fighter_gobj)
     gIFCommonPlayerInterface.magnify_mode = 0;
 }
 
+/** TRUE while a Special Zoom is on (Zoom.zoom_type is not zero). */
+sb32 ftRemixSpecialZoomIsActive(void)
+{
+    return (sFTRemixSpecialZoomType != FTREMIX_SPECIAL_ZOOM_NONE) ? TRUE : FALSE;
+}
+
 /**
  * Ends the zoom: restores the camera and the magnifying glass, shows the stage again and destroys the background
  * (SpecialZoom.asm end_zoom). Does nothing when no zoom is active.

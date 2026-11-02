@@ -175,7 +175,7 @@ void ftCommonJumpAerialSetStatus(GObj *fighter_gobj, s32 input_source)
 #ifdef REGION_REMIX
     fp->physics.vel_air.y = (((stick_range_y * ftRemixSizeJumpHeightMul(fp, attr->jump_height_mul)) +
                               ftRemixSizeJumpHeightBase(fp, attr->jump_height_base)) *
-                             ftRemixSizeAerialJumpHeight(fp, attr->jumpaerial_height));
+                             ftRemixSizeAerialJumpHeightSingle(fp, attr->jumpaerial_height));
 #else
     fp->physics.vel_air.y = (((stick_range_y * attr->jump_height_mul) + attr->jump_height_base) * attr->jumpaerial_height);
 #endif
