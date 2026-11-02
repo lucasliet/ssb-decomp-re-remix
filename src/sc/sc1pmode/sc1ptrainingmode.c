@@ -782,6 +782,9 @@ void sc1PTrainingModeInitVars(void)
 	gSCManagerBattleState->players[dummy].color = 4;
 	gSCManagerBattleState->pl_count = 1;
 	gSCManagerBattleState->cp_count = 1;
+#if defined(PORT) && defined(REGION_REMIX)
+	dummy = sc1PTrainingRemixSetupPorts(gSCManagerSceneData.player, dummy);
+#endif
 
 	sSC1PTrainingModeMenu.main_menu_option = nSC1PTrainingModeMenuMainCP;
 	sSC1PTrainingModeMenu.damage = 0;
@@ -2093,7 +2096,11 @@ void sc1PTrainingModeFuncStart(void)
 
 		desc.fkind = gSCManagerBattleState->players[player].fkind;
 
+#if defined(PORT) && defined(REGION_REMIX)
+		mpCollisionGetPlayerMapObjPosition(sc1PTrainingRemixSpawnPort(player), &desc.pos);
+#else
 		mpCollisionGetPlayerMapObjPosition(player, &desc.pos);
+#endif
 
 		desc.lr = (desc.pos.x >= 0.0F) ? -1 : +1;
 		desc.team = gSCManagerBattleState->players[player].team;

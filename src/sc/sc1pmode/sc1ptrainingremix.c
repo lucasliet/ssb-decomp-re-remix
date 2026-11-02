@@ -18,6 +18,8 @@
 #include "remix/remix_symbols.h"
 #include "remix/remix_toggles.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
+#include "sc/sc1pmode/sc1ptrainingportrules.h"
+#include <if/ifdef.h>
 #include "ft/ftremix/ftremixtraining.h"
 #include "remix/remix_training.h"
 
@@ -146,6 +148,65 @@ void sc1PTrainingRemixPollMusic(void)
     port_log("SSB64: training music: option %d bgm %d\n", (int)remix_training_get(REMIX_TRAINING_MUSIC), (int)bgm);
     syAudioPlayBGM(0, bgm);
     gMPCollisionBGMCurrent = bgm;
+}
+
+static s32 sc1PTrainingRemixGetPortFkind(s32 port, s32 menu_port)
+{
+    s32 select_fkind = (port == menu_port) ? gSCManagerSceneData.training_man_fkind : gSCManagerSceneData.training_com_fkind;
+    s32 chosen = remix_training_character_fkind(remix_training_get(REMIX_TRAINING_CHARACTER(port)));
+
+    return (chosen >= 0) ? chosen : select_fkind;
+}
+
+static void sc1PTrainingRemixSetupPort(s32 port, s32 menu_port, s32 type)
+{
+    SCBattleState *state = gSCManagerBattleState;
+    s32 select_costume = (port == menu_port) ? gSCManagerSceneData.training_man_costume : gSCManagerSceneData.training_com_costume;
+
+    if (type == SC1PTRAININGPORTRULES_TYPE_DISABLED)
+    {
+        state->players[port].pkind = nFTPlayerKindNot;
+        return;
+    }
+    state->players[port].fkind = sc1PTrainingRemixGetPortFkind(port, menu_port);
+    state->players[port].costume = sc1PTrainingPortRulesPick(remix_training_get(REMIX_TRAINING_COSTUME(port)), select_costume);
+
+    if (type == SC1PTRAININGPORTRULES_TYPE_HUMAN)
+    {
+        state->players[port].pkind = nFTPlayerKindMan;
+        state->players[port].team = 0;
+        state->players[port].color = port;
+        return;
+    }
+    state->players[port].pkind = nFTPlayerKindCom;
+    state->players[port].tag = nIFPlayerTagKindCP;
+    state->players[port].level = 3;
+    state->players[port].team = 1;
+    state->players[port].color = 4;
+}
+
+s32 sc1PTrainingRemixSetupPorts(s32 menu_port, s32 select_cpu_port)
+{
+    s32 types[SC1PTRAININGPORTRULES_PORT_COUNT];
+    s32 port;
+
+    for (port = 0; port < SC1PTRAININGPORTRULES_PORT_COUNT; port++)
+    {
+        types[port] = sc1PTrainingPortRulesResolveType(remix_training_get(REMIX_TRAINING_TYPE(port)), port, menu_port, select_cpu_port);
+        sc1PTrainingRemixSetupPort(port, menu_port, types[port]);
+        port_log("SSB64: training port: %d type %d fkind %d costume %d spawn %d\n", (int)port, (int)types[port],
+                 (int)gSCManagerBattleState->players[port].fkind, (int)gSCManagerBattleState->players[port].costume,
+                 (int)sc1PTrainingRemixSpawnPort(port));
+    }
+    gSCManagerBattleState->pl_count = sc1PTrainingPortRulesCountType(types, SC1PTRAININGPORTRULES_TYPE_HUMAN);
+    gSCManagerBattleState->cp_count = sc1PTrainingPortRulesCountType(types, SC1PTRAININGPORTRULES_TYPE_CPU);
+
+    return sc1PTrainingPortRulesPickDummy(types, menu_port);
+}
+
+s32 sc1PTrainingRemixSpawnPort(s32 port)
+{
+    return sc1PTrainingPortRulesSpawnPort(remix_training_get(REMIX_TRAINING_SPAWN(port)), port);
 }
 
 sb32 sc1PTrainingRemixIsFrameHeld(void)

@@ -32,6 +32,19 @@ extern void sc1PTrainingRemixStartMusic(void);
  */
 extern void sc1PTrainingRemixPollMusic(void);
 
+/**
+ * Builds the four ports of the match from the per-port Training options (Training.asm tail_px: Type, Character, Costume), on top of
+ * what the character select chose. Disabled ports get no fighter.
+ *
+ * @param menu_port Port of the human that owns the Training menu.
+ * @param select_cpu_port Port the character select gave to the CPU.
+ * @return The port the dummy statistics and behavior follow.
+ */
+extern s32 sc1PTrainingRemixSetupPorts(s32 menu_port, s32 select_cpu_port);
+
+/** Port whose spawn point `port` starts on (the Spawn entry of the chain). */
+extern s32 sc1PTrainingRemixSpawnPort(s32 port);
+
 /** TRUE when this frame of the match must not run (frozen, and no frame advance was asked for). Consumes a frame advance. */
 extern sb32 sc1PTrainingRemixIsFrameHeld(void);
 
