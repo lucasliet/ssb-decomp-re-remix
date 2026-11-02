@@ -77,8 +77,14 @@ intptr_t dMNTitleFireSpriteOffsets[/* */] =
 MNTitleSpriteDesc dMNTitleCommonSpriteDescs[/* */] =
 {
 #if defined(REGION_US)
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Boot.asm patches these two rows: larger black backsplash (0x245C8) and larger logo (0x3DC88, tail of the file). */
+	{ { 157, 119 }, 0x245C8 },
+	{ { 161, 104 }, 0x3DC88 },
+#else
 	{ { 157,  94 }, llMNTitleCutoutSprite },
 	{ { 161,  88 }, llMNTitleSmashSprite },
+#endif
 	{ {  55,  96 }, llMNTitleSuperSprite },
 	{ { 268,  96 }, llMNTitleBrosSprite },
 	{ { 270, 132 }, llMNTitleTMUnkSprite },
