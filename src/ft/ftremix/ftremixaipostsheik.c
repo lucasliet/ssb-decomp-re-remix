@@ -5,8 +5,8 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
-#include <math.h>
 #include <ft/fighter.h>
+#include <math.h>
 #include "ft/ftcomputer.h"
 #include "ft/ftremix/ftremixailv10rules.h"
 #include "ft/ftremix/ftremixaipostsheik.h"
