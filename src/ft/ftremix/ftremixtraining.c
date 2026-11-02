@@ -90,6 +90,7 @@ static void ftRemixTrainingApplyShieldOutput(FTStruct *fp, const SC1PTrainingRul
     switch (out->action)
     {
     case SC1PTRAININGRULES_ACTION_OOS_INPUT:
+        port_log("SSB64: training oos: port %d option %d status %d\n", (int)fp->player, (int)remix_training_get(REMIX_TRAINING_OOS), (int)fp->status_id);
         pl->button_hold = out->button_mask;
         pl->button_tap = out->button_mask;
         pl->button_release = Z_TRIG;

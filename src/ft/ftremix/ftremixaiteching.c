@@ -6,6 +6,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ft/fighter.h>
+#include <port_log.h>
 #include <gm/gmremixtoggle.h>
 #include <sc/scdef.h>
 #include <sc/sctypes.h>
@@ -81,6 +82,8 @@ static sb32 ftRemixAiTechStartRoll(GObj *fighter_gobj, s32 status_id)
  */
 static sb32 ftRemixAiTechByMenu(GObj *fighter_gobj, FTStruct *fp, s32 option)
 {
+    port_log("SSB64: training tech: port %d option %d lr %d\n", (int)fp->player, (int)option, (int)fp->lr);
+
     switch (option)
     {
     case FTREMIX_AI_TECH_MENU_BACKWARD:
