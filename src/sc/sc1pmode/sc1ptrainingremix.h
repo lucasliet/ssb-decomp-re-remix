@@ -23,6 +23,15 @@ extern void sc1PTrainingRemixOnReset(void);
  */
 extern sb32 sc1PTrainingRemixPollDpad(void);
 
+/** Starts the track of the Music entry (Training.asm play_custom_music_: bgm_table[entry_music]; entry 0 is the Training Mode theme). */
+extern void sc1PTrainingRemixStartMusic(void);
+
+/**
+ * Plays the Music entry when its value changed since the last call (play_bgm_), and keeps it as the stage track so it resumes after
+ * a hammer or star. A hammer or star in play keeps its own theme.
+ */
+extern void sc1PTrainingRemixPollMusic(void);
+
 /** TRUE when this frame of the match must not run (frozen, and no frame advance was asked for). Consumes a frame advance. */
 extern sb32 sc1PTrainingRemixIsFrameHeld(void);
 

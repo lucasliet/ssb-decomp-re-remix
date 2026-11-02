@@ -693,6 +693,8 @@ void sc1PTrainingModeUpdateAll(void)
 #if defined(PORT) && defined(REGION_REMIX)
 	sb32 is_skip_advance;
 
+	sc1PTrainingRemixPollMusic();
+
 	if (sc1PTrainingRemixPollDpad() != FALSE)
 	{
 		sc1PTrainingModeQuickReset();
@@ -2017,9 +2019,13 @@ void sc1PTrainingModeMakeMenuAll(void)
 // 0x80190164
 void sc1PTrainingModeSetPlayDefaultBGM(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	sc1PTrainingRemixStartMusic();
+#else
 	gMPCollisionBGMDefault = nSYAudioBGMTrainingMode;
 	syAudioPlayBGM(0, gMPCollisionBGMDefault);
 	gMPCollisionBGMCurrent = gMPCollisionBGMDefault;
+#endif
 }
 
 // 0x801901A0

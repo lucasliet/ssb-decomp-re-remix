@@ -5,11 +5,16 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <sys/controller.h>
+#include <sys/audio.h>
+#include <gm/gmsound.h>
+#include <mp/map.h>
+#include <port_log.h>
 #include <string.h>
 #include "it/itremix/itremix.h"
 #include <sc/scene.h>
 #include "gm/gmremixtoggle.h"
 #include "remix/remix_hud_text.h"
+#include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #include "remix/remix_toggles.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
@@ -31,6 +36,7 @@
 static sb32 sSC1PTrainingRemixIsFrozen;
 static sb32 sSC1PTrainingRemixIsAdvancing;
 static s32 sSC1PTrainingRemixResetCount;
+static u32 sSC1PTrainingRemixPlayedBGM;
 
 void sc1PTrainingRemixStartScene(sb32 is_reset)
 {
@@ -102,6 +108,44 @@ sb32 sc1PTrainingRemixPollDpad(void)
         sc1PTrainingRemixCycleModelDisplay();
     }
     return FALSE;
+}
+
+static u32 sc1PTrainingRemixGetBGM(void)
+{
+    u32 table_address = REMIX_SYM_Training__bgm_table + (remix_training_get(REMIX_TRAINING_MUSIC) * 2);
+
+    return remix_ram_image_read_half(table_address);
+}
+
+void sc1PTrainingRemixStartMusic(void)
+{
+    u32 bgm = sc1PTrainingRemixGetBGM();
+
+    port_log("SSB64: training music: start option %d bgm %d\n", (int)remix_training_get(REMIX_TRAINING_MUSIC), (int)bgm);
+    sSC1PTrainingRemixPlayedBGM = bgm;
+    gMPCollisionBGMDefault = bgm;
+    syAudioPlayBGM(0, bgm);
+    gMPCollisionBGMCurrent = bgm;
+}
+
+void sc1PTrainingRemixPollMusic(void)
+{
+    u32 bgm = sc1PTrainingRemixGetBGM();
+
+    if (bgm == sSC1PTrainingRemixPlayedBGM)
+    {
+        return;
+    }
+    sSC1PTrainingRemixPlayedBGM = bgm;
+    gMPCollisionBGMDefault = bgm;
+
+    if ((gMPCollisionBGMCurrent == nSYAudioBGMHammer) || (gMPCollisionBGMCurrent == nSYAudioBGMStar))
+    {
+        return;
+    }
+    port_log("SSB64: training music: option %d bgm %d\n", (int)remix_training_get(REMIX_TRAINING_MUSIC), (int)bgm);
+    syAudioPlayBGM(0, bgm);
+    gMPCollisionBGMCurrent = bgm;
 }
 
 sb32 sc1PTrainingRemixIsFrameHeld(void)
