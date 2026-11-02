@@ -16,6 +16,7 @@
 #include <sc/sctypes.h>
 #include <mp/map.h>
 #include <port_log.h>
+#include "remix/remix_training.h"
 
 #define GRREMIX_SCUTTLE_MINIONS_ENABLED FALSE /* asm scuttle_town_setup_: `b _end` before the minion setup */
 #define GRREMIX_SCUTTLE_HEADER_TO_GROUND_DATA 0x14 /* asm scuttle_town_setup_: header = 0x80131300 pointer - 0x14 */
@@ -80,14 +81,12 @@ static u32 grRemixScuttleStagePaletteIndex(void)
 /**
  * Returns whether the training stage background is shown, the only training case where the asm runs the fade
  * (asm: Training.entry_bg + 0x4 is non-zero).
- * REMIX-TODO(toggles): the Training menu background value has no port accessor yet, so the normal training
- * background (value 0, no fade) is assumed.
  *
- * @return FALSE, the normal training background is assumed.
+ * @return TRUE when the Training Stage Background option is on.
  */
 static sb32 grRemixScuttleTrainingShowsStageBg(void)
 {
-    return FALSE;
+    return (remix_training_get(REMIX_TRAINING_STAGE_BG) != 0) ? TRUE : FALSE;
 }
 
 /**
