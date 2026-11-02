@@ -1411,6 +1411,9 @@ s32 mnPlayers1PBonusGetCostume(s32 fkind, s32 select_button)
 // 0x80133F88
 s32 mnPlayers1PBonusGetStatusSelected(s32 fkind)
 {
+#ifdef REGION_REMIX
+	return mnRemixCssGetSelectionStatus(fkind);
+#endif
 	switch (fkind)
 	{
 	case nFTKindFox:
@@ -2839,6 +2842,9 @@ void mnPlayers1PBonusSpotlightProcUpdate(GObj *gobj)
 		{
 			s32 fk = sMNPlayers1PBonusSlot.fkind;
 			f32 sz = ((u32)fk < ARRAY_COUNT(sizes)) ? sizes[fk] : port_fighter_css_spotlight_scale(fk);
+#ifdef REGION_REMIX
+			sz = mnRemixCssGetSpotlightScale(fk);
+#endif
 			DObjGetStruct(gobj)->scale.vec.f.x = sz;
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;

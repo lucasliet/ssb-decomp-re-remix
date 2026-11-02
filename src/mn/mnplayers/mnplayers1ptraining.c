@@ -1188,6 +1188,9 @@ s32 mnPlayers1PTrainingGetFreeCostume(s32 fkind, s32 player)
 // 0x8013361C
 s32 mnPlayers1PTrainingGetStatusSelected(s32 fkind)
 {
+#ifdef REGION_REMIX
+	return mnRemixCssGetSelectionStatus(fkind);
+#endif
 	switch (fkind)
 	{
 	case nFTKindFox:
@@ -3037,6 +3040,9 @@ void mnPlayers1PTrainingSpotlightProcUpdate(GObj *gobj)
 		{
 			s32 fk = sMNPlayers1PTrainingSlots[player].fkind;
 			f32 sz = ((u32)fk < ARRAY_COUNT(sizes)) ? sizes[fk] : port_fighter_css_spotlight_scale(fk);
+#ifdef REGION_REMIX
+			sz = mnRemixCssGetSpotlightScale(fk);
+#endif
 			DObjGetStruct(gobj)->scale.vec.f.x = sz;
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;

@@ -74,4 +74,24 @@ s32 mnRemixCssGetPortrait(s32 fkind)
     return 0;
 }
 
+/** Demo status the confirmed fighter plays on the character select (Character.selection_action.table, one entry per id). */
+s32 mnRemixCssGetSelectionStatus(s32 fkind)
+{
+    if (((u32)fkind >= REMIX_CSS_NUM_CHARACTERS) || (kRemixCssSelectionAction[fkind] == 0))
+    {
+        return nFTDemoStatusWin1;
+    }
+    return (s32)kRemixCssSelectionAction[fkind];
+}
+
+/** Scale of the spotlight under the fighter on the character select (Character.css_circle_size.table). */
+f32 mnRemixCssGetSpotlightScale(s32 fkind)
+{
+    if (((u32)fkind >= REMIX_CSS_NUM_CHARACTERS) || (kRemixCssCircleSize[fkind] <= 0.0F))
+    {
+        return 1.5F;
+    }
+    return kRemixCssCircleSize[fkind];
+}
+
 #endif

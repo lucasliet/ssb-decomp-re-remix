@@ -31,6 +31,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
 #include "mn/mnplayers/mnremixvariants.h"
+#include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
 #endif
 
@@ -1994,6 +1995,9 @@ s32 mnPlayersVSGetFreeCostume(s32 fkind, s32 player)
 // 0x801348EC
 s32 mnPlayersVSGetStatusSelected(s32 fkind)
 {
+#ifdef REGION_REMIX
+	return mnRemixCssGetSelectionStatus(fkind);
+#endif
 	switch (fkind)
 	{
 	case nFTKindFox:
@@ -4806,6 +4810,9 @@ void mnPlayersVSSpotlightProcUpdate(GObj *gobj)
 		{
 			s32 fk = sMNPlayersVSSlots[player].fkind;
 			f32 sz = ((u32)fk < ARRAY_COUNT(sizes)) ? sizes[fk] : port_fighter_css_spotlight_scale(fk);
+#ifdef REGION_REMIX
+			sz = mnRemixCssGetSpotlightScale(fk);
+#endif
 			DObjGetStruct(gobj)->scale.vec.f.x = sz;
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;
