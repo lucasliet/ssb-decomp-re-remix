@@ -2666,7 +2666,14 @@ void mnPlayersVSUpdatePlayerKind(s32 player)
 		 * slots 3 and 4 are locked closed and their HMN/CPU/NOT button is
 		 * inert. */
 		extern int port_classic_coop_context(void);
-		if (port_classic_coop_context() && (player >= 2))
+		sb32 is_closed = port_classic_coop_context() != 0;
+#ifdef REGION_REMIX
+		if (gmRemixTwelveCBIsActive() != FALSE)
+		{
+			is_closed = TRUE;
+		}
+#endif
+		if (is_closed && (player >= 2))
 		{
 			return;
 		}
@@ -5770,7 +5777,15 @@ void mnPlayersVSInitVars(void)
 		 * lock slots 3 and 4 closed (their kind button is also disabled in
 		 * mnPlayersVSUpdatePlayerKind). */
 		extern int port_classic_coop_context(void);
-		if (port_classic_coop_context())
+		sb32 is_closed = port_classic_coop_context() != 0;
+#ifdef REGION_REMIX
+		/* 12-Character Battle only has ports 1 and 2 (TwelveCharBattle.asm sets 3P/4P to N/A, no character). */
+		if (gmRemixTwelveCBIsActive() != FALSE)
+		{
+			is_closed = TRUE;
+		}
+#endif
+		if (is_closed)
 		{
 			for (i = 2; i < GMCOMMON_PLAYERS_MAX; i++)
 			{

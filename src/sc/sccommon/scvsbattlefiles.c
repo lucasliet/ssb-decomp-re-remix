@@ -8,7 +8,13 @@
 // // // // // // // // // // // //
 
 // 0x8018E480
+#if defined(PORT) && defined(REGION_REMIX)
+/* Tag Team queues put up to 24 different fighters in a match, each with its own main, animation and weapon files; the
+ * 100 vanilla entries ran out ("Status Buffer is full !!", Switch log 2026-11-02). */
+LBFileNode sSCVSBattleStatusBuffer[1024];
+#else
 LBFileNode sSCVSBattleStatusBuffer[100];
+#endif
 
 // 0x8018E7A0
 LBFileNode sSCVSBattleForceStatusBuffer[7];
