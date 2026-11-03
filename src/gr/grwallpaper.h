@@ -9,6 +9,10 @@ extern void grWallpaperCalcPersp(SObj *wallpaper_sobj);
 extern void grWallpaperCommonProcUpdate(GObj *wallpaper_gobj);
 extern void grWallpaperMakeCommon(void);
 extern void grWallpaperMakeStatic(void);
+#if defined(PORT) && defined(REGION_REMIX)
+/** The stage wallpaper GObj (Remix reads it as the room 0 object and swaps its bitmap), NULL when the stage has none. */
+extern GObj *grWallpaperGetGObj(void);
+#endif
 extern void grWallpaperSectorProcUpdate(GObj *wallpaper_gobj);
 extern void grWallpaperMakeSector(void);
 extern void grWallpaperBonus3ProcDisplay(GObj *wallpaper_gobj);

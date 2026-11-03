@@ -463,3 +463,10 @@ void grWallpaperResumeProcessAll(void)
         gobj = gobj->link_next;
     }
 }
+
+#if defined(PORT) && defined(REGION_REMIX)
+GObj *grWallpaperGetGObj(void)
+{
+    return sGRWallpaperGObj;
+}
+#endif

@@ -8,6 +8,7 @@
 #include "grremixscuttle.h"
 #include "grremixhazards.h"
 #include "grremixscuttleminion.h"
+#include "grremixstagebg.h"
 #include <lb/library.h>
 #include <gr/ground.h>
 #include <sys/objdef.h>
@@ -22,7 +23,6 @@
 #define GRREMIX_SCUTTLE_HEADER_TO_GROUND_DATA 0x14 /* asm scuttle_town_setup_: header = 0x80131300 pointer - 0x14 */
 #define GRREMIX_SCUTTLE_DAY_HEADER_FIELD 0x48 /* asm: day background image header, in the ground data */
 #define GRREMIX_SCUTTLE_NIGHT_HEADER_FIELD 0xC8 /* asm: night background image header, in the ground data */
-#define GRREMIX_SCUTTLE_IMAGE_BG_ADDRESS_FIELD 0x34 /* asm: background address, in the image header */
 #define GRREMIX_SCUTTLE_GLASS_COLOR_FIELD 0x4C /* asm: magnifying glass color, in the ground data */
 #define GRREMIX_SCUTTLE_PALETTE_NIGHT 0x3F800000 /* asm: palette index 1.0F, the first palette is shown (to night) */
 #define GRREMIX_SCUTTLE_PALETTE_DAY 0x41100000 /* asm: palette index 9.0F, the second to last palette is shown (to day) */
@@ -51,8 +51,8 @@ typedef struct GRRemixScuttleFadeState
     s32 alpha_delta;
     u32 rgb;
     u32 glass_color;
-    void *bg_address;
-    void *bg_addresses[GRREMIX_SCUTTLE_TRANSITIONS];
+    u32 bg_bitmap;
+    u32 bg_bitmaps[GRREMIX_SCUTTLE_TRANSITIONS];
 } GRRemixScuttleFadeState;
 
 /* Hazards.asm COLOR_NIGHT, COLOR_NIGHT_GLASS, COLOR_DAY, COLOR_DAY_GLASS, in the asm order of the night and day slots. */
@@ -65,17 +65,13 @@ static const GRRemixScuttleTransitionColors sGRRemixScuttleColors[GRREMIX_SCUTTL
 static GRRemixScuttleFadeState sGRRemixScuttleFade;
 
 /**
- * Returns the raw stage palette index read by the asm (RAM 0x800466F8 group, top joint, part image palette). The
- * port cannot walk that object tree yet.
- * REMIX-TODO(palette): the asm walks the group 0x2 head (RAM 0x800466F8) to the top joint, first joint (+0x10), part
- * image struct (+0x80) and reads the current palette index (+0x88). Until that walk is ported it returns 0, which
- * matches neither palette, so the background transition never starts.
+ * Returns the raw stage palette index read by the asm (RAM 0x800466F8 group, top joint, first joint, part image palette).
  *
- * @return the raw palette index, 0 while the port cannot read it.
+ * @return the raw palette index bits, 0 while the stage model is missing.
  */
 static u32 grRemixScuttleStagePaletteIndex(void)
 {
-    return 0;
+    return grRemixStageReadFirstJointPaletteBits();
 }
 
 /**
@@ -105,30 +101,15 @@ static sb32 grRemixScuttleFadeIsWanted(void)
 }
 
 /**
- * Returns the background address of one transition, read from the stage file (asm: header field -> image header
- * -> background address at +0x34). The file pointers are relocation tokens, so they go through PORT_RESOLVE.
- *
- * @param image_header_field Ground data offset of the background image header pointer.
- * @return the background address the transition shows.
- */
-static void *grRemixScuttleBgAddress(u32 image_header_field)
-{
-    u8 *ground = (u8 *) gMPCollisionGroundData;
-    u8 *image_header = (u8 *) PORT_RESOLVE(*(u32 *) (ground + image_header_field));
-
-    return (void *) PORT_RESOLVE(*(u32 *) (image_header + GRREMIX_SCUTTLE_IMAGE_BG_ADDRESS_FIELD));
-}
-
-/**
  * Reads the night and day background addresses of the stage file and selects the fade colors (asm: _init_fade).
  * The asm saves the addresses in the fade object at 0x68 (night) and 0x6C (day).
  */
 static void grRemixScuttleFadeLoadBackgrounds(void)
 {
-    sGRRemixScuttleFade.bg_addresses[GRREMIX_SCUTTLE_NIGHT] =
-        grRemixScuttleBgAddress(GRREMIX_SCUTTLE_NIGHT_HEADER_FIELD);
-    sGRRemixScuttleFade.bg_addresses[GRREMIX_SCUTTLE_DAY] =
-        grRemixScuttleBgAddress(GRREMIX_SCUTTLE_DAY_HEADER_FIELD);
+    sGRRemixScuttleFade.bg_bitmaps[GRREMIX_SCUTTLE_NIGHT] =
+        grRemixStageBgBitmapToken(GRREMIX_SCUTTLE_NIGHT_HEADER_FIELD);
+    sGRRemixScuttleFade.bg_bitmaps[GRREMIX_SCUTTLE_DAY] =
+        grRemixStageBgBitmapToken(GRREMIX_SCUTTLE_DAY_HEADER_FIELD);
 }
 
 /**
@@ -141,7 +122,7 @@ static void grRemixScuttleFadeResetState(void)
     sGRRemixScuttleFade.alpha_delta = 0;
     sGRRemixScuttleFade.rgb = 0;
     sGRRemixScuttleFade.glass_color = 0;
-    sGRRemixScuttleFade.bg_address = NULL;
+    sGRRemixScuttleFade.bg_bitmap = 0;
 }
 
 /**
@@ -174,11 +155,13 @@ static void grRemixScuttleFadeStart(s32 transition)
 {
     const GRRemixScuttleTransitionColors *colors = &sGRRemixScuttleColors[transition];
 
+    port_log("remix scuttle town: transition to %s\n", (transition == GRREMIX_SCUTTLE_NIGHT) ? "night" : "day");
+
     sGRRemixScuttleFade.in_transition = TRUE;
     sGRRemixScuttleFade.alpha_delta = GRREMIX_SCUTTLE_ALPHA_STEP;
     sGRRemixScuttleFade.rgb = colors->rgb & 0xFFFFFF00;
     sGRRemixScuttleFade.glass_color = colors->glass_color;
-    sGRRemixScuttleFade.bg_address = sGRRemixScuttleFade.bg_addresses[transition];
+    sGRRemixScuttleFade.bg_bitmap = sGRRemixScuttleFade.bg_bitmaps[transition];
 }
 
 /**
@@ -194,12 +177,11 @@ static void grRemixScuttleFadeWriteGlassColor(void)
 
 /**
  * Switches the stage background at the max alpha (asm: _check_max, which stores the background address into the
- * background image object).
- * REMIX-TODO(bg image object): the asm writes the background address to the bg image object position struct (RAM
- * 0x80046800 -> +0x74, field +0x44). Until that object is ported the background stays the same.
+ * background image object, here the bitmap of the stage wallpaper sprite).
  */
 static void grRemixScuttleFadeSwitchBackground(void)
 {
+    grRemixStageBgSetBitmap(sGRRemixScuttleFade.bg_bitmap);
 }
 
 /**
