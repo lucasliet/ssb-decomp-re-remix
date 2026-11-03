@@ -54,4 +54,18 @@ int gmRemixKothRulesSettle(int candidate, int *buffer, int buffer_frames)
     return candidate;
 }
 
+void gmRemixKothRulesMeterY(int dragon_king_hud, int is_dragon_king_stage, float *frame_y, float *bar_y)
+{
+    int at_top = (dragon_king_hud == GMREMIX_KOTHRULES_DK_HUD_ALWAYS) ||
+                 ((dragon_king_hud != GMREMIX_KOTHRULES_DK_HUD_OFF) && (is_dragon_king_stage != 0));
+
+    *frame_y = at_top ? 8.0F : 180.0F;
+    *bar_y = at_top ? 16.0F : 188.0F;
+}
+
+float gmRemixKothRulesMeterX(int port)
+{
+    return 40.0F + (70.0F * (float)port);
+}
+
 #endif

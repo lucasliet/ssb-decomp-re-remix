@@ -40,6 +40,29 @@ extern int gmRemixKothRulesCandidate(const GMRemixKothRulesFighter *fighters, in
  */
 extern int gmRemixKothRulesSettle(int candidate, int *buffer, int buffer_frames);
 
+/* Toggles.entry_dragon_king_hud values: 0 default (Dragon King stages only), 1 always, 2 never. */
+#define GMREMIX_KOTHRULES_DK_HUD_DEFAULT 0
+#define GMREMIX_KOTHRULES_DK_HUD_ALWAYS 1
+#define GMREMIX_KOTHRULES_DK_HUD_OFF 2
+
+/**
+ * Vertical position of the score meters (KingOfTheHill.asm setup_): the frame sprite and the bar rectangle sit 8 pixels apart,
+ * at the bottom of the screen, or at the top on the Dragon King HUD position.
+ *
+ * @param dragon_king_hud Toggles.entry_dragon_king_hud.
+ * @param is_dragon_king_stage Non-zero on Dragon King or Dragon King Remix.
+ * @param frame_y Receives the Y of the frame sprite.
+ * @param bar_y Receives the Y of the bar and flash rectangles.
+ */
+extern void gmRemixKothRulesMeterY(int dragon_king_hud, int is_dragon_king_stage, float *frame_y, float *bar_y);
+
+/**
+ * Left edge of the bar of a port: 40 pixels plus 70 per port. The frame sprite sits 3 pixels to the left of it.
+ *
+ * @param port Port 0..3 (the port, not the position among the active players).
+ */
+extern float gmRemixKothRulesMeterX(int port);
+
 #endif
 
 #endif

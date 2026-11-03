@@ -26,6 +26,7 @@ typedef enum IFRemixSpriteId
     IFREMIX_SPRITE_C_ARROW_B,
     IFREMIX_SPRITE_C_ARROW_C,
     IFREMIX_SPRITE_C_ARROW_D,
+    IFREMIX_SPRITE_KOTH_METER,
     IFREMIX_SPRITE_COUNT
 } IFRemixSpriteId;
 
@@ -39,6 +40,8 @@ typedef struct IFRemixSpriteEntry
 #define IFREMIX_SPRITE_FILE_BUTTONS 0xC5
 /** Remix CSS images file (File.CSS_IMAGES): the D-pad and the C stick arrows. */
 #define IFREMIX_SPRITE_FILE_CSS_IMAGES 0xA06
+/** King of the Hill graphics file (File.KING_OF_THE_HILL_GFX): the score meter frame. */
+#define IFREMIX_SPRITE_FILE_KOTH 0x14F3
 
 /** Entry of a sprite, or NULL when id is outside 0..IFREMIX_SPRITE_COUNT-1. */
 extern const IFRemixSpriteEntry *ifRemixSpriteRulesGetEntry(int id);
