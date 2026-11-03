@@ -2259,6 +2259,9 @@ void ifCommonAnnounceGoMakeInterface(void)
     GObj *interface_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
     s32 i;
 
+#ifdef REGION_REMIX
+    gmRemixMusicTitleHideAtGo();
+#endif
     gcAddGObjDisplay(interface_gobj, lbCommonDrawSObjAttr, 23, GOBJ_PRIORITY_DEFAULT, ~0);
     gcAddGObjProcess(interface_gobj, ifCommonAnnounceThread, nGCProcessKindThread, 5);
 
