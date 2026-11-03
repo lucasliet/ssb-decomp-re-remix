@@ -155,6 +155,17 @@ void gmRemixTwelveCBBeginMatch(void)
              (int)sGMRemixTwelveCB.players[1].stocks_remaining);
 }
 
+void gmRemixTwelveCBUndoCurrentGame(void)
+{
+    if ((gmRemixTwelveCBIsActive() == FALSE) || (sGMRemixTwelveCBIsInit == FALSE))
+    {
+        return;
+    }
+    gmRemixTwelveCBUndoGame(&sGMRemixTwelveCB);
+    port_log("twelvecb: game taken back, now game %d, pool %d / %d\n", (int)sGMRemixTwelveCB.current_game,
+             (int)sGMRemixTwelveCB.players[0].stocks_remaining, (int)sGMRemixTwelveCB.players[1].stocks_remaining);
+}
+
 sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind)
 {
     if (gmRemixTwelveCBIsActive() == FALSE)

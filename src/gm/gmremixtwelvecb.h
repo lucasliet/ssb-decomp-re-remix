@@ -88,6 +88,9 @@ extern sb32 gmRemixTwelveCBIsComplete(void);
  */
 extern const GMRemixTwelveCBState* gmRemixTwelveCBGetState(void);
 
+/** Takes back the game in progress when both players accepted a Gentlemen's Reset of the pause (gmRemixTwelveCBUndoGame). */
+extern void gmRemixTwelveCBUndoCurrentGame(void);
+
 /** Forgets the battle (the CSS goes back to the VS menu). */
 extern void gmRemixTwelveCBReset(void);
 

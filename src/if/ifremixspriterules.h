@@ -29,6 +29,7 @@ typedef enum IFRemixSpriteId
     IFREMIX_SPRITE_KOTH_METER,
     IFREMIX_SPRITE_MULTIMAN_POLYGON,
     IFREMIX_SPRITE_MULTIMAN_CROSS,
+    IFREMIX_SPRITE_START_BUTTON,
     IFREMIX_SPRITE_COUNT
 } IFRemixSpriteId;
 
@@ -48,6 +49,9 @@ typedef struct IFRemixSpriteEntry
 #define IFREMIX_SPRITE_FILE_DIGITS 0x24
 /** King of the Hill graphics file (File.KING_OF_THE_HILL_GFX): the score meter frame. */
 #define IFREMIX_SPRITE_FILE_KOTH 0x14F3
+
+/** Vanilla sound test file: the START button sprite (llMNSoundTestStartButtonSprite). */
+#define IFREMIX_SPRITE_FILE_SOUND_TEST 0xC4
 
 /** Entry of a sprite, or NULL when id is outside 0..IFREMIX_SPRITE_COUNT-1. */
 extern const IFRemixSpriteEntry *ifRemixSpriteRulesGetEntry(int id);

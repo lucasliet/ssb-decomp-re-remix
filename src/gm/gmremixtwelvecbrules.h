@@ -143,6 +143,31 @@ extern void gmRemixTwelveCBRecordKo(GMRemixTwelveCBState *state, int32_t port, i
  */
 extern void gmRemixTwelveCBCalculateBest(GMRemixTwelveCBState *state);
 
+/**
+ * Takes back the game in progress after a Gentlemen's Reset was accepted (gentlemens_reset_ _reset): every stock the players
+ * lost this game goes back to their pools and to the portrait they played, the game record is cleared (the portrait stays) and
+ * the battle goes back one game, to not started when it was the first. Does nothing before a game started.
+ *
+ * @param state Battle state.
+ */
+extern void gmRemixTwelveCBUndoGame(GMRemixTwelveCBState *state);
+
+/**
+ * Port that controls the pause after a reset request (gentlemens_reset_ 3689-3703): the opponent when it is a human, so that he
+ * can accept or decline, otherwise the player that asked.
+ *
+ * @param pausing_port Port that controls the pause (0 or 1).
+ * @param opponent_is_human Non-zero when the other player is a human.
+ */
+extern int32_t gmRemixTwelveCBResetControllerPort(int32_t pausing_port, int32_t opponent_is_human);
+
+/**
+ * Digit of the requesting player in "Game reset requested by  P." ('1' for port 0, '2' for port 1).
+ *
+ * @param port Port of the player that asked.
+ */
+extern char gmRemixTwelveCBResetRequesterDigit(int32_t port);
+
 #endif
 
 #endif

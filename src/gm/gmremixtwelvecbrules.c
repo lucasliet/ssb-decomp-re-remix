@@ -289,4 +289,44 @@ int32_t gmRemixTwelveCBGetWinnerPortraitOf(const GMRemixTwelveCBState *state, in
     return (last->stocks_end != GMREMIX_TWELVECB_NO_STOCKS) ? (int32_t)last->portrait : -1;
 }
 
+void gmRemixTwelveCBUndoGame(GMRemixTwelveCBState *state)
+{
+    int32_t port;
+    int32_t game = state->current_game;
+
+    if (game < 0)
+    {
+        return;
+    }
+    for (port = 0; port < GMREMIX_TWELVECB_PLAYERS; port++)
+    {
+        GMRemixTwelveCBMatch *match = &state->players[port].matches[game];
+
+        state->players[port].stocks_remaining += gmRemixTwelveCBStocksLost(match);
+
+        if (gmRemixTwelveCBPortraitIsValid(match->portrait) != 0)
+        {
+            state->stocks_by_portrait[match->portrait] = (int8_t)match->stocks_start;
+        }
+        match->fkind = GMREMIX_TWELVECB_NO_STOCKS;
+        match->stocks_start = 0;
+        match->stocks_end = 0;
+    }
+    if (game == 0)
+    {
+        state->status = GMREMIX_TWELVECB_STATUS_NOT_STARTED;
+    }
+    state->current_game = game - 1;
+}
+
+int32_t gmRemixTwelveCBResetControllerPort(int32_t pausing_port, int32_t opponent_is_human)
+{
+    return (opponent_is_human != 0) ? (pausing_port ^ 1) : pausing_port;
+}
+
+char gmRemixTwelveCBResetRequesterDigit(int32_t port)
+{
+    return (char)('1' + port);
+}
+
 #endif

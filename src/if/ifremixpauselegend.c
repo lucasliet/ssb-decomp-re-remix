@@ -16,6 +16,7 @@
 #include <sys/objman.h>
 #include "gm/gmremixgroupdisplay.h"
 #include "gm/gmremixtoggle.h"
+#include "if/ifremixgentlemensreset.h"
 #include "if/ifremixpauselegend.h"
 #include "if/ifremixsprite.h"
 #include "remix/remix_hud_text.h"
@@ -176,6 +177,12 @@ void ifRemixPauseLegendEnd(void)
     sIFRemixPauseLegendSpriteCount = 0;
 }
 
+void ifRemixPauseLegendHideMusicAndCamera(void)
+{
+    sIFRemixPauseLegendExtraShown = FALSE;
+    ifRemixPauseLegendApplyGroups();
+}
+
 /** Toggles the R legend with Dpad Left while the Disable HUD toggle is OFF (check_toggle_hud_press_); hiding it hides the rest. */
 static void ifRemixPauseLegendToggleHudOnDpadLeft(u16 button_tap)
 {
@@ -194,7 +201,7 @@ static void ifRemixPauseLegendToggleOnRPress(u16 button_tap, u16 button_hold)
     {
         return;
     }
-    if ((gmRemixToggle(disable_hud) != 0) || !sIFRemixPauseLegendHudShown)
+    if ((gmRemixToggle(disable_hud) != 0) || !sIFRemixPauseLegendHudShown || (ifRemixGentlemensResetIsRequested() != FALSE))
     {
         return;
     }

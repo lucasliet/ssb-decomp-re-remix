@@ -14,6 +14,7 @@
 #include "gm/gmremixtagteam.h"
 #include "gm/gmremixmagnify.h"
 #include "if/ifremixstaminahud.h"
+#include "if/ifremixgentlemensreset.h"
 #include "if/ifremixpauselegend.h"
 #include "gm/gmremixbgm.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
@@ -3211,6 +3212,7 @@ void ifCommonBattlePauseMakeInterface(s32 player)
 void ifCommonBattlePauseEjectGObjs(void)
 {
 #ifdef REGION_REMIX
+    ifRemixGentlemensResetEnd();
     ifRemixPauseLegendEnd();
 #endif
     lbCommonEjectGObjLinkedList(gGCCommonLinks[nGCCommonLinkIDPauseMenu]);
@@ -3396,6 +3398,7 @@ void ifCommonBattlePauseUpdateInterface(void)
 #ifdef REGION_REMIX
         gmRemixBgmPauseUpdate(button_hold);
         ifRemixPauseLegendUpdate(button_tap, button_hold);
+        ifRemixGentlemensResetUpdate();
         if (ftRemixPauseKeepsSceneCamera())
         {
             sIFCommonBattlePauseCameraEyeXOrigin = gGMCameraPauseCameraEyeX;
@@ -3456,6 +3459,12 @@ void ifCommonBattlePauseUpdateInterface(void)
             (button_hold & Z_TRIG)
         )
         {
+#ifdef REGION_REMIX
+            if (ifRemixGentlemensResetHandleCombo(&sIFCommonBattlePausePlayer) != FALSE)
+            {
+                return;
+            }
+#endif
             gSCManagerSceneData.is_reset = TRUE;
 
             gcFuncGObjAll(ifCommonBattleInterfacePauseGObj, 0);

@@ -14,6 +14,9 @@ void ifRemixPauseLegendReset(void);
 /** Ejects the legend sprites when the pause ends. */
 void ifRemixPauseLegendEnd(void);
 
+/** Hides the music and camera legends (the Gentlemen's Reset request destroys them, TwelveCharBattle.asm 3624-3638). */
+void ifRemixPauseLegendHideMusicAndCamera(void);
+
 /**
  * Runs the pause legend controls and draws the legends of the current frame (Pause.asm check_toggle_hud_press_ and
  * check_legend_toggle_press_). Call it once per frame from the default pause, where the camera controls are allowed.
