@@ -31,6 +31,8 @@ extern void *func_800269C0_275C0(u16 id);
 #define MNVSSTATS_VIEW_HINT_NEXT_X 87.0F
 #define MNVSSTATS_VIEW_TEXT_SCALE 0.8125F
 #define MNVSSTATS_VIEW_WHITE 0xFFFFFFFF
+/* White at the transparency the page background (alpha 0xB0 black) leaves a drawn object: about 31 percent. */
+#define MNVSSTATS_VIEW_DIMMED 0xFFFFFF4F
 /* Display group (gGCCommonLinks) of the normal results rows, which VsStats.asm check_menu_toggle_ hides while a page shows. */
 #define MNVSSTATS_VIEW_GROUP_RESULTS_ROWS 0x16
 
@@ -61,12 +63,12 @@ static void mnRemixVSStatsViewStartPressBuffer(void)
 }
 
 /**
- * Hides or shows the normal results rows and the Press A prompt, and the opposite for the stats page background and its
- * B and R buttons (Render.toggle_group_display_).
+ * Hides or shows the normal results rows, and the opposite for the stats page background and its B and R buttons
+ * (Render.toggle_group_display_). The Press A prompt stays: the reference emulator shows it dimmed under the page
+ * background (docs/remix/notes/i8_reference_emulator.md).
  */
 static void mnRemixVSStatsViewSetResultsHidden(u32 hide)
 {
-    gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PROMPT, hide);
     gmRemixGroupDisplaySet(MNVSSTATS_VIEW_GROUP_RESULTS_ROWS, hide);
     gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PAGES, (hide == 0) ? 1 : 0);
 }
@@ -107,10 +109,10 @@ static void mnRemixVSStatsViewCheckHide(void)
 }
 
 /** The Press A prompt above the results (asm press_a text, revealed by check_menu_toggle_). */
-static void mnRemixVSStatsViewDrawPrompt(void)
+static void mnRemixVSStatsViewDrawPrompt(u32 rgba)
 {
     remix_hud_text_put(MNVSSTATS_VIEW_PROMPT_SLOT, "Press     for Match Stats", MNVSSTATS_VIEW_PROMPT_X,
-                       MNVSSTATS_VIEW_PROMPT_Y, MNVSSTATS_VIEW_WHITE, MNVSSTATS_VIEW_TEXT_SCALE, REMIX_HUD_ALIGN_CENTER);
+                       MNVSSTATS_VIEW_PROMPT_Y, rgba, MNVSSTATS_VIEW_TEXT_SCALE, REMIX_HUD_ALIGN_CENTER);
 }
 
 /** The B and R hints in the upper corners of the stats page (asm press_b and press_r). */
@@ -157,9 +159,10 @@ void mnRemixVSStatsViewRun(s32 results_tics, s32 allow_exit_wait)
     {
         mnRemixVSStatsPagesDraw(sMNRemixVSStatsViewPage);
         mnRemixVSStatsViewDrawHints();
+        mnRemixVSStatsViewDrawPrompt(MNVSSTATS_VIEW_DIMMED);
         return;
     }
-    mnRemixVSStatsViewDrawPrompt();
+    mnRemixVSStatsViewDrawPrompt(MNVSSTATS_VIEW_WHITE);
 }
 
 #endif
