@@ -9,6 +9,7 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
+#include "if/ifremixsprite.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_debug.h"
 #include "remix/remix_hud_text.h"
@@ -77,6 +78,7 @@ sb32 gmRemixModeIs(s32 mode)
 void gmRemixModeSceneClear(void)
 {
     remix_hud_text_clear();
+    ifRemixSpriteSceneReset();
 }
 
 void gmRemixModeLogMatch(void)
