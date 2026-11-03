@@ -48,6 +48,15 @@ extern void gmRemixTwelveCBOnKo(FTStruct *fp);
  */
 extern sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind);
 
+/**
+ * Remembers the CSS portrait slot (0..23) a player's token sits on; the game takes its portrait stocks from it. -1 forgets it,
+ * and the portrait is then worked out from the fighter (the default character set).
+ *
+ * @param port Player port (0 or 1).
+ * @param slot Portrait slot, or -1.
+ */
+extern void gmRemixTwelveCBSetCssPortrait(s32 port, s32 slot);
+
 /** TRUE when the stock pool of a player is empty, which ends the battle. */
 extern sb32 gmRemixTwelveCBIsComplete(void);
 

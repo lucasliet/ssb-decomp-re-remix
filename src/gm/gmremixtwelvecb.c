@@ -53,6 +53,27 @@ sb32 gmRemixTwelveCBIsComplete(void)
     return (sGMRemixTwelveCBIsInit != FALSE) && (sGMRemixTwelveCB.status == GMREMIX_TWELVECB_STATUS_COMPLETE);
 }
 
+/* Portrait slot the CSS reported for each port, -1 when none. */
+static s32 sGMRemixTwelveCBCssPortrait[GMREMIX_TWELVECB_PLAYERS] = { -1, -1 };
+
+void gmRemixTwelveCBSetCssPortrait(s32 port, s32 slot)
+{
+    if ((port >= 0) && (port < GMREMIX_TWELVECB_PLAYERS))
+    {
+        sGMRemixTwelveCBCssPortrait[port] = slot;
+    }
+}
+
+/** Portrait of a port: the one the CSS reported, else the default set slot of the fighter. */
+static s32 gmRemixTwelveCBPortraitOfPort(s32 port, s32 fkind)
+{
+    if ((port >= 0) && (port < GMREMIX_TWELVECB_PLAYERS) && (sGMRemixTwelveCBCssPortrait[port] >= 0))
+    {
+        return sGMRemixTwelveCBCssPortrait[port];
+    }
+    return gmRemixTwelveCBPortraitOf(fkind);
+}
+
 static void gmRemixTwelveCBPickPortraits(void)
 {
     s32 port;
@@ -60,7 +81,7 @@ static void gmRemixTwelveCBPickPortraits(void)
     for (port = 0; port < GMREMIX_TWELVECB_PLAYERS; port++)
     {
         gmRemixTwelveCBSetNextPortrait(&sGMRemixTwelveCB, port,
-                                       gmRemixTwelveCBPortraitOf(gSCManagerBattleState->players[port].fkind));
+                                       gmRemixTwelveCBPortraitOfPort(port, gSCManagerBattleState->players[port].fkind));
     }
 }
 
@@ -113,7 +134,7 @@ sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind)
     {
         return TRUE;
     }
-    return (gmRemixTwelveCBGetPortraitStocks(&sGMRemixTwelveCB, gmRemixTwelveCBPortraitOf(fkind)) > 0) ? TRUE : FALSE;
+    return (gmRemixTwelveCBGetPortraitStocks(&sGMRemixTwelveCB, gmRemixTwelveCBPortraitOfPort(slot, fkind)) > 0) ? TRUE : FALSE;
 }
 
 s32 gmRemixTwelveCBGetStocks(s32 player, s32 match_stocks)

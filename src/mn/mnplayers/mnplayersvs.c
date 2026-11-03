@@ -31,6 +31,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
 #include "mn/mnplayers/mnremixvariants.h"
+#include "mn/mnplayers/mnremixtwelvecblayout.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
 #endif
@@ -509,6 +510,79 @@ void mnPlayersVSMakeRemixPortrait(s32 slot)
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
 }
+
+/* 12-Character Battle CSS (TwelveCharBattle.asm): the character set (0 Default .. 3 Remix) each player shows in his half, and the
+ * slot of the portrait each player's token sits on, MNREMIX_TCB_NO_SLOT when none. */
+static s32 sMNPlayersVSTwelveCBSet[2];
+static s32 sMNPlayersVSTwelveCBPortrait[2] = { MNREMIX_TCB_NO_SLOT, MNREMIX_TCB_NO_SLOT };
+
+/** Fighter kind shown by a slot, in the character set of the player that owns it. */
+static s32 mnPlayersVSTwelveCBSlotFkind(s32 slot)
+{
+	s32 owner = mnRemixTwelveCBLayoutOwner(slot);
+
+	return (owner < 0) ? nFTKindNull : mnRemixTwelveCBLayoutFkind(sMNPlayersVSTwelveCBSet[owner], slot);
+}
+
+/** Slot the player's token sits on when it holds the fighter, else the player's own portrait of that fighter. */
+static s32 mnPlayersVSTwelveCBGetPortrait(s32 player, s32 fkind)
+{
+	s32 slot = sMNPlayersVSTwelveCBPortrait[player];
+
+	if ((slot != MNREMIX_TCB_NO_SLOT) && (mnPlayersVSTwelveCBSlotFkind(slot) == fkind))
+	{
+		return slot;
+	}
+	slot = mnRemixTwelveCBLayoutSlotOfFkind(sMNPlayersVSTwelveCBSet[player], player, fkind);
+
+	return (slot == MNREMIX_TCB_NO_SLOT) ? ((player == 0) ? 0 : MNREMIX_TCB_HALF_COLUMNS) : slot;
+}
+
+/** Slide-in of a 12-Character Battle portrait (the asm routine at 0x80131EE4, run by the portrait objects). */
+void mnPlayersVSTwelveCBPortraitProcUpdate(GObj *gobj)
+{
+	SObj *sobj = SObjGetStruct(gobj);
+
+	sobj->pos.x = mnRemixTwelveCBLayoutNextX(gobj->user_data.s, sobj->pos.x);
+}
+
+void mnPlayersVSMakeTwelveCBPortrait(s32 slot)
+{
+	GObj *gobj;
+	SObj *sobj;
+	s32 fkind = mnPlayersVSTwelveCBSlotFkind(slot);
+
+	gobj = gcMakeGObjSPAfter(0, NULL, 18, GOBJ_PRIORITY_DEFAULT);
+	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
+	gcAddGObjProcess(gobj, mnPlayersVSTwelveCBPortraitProcUpdate, nGCProcessKindFunc, 1);
+	gobj->user_data.s = slot;
+
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[8], kRemixCssPortraitOffset[fkind]));
+	sobj->pos.x = mnRemixTwelveCBLayoutStartX(slot);
+	sobj->pos.y = mnRemixTwelveCBLayoutCellY(slot);
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+}
+
+/** Player (0 or 1) whose token is the GObj, 0 when it is none of them. */
+static s32 mnPlayersVSTwelveCBPlayerOfPuck(GObj *puck_gobj)
+{
+	return (sMNPlayersVSSlots[1].puck == puck_gobj) ? 1 : 0;
+}
+
+/** Portrait slot of a player's fighter: the 12-Character Battle slot of his half, else the Remix CSS slot of the fighter. */
+static s32 mnPlayersVSGetPortraitOfPlayer(s32 player, s32 fkind)
+{
+	if ((gmRemixTwelveCBIsActive() != FALSE) && (player < 2))
+	{
+		return mnPlayersVSTwelveCBGetPortrait(player, fkind);
+	}
+	return mnPlayersVSGetPortrait(fkind);
+}
+#endif
+
+#ifndef REGION_REMIX
+#define mnPlayersVSGetPortraitOfPlayer(player, fkind) mnPlayersVSGetPortrait(fkind)
 #endif
 
 // 0x80132118
@@ -675,6 +749,14 @@ void mnPlayersVSMakePortraitAll(void)
 #ifdef REGION_REMIX
 	s32 slot;
 
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
+		{
+			mnPlayersVSMakeTwelveCBPortrait(slot);
+		}
+		return;
+	}
 	for (slot = 0; slot < REMIX_CSS_NUM_SLOTS; slot++)
 	{
 		mnPlayersVSMakeRemixPortrait(slot);
@@ -3053,7 +3135,7 @@ void mnPlayersVSMakePortraitFlash(s32 player)
 {
 	GObj *gobj;
 	SObj *sobj;
-	s32 portrait = mnPlayersVSGetPortrait(sMNPlayersVSSlots[player].fkind);
+	s32 portrait = mnPlayersVSGetPortraitOfPlayer(player, sMNPlayersVSSlots[player].fkind);
 
 	mnPlayersVSDestroyPortraitFlash(player);
 	
@@ -3064,6 +3146,12 @@ void mnPlayersVSMakePortraitFlash(s32 player)
 
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[5], llMNPlayersPortraitsWhiteSquareSprite));
 #ifdef REGION_REMIX
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		sobj->pos.x = mnRemixTwelveCBLayoutCellX(portrait) + 1.0F;
+		sobj->pos.y = mnRemixTwelveCBLayoutCellY(portrait) + 1.0F;
+		return;
+	}
 	sobj->pos.x = mnPlayersVSRemixCellX(portrait) + 1.0F;
 	sobj->pos.y = mnPlayersVSRemixCellY(portrait) + 1.0F;
 #else
@@ -3643,11 +3731,42 @@ sb32 mnPlayersVSCheckCursorPuckGrab(GObj *gobj, s32 player)
 }
 
 #ifdef REGION_REMIX
-s32 mnPlayersVSGetRemixPuckFighterKind(s32 player)
+/** 12-Character Battle: the fighter under the token of a player, who only reaches the portraits of his own half. */
+static s32 mnPlayersVSGetTwelveCBPuckFighterKind(s32 player)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayersVSSlots[player].puck);
-	s32 slot = mnPlayersVSRemixSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	s32 slot = (player > 1) ? MNREMIX_TCB_NO_SLOT : mnRemixTwelveCBLayoutSlotAtPoint(player, (s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
 	s32 fkind;
+
+	if (slot == MNREMIX_TCB_NO_SLOT)
+	{
+		return nFTKindNull;
+	}
+	fkind = mnPlayersVSTwelveCBSlotFkind(slot);
+
+	if ((mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE))
+	{
+		return nFTKindNull;
+	}
+	if (sMNPlayersVSSlots[player].is_selected == FALSE)
+	{
+		sMNPlayersVSTwelveCBPortrait[player] = slot;
+	}
+	return fkind;
+}
+
+s32 mnPlayersVSGetRemixPuckFighterKind(s32 player)
+{
+	SObj *sobj;
+	s32 slot;
+	s32 fkind;
+
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		return mnPlayersVSGetTwelveCBPuckFighterKind(player);
+	}
+	sobj = SObjGetStruct(sMNPlayersVSSlots[player].puck);
+	slot = mnPlayersVSRemixSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
 
 	if (slot < 0)
 	{
@@ -4238,6 +4357,15 @@ void mnPlayersVSCenterPuckInPortrait(GObj *gobj, s32 fkind)
 	s32 portrait = mnPlayersVSGetPortrait(fkind);
 
 #ifdef REGION_REMIX
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		s32 player = mnPlayersVSTwelveCBPlayerOfPuck(gobj);
+
+		portrait = mnPlayersVSTwelveCBGetPortrait(player, fkind);
+		SObjGetStruct(gobj)->pos.x = mnRemixTwelveCBLayoutCellX(portrait) + ((MNREMIX_TCB_CELL_SIZE / 2) - 13);
+		SObjGetStruct(gobj)->pos.y = mnRemixTwelveCBLayoutCellY(portrait) + ((MNREMIX_TCB_CELL_SIZE / 2) - 12);
+		return;
+	}
 	SObjGetStruct(gobj)->pos.x = mnPlayersVSRemixCellX(portrait) + ((REMIX_CSS_PORTRAIT_WIDTH / 2) - 13);
 	SObjGetStruct(gobj)->pos.y = mnPlayersVSRemixCellY(portrait) + ((REMIX_CSS_PORTRAIT_HEIGHT / 2) - 12);
 #else
@@ -4634,12 +4762,13 @@ void mnPlayersVSPuckAdjustOverlap(s32 this_player, s32 other_player, f32 unused)
 // 0x80139460
 void mnPlayersVSPuckAdjustPortraitEdge(s32 player)
 {
-	s32 portrait = mnPlayersVSGetPortrait(sMNPlayersVSSlots[player].fkind);
+	s32 portrait = mnPlayersVSGetPortraitOfPlayer(player, sMNPlayersVSSlots[player].fkind);
 #ifdef REGION_REMIX
-	f32 portrait_edge_x = mnPlayersVSRemixCellX(portrait);
-	f32 portrait_edge_y = mnPlayersVSRemixCellY(portrait);
-	f32 portrait_width = REMIX_CSS_PORTRAIT_WIDTH;
-	f32 portrait_height = REMIX_CSS_PORTRAIT_HEIGHT;
+	sb32 is_twelvecb = (gmRemixTwelveCBIsActive() != FALSE) ? TRUE : FALSE;
+	f32 portrait_edge_x = is_twelvecb ? mnRemixTwelveCBLayoutCellX(portrait) : mnPlayersVSRemixCellX(portrait);
+	f32 portrait_edge_y = is_twelvecb ? mnRemixTwelveCBLayoutCellY(portrait) : mnPlayersVSRemixCellY(portrait);
+	f32 portrait_width = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : REMIX_CSS_PORTRAIT_WIDTH;
+	f32 portrait_height = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : REMIX_CSS_PORTRAIT_HEIGHT;
 #else
 	f32 portrait_edge_x = ((portrait >= 6) ? portrait - 6 : portrait) * 45 + 25;
 	f32 portrait_edge_y = ((portrait >= 6) ? 1 : 0) * 43 + 36;
@@ -5416,16 +5545,24 @@ void mnPlayersVSPauseSlotProcesses(void)
 // 0x8013A920
 #if defined(PORT) && defined(REGION_REMIX)
 /**
- * The 12-Character Battle has no panels for ports 3 and 4 (TwelveCharBattle.asm skips InitSlot(2) and InitSlot(3)). The port
- * keeps the two slots, which the rest of the screen reads, but never shows their panel, doors, buttons, puck or cursor.
+ * Per-frame work of the 12-Character Battle CSS: tells the match which portraits the tokens sit on, and hides ports 3 and 4
+ * (TwelveCharBattle.asm skips InitSlot(2) and InitSlot(3); the port keeps the two slots, which the rest of the screen reads,
+ * but never shows their panel, doors, buttons, puck or cursor).
  */
-static void mnPlayersVSHideClosedPanels(void)
+static void mnPlayersVSTwelveCBFrameUpdate(void)
 {
 	s32 player;
 
 	if (gmRemixTwelveCBIsActive() == FALSE)
 	{
 		return;
+	}
+	for (player = 0; player < 2; player++)
+	{
+		s32 slot = sMNPlayersVSTwelveCBPortrait[player];
+		sb32 is_valid = (slot != MNREMIX_TCB_NO_SLOT) && (mnPlayersVSTwelveCBSlotFkind(slot) == sMNPlayersVSSlots[player].fkind);
+
+		gmRemixTwelveCBSetCssPortrait(player, is_valid ? slot : -1);
 	}
 	for (player = 2; player < GMCOMMON_PLAYERS_MAX; player++)
 	{
@@ -5455,7 +5592,7 @@ void mnPlayersVSFuncRun(GObj *gobj)
 	s32 gkind;
 	s32 *gkinds;
 #if defined(PORT) && defined(REGION_REMIX)
-	mnPlayersVSHideClosedPanels();
+	mnPlayersVSTwelveCBFrameUpdate();
 #endif
 
 	// lock game rules UI when competitive ruleset is enabled
