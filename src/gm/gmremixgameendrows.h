@@ -22,16 +22,6 @@ extern sb32 gmRemixGameEndRowsHasRow(void);
  */
 extern s32 gmRemixGameEndRowsGetValue(s32 port);
 
-/**
- * Draws the extra results row (label and one value per present port) with the Remix HUD text. The label is text, the asm uses a
- * sprite of the Remix results file (offsets 0xE648 "Times", 0xE9E0 "FGs") that the port does not load.
- *
- * @param y Top of the row in N64 screen units (124).
- * @param column_x Centre x of each port column, as mnVSResultsGetColumnX returns it.
- * @param is_present TRUE for each port that took part.
- */
-extern void gmRemixGameEndRowsDraw(f32 y, const f32 *column_x, const sb32 *is_present);
-
 #endif
 
 #endif

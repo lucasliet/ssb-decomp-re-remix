@@ -28,6 +28,7 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
+#include "mn/mnvsmode/mnremixvsmode.h"
 #include "mn/mnvsmode/mnremixvsstatsview.h"
 #endif
 
@@ -2989,12 +2990,19 @@ void mnVSResultsInitFightersAll(void)
 	}
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+static sb32 sMNVSResultsIsRemixRowMade;
+#endif
+
 // 0x80137698
 void mnVSResultsInitVars(void)
 {
 	s32 i;
 
 	sMNVSResultsTotalTimeTics = 0;
+#if defined(PORT) && defined(REGION_REMIX)
+	sMNVSResultsIsRemixRowMade = FALSE;
+#endif
 	sMNVSResultsBarWidth = 0;
 	sMNVSResultsCharacterAlpha = 0x00;
 	sMNVSResultsIsTeamBattle = gSCManagerTransferBattleState.is_team_battle;
@@ -3428,23 +3436,99 @@ void func_ovl31_801388A4(void)
 }
 
 #if defined(PORT) && defined(REGION_REMIX)
-/** Draws the King of the Hill and Smashketball row once its time has come, in the slot of the vanilla layout (GameEnd.asm add_row_to_results_). */
-static void mnVSResultsDrawRemixRow(void)
+#define MNVSRESULTS_REMIX_ROW_TICS 290
+#define MNVSRESULTS_REMIX_ROW_LABEL_X 26.0F
+#define MNVSRESULTS_REMIX_ROW_MINUTES_X (-20.0F)
+#define MNVSRESULTS_REMIX_ROW_COLON_X 11.0F
+#define MNVSRESULTS_REMIX_ROW_COLON_ATTR 0x0201
+#define MNVSRESULTS_REMIX_ROW_COLON_OFFSET 0x08D8
+
+/** The "Times" or "FGs" label of the extra row: a sprite of the results file next to the vanilla KOs label (VsRemixMenu.asm _draw_alt_texture). */
+static GObj* mnVSResultsMakeRemixRowLabel(f32 y, sb32 is_koth)
 {
-	f32 column_x[GMCOMMON_PLAYERS_MAX];
-	sb32 is_present[GMCOMMON_PLAYERS_MAX];
+	GObj *gobj = lbCommonMakeSpriteGObj
+	(
+		0,
+		NULL,
+		22,
+		GOBJ_PRIORITY_DEFAULT,
+		lbCommonDrawSObjAttr,
+		31,
+		GOBJ_PRIORITY_DEFAULT,
+		~0,
+		lbRelocGetFileData
+		(
+			Sprite*,
+			sMNVSResultsFiles[0],
+			(is_koth != FALSE) ? GMREMIX_GAMEEND_ROWS_KOTH_LABEL_OFFSET : GMREMIX_GAMEEND_ROWS_SMASHKETBALL_LABEL_OFFSET
+		),
+		nGCProcessKindFunc,
+		NULL,
+		1
+	);
+	SObjGetStruct(gobj)->pos.x = MNVSRESULTS_REMIX_ROW_LABEL_X;
+	SObjGetStruct(gobj)->pos.y = y;
+	SObjGetStruct(gobj)->sprite.attr &= ~SP_FASTCOPY;
+	SObjGetStruct(gobj)->sprite.attr |= SP_TRANSPARENT;
+	SObjGetStruct(gobj)->sprite.red = 0xFF;
+	SObjGetStruct(gobj)->sprite.green = 0xFF;
+	SObjGetStruct(gobj)->sprite.blue = 0xFF;
+
+	return gobj;
+}
+
+/** M:SS of the King of the Hill row: seconds in the column with the tens digit forced, minutes 20 to the left, the colon between them. */
+static void mnVSResultsMakeRemixRowTime(GObj *gobj, f32 x, f32 y, s32 frames, s32 color_id)
+{
+	s32 seconds = gmRemixGameEndRowsSecondsDigits(frames);
+	SObj *sobj;
+
+	sobj = mnVSResultsMakeDigit(gobj, seconds / 10, color_id);
+	sobj->pos.x = x + 16.0F;
+	sobj->pos.y = y;
+	sobj = mnVSResultsMakeDigit(gobj, seconds % 10, color_id);
+	sobj->pos.x = x + 24.0F;
+	sobj->pos.y = y;
+
+	mnVSResultsMakeNumber(gobj, x + MNVSRESULTS_REMIX_ROW_MINUTES_X, y, gmRemixGameEndRowsMinutes(frames), color_id);
+
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSResultsFiles[5], MNVSRESULTS_REMIX_ROW_COLON_OFFSET));
+	sobj->pos.x = x + MNVSRESULTS_REMIX_ROW_MINUTES_X + MNVSRESULTS_REMIX_ROW_COLON_X + 20.0F;
+	sobj->pos.y = y;
+	sobj->sprite.attr = MNVSRESULTS_REMIX_ROW_COLON_ATTR;
+	mnVSResultsSetNumberColor(sobj, color_id);
+}
+
+/** Makes the King of the Hill and Smashketball row once its time has come, in the slot of the vanilla layout (VsRemixMenu.asm add_row_to_results_). */
+static void mnVSResultsMakeRemixRow(void)
+{
+	sb32 is_koth;
+	GObj *gobj;
 	s32 i;
 
-	if ((gmRemixGameEndRowsHasRow() == FALSE) || (sMNVSResultsTotalTimeTics < 290))
+	if ((gmRemixGameEndRowsHasRow() == FALSE) || (sMNVSResultsIsRemixRowMade != FALSE) || (sMNVSResultsTotalTimeTics < MNVSRESULTS_REMIX_ROW_TICS))
 	{
 		return;
 	}
+	sMNVSResultsIsRemixRowMade = TRUE;
+	is_koth = gmRemixModeIs(MNREMIX_VSMODE_KOTH);
+	gobj = mnVSResultsMakeRemixRowLabel(GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, is_koth);
+
 	for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
 	{
-		is_present[i] = sMNVSResultsIsPresent[i];
-		column_x[i] = (is_present[i] != FALSE) ? mnVSResultsGetColumnX(i) : 0.0F;
+		s32 value = gmRemixGameEndRowsGetValue(i);
+
+		if (sMNVSResultsIsPresent[i] == FALSE)
+		{
+			continue;
+		}
+		if (is_koth != FALSE)
+		{
+			mnVSResultsMakeRemixRowTime(gobj, mnVSResultsGetColumnX(i), GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, value, mnVSResultsGetNumberColorID(i));
+			continue;
+		}
+		mnVSResultsMakeNumber(gobj, mnVSResultsGetColumnX(i), GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, gmRemixGameEndRowsClampCount(value), mnVSResultsGetNumberColorID(i));
 	}
-	gmRemixGameEndRowsDraw(GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, column_x, is_present);
 }
 #endif
 
@@ -3459,7 +3543,7 @@ void mnVSResultsFuncRun(GObj *gobj)
 #if defined(PORT) && defined(REGION_REMIX)
 	gmRemixTwelveCBHudDrawResults();
 	mnRemixVSStatsViewRun(sMNVSResultsTotalTimeTics, sMNVSResultsAllowExitWait);
-	mnVSResultsDrawRemixRow();
+	mnVSResultsMakeRemixRow();
 #endif
 
 	if (sMNVSResultsTotalTimeTics == sMNVSResultsDrawWallpaperTic)
