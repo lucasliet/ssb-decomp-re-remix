@@ -3207,6 +3207,9 @@ void ifCommonBattlePauseMakeInterface(s32 player)
 // 0x80113F50
 void ifCommonBattlePauseEjectGObjs(void)
 {
+#ifdef REGION_REMIX
+    ifRemixPauseLegendEnd();
+#endif
     lbCommonEjectGObjLinkedList(gGCCommonLinks[nGCCommonLinkIDPauseMenu]);
 }
 

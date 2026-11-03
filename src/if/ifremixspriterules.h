@@ -20,6 +20,12 @@ typedef enum IFRemixSpriteId
     IFREMIX_SPRITE_BUTTON_Z,
     IFREMIX_SPRITE_BUTTON_PLUS,
     IFREMIX_SPRITE_BUTTON_L_THIN,
+    IFREMIX_SPRITE_LEGEND_WORD,
+    IFREMIX_SPRITE_DPAD,
+    IFREMIX_SPRITE_C_ARROW_A,
+    IFREMIX_SPRITE_C_ARROW_B,
+    IFREMIX_SPRITE_C_ARROW_C,
+    IFREMIX_SPRITE_C_ARROW_D,
     IFREMIX_SPRITE_COUNT
 } IFRemixSpriteId;
 
@@ -31,6 +37,8 @@ typedef struct IFRemixSpriteEntry
 
 /** Reloc file of the vanilla pause interface (IFCommonBattlePause), where the button sprites live. */
 #define IFREMIX_SPRITE_FILE_BUTTONS 0xC5
+/** Remix CSS images file (File.CSS_IMAGES): the D-pad and the C stick arrows. */
+#define IFREMIX_SPRITE_FILE_CSS_IMAGES 0xA06
 
 /** Entry of a sprite, or NULL when id is outside 0..IFREMIX_SPRITE_COUNT-1. */
 extern const IFRemixSpriteEntry *ifRemixSpriteRulesGetEntry(int id);

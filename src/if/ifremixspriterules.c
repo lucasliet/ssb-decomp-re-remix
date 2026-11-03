@@ -16,6 +16,12 @@ static const IFRemixSpriteEntry sIFRemixSpriteEntries[IFREMIX_SPRITE_COUNT] =
     { IFREMIX_SPRITE_FILE_BUTTONS, 0x0BD8 },
     { IFREMIX_SPRITE_FILE_BUTTONS, 0x04D8 },
     { IFREMIX_SPRITE_FILE_BUTTONS, 0x1B10 },
+    { IFREMIX_SPRITE_FILE_BUTTONS, 0x19F8 },   /* the "Legend" word of the pause R legend (Pause.asm 182) */
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x0218 }, /* D-pad */
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x1958 }, /* the four C stick arrows of the camera legend (Pause.asm 326-332) */
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x0688 },
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x1A88 },
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x1BB8 },
 };
 
 const IFRemixSpriteEntry *ifRemixSpriteRulesGetEntry(int id)

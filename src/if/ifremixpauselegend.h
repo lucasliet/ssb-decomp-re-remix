@@ -5,8 +5,14 @@
 
 #include <ssb_types.h>
 
-/** Resets the pause legends for a new pause: the R legend shown, the camera legend hidden (Pause.asm show_legend_helper_). */
+/**
+ * Starts the pause legends of a new pause: makes their sprites, with the R legend shown and the music and camera legends hidden
+ * (Pause.asm show_legend_helper_).
+ */
 void ifRemixPauseLegendReset(void);
+
+/** Ejects the legend sprites when the pause ends. */
+void ifRemixPauseLegendEnd(void);
 
 /**
  * Runs the pause legend controls and draws the legends of the current frame (Pause.asm check_toggle_hud_press_ and
