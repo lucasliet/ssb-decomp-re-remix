@@ -75,6 +75,32 @@ Lights1 dMNPlayersVSLights12 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF
 //                               //
 // // // // // // // // // // // //
 
+#if defined(PORT) && defined(REGION_REMIX)
+/* TwelveCharBattle.asm (hook 0x80134430): the header sprite of the mode in the game modes file (0x12). */
+#define MNPLAYERSVS_TWELVECB_HEADER_OFFSET 0x2048
+
+/** Offset of the header sprite: the Free-for-all or Team Battle one, or the 12-Character Battle one. */
+static intptr_t mnPlayersVSGetModeHeaderOffset(intptr_t vanilla_offset)
+{
+	return (gmRemixTwelveCBIsActive() != FALSE) ? MNPLAYERSVS_TWELVECB_HEADER_OFFSET : vanilla_offset;
+}
+
+/**
+ * Panel position of a player (TwelveCharBattle.asm change_2p_panel_position_): in the 12-Character Battle the second player's
+ * panel takes the place of the fourth, 3 panels (69 units each) to the right of the first.
+ */
+static s32 mnPlayersVSGetPanelIndex(s32 player)
+{
+	if ((player == 1) && (gmRemixTwelveCBIsActive() != FALSE))
+	{
+		return 3;
+	}
+	return player;
+}
+#else
+#define mnPlayersVSGetPanelIndex(player) (player)
+#endif
+
 // 0x8013BA80
 s32 sMNPlayersVSPad0x8013BA80;
 
@@ -680,7 +706,7 @@ void mnPlayersVSMakeTeamSelect(s32 team, s32 player)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 34, GOBJ_PRIORITY_DEFAULT, ~0);
 
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], offsets[team]));
-	sobj->pos.x = (player * 69) + 34;
+	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 34;
 	sobj->pos.y = 131.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -735,7 +761,7 @@ void mnPlayersVSMakeTeamSelectAll(void)
 void mnPlayersVSUpdatePlayerKindSelect(GObj *gobj, s32 player, s32 pkind)
 {
 	SObj *sobj;
-	f32 x = (player * 69) + 64;
+	f32 x = (mnPlayersVSGetPanelIndex(player) * 69) + 64;
 	f32 y = 131.0F;
 
 	intptr_t offsets[/* */] =
@@ -767,7 +793,7 @@ void mnPlayersVSMakeRemixNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 	gcRemoveSObjAll(gobj);
 
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[2], kRemixCssLogoOffset[fkind]));
-	sobj->pos.x = (player * 69) + 24;
+	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 24;
 	sobj->pos.y = 143.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -785,7 +811,7 @@ void mnPlayersVSMakeRemixNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 		sobj->sprite.blue = 0x44;
 	}
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], kRemixCssNameOffset[fkind]));
-	sobj->pos.x = (player * 69) + 22;
+	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 22;
 	sobj->pos.y = 201.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -832,7 +858,7 @@ void mnPlayersVSMakeNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 		gcRemoveSObjAll(gobj);
 
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[2], emblem_offsets[fkind]));
-		sobj->pos.x = (player * 69) + 24;
+		sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 24;
 		sobj->pos.y = 143.0F;
 		sobj->sprite.attr &= ~SP_FASTCOPY;
 		sobj->sprite.attr |= SP_TRANSPARENT;
@@ -850,7 +876,7 @@ void mnPlayersVSMakeNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 			sobj->sprite.blue = 0x44;
 		}
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], name_offsets[fkind]));
-		sobj->pos.x = (player * 69) + 22;
+		sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 22;
 		sobj->pos.y = 201.0F;
 		sobj->sprite.attr &= ~SP_FASTCOPY;
 		sobj->sprite.attr |= SP_TRANSPARENT;
@@ -862,10 +888,10 @@ void mnPlayersVSMakeNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 void mnPlayersVSUpdateShutter(s32 player)
 {
 	// Left door
-	SObjGetStruct(sMNPlayersVSSlots[player].panel_doors)->pos.x = ((player * 69) - 19) + sMNPlayersVSSlots[player].door_offset;
+	SObjGetStruct(sMNPlayersVSSlots[player].panel_doors)->pos.x = ((mnPlayersVSGetPanelIndex(player) * 69) - 19) + sMNPlayersVSSlots[player].door_offset;
 
 	// Right door
-	SObjGetStruct(sMNPlayersVSSlots[player].panel_doors)->next->pos.x = ((player * 69) + 88) - sMNPlayersVSSlots[player].door_offset;
+	SObjGetStruct(sMNPlayersVSSlots[player].panel_doors)->next->pos.x = ((mnPlayersVSGetPanelIndex(player) * 69) + 88) - sMNPlayersVSSlots[player].door_offset;
 }
 
 // 0x80132C6C
@@ -1181,7 +1207,7 @@ void mnPlayersVSMakePlayerKindSelect(s32 player)
 		NULL,
 		1
 	);
-	SObjGetStruct(gobj)->pos.x = (player * 69) + 64;
+	SObjGetStruct(gobj)->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 64;
 	SObjGetStruct(gobj)->pos.y = 131.0F;
 	SObjGetStruct(gobj)->sprite.attr &= ~SP_FASTCOPY;
 	SObjGetStruct(gobj)->sprite.attr |= SP_TRANSPARENT;
@@ -1206,12 +1232,12 @@ void mnPlayersVSMakePlayerKind(s32 player)
 	if (sMNPlayersVSSlots[player].pkind == nFTPlayerKindCom)
 	{
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonCPTextSprite));
-		sobj->pos.x = ((player * 69) + 26);
+		sobj->pos.x = ((mnPlayersVSGetPanelIndex(player) * 69) + 26);
 	}
 	else
 	{
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], offsets[player]));
-		sobj->pos.x = pos_x[player] + ((player * 69) + 22);
+		sobj->pos.x = pos_x[player] + ((mnPlayersVSGetPanelIndex(player) * 69) + 22);
 	}
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1243,6 +1269,7 @@ void mnPlayersVSMakeGate(s32 player)
 	};
 	s32 color_ids[/* */] = { 0, 1, 2, 3 };
 	s32 start_x;
+	s32 panel_index = mnPlayersVSGetPanelIndex(player);
 
 	sMNPlayersVSSlots[player].panel = gobj = lbCommonMakeSpriteGObj
 	(
@@ -1264,7 +1291,7 @@ void mnPlayersVSMakeGate(s32 player)
 		NULL,
 		1
 	);
-	start_x = player * 69;
+	start_x = mnPlayersVSGetPanelIndex(player) * 69;
 
 	SObjGetStruct(gobj)->pos.x = start_x + 22;
 	SObjGetStruct(gobj)->pos.y = 126.0F;
@@ -1295,7 +1322,7 @@ void mnPlayersVSMakeGate(s32 player)
 		NULL,
 		23,
 		GOBJ_PRIORITY_DEFAULT,
-		proc_displays[player],
+		proc_displays[panel_index],
 		29,
 		GOBJ_PRIORITY_DEFAULT,
 		~0,
@@ -1848,7 +1875,11 @@ void mnPlayersVSMakeLabels(void)
 		(
 			Sprite*,
 			sMNPlayersVSFiles[4],
+#if defined(PORT) && defined(REGION_REMIX)
+			mnPlayersVSGetModeHeaderOffset(offsets[sMNPlayersVSIsTeamBattle])
+#else
 			offsets[sMNPlayersVSIsTeamBattle]
+#endif
 		),
 		nGCProcessKindFunc,
 		NULL,
@@ -2098,7 +2129,7 @@ void mnPlayersVSMakeFighter(GObj *fighter_gobj, s32 player, s32 fkind, s32 costu
 
 		gcAddGObjProcess(fighter_gobj, mnPlayersVSFighterProcUpdate, nGCProcessKindFunc, 1);
 
-		DObjGetStruct(fighter_gobj)->translate.vec.f.x = (player * 840) - 1250;
+		DObjGetStruct(fighter_gobj)->translate.vec.f.x = (mnPlayersVSGetPanelIndex(player) * 840) - 1250;
 		DObjGetStruct(fighter_gobj)->translate.vec.f.y = -850.0F;
 #ifdef PORT
 		/* Widescreen FOV expansion compresses 3D-vertex clip-x via
@@ -2347,6 +2378,14 @@ sb32 mnPlayersVSCheckGameModeInRange(GObj *gobj)
 	sb32 is_in_range;
 	SObj *sobj;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	/* VsRemixMenu.asm (hook 0x80135270): the 12-Character Battle cannot switch to Team Battle. */
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		return FALSE;
+	}
+#endif
+
 	sobj = SObjGetStruct(gobj);
 
 	pos_x = sobj->pos.x + 20.0F;
@@ -2441,7 +2480,7 @@ s32 mnPlayersVSCheckTeamSelectInRange(GObj *gobj, s32 player)
 
 	pos_x = sobj->pos.x + 20.0F;
 
-	is_in_range = (pos_x >= (player * 69) + 34) && (pos_x <= (player * 69) + 58) ? TRUE : FALSE;
+	is_in_range = (pos_x >= (mnPlayersVSGetPanelIndex(player) * 69) + 34) && (pos_x <= (mnPlayersVSGetPanelIndex(player) * 69) + 58) ? TRUE : FALSE;
 
 	if (is_in_range != FALSE)
 	{
@@ -2563,7 +2602,7 @@ sb32 mnPlayersVSCheckHandicapArrowRInRange(GObj *gobj, s32 player)
 
 	pos_x = sobj->pos.x + 20.0F;
 
-	is_in_range = ((pos_x >= (player * 69) + 68) && (pos_x <= (player * 69) + 90)) ? TRUE : FALSE;
+	is_in_range = ((pos_x >= (mnPlayersVSGetPanelIndex(player) * 69) + 68) && (pos_x <= (mnPlayersVSGetPanelIndex(player) * 69) + 90)) ? TRUE : FALSE;
 
 	if (is_in_range != FALSE)
 	{
@@ -2590,7 +2629,7 @@ sb32 mnPlayersVSCheckHandicapArrowLInRange(GObj *gobj, s32 player)
 
 	pos_x = sobj->pos.x + 20.0F;
 
-	is_in_range = ((pos_x >= (player * 69) + 21) && (pos_x <= (player * 69) + 43)) ? TRUE : FALSE;
+	is_in_range = ((pos_x >= (mnPlayersVSGetPanelIndex(player) * 69) + 21) && (pos_x <= (mnPlayersVSGetPanelIndex(player) * 69) + 43)) ? TRUE : FALSE;
 
 	if (is_in_range != FALSE)
 	{
@@ -2617,7 +2656,7 @@ s32 mnPlayersVSCheckPlayerKindSelectInRange(GObj *gobj, s32 player)
 
 	pos_x = sobj->pos.x + 20.0F;
 
-	is_in_range = ((pos_x >= (player * 69) + 60) && (pos_x <= (player * 69) + 88)) ? TRUE : FALSE;
+	is_in_range = ((pos_x >= (mnPlayersVSGetPanelIndex(player) * 69) + 60) && (pos_x <= (mnPlayersVSGetPanelIndex(player) * 69) + 88)) ? TRUE : FALSE;
 
 	if (is_in_range != FALSE)
 	{
@@ -2888,7 +2927,7 @@ void mnPlayersVSUpdateFighter(s32 player)
 				sMNPlayersVSSlots[player].costume = costume;
 				ftParamInitAllParts(fighter_gobj, costume, sMNPlayersVSSlots[player].shade);
 			}
-			DObjGetStruct(fighter_gobj)->translate.vec.f.x = (player * 840) - 1250;
+			DObjGetStruct(fighter_gobj)->translate.vec.f.x = (mnPlayersVSGetPanelIndex(player) * 840) - 1250;
 			DObjGetStruct(fighter_gobj)->translate.vec.f.y = -850.0F;
 			{
 				f32 scale = port_widescreen_clip_x_scale();
@@ -3238,7 +3277,7 @@ void mnPlayersVSArrowThreadUpdate(GObj *gobj)
 		else if (mnPlayersVSGetArrowSObj(gobj, 0) == NULL)
 		{
 			sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonArrowLSprite));
-			sobj->pos.x = (player * 69) + 25;
+			sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 25;
 			sobj->pos.y = 201.0F;
 			sobj->sprite.attr &= ~SP_FASTCOPY;
 			sobj->sprite.attr |= SP_TRANSPARENT;
@@ -3260,7 +3299,7 @@ void mnPlayersVSArrowThreadUpdate(GObj *gobj)
 		else if (mnPlayersVSGetArrowSObj(gobj, 1) == NULL)
 		{
 			sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonArrowRSprite));
-			sobj->pos.x = (player * 69) + 79;
+			sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 79;
 			sobj->pos.y = 201.0F;
 			sobj->sprite.attr &= ~SP_FASTCOPY;
 			sobj->sprite.attr |= SP_TRANSPARENT;
@@ -3304,13 +3343,13 @@ void mnPlayersVSMakeHandicapLevel(s32 player)
 	if (sMNPlayersVSSlots[player].pkind == nFTPlayerKindMan)
 	{
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonHandicapTextSprite));
-		sobj->pos.x = (player * 69) + 35;
+		sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 35;
 		sobj->user_data.s = nFTPlayerKindMan;
 	}
 	else
 	{
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonCPLevelTextSprite));
-		sobj->pos.x = (player * 69) + 34;
+		sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 34;
 		sobj->user_data.s = nFTPlayerKindCom;
 	}
 	sobj->pos.y = 201.0F;
@@ -3321,7 +3360,7 @@ void mnPlayersVSMakeHandicapLevel(s32 player)
 	sobj->sprite.attr |= SP_TRANSPARENT;
 
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[1], llMNCommonColonSprite));
-	sobj->pos.x = (player * 69) + 61;
+	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 61;
 	sobj->pos.y = 202.0F;
 	sobj->sprite.red = 0xFF;
 	sobj->sprite.green = 0xFF;
@@ -3367,7 +3406,7 @@ void mnPlayersVSMakeHandicapLevelValue(s32 player)
 	}
 #endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[1], offsets[value]));
-	sobj->pos.x = (player * 69) + 67;
+	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 67;
 	sobj->pos.y = 200.0F;
 	sobj->sprite.red = 0xFF;
 	sobj->sprite.green = 0xFF;
@@ -4467,8 +4506,8 @@ void mnPlayersVSMakeCursor(s32 player)
 	);
 	gobj->user_data.s = player;
 
-	SObjGetStruct(gobj)->pos.x = pos[player].x;
-	SObjGetStruct(gobj)->pos.y = pos[player].y;
+	SObjGetStruct(gobj)->pos.x = pos[mnPlayersVSGetPanelIndex(player)].x;
+	SObjGetStruct(gobj)->pos.y = pos[mnPlayersVSGetPanelIndex(player)].y;
 	SObjGetStruct(gobj)->sprite.attr &= ~SP_FASTCOPY;
 	SObjGetStruct(gobj)->sprite.attr |= SP_TRANSPARENT;
 
@@ -4853,6 +4892,13 @@ void mnPlayersVSMakeSpotlight(void)
 		gcPlayAnimAll(gobj);
 
 		DObjGetStruct(gobj)->translate.vec.f.x = x;
+#if defined(PORT) && defined(REGION_REMIX)
+		/* TwelveCharBattle.asm: the spotlight of the second player sits where the fourth panel's would. */
+		if ((i == 1) && (gmRemixTwelveCBIsActive() != FALSE))
+		{
+			DObjGetStruct(gobj)->translate.vec.f.x = mnPlayersVSGetPanelIndex(1) * 840 - 1250;
+		}
+#endif
 		DObjGetStruct(gobj)->translate.vec.f.y = y;
 		DObjGetStruct(gobj)->translate.vec.f.z = 0.0F;
 #ifdef PORT
@@ -5368,12 +5414,49 @@ void mnPlayersVSPauseSlotProcesses(void)
 }
 
 // 0x8013A920
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * The 12-Character Battle has no panels for ports 3 and 4 (TwelveCharBattle.asm skips InitSlot(2) and InitSlot(3)). The port
+ * keeps the two slots, which the rest of the screen reads, but never shows their panel, doors, buttons, puck or cursor.
+ */
+static void mnPlayersVSHideClosedPanels(void)
+{
+	s32 player;
+
+	if (gmRemixTwelveCBIsActive() == FALSE)
+	{
+		return;
+	}
+	for (player = 2; player < GMCOMMON_PLAYERS_MAX; player++)
+	{
+		GObj *hidden[] =
+		{
+			sMNPlayersVSSlots[player].panel, sMNPlayersVSSlots[player].panel_doors, sMNPlayersVSSlots[player].type_button,
+			sMNPlayersVSSlots[player].name_emblem_gobj, sMNPlayersVSSlots[player].puck, sMNPlayersVSSlots[player].cursor,
+			sMNPlayersVSSlots[player].type
+		};
+		s32 i;
+
+		for (i = 0; i < ARRAY_COUNT(hidden); i++)
+		{
+			if (hidden[i] != NULL)
+			{
+				hidden[i]->flags = GOBJ_FLAG_HIDDEN;
+			}
+		}
+	}
+}
+#endif
+
 void mnPlayersVSFuncRun(GObj *gobj)
 {
 	s32 gkinds_num;
 	s32 i;
 	s32 gkind;
 	s32 *gkinds;
+#if defined(PORT) && defined(REGION_REMIX)
+	mnPlayersVSHideClosedPanels();
+#endif
 
 	// lock game rules UI when competitive ruleset is enabled
 	{
