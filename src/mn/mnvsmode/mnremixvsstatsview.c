@@ -24,10 +24,10 @@ extern void *func_800269C0_275C0(u16 id);
 #define MNVSSTATS_VIEW_HINT_NEXT_SLOT 2
 #define MNVSSTATS_VIEW_PROMPT_X 160.0F
 #define MNVSSTATS_VIEW_PROMPT_Y 218.0F
-#define MNVSSTATS_VIEW_HINT_Y 20.0F
-#define MNVSSTATS_VIEW_HINT_BACK_X 48.0F
-#define MNVSSTATS_VIEW_HINT_NEXT_X 120.0F
-#define MNVSSTATS_VIEW_TEXT_HEIGHT 8.0F
+#define MNVSSTATS_VIEW_HINT_Y 15.9375F
+#define MNVSSTATS_VIEW_HINT_BACK_X 34.75F
+#define MNVSSTATS_VIEW_HINT_NEXT_X 87.0F
+#define MNVSSTATS_VIEW_TEXT_SCALE 0.8125F
 #define MNVSSTATS_VIEW_WHITE 0xFFFFFFFF
 
 static s32 sMNRemixVSStatsViewPage;
@@ -91,17 +91,17 @@ static void mnRemixVSStatsViewCheckHide(void)
 /** The Press A prompt above the results (asm press_a text, revealed by check_menu_toggle_). */
 static void mnRemixVSStatsViewDrawPrompt(void)
 {
-    remix_hud_text_put(MNVSSTATS_VIEW_PROMPT_SLOT, "Press A for Match Stats", MNVSSTATS_VIEW_PROMPT_X,
-                       MNVSSTATS_VIEW_PROMPT_Y, MNVSSTATS_VIEW_WHITE, MNVSSTATS_VIEW_TEXT_HEIGHT);
+    remix_hud_text_put(MNVSSTATS_VIEW_PROMPT_SLOT, "Press     for Match Stats", MNVSSTATS_VIEW_PROMPT_X,
+                       MNVSSTATS_VIEW_PROMPT_Y, MNVSSTATS_VIEW_WHITE, MNVSSTATS_VIEW_TEXT_SCALE, REMIX_HUD_ALIGN_CENTER);
 }
 
 /** The B and R hints in the upper corners of the stats page (asm press_b and press_r). */
 static void mnRemixVSStatsViewDrawHints(void)
 {
-    remix_hud_text_put(MNVSSTATS_VIEW_HINT_BACK_SLOT, "B: Back", MNVSSTATS_VIEW_HINT_BACK_X, MNVSSTATS_VIEW_HINT_Y,
-                       MNVSSTATS_VIEW_WHITE, MNVSSTATS_VIEW_TEXT_HEIGHT);
-    remix_hud_text_put(MNVSSTATS_VIEW_HINT_NEXT_SLOT, "R: Next Page", MNVSSTATS_VIEW_HINT_NEXT_X, MNVSSTATS_VIEW_HINT_Y,
-                       MNVSSTATS_VIEW_WHITE, MNVSSTATS_VIEW_TEXT_HEIGHT);
+    remix_hud_text_put(MNVSSTATS_VIEW_HINT_BACK_SLOT, ": Back", MNVSSTATS_VIEW_HINT_BACK_X, MNVSSTATS_VIEW_HINT_Y,
+                       MNVSSTATS_VIEW_WHITE, MNVSSTATS_VIEW_TEXT_SCALE, REMIX_HUD_ALIGN_LEFT);
+    remix_hud_text_put(MNVSSTATS_VIEW_HINT_NEXT_SLOT, ": Next Page", MNVSSTATS_VIEW_HINT_NEXT_X, MNVSSTATS_VIEW_HINT_Y,
+                       MNVSSTATS_VIEW_WHITE, MNVSSTATS_VIEW_TEXT_SCALE, REMIX_HUD_ALIGN_LEFT);
 }
 
 void mnRemixVSStatsViewSetup(void)

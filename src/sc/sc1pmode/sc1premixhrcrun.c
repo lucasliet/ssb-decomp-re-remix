@@ -12,6 +12,7 @@
 #include <port_log.h>
 #include <sc/scmanager.h>
 #include <sc/scene.h>
+#include <stdio.h>
 #include <sys/objdef.h>
 #include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_hud_text.h"
@@ -25,6 +26,8 @@
 #include "sc/sc1pmode/sc1premixhrctravel.h"
 
 #define SC1PREMIX_HRC_HUD_SLOT 29
+#define SC1PREMIX_HRC_LABEL_SLOT 30
+#define SC1PREMIX_HRC_NUMBER_LENGTH 16
 #define SC1PREMIX_HRC_HUD_COLOR 0xFFFFFFFF
 #define SC1PREMIX_HRC_FEET_TENTHS 10
 #define SC1PREMIX_HRC_PLATFORM_LINE_ID 0
@@ -201,12 +204,17 @@ static void sc1PRemixHrcRunCutInputs(GObj *human_gobj)
 static void sc1PRemixHrcRunDrawHud(void)
 {
     SC1PRemixHrcCounterLayout layout;
+    char number[SC1PREMIX_HRC_NUMBER_LENGTH];
     s32 distance = sSC1PRemixHrcState.distance;
-    s32 complete_tics = (sSC1PRemixHrcIsCompleting != FALSE) ? (SC1PREMIX_HRC_COMPLETE_TIMER_START - sSC1PRemixHrcState.complete_timer) : 0;
+    /* EndAttempt decrements the timer before this draw; HRC.asm animates the first step while the timer still reads 45. */
+    s32 complete_tics = (SC1PREMIX_HRC_COMPLETE_TIMER_START - 1) - sSC1PRemixHrcState.complete_timer;
 
-    sc1PRemixHrcCounterAt(complete_tics, &layout);
-    remix_hud_text_putf(SC1PREMIX_HRC_HUD_SLOT, layout.x, layout.y, SC1PREMIX_HRC_HUD_COLOR, layout.height,
-                        "%d.%d FT.", (int)(distance / SC1PREMIX_HRC_FEET_TENTHS), (int)(distance % SC1PREMIX_HRC_FEET_TENTHS));
+    snprintf(number, sizeof(number), "%d.%d", (int)(distance / SC1PREMIX_HRC_FEET_TENTHS), (int)(distance % SC1PREMIX_HRC_FEET_TENTHS));
+    sc1PRemixHrcCounterAt(complete_tics, sSC1PRemixHrcIsCompleting, remix_hud_text_measure(number, SC1PREMIX_HRC_COUNTER_SCALE), &layout);
+    remix_hud_text_put(SC1PREMIX_HRC_HUD_SLOT, number, layout.counter_x, layout.counter_y, SC1PREMIX_HRC_HUD_COLOR, layout.counter_scale,
+                       REMIX_HUD_ALIGN_RIGHT);
+    remix_hud_text_put(SC1PREMIX_HRC_LABEL_SLOT, "FT.", layout.label_x, layout.label_y, SC1PREMIX_HRC_HUD_COLOR, layout.label_scale,
+                       REMIX_HUD_ALIGN_LEFT);
 }
 
 void sc1PRemixHrcRunStart(void)

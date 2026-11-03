@@ -33,9 +33,8 @@ s32 gmRemixGameEndRowsGetValue(s32 port)
 #define GMREMIX_GAMEEND_ROWS_TEXT_SLOT_FIRST 20
 #define GMREMIX_GAMEEND_ROWS_TEXT_SLOT_LABEL 30
 #define GMREMIX_GAMEEND_ROWS_PORTS 4
-#define GMREMIX_GAMEEND_ROWS_LABEL_X 52.0F
-#define GMREMIX_GAMEEND_ROWS_TEXT_Y_OFFSET 6.0F
-#define GMREMIX_GAMEEND_ROWS_TEXT_HEIGHT 12.0F
+#define GMREMIX_GAMEEND_ROWS_LABEL_X 26.0F
+#define GMREMIX_GAMEEND_ROWS_TEXT_SCALE 0.75F
 #define GMREMIX_GAMEEND_ROWS_TEXT_COLOR 0xFFFFFFFF
 
 void gmRemixGameEndRowsDraw(f32 y, const f32 *column_x, const sb32 *is_present)
@@ -43,8 +42,10 @@ void gmRemixGameEndRowsDraw(f32 y, const f32 *column_x, const sb32 *is_present)
     sb32 is_koth = gmRemixModeIs(MNREMIX_VSMODE_KOTH) ? TRUE : FALSE;
     s32 port;
 
-    remix_hud_text_putf(GMREMIX_GAMEEND_ROWS_TEXT_SLOT_LABEL, GMREMIX_GAMEEND_ROWS_LABEL_X, y + GMREMIX_GAMEEND_ROWS_TEXT_Y_OFFSET,
-                        GMREMIX_GAMEEND_ROWS_TEXT_COLOR, GMREMIX_GAMEEND_ROWS_TEXT_HEIGHT, "%s", (is_koth != FALSE) ? "Time" : "Goals");
+    /* REMIX-TODO(GameEnd): VsRemixMenu.asm:1106-1232 draws the "Times"/"FGs" label images and the result number sprites here,
+     * not Kabel text. */
+    remix_hud_text_put(GMREMIX_GAMEEND_ROWS_TEXT_SLOT_LABEL, (is_koth != FALSE) ? "Time" : "Goals", GMREMIX_GAMEEND_ROWS_LABEL_X, y,
+                       GMREMIX_GAMEEND_ROWS_TEXT_COLOR, GMREMIX_GAMEEND_ROWS_TEXT_SCALE, REMIX_HUD_ALIGN_LEFT);
 
     for (port = 0; port < GMREMIX_GAMEEND_ROWS_PORTS; port++)
     {
@@ -57,13 +58,13 @@ void gmRemixGameEndRowsDraw(f32 y, const f32 *column_x, const sb32 *is_present)
         }
         if (is_koth != FALSE)
         {
-            remix_hud_text_putf(slot, column_x[port], y + GMREMIX_GAMEEND_ROWS_TEXT_Y_OFFSET, GMREMIX_GAMEEND_ROWS_TEXT_COLOR,
-                                GMREMIX_GAMEEND_ROWS_TEXT_HEIGHT, "%d:%02d", gmRemixGameEndRowsMinutes(value),
+            remix_hud_text_putf(slot, column_x[port], y, GMREMIX_GAMEEND_ROWS_TEXT_COLOR, GMREMIX_GAMEEND_ROWS_TEXT_SCALE,
+                                REMIX_HUD_ALIGN_CENTER, "%d:%02d", gmRemixGameEndRowsMinutes(value),
                                 gmRemixGameEndRowsSecondsDigits(value));
             continue;
         }
-        remix_hud_text_putf(slot, column_x[port], y + GMREMIX_GAMEEND_ROWS_TEXT_Y_OFFSET, GMREMIX_GAMEEND_ROWS_TEXT_COLOR,
-                            GMREMIX_GAMEEND_ROWS_TEXT_HEIGHT, "%d", gmRemixGameEndRowsClampCount(value));
+        remix_hud_text_putf(slot, column_x[port], y, GMREMIX_GAMEEND_ROWS_TEXT_COLOR, GMREMIX_GAMEEND_ROWS_TEXT_SCALE,
+                            REMIX_HUD_ALIGN_CENTER, "%d", gmRemixGameEndRowsClampCount(value));
     }
 }
 

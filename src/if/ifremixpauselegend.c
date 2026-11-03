@@ -6,7 +6,9 @@
  * stops being drawn once its caller stops putting it, so leaving the pause clears the legends without a destroy call.
  *
  * Not ported: the music legend of group 0xF (track title and the Next/Random rows), which belongs to the alternate pause
- * music. The button glyphs of the asm are image textures, so the port draws them as text.
+ * music. REMIX-TODO(Pause): the button glyphs, the "/" separators and the "Legend" word of the asm are image sprites of file
+ * 0xC5 and 0xA06 (Pause.asm:181-182, 321-340); until the port draws those, the R glyph and the word are drawn as text at their
+ * positions and the camera rows lack their glyphs.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -22,18 +24,21 @@
 #define IFREMIX_PAUSE_LEGEND_SLOT_CAMERA_ZOOM 21
 #define IFREMIX_PAUSE_LEGEND_SLOT_CAMERA_PAN 22
 #define IFREMIX_PAUSE_LEGEND_SLOT_CAMERA_FOV 23
+#define IFREMIX_PAUSE_LEGEND_SLOT_WORD 19
 
-/* Pause.asm Render.draw_string positions, converted to centre coordinates with an estimated glyph width */
-#define IFREMIX_PAUSE_LEGEND_HEIGHT 8.0F
+/* Pause.asm Render.draw_string arguments (X, Y of the glyph box top, scale 1.0, left aligned, Kabel) */
+#define IFREMIX_PAUSE_LEGEND_SCALE 1.0F
 #define IFREMIX_PAUSE_LEGEND_COLOR 0xFFFFFFFF
-#define IFREMIX_PAUSE_LEGEND_R_X 262.0F
-#define IFREMIX_PAUSE_LEGEND_R_Y 229.0F
+#define IFREMIX_PAUSE_LEGEND_R_X 226.0F
+#define IFREMIX_PAUSE_LEGEND_R_Y 203.0F
+#define IFREMIX_PAUSE_LEGEND_WORD_X 243.0F
+#define IFREMIX_PAUSE_LEGEND_WORD_Y 205.0F
 #define IFREMIX_PAUSE_LEGEND_ZOOM_X 72.0F
-#define IFREMIX_PAUSE_LEGEND_ZOOM_Y 144.0F
-#define IFREMIX_PAUSE_LEGEND_PAN_X 74.0F
-#define IFREMIX_PAUSE_LEGEND_PAN_Y 158.0F
-#define IFREMIX_PAUSE_LEGEND_FOV_X 80.0F
-#define IFREMIX_PAUSE_LEGEND_FOV_Y 174.0F
+#define IFREMIX_PAUSE_LEGEND_ZOOM_Y 140.0F
+#define IFREMIX_PAUSE_LEGEND_PAN_X 94.0F
+#define IFREMIX_PAUSE_LEGEND_PAN_Y 154.0F
+#define IFREMIX_PAUSE_LEGEND_FOV_X 94.0F
+#define IFREMIX_PAUSE_LEGEND_FOV_Y 170.0F
 
 /* Pause.asm group 0xE (R legend) and group 0x10 (camera legend) show state, both set in ifRemixPauseLegendReset */
 static sb32 sIFRemixPauseLegendHudShown;
@@ -95,16 +100,16 @@ static void ifRemixPauseLegendToggleOnRPress(u16 button_tap, u16 button_hold)
 }
 
 /**
- * Puts one camera legend row, the Pause.asm group 0x10 strings in the port text form.
+ * Puts one camera legend row, a Pause.asm group 0x10 string.
  *
  * @param slot remix_hud_text slot of the row.
- * @param x Horizontal centre of the row.
- * @param y Vertical centre of the row.
+ * @param x Left edge of the row.
+ * @param y Top of the glyph box.
  * @param text Row text.
  */
 static void ifRemixPauseLegendPutCameraRow(s32 slot, f32 x, f32 y, const char *text)
 {
-    remix_hud_text_put(slot, text, x, y, IFREMIX_PAUSE_LEGEND_COLOR, IFREMIX_PAUSE_LEGEND_HEIGHT);
+    remix_hud_text_put(slot, text, x, y, IFREMIX_PAUSE_LEGEND_COLOR, IFREMIX_PAUSE_LEGEND_SCALE, REMIX_HUD_ALIGN_LEFT);
 }
 
 /**
@@ -113,11 +118,11 @@ static void ifRemixPauseLegendPutCameraRow(s32 slot, f32 x, f32 y, const char *t
 static void ifRemixPauseLegendPutCamera(void)
 {
     ifRemixPauseLegendPutCameraRow(IFREMIX_PAUSE_LEGEND_SLOT_CAMERA_ZOOM, IFREMIX_PAUSE_LEGEND_ZOOM_X,
-                                   IFREMIX_PAUSE_LEGEND_ZOOM_Y, "A/B: Zoom Camera");
+                                   IFREMIX_PAUSE_LEGEND_ZOOM_Y, ": Zoom Camera");
     ifRemixPauseLegendPutCameraRow(IFREMIX_PAUSE_LEGEND_SLOT_CAMERA_PAN, IFREMIX_PAUSE_LEGEND_PAN_X,
-                                   IFREMIX_PAUSE_LEGEND_PAN_Y, "D-Pad: Pan Camera");
+                                   IFREMIX_PAUSE_LEGEND_PAN_Y, ": Pan Camera");
     ifRemixPauseLegendPutCameraRow(IFREMIX_PAUSE_LEGEND_SLOT_CAMERA_FOV, IFREMIX_PAUSE_LEGEND_FOV_X,
-                                   IFREMIX_PAUSE_LEGEND_FOV_Y, "Z+A/B: Field of View");
+                                   IFREMIX_PAUSE_LEGEND_FOV_Y, ": Field of View");
 }
 
 /**
@@ -130,8 +135,10 @@ static void ifRemixPauseLegendDraw(void)
     {
         return;
     }
-    remix_hud_text_put(IFREMIX_PAUSE_LEGEND_SLOT_R, "R: Legend", IFREMIX_PAUSE_LEGEND_R_X, IFREMIX_PAUSE_LEGEND_R_Y,
-                       IFREMIX_PAUSE_LEGEND_COLOR, IFREMIX_PAUSE_LEGEND_HEIGHT);
+    remix_hud_text_put(IFREMIX_PAUSE_LEGEND_SLOT_R, "R", IFREMIX_PAUSE_LEGEND_R_X, IFREMIX_PAUSE_LEGEND_R_Y,
+                       IFREMIX_PAUSE_LEGEND_COLOR, IFREMIX_PAUSE_LEGEND_SCALE, REMIX_HUD_ALIGN_LEFT);
+    remix_hud_text_put(IFREMIX_PAUSE_LEGEND_SLOT_WORD, "Legend", IFREMIX_PAUSE_LEGEND_WORD_X, IFREMIX_PAUSE_LEGEND_WORD_Y,
+                       IFREMIX_PAUSE_LEGEND_COLOR, IFREMIX_PAUSE_LEGEND_SCALE, REMIX_HUD_ALIGN_LEFT);
     if (sIFRemixPauseLegendCameraShown)
     {
         ifRemixPauseLegendPutCamera();

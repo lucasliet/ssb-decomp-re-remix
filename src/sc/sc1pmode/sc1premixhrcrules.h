@@ -15,9 +15,12 @@
 #define SC1PREMIX_HRC_CAMERA_WARP_DISTANCE (-9120.0F)
 #define SC1PREMIX_HRC_COMPLETE_TIMER_START 45
 #define SC1PREMIX_HRC_TIME_LIMIT_TICS 600
-#define SC1PREMIX_HRC_COUNTER_X 246.0F
+#define SC1PREMIX_HRC_COUNTER_X 278.0F
 #define SC1PREMIX_HRC_COUNTER_Y 44.0F
-#define SC1PREMIX_HRC_COUNTER_HEIGHT 16.0F
+#define SC1PREMIX_HRC_COUNTER_SCALE 0.9F
+#define SC1PREMIX_HRC_LABEL_X 282.0F
+#define SC1PREMIX_HRC_LABEL_Y 47.0F
+#define SC1PREMIX_HRC_LABEL_SCALE 0.625F
 #define SC1PREMIX_HRC_COUNTER_CENTER_X 160.0F
 #define SC1PREMIX_HRC_CLOUD_START (-7.505F)
 #define SC1PREMIX_HRC_CLOUD_WARP_THRESHOLD (-342.505F)
@@ -53,12 +56,15 @@ typedef struct SC1PRemixHrcMove
 
 } SC1PRemixHrcMove;
 
-/** Where the distance counter sits on the 320x240 screen and how tall its text is. */
+/** Where the distance counter (right aligned) and its "FT." label (left aligned) sit on the 320x240 screen and their font scales. */
 typedef struct SC1PRemixHrcCounterLayout
 {
-    float x;
-    float y;
-    float height;
+    float counter_x;
+    float counter_y;
+    float counter_scale;
+    float label_x;
+    float label_y;
+    float label_scale;
 
 } SC1PRemixHrcCounterLayout;
 
@@ -99,13 +105,16 @@ extern void sc1PRemixHrcTrack(SC1PRemixHrcState *state, float sandbag_x, float c
 extern int sc1PRemixHrcAttemptVerdict(const SC1PRemixHrcAttempt *attempt);
 
 /**
- * Layout of the distance counter. At COMPLETE it moves to the centre of the screen while growing to twice its size and sinking half a unit
- * per tic over the end timer (HRC.asm _complete, _animate_counter).
+ * Layout of the distance counter and its "FT." label. At COMPLETE both slide left by the same step per tic, sink half a unit and grow by
+ * 0.01 per tic over the end timer, until the pair is centred (HRC.asm _complete, _animate_counter). The step is fixed on the first tic from
+ * the width of the number: the counter right edge travels to 160 + 0.725 * width - 12.5 in the 46 tics the timer takes to run out.
  *
  * @param complete_tics Tics since the attempt ended in COMPLETE, 0 while it is on; capped at the end timer.
- * @param layout Receives the position and the height of the text.
+ * @param is_completing Whether the attempt ended in COMPLETE; the layout is the resting one otherwise.
+ * @param number_width Width of the counter number at its resting scale, in screen units.
+ * @param layout Receives the positions and the font scales.
  */
-extern void sc1PRemixHrcCounterAt(int complete_tics, SC1PRemixHrcCounterLayout *layout);
+extern void sc1PRemixHrcCounterAt(int complete_tics, int is_completing, float number_width, SC1PRemixHrcCounterLayout *layout);
 
 /**
  * Scroll speed of the clouds: the contest scrolls them against the Sandbag once it passes the start line.

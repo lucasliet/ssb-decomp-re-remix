@@ -8,6 +8,9 @@
 
 #define SC1PREMIX_HRC_CAMERA_PAN_DIVISOR 3.0F
 #define SC1PREMIX_HRC_COUNTER_SINK_PER_TIC 0.5F
+#define SC1PREMIX_HRC_COUNTER_GROWTH_PER_TIC 0.01F
+#define SC1PREMIX_HRC_COUNTER_HALF_GROWN 0.725F
+#define SC1PREMIX_HRC_COUNTER_TAIL_HALF 12.5F
 
 void sc1PRemixHrcStateReset(SC1PRemixHrcState *state)
 {
@@ -81,10 +84,23 @@ int sc1PRemixHrcAttemptVerdict(const SC1PRemixHrcAttempt *attempt)
     return SC1PREMIX_HRC_VERDICT_DISABLE_INPUTS;
 }
 
-void sc1PRemixHrcCounterAt(int complete_tics, SC1PRemixHrcCounterLayout *layout)
+void sc1PRemixHrcCounterAt(int complete_tics, int is_completing, float number_width, SC1PRemixHrcCounterLayout *layout)
 {
-    float progress;
+    float final_right_edge;
+    float step;
+    int steps;
 
+    layout->counter_x = SC1PREMIX_HRC_COUNTER_X;
+    layout->counter_y = SC1PREMIX_HRC_COUNTER_Y;
+    layout->counter_scale = SC1PREMIX_HRC_COUNTER_SCALE;
+    layout->label_x = SC1PREMIX_HRC_LABEL_X;
+    layout->label_y = SC1PREMIX_HRC_LABEL_Y;
+    layout->label_scale = SC1PREMIX_HRC_LABEL_SCALE;
+
+    if (is_completing == 0)
+    {
+        return;
+    }
     if (complete_tics > SC1PREMIX_HRC_COMPLETE_TIMER_START)
     {
         complete_tics = SC1PREMIX_HRC_COMPLETE_TIMER_START;
@@ -93,11 +109,16 @@ void sc1PRemixHrcCounterAt(int complete_tics, SC1PRemixHrcCounterLayout *layout)
     {
         complete_tics = 0;
     }
-    progress = (float)complete_tics / (float)SC1PREMIX_HRC_COMPLETE_TIMER_START;
+    steps = complete_tics + 1;
+    final_right_edge = SC1PREMIX_HRC_COUNTER_CENTER_X + (SC1PREMIX_HRC_COUNTER_HALF_GROWN * number_width) - SC1PREMIX_HRC_COUNTER_TAIL_HALF;
+    step = (SC1PREMIX_HRC_COUNTER_X - final_right_edge) / (float)(SC1PREMIX_HRC_COMPLETE_TIMER_START + 1);
 
-    layout->x = SC1PREMIX_HRC_COUNTER_X + ((SC1PREMIX_HRC_COUNTER_CENTER_X - SC1PREMIX_HRC_COUNTER_X) * progress);
-    layout->y = SC1PREMIX_HRC_COUNTER_Y + (complete_tics * SC1PREMIX_HRC_COUNTER_SINK_PER_TIC);
-    layout->height = SC1PREMIX_HRC_COUNTER_HEIGHT * (1.0F + progress);
+    layout->counter_x -= step * steps;
+    layout->label_x -= step * steps;
+    layout->counter_y += SC1PREMIX_HRC_COUNTER_SINK_PER_TIC * steps;
+    layout->label_y += SC1PREMIX_HRC_COUNTER_SINK_PER_TIC * steps;
+    layout->counter_scale += SC1PREMIX_HRC_COUNTER_GROWTH_PER_TIC * steps;
+    layout->label_scale += SC1PREMIX_HRC_COUNTER_GROWTH_PER_TIC * steps;
 }
 
 float sc1PRemixHrcCloudSpeed(float sandbag_dx, int is_past_start)

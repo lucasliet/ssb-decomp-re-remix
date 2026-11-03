@@ -1,12 +1,11 @@
 /*
  * mnremixvsstatspages.c - layout of the two VS match stats pages (VsStats.asm setup_ page 1 and page 2, draw_line_,
- * draw_underline_, draw_port_headers_). A row is one overlay label: the label, then one cell per active port. The overlay
- * text is centred, so the cells are spaced by characters and line up only approximately with the asm right-aligned cells.
+ * draw_underline_, draw_port_headers_). A row is the label (left aligned at X 24) and one right aligned cell per active
+ * port at X 184 + 35 * column, every string at scale 0.8125 as in the asm.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
-#include <string.h>
 #include <ssb_types.h>
 #include <ft/fighter.h>
 #include <sc/scmanager.h>
@@ -16,9 +15,9 @@
 #include "mn/mnvsmode/mnremixvsstatspages.h"
 #include "remix/remix_hud_text.h"
 
-#define MNVSSTATS_PAGES_TEXT_SLOT_FIRST 4
-#define MNVSSTATS_PAGES_BAR_SLOT_BACKGROUND 0
-#define MNVSSTATS_PAGES_BAR_SLOT_FIRST 1
+#define MNVSSTATS_PAGES_TEXT_SLOT_FIRST 48
+#define MNVSSTATS_PAGES_RECT_SLOT_BACKGROUND 0
+#define MNVSSTATS_PAGES_RECT_SLOT_FIRST 1
 #define MNVSSTATS_PAGES_FIRST_Y 30
 #define MNVSSTATS_PAGES_LINE_STEP 11
 #define MNVSSTATS_PAGES_GROUP_GAP 5
@@ -42,13 +41,12 @@
 #define MNVSSTATS_PAGES_BACKGROUND_WIDTH 300.0F
 #define MNVSSTATS_PAGES_BACKGROUND_HEIGHT 220.0F
 #define MNVSSTATS_PAGES_BACKGROUND_RGBA 0x000000B0
-#define MNVSSTATS_PAGES_CENTER_X 160.0F
-#define MNVSSTATS_PAGES_PORT_HEADER_X 208.0F
-#define MNVSSTATS_PAGES_PORT_HEADER_Y 20.0F
-#define MNVSSTATS_PAGES_TEXT_HEIGHT 8.0F
-#define MNVSSTATS_PAGES_TEXT_HALF_HEIGHT 4.0F
+#define MNVSSTATS_PAGES_LABEL_X 24.0F
+#define MNVSSTATS_PAGES_CELL_X 184.0F
+#define MNVSSTATS_PAGES_CELL_STEP 35.0F
+#define MNVSSTATS_PAGES_PORT_HEADER_Y 16.0F
+#define MNVSSTATS_PAGES_TEXT_SCALE 0.8125F
 #define MNVSSTATS_PAGES_WHITE 0xFFFFFFFF
-#define MNVSSTATS_PAGES_CELL_WIDTH 6
 #define MNVSSTATS_PAGES_INDENT 8
 #define MNVSSTATS_PAGES_NO_PORT (-1)
 #define MNVSSTATS_PAGES_DASH "-"
@@ -64,7 +62,7 @@ typedef struct MNRemixVSStatsCursor
 {
     s32 y;
     s32 text_slot;
-    s32 bar_slot;
+    s32 rect_slot;
     sb32 stripe_on;
 } MNRemixVSStatsCursor;
 
@@ -185,36 +183,6 @@ static MNRemixVSStatsRow mnRemixVSStatsPagesStatRow(const char *label, s32 inden
     return row;
 }
 
-/** Appends src to text from index used, cut at the overlay text length. Returns the new length. */
-static s32 mnRemixVSStatsPagesAppend(char *text, s32 used, const char *src)
-{
-    while ((*src != '\0') && (used < REMIX_HUD_TEXT_LENGTH - 1))
-    {
-        text[used++] = *src++;
-    }
-    text[used] = '\0';
-    return used;
-}
-
-/** Appends spaces to text from index used, up to count of them. Returns the new length. */
-static s32 mnRemixVSStatsPagesAppendSpaces(char *text, s32 used, s32 count)
-{
-    while ((count > 0) && (used < REMIX_HUD_TEXT_LENGTH - 1))
-    {
-        text[used++] = ' ';
-        count--;
-    }
-    text[used] = '\0';
-    return used;
-}
-
-/** Appends a cell right aligned in MNVSSTATS_PAGES_CELL_WIDTH characters. Returns the new length. */
-static s32 mnRemixVSStatsPagesAppendCell(char *text, s32 used, const char *cell)
-{
-    used = mnRemixVSStatsPagesAppendSpaces(text, used, MNVSSTATS_PAGES_CELL_WIDTH - (s32)strlen(cell));
-    return mnRemixVSStatsPagesAppend(text, used, cell);
-}
-
 /** Writes a decimal number, with a leading minus for a negative value, into out. */
 static void mnRemixVSStatsPagesFormatNumber(char *out, s32 value)
 {
@@ -240,14 +208,28 @@ static void mnRemixVSStatsPagesFormatNumber(char *out, s32 value)
     out[length] = '\0';
 }
 
-/** Writes the label and the cells of the active ports into text, cut at the overlay text length. */
-static void mnRemixVSStatsPagesFormatRow(char *text, const MNRemixVSStatsRow *row)
+static void mnRemixVSStatsPagesFormatDash(char *out);
+
+/** Draws one string at the cursor text slot. The overlay keeps it for the frame it was put in and the next one. */
+static void mnRemixVSStatsPagesPutText(MNRemixVSStatsCursor *cursor, const char *text, f32 x, f32 y, s32 align)
+{
+    remix_hud_text_put(cursor->text_slot, text, x, y, MNVSSTATS_PAGES_WHITE, MNVSSTATS_PAGES_TEXT_SCALE, align);
+    cursor->text_slot++;
+}
+
+/** X of the right edge of the cell of the nth active port (the asm packs the columns of active ports only). */
+static f32 mnRemixVSStatsPagesCellX(s32 column_index)
+{
+    return MNVSSTATS_PAGES_CELL_X + MNVSSTATS_PAGES_CELL_STEP * (f32)column_index;
+}
+
+/** Draws the cells of a row, one right aligned string per active port. */
+static void mnRemixVSStatsPagesDrawCells(MNRemixVSStatsCursor *cursor, const MNRemixVSStatsRow *row)
 {
     char number[MNVSSTATS_PAGES_NUMBER_LENGTH];
     s32 column;
-    s32 used = mnRemixVSStatsPagesAppendSpaces(text, 0, row->indent);
+    s32 column_index = 0;
 
-    used = mnRemixVSStatsPagesAppend(text, used, row->label);
     for (column = 0; column < MN_REMIX_VS_STATS_PORT_COUNT; column++)
     {
         if (!mnRemixVSStatsPagesIsPortActive(column))
@@ -256,20 +238,23 @@ static void mnRemixVSStatsPagesFormatRow(char *text, const MNRemixVSStatsRow *ro
         }
         if (column == row->dash)
         {
-            used = mnRemixVSStatsPagesAppendCell(text, used, MNVSSTATS_PAGES_DASH);
-            continue;
+            mnRemixVSStatsPagesFormatDash(number);
         }
-        mnRemixVSStatsPagesFormatNumber(number, mnRemixVSStatsPagesGetValue(row->value, row->row, column));
-        used = mnRemixVSStatsPagesAppendCell(text, used, number);
+        else
+        {
+            mnRemixVSStatsPagesFormatNumber(number, mnRemixVSStatsPagesGetValue(row->value, row->row, column));
+        }
+        mnRemixVSStatsPagesPutText(cursor, number, mnRemixVSStatsPagesCellX(column_index), (f32)cursor->y,
+                                   REMIX_HUD_ALIGN_RIGHT);
+        column_index++;
     }
 }
 
-/** Draws one label at the cursor slot. The overlay keeps it for the frame it was put in and the next one. */
-static void mnRemixVSStatsPagesPutText(MNRemixVSStatsCursor *cursor, const char *text, f32 x)
+/** Writes the "-" of a cell that has no value (the row of a port against itself). */
+static void mnRemixVSStatsPagesFormatDash(char *out)
 {
-    remix_hud_text_put(cursor->text_slot, text, x, (f32)(cursor->y + MNVSSTATS_PAGES_TEXT_HALF_HEIGHT),
-                       MNVSSTATS_PAGES_WHITE, MNVSSTATS_PAGES_TEXT_HEIGHT);
-    cursor->text_slot++;
+    out[0] = MNVSSTATS_PAGES_DASH[0];
+    out[1] = '\0';
 }
 
 /** Striped background of every second row that has values (asm draw_line_ stripe_on flip). */
@@ -277,9 +262,9 @@ static void mnRemixVSStatsPagesStripeRow(MNRemixVSStatsCursor *cursor)
 {
     if (cursor->stripe_on)
     {
-        remix_hud_bar_put(cursor->bar_slot, MNVSSTATS_PAGES_STRIPE_X, (f32)cursor->y, MNVSSTATS_PAGES_STRIPE_WIDTH,
-                          MNVSSTATS_PAGES_STRIPE_HEIGHT, 1.0F, MNVSSTATS_PAGES_STRIPE_RGBA, 0.0F);
-        cursor->bar_slot++;
+        remix_hud_rect_put(cursor->rect_slot, MNVSSTATS_PAGES_STRIPE_X, (f32)cursor->y, MNVSSTATS_PAGES_STRIPE_WIDTH,
+                           MNVSSTATS_PAGES_STRIPE_HEIGHT, MNVSSTATS_PAGES_STRIPE_RGBA);
+        cursor->rect_slot++;
     }
     cursor->stripe_on = !cursor->stripe_on;
 }
@@ -287,8 +272,6 @@ static void mnRemixVSStatsPagesStripeRow(MNRemixVSStatsCursor *cursor)
 /** Draws a row. A row whose ignore port is inactive is skipped without moving the cursor, as in the asm. */
 static void mnRemixVSStatsPagesDrawRow(MNRemixVSStatsCursor *cursor, const MNRemixVSStatsRow *row)
 {
-    char text[REMIX_HUD_TEXT_LENGTH];
-
     if ((row->ignore_port != MNVSSTATS_PAGES_NO_PORT) && !mnRemixVSStatsPagesIsPortActive(row->ignore_port))
     {
         return;
@@ -297,15 +280,16 @@ static void mnRemixVSStatsPagesDrawRow(MNRemixVSStatsCursor *cursor, const MNRem
     {
         mnRemixVSStatsPagesStripeRow(cursor);
     }
-    mnRemixVSStatsPagesFormatRow(text, row);
-    mnRemixVSStatsPagesPutText(cursor, text, MNVSSTATS_PAGES_CENTER_X);
+    mnRemixVSStatsPagesPutText(cursor, row->label, MNVSSTATS_PAGES_LABEL_X + (f32)row->indent, (f32)cursor->y,
+                               REMIX_HUD_ALIGN_LEFT);
+    mnRemixVSStatsPagesDrawCells(cursor, row);
     cursor->y += MNVSSTATS_PAGES_LINE_STEP;
 }
 
 /** Draws a label-only header line (asm draw_header). */
 static void mnRemixVSStatsPagesDrawHeader(MNRemixVSStatsCursor *cursor, const char *label)
 {
-    mnRemixVSStatsPagesPutText(cursor, label, MNVSSTATS_PAGES_CENTER_X);
+    mnRemixVSStatsPagesPutText(cursor, label, MNVSSTATS_PAGES_LABEL_X, (f32)cursor->y, REMIX_HUD_ALIGN_LEFT);
     cursor->y += MNVSSTATS_PAGES_LINE_STEP;
 }
 
@@ -313,9 +297,9 @@ static void mnRemixVSStatsPagesDrawHeader(MNRemixVSStatsCursor *cursor, const ch
 static void mnRemixVSStatsPagesDrawUnderline(MNRemixVSStatsCursor *cursor, s32 width)
 {
     cursor->y -= MNVSSTATS_PAGES_UNDERLINE_ADJUST;
-    remix_hud_bar_put(cursor->bar_slot, MNVSSTATS_PAGES_UNDERLINE_X, (f32)cursor->y, (f32)width,
-                      MNVSSTATS_PAGES_UNDERLINE_HEIGHT, 1.0F, MNVSSTATS_PAGES_UNDERLINE_RGBA, 0.0F);
-    cursor->bar_slot++;
+    remix_hud_rect_put(cursor->rect_slot, MNVSSTATS_PAGES_UNDERLINE_X, (f32)cursor->y, (f32)width,
+                       MNVSSTATS_PAGES_UNDERLINE_HEIGHT, MNVSSTATS_PAGES_UNDERLINE_RGBA);
+    cursor->rect_slot++;
     cursor->y += MNVSSTATS_PAGES_UNDERLINE_AFTER;
 }
 
@@ -325,24 +309,22 @@ static void mnRemixVSStatsPagesDrawGap(MNRemixVSStatsCursor *cursor)
     cursor->y += MNVSSTATS_PAGES_GROUP_GAP;
 }
 
-/** Draws the 1P to 4P headers of the active ports above the page (asm draw_port_headers_). */
+/** Draws the 1P to 4P headers of the active ports above the page (asm draw_port_headers_), right aligned over the cells. */
 static void mnRemixVSStatsPagesDrawPortHeader(MNRemixVSStatsCursor *cursor)
 {
-    char text[REMIX_HUD_TEXT_LENGTH];
     s32 column;
-    s32 used = 0;
+    s32 column_index = 0;
 
-    text[0] = '\0';
     for (column = 0; column < MN_REMIX_VS_STATS_PORT_COUNT; column++)
     {
-        if (mnRemixVSStatsPagesIsPortActive(column))
+        if (!mnRemixVSStatsPagesIsPortActive(column))
         {
-            used = mnRemixVSStatsPagesAppendCell(text, used, dMNVSStatsPagesPortNames[column]);
+            continue;
         }
+        mnRemixVSStatsPagesPutText(cursor, dMNVSStatsPagesPortNames[column], mnRemixVSStatsPagesCellX(column_index),
+                                   MNVSSTATS_PAGES_PORT_HEADER_Y, REMIX_HUD_ALIGN_RIGHT);
+        column_index++;
     }
-    remix_hud_text_put(cursor->text_slot, text, MNVSSTATS_PAGES_PORT_HEADER_X, MNVSSTATS_PAGES_PORT_HEADER_Y,
-                       MNVSSTATS_PAGES_WHITE, MNVSSTATS_PAGES_TEXT_HEIGHT);
-    cursor->text_slot++;
 }
 
 /** Draws the victim rows of the damage table, one per port (asm draw_row p1..p4). */
@@ -452,24 +434,56 @@ static void mnRemixVSStatsPagesDrawPageTwo(MNRemixVSStatsCursor *cursor)
     mnRemixVSStatsPagesDrawRow(cursor, &down);
 }
 
+/** Number of ports with a fighter in the match. */
+static s32 mnRemixVSStatsPagesCountActivePorts(void)
+{
+    s32 port;
+    s32 count = 0;
+
+    for (port = 0; port < MN_REMIX_VS_STATS_PORT_COUNT; port++)
+    {
+        if (mnRemixVSStatsPagesIsPortActive(port))
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+/**
+ * Stripe state at the start of page 2. VsStats.asm never resets stripe_on, so page 2 continues the alternation where the
+ * rows with values of page 1 left it: the damage rows, the three totals and, with the combo meter on, the combo rows.
+ */
+static sb32 mnRemixVSStatsPagesPageTwoStartsStriped(void)
+{
+    s32 active = mnRemixVSStatsPagesCountActivePorts();
+    s32 rows_with_values = active + 3;
+
+    if (gmRemixToggle(combo_meter) != FALSE)
+    {
+        rows_with_values += active + 2;
+    }
+    return (rows_with_values & 1) != 0;
+}
+
 void mnRemixVSStatsPagesDraw(s32 page)
 {
     MNRemixVSStatsCursor cursor;
 
     cursor.y = MNVSSTATS_PAGES_FIRST_Y;
     cursor.text_slot = MNVSSTATS_PAGES_TEXT_SLOT_FIRST;
-    cursor.bar_slot = MNVSSTATS_PAGES_BAR_SLOT_FIRST;
+    cursor.rect_slot = MNVSSTATS_PAGES_RECT_SLOT_FIRST;
     cursor.stripe_on = FALSE;
 
-    remix_hud_bar_put(MNVSSTATS_PAGES_BAR_SLOT_BACKGROUND, MNVSSTATS_PAGES_BACKGROUND_X, MNVSSTATS_PAGES_BACKGROUND_Y,
-                      MNVSSTATS_PAGES_BACKGROUND_WIDTH, MNVSSTATS_PAGES_BACKGROUND_HEIGHT, 1.0F,
-                      MNVSSTATS_PAGES_BACKGROUND_RGBA, 0.0F);
+    remix_hud_rect_put(MNVSSTATS_PAGES_RECT_SLOT_BACKGROUND, MNVSSTATS_PAGES_BACKGROUND_X, MNVSSTATS_PAGES_BACKGROUND_Y,
+                       MNVSSTATS_PAGES_BACKGROUND_WIDTH, MNVSSTATS_PAGES_BACKGROUND_HEIGHT, MNVSSTATS_PAGES_BACKGROUND_RGBA);
     mnRemixVSStatsPagesDrawPortHeader(&cursor);
     if (page == 0)
     {
         mnRemixVSStatsPagesDrawPageOne(&cursor);
         return;
     }
+    cursor.stripe_on = mnRemixVSStatsPagesPageTwoStartsStriped();
     mnRemixVSStatsPagesDrawPageTwo(&cursor);
 }
 
