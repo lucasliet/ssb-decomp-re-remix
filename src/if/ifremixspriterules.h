@@ -27,6 +27,8 @@ typedef enum IFRemixSpriteId
     IFREMIX_SPRITE_C_ARROW_C,
     IFREMIX_SPRITE_C_ARROW_D,
     IFREMIX_SPRITE_KOTH_METER,
+    IFREMIX_SPRITE_MULTIMAN_POLYGON,
+    IFREMIX_SPRITE_MULTIMAN_CROSS,
     IFREMIX_SPRITE_COUNT
 } IFRemixSpriteId;
 
@@ -40,6 +42,10 @@ typedef struct IFRemixSpriteEntry
 #define IFREMIX_SPRITE_FILE_BUTTONS 0xC5
 /** Remix CSS images file (File.CSS_IMAGES): the D-pad and the C stick arrows. */
 #define IFREMIX_SPRITE_FILE_CSS_IMAGES 0xA06
+/** Vanilla button images file (File 0x19): holds the polygon stock icon of Multi-Man. */
+#define IFREMIX_SPRITE_FILE_STOCK_ICONS 0x19
+/** Vanilla interface digits file: the "x" sprite (llIFCommonDigitsCrossSprite). */
+#define IFREMIX_SPRITE_FILE_DIGITS 0x24
 /** King of the Hill graphics file (File.KING_OF_THE_HILL_GFX): the score meter frame. */
 #define IFREMIX_SPRITE_FILE_KOTH 0x14F3
 

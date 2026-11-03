@@ -75,6 +75,17 @@ extern void sc1PRemixMultimanKosAddEnemy(SC1PRemixMultimanKos *counter);
 /** Marks the player as KO'd, so later enemy KOs are not counted. */
 extern void sc1PRemixMultimanKosSetPlayerKo(SC1PRemixMultimanKos *counter);
 
+/**
+ * Vertical position of the Multi-Man HUD (SinglePlayerModes.asm, draw icons): the polygon icon, the "x" and the counter sit at the
+ * top-left; only the Dragon King HUD setting "always" (1) moves them to the bottom, 212 for the "x" and the counter, 214 for the icon.
+ *
+ * @param dragon_king_hud Toggles.entry_dragon_king_hud.
+ * @param polygon_y Receives the Y of the polygon icon.
+ * @param cross_y Receives the Y of the "x" sprite.
+ * @param counter_y Receives the Y of the counter text.
+ */
+extern void sc1PRemixMultimanHudY(int dragon_king_hud, float *polygon_y, float *cross_y, float *counter_y);
+
 #endif
 
 #endif

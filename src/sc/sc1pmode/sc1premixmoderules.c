@@ -76,4 +76,13 @@ void sc1PRemixMultimanKosSetPlayerKo(SC1PRemixMultimanKos *counter)
     counter->is_player_ko = 1;
 }
 
+void sc1PRemixMultimanHudY(int dragon_king_hud, float *polygon_y, float *cross_y, float *counter_y)
+{
+    int is_low = (dragon_king_hud == 1);
+
+    *polygon_y = is_low ? 214.0F : 20.0F;
+    *cross_y = is_low ? 212.0F : 18.0F;
+    *counter_y = is_low ? 212.0F : 18.0F;
+}
+
 #endif

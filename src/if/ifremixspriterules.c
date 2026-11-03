@@ -23,6 +23,8 @@ static const IFRemixSpriteEntry sIFRemixSpriteEntries[IFREMIX_SPRITE_COUNT] =
     { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x1A88 },
     { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x1BB8 },
     { IFREMIX_SPRITE_FILE_KOTH, 0x0AA8 },       /* the score meter frame (KingOfTheHill.asm setup_, image footer 0xAA8) */
+    { IFREMIX_SPRITE_FILE_STOCK_ICONS, 0x0080 }, /* the polygon stock icon of the Multi-Man counter (SinglePlayerModes.asm 2312) */
+    { IFREMIX_SPRITE_FILE_DIGITS, 0x0828 },      /* the "x" of the Multi-Man counter (llIFCommonDigitsCrossSprite) */
 };
 
 const IFRemixSpriteEntry *ifRemixSpriteRulesGetEntry(int id)

@@ -20,6 +20,9 @@ extern sb32 sc1PRemixMultimanIsActive(void);
 /** Applies the horde rules to the battle of the stage being set up and starts a new KO count; no-op outside the horde modes. */
 extern void sc1PRemixMultimanSetupBattle(void);
 
+/** Makes the polygon icon and the "x" of the KO counter at the scene start; no-op outside the horde modes. */
+extern void sc1PRemixMultimanSetupHud(void);
+
 /** Gives the 1P game player the knockback ratio and the single stock of the horde modes; no-op outside them. */
 extern void sc1PRemixMultimanSetupPlayer(s32 player);
 

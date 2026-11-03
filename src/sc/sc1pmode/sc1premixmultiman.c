@@ -15,17 +15,25 @@
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmoderules.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
+#include "gm/gmremixtoggle.h"
+#include "if/ifremixsprite.h"
 #include "remix/remix_hud_text.h"
 
 #define SC1PREMIX_MULTIMAN_POLYGON_KINDS 12
 #define SC1PREMIX_MULTIMAN_STOCK_COUNT 0
 #define SC1PREMIX_MULTIMAN_HUD_SLOT 28
 #define SC1PREMIX_MULTIMAN_HUD_X 50.0F
-#define SC1PREMIX_MULTIMAN_HUD_Y 18.0F
+#define SC1PREMIX_MULTIMAN_POLYGON_X 30.0F
+#define SC1PREMIX_MULTIMAN_CROSS_X 39.0F
+#define SC1PREMIX_MULTIMAN_ICON_TINT 0x848484FF
+#define SC1PREMIX_MULTIMAN_ICON_PALETTE 0x303030FF
+#define SC1PREMIX_MULTIMAN_GROUP 0x0B
+#define SC1PREMIX_MULTIMAN_DL_LINK 23
 #define SC1PREMIX_MULTIMAN_HUD_SCALE 0.9F
 #define SC1PREMIX_MULTIMAN_HUD_COLOR 0xFFFFFFFF
 
 static SC1PRemixMultimanKos sSC1PRemixMultimanKos;
+static f32 sSC1PRemixMultimanCounterY;
 
 s32 sc1PRemixMultimanFirstStage(s32 mode)
 {
@@ -52,6 +60,23 @@ void sc1PRemixMultimanSetupBattle(void)
     gSCManagerBattleState->is_team_attack = FALSE;
     gSCManagerBattleState->item_appearance_rate = 0;
     gSCManagerBattleState->time_limit = SCBATTLE_TIMELIMIT_INFINITE;
+}
+
+void sc1PRemixMultimanSetupHud(void)
+{
+    f32 polygon_y;
+    f32 cross_y;
+
+    if (sc1PRemixMultimanIsActive() == FALSE)
+    {
+        return;
+    }
+    sc1PRemixMultimanHudY(gmRemixToggle(dragon_king_hud), &polygon_y, &cross_y, &sSC1PRemixMultimanCounterY);
+
+    ifRemixSpriteMake(IFREMIX_SPRITE_MULTIMAN_POLYGON, SC1PREMIX_MULTIMAN_GROUP, SC1PREMIX_MULTIMAN_DL_LINK,
+                      SC1PREMIX_MULTIMAN_POLYGON_X, polygon_y, SC1PREMIX_MULTIMAN_ICON_TINT, SC1PREMIX_MULTIMAN_ICON_PALETTE, 1.0F);
+    ifRemixSpriteMake(IFREMIX_SPRITE_MULTIMAN_CROSS, SC1PREMIX_MULTIMAN_GROUP, SC1PREMIX_MULTIMAN_DL_LINK,
+                      SC1PREMIX_MULTIMAN_CROSS_X, cross_y, SC1PREMIX_MULTIMAN_ICON_TINT, SC1PREMIX_MULTIMAN_ICON_PALETTE, 1.0F);
 }
 
 void sc1PRemixMultimanSetupPlayer(s32 player)
@@ -144,7 +169,7 @@ void sc1PRemixMultimanDrawHud(void)
     {
         return;
     }
-    remix_hud_text_putf(SC1PREMIX_MULTIMAN_HUD_SLOT, SC1PREMIX_MULTIMAN_HUD_X, SC1PREMIX_MULTIMAN_HUD_Y,
+    remix_hud_text_putf(SC1PREMIX_MULTIMAN_HUD_SLOT, SC1PREMIX_MULTIMAN_HUD_X, sSC1PRemixMultimanCounterY,
                         SC1PREMIX_MULTIMAN_HUD_COLOR, SC1PREMIX_MULTIMAN_HUD_SCALE, REMIX_HUD_ALIGN_LEFT, "%d",
                         (int)sSC1PRemixMultimanKos.kos);
 }

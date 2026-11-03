@@ -2613,6 +2613,7 @@ void sc1PGameFuncStart(void)
 #ifdef REGION_REMIX
     ifRemixComboMeterSetup();
     ifRemixAnnouncerSetup();
+    sc1PRemixMultimanSetupHud();
 #endif
 
 #ifndef PORT
