@@ -79,6 +79,15 @@ sb32 gmRemixTwelveCBTrySetStocks(s32 stocks)
     return TRUE;
 }
 
+s32 gmRemixTwelveCBGetWinnerPortrait(s32 port)
+{
+    if (sGMRemixTwelveCBIsInit == FALSE)
+    {
+        return -1;
+    }
+    return gmRemixTwelveCBGetWinnerPortraitOf(&sGMRemixTwelveCB, port);
+}
+
 /* Portrait slot the CSS reported for each port, -1 when none. */
 static s32 sGMRemixTwelveCBCssPortrait[GMREMIX_TWELVECB_PLAYERS] = { -1, -1 };
 

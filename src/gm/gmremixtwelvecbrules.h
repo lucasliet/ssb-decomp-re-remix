@@ -96,6 +96,15 @@ extern int32_t gmRemixTwelveCBGetPortraitStocks(const GMRemixTwelveCBState *stat
 extern void gmRemixTwelveCBSetNextPortrait(GMRemixTwelveCBState *state, int32_t port, int32_t portrait);
 
 /**
+ * Portrait the winner of the last game must keep (the CSS only lets him pick it again): the portrait of the last game record when
+ * the player still had stocks at its end. -1 when there is none to keep: no game yet, the battle is over, or he lost the game.
+ *
+ * @param state Battle state.
+ * @param port Player port (0 or 1).
+ */
+extern int32_t gmRemixTwelveCBGetWinnerPortraitOf(const GMRemixTwelveCBState *state, int32_t port);
+
+/**
  * Stock count (0-based) a player starts the next game with (set_initial_stock_count_): the stocks the player ended the last
  * game with when any are left to spare, otherwise the stocks of the portrait chosen.
  *

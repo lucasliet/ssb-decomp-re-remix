@@ -69,6 +69,15 @@ extern void gmRemixTwelveCBSetCssSet(s32 port, s32 set);
  */
 extern sb32 gmRemixTwelveCBTrySetStocks(s32 stocks);
 
+/**
+ * Portrait slot a player must keep for the next game: the portrait he won the last game with (CharacterSelect.asm 1155-1228,
+ * TwelveCharBattle.asm 2860-2929). A winner keeps his character until it loses a stock.
+ *
+ * @param port Player port (0 or 1).
+ * @return The slot, or -1 when the player is free to choose (no game played, he lost it, or the battle is over).
+ */
+extern s32 gmRemixTwelveCBGetWinnerPortrait(s32 port);
+
 /** TRUE when the stock pool of a player is empty, which ends the battle. */
 extern sb32 gmRemixTwelveCBIsComplete(void);
 

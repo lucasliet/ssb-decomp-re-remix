@@ -19,6 +19,7 @@ extern float port_widescreen_clip_x_scale(void);
 #endif
 #ifdef REGION_REMIX
 #include "remix/remix_css_data.h"
+#include "remix/remix_roster_data.h"
 #include "gm/gmremixmenumusic.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixspawnsetup.h"
@@ -68,6 +69,8 @@ u32 dMNPlayersVSFileIDs[/* */] =
 	/* [9] Results sprites (the 12-Character Battle winner crown), [10] interface digits (its stock cross) */
 	, llMNVSResultsFileID
 	, llIFCommonDigitsFileID
+	/* [11] Remix CSS images (the variant flags and the polygon icon of the 12-Character Battle portraits) */
+	, REMIX_CSS_IMAGES_FILE_ID
 #endif
 };
 
@@ -556,6 +559,51 @@ void mnPlayersVSTwelveCBPortraitProcUpdate(GObj *gobj)
 	SObj *sobj = SObjGetStruct(gobj);
 
 	sobj->pos.x = mnRemixTwelveCBLayoutNextX(gobj->user_data.s, sobj->pos.x);
+
+	if (sobj->next != NULL)
+	{
+		sobj->next->pos.x = sobj->pos.x; /* the variant indicator rides on the corner of the portrait */
+	}
+}
+
+/* TwelveCharBattle.asm update_portrait_variant_indicator_ (2237-2346): the Japanese and European flags and the polygon icon
+ * (file 0xA06, offsets 0x558, 0x3B8 and 0x13A8) sit on the upper left corner of the portrait; other characters have none. */
+#define MNPLAYERSVS_TWELVECB_FLAG_J_OFFSET 0x558
+#define MNPLAYERSVS_TWELVECB_FLAG_E_OFFSET 0x3B8
+#define MNPLAYERSVS_TWELVECB_ICON_POLYGON_OFFSET 0x13A8
+#define MNPLAYERSVS_TWELVECB_FLAG_SCALE 0.5625F
+
+static void mnPlayersVSMakeTwelveCBVariantIndicator(GObj *portrait_gobj, s32 fkind, SObj *portrait_sobj)
+{
+	u32 offset;
+	f32 scale = MNPLAYERSVS_TWELVECB_FLAG_SCALE;
+	SObj *sobj;
+
+	switch (kRemixRoster[fkind].variant_type)
+	{
+	case REMIX_VARIANT_J:
+		offset = MNPLAYERSVS_TWELVECB_FLAG_J_OFFSET;
+		break;
+
+	case REMIX_VARIANT_E:
+		offset = MNPLAYERSVS_TWELVECB_FLAG_E_OFFSET;
+		break;
+
+	case REMIX_VARIANT_POLYGON:
+		offset = MNPLAYERSVS_TWELVECB_ICON_POLYGON_OFFSET;
+		scale = 1.0F;
+		break;
+
+	default:
+		return;
+	}
+	sobj = lbCommonMakeSObjForGObj(portrait_gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[11], offset));
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+	sobj->sprite.scalex = scale;
+	sobj->sprite.scaley = scale;
+	sobj->pos.x = portrait_sobj->pos.x;
+	sobj->pos.y = portrait_sobj->pos.y;
 }
 
 static void mnPlayersVSMakeTwelveCBPortrait(s32 slot, sb32 is_sliding)
@@ -575,6 +623,7 @@ static void mnPlayersVSMakeTwelveCBPortrait(s32 slot, sb32 is_sliding)
 	sobj->pos.y = mnRemixTwelveCBLayoutCellY(slot);
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
+	mnPlayersVSMakeTwelveCBVariantIndicator(gobj, fkind, sobj);
 }
 
 /* TwelveCharBattle.asm 2788-2855: a defeated portrait is covered by a black rectangle of alpha 0xA0 that follows its slide. */
@@ -4098,6 +4147,52 @@ sb32 mnPlayersVSCheckCursorPuckGrab(GObj *gobj, s32 player)
 }
 
 #ifdef REGION_REMIX
+/**
+ * TwelveCharBattle.asm 2860-2929: a defeated portrait cannot be taken into another game, and the winner of the last game can only
+ * pick the portrait he won with.
+ */
+static sb32 mnPlayersVSTwelveCBIsSlotSelectable(s32 player, s32 slot)
+{
+	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+	s32 winner_slot = gmRemixTwelveCBGetWinnerPortrait(player);
+
+	if (state == NULL)
+	{
+		return TRUE;
+	}
+	if ((state->status != GMREMIX_TWELVECB_STATUS_COMPLETE) && (gmRemixTwelveCBGetPortraitStocks(state, slot) == 0))
+	{
+		return FALSE;
+	}
+	return ((winner_slot >= 0) && (winner_slot != slot)) ? FALSE : TRUE;
+}
+
+/** 12-Character Battle Random: a portrait of the player's half that he may take (CharacterSelect.asm 1155-1228). */
+static s32 mnPlayersVSRandTwelveCBFighterKind(GObj *puck_gobj)
+{
+	s32 player = mnPlayersVSTwelveCBPlayerOfPuck(puck_gobj);
+	s32 winner_slot = gmRemixTwelveCBGetWinnerPortrait(player);
+	s32 slot;
+	s32 attempt;
+
+	for (attempt = 0; attempt < 100; attempt++)
+	{
+		s32 index = syUtilsRandTimeUCharRange(MNREMIX_TCB_ROWS * MNREMIX_TCB_HALF_COLUMNS);
+
+		slot = (winner_slot >= 0) ? winner_slot :
+		       (((index / MNREMIX_TCB_HALF_COLUMNS) * MNREMIX_TCB_COLUMNS) + (index % MNREMIX_TCB_HALF_COLUMNS) + (player * MNREMIX_TCB_HALF_COLUMNS));
+
+		if ((mnPlayersVSTwelveCBIsSlotSelectable(player, slot) != FALSE) &&
+		    (mnPlayersVSCheckFighterLocked(mnPlayersVSTwelveCBSlotFkind(slot)) == FALSE))
+		{
+			break;
+		}
+	}
+	sMNPlayersVSTwelveCBPortrait[player] = slot;
+
+	return mnPlayersVSTwelveCBSlotFkind(slot);
+}
+
 /** 12-Character Battle: the fighter under the token of a player, who only reaches the portraits of his own half. */
 static s32 mnPlayersVSGetTwelveCBPuckFighterKind(s32 player)
 {
@@ -4111,7 +4206,8 @@ static s32 mnPlayersVSGetTwelveCBPuckFighterKind(s32 player)
 	}
 	fkind = mnPlayersVSTwelveCBSlotFkind(slot);
 
-	if ((mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE))
+	if ((mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE) ||
+	    (mnPlayersVSTwelveCBIsSlotSelectable(player, slot) == FALSE))
 	{
 		return nFTKindNull;
 	}
@@ -4761,6 +4857,13 @@ s32 mnPlayersVSRandFighterKind(GObj *gobj)
 	s32 fkind;
 
 #ifdef REGION_REMIX
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		fkind = mnPlayersVSRandTwelveCBFighterKind(gobj);
+		mnPlayersVSCenterPuckInPortrait(gobj, fkind);
+
+		return fkind;
+	}
 	do
 	{
 		fkind = mnRemixRandomResolveFighterKind(kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)]);

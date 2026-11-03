@@ -275,4 +275,18 @@ void gmRemixTwelveCBCalculateBest(GMRemixTwelveCBState *state)
     }
 }
 
+int32_t gmRemixTwelveCBGetWinnerPortraitOf(const GMRemixTwelveCBState *state, int32_t port)
+{
+    const GMRemixTwelveCBMatch *last;
+
+    if ((port < 0) || (port >= GMREMIX_TWELVECB_PLAYERS) || (state->status != GMREMIX_TWELVECB_STATUS_STARTED) ||
+        (state->current_game < 0) || (state->current_game >= GMREMIX_TWELVECB_GAMES))
+    {
+        return -1;
+    }
+    last = &state->players[port].matches[state->current_game];
+
+    return (last->stocks_end != GMREMIX_TWELVECB_NO_STOCKS) ? (int32_t)last->portrait : -1;
+}
+
 #endif
