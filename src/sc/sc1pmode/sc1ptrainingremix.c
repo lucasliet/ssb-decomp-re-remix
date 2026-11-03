@@ -226,6 +226,20 @@ s32 sc1PTrainingRemixGetItemKind(s32 entry)
     return ITREMIX_KIND_START + entry;
 }
 
+static sb32 sc1PTrainingRemixIsZTapped(void)
+{
+    s32 port;
+
+    for (port = 0; port < MAXCONTROLLERS; port++)
+    {
+        if (gSYControllerDevices[port].button_tap & Z_TRIG)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 void sc1PTrainingRemixDrawHud(void)
 {
     sc1PTrainingRemixLegendUpdate();
@@ -233,6 +247,10 @@ void sc1PTrainingRemixDrawHud(void)
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusPause)
     {
         return;
+    }
+    if (sc1PTrainingRemixIsZTapped() != FALSE)
+    {
+        remix_training_open_menu();
     }
     remix_hud_text_put(SC1PTRAININGREMIX_HUD_SLOT, "Reset Count:", SC1PTRAININGREMIX_HUD_LABEL_X, SC1PTRAININGREMIX_HUD_Y,
                        SC1PTRAININGREMIX_HUD_COLOR, SC1PTRAININGREMIX_HUD_SCALE, REMIX_HUD_ALIGN_LEFT);
