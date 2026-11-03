@@ -20,7 +20,7 @@
 #define MNREMIX_TCB_CELL_SIZE 30
 #define MNREMIX_TCB_PORTRAIT_SIZE 32
 
-/** Fighter kind of a slot in a character set (0 Default, 1 Japanese, 2 Polygon, 3 Remix); -1 for an invalid set or slot. */
+/** Fighter kind of a slot in a character set (0 Default, 1 Japanese, 2 Polygon, 3 Remix, 4 Custom); -1 for an invalid set or slot. */
 extern int mnRemixTwelveCBLayoutFkind(int set, int slot);
 
 /** Final X and Y of the portrait of a slot, in screen units (the asm portrait_x_position and _get_y). */

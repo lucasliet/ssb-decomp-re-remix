@@ -4,6 +4,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include "mn/mnplayers/mnremixtwelvecbcustom.h"
 #include "mn/mnplayers/mnremixtwelvecblayout.h"
 
 /* Fighter kinds of a set: three rows of the four characters a half shows (TwelveCharBattle.asm layout.slot_N, 81-197). */
@@ -37,7 +38,15 @@ static int slotIsValid(int slot)
 
 int mnRemixTwelveCBLayoutFkind(int set, int slot)
 {
-    if ((set < 0) || (set >= MNREMIX_TCB_SETS) || !slotIsValid(slot))
+    if (!slotIsValid(slot))
+    {
+        return -1;
+    }
+    if (set == MNREMIX_TCB_CUSTOM_SET)
+    {
+        return mnRemixTwelveCBCustomFkind(slot);
+    }
+    if ((set < 0) || (set >= MNREMIX_TCB_SETS))
     {
         return -1;
     }
@@ -114,9 +123,11 @@ int mnRemixTwelveCBLayoutSlotOfFkind(int set, int player, int fkind)
     {
         for (column = 0; column < MNREMIX_TCB_HALF_COLUMNS; column++)
         {
-            if (mnRemixTwelveCBLayoutFkind(set, (row * MNREMIX_TCB_COLUMNS) + column) == fkind)
+            int slot = (row * MNREMIX_TCB_COLUMNS) + column + (player * MNREMIX_TCB_HALF_COLUMNS);
+
+            if (mnRemixTwelveCBLayoutFkind(set, slot) == fkind)
             {
-                return (row * MNREMIX_TCB_COLUMNS) + column + (player * MNREMIX_TCB_HALF_COLUMNS);
+                return slot;
             }
         }
     }

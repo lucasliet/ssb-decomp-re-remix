@@ -32,6 +32,8 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
 #include "mn/mnplayers/mnremixvariants.h"
+#include "mn/mnplayers/mnremixtwelvecbcustom.h"
+#include "mn/mnplayers/mnremixtwelvecbcustomlegend.h"
 #include "mn/mnplayers/mnremixtwelvecblayout.h"
 #include "if/ifremixsprite.h"
 #include <string.h>
@@ -708,7 +710,7 @@ static void mnPlayersVSTwelveCBRebuildHalf(s32 player)
 #define MNPLAYERSVS_TWELVECB_ZONE_Y 172.0F
 #define MNPLAYERSVS_TWELVECB_ZONE_HEIGHT 14.0F
 #define MNPLAYERSVS_TWELVECB_ZONE_WIDTH 32.0F
-#define MNPLAYERSVS_TWELVECB_SETS_SELECTABLE MNREMIX_TCB_SETS
+#define MNPLAYERSVS_TWELVECB_SETS_SELECTABLE (MNREMIX_TCB_CUSTOM_SET + 1)
 
 static const f32 sMNPlayersVSTwelveCBZoneX[2] = { 91.5F, 159.0F };
 static const f32 sMNPlayersVSTwelveCBRightArrowX[2] = { 153.0F, 221.0F };
@@ -866,6 +868,146 @@ static sb32 mnPlayersVSCheckTwelveCBPress(GObj *cursor_gobj)
 		return TRUE;
 	}
 	return FALSE;
+}
+
+/* TwelveCharBattle.asm check_input_ (4056-4464): the Custom set is edited with the token held over one of the player's portraits. The
+ * characters Z and R cycle through come from the Training menu list (Training.entry_id_to_char_id), minus the Sandbag. */
+#define MNPLAYERSVS_TWELVECB_SANDBAG 60
+#define MNPLAYERSVS_TWELVECB_ROSTER_MAX 128
+
+static const struct { s32 fkind; const char *name; } sMNPlayersVSTwelveCBRosterEntries[] =
+{
+#include "remix/remix_training_characters_data.inc"
+};
+
+static s32 sMNPlayersVSTwelveCBRoster[MNPLAYERSVS_TWELVECB_ROSTER_MAX];
+static s32 sMNPlayersVSTwelveCBRosterCount;
+static s32 sMNPlayersVSTwelveCBCycleTimer[2] = { MNREMIX_TCB_CUSTOM_REPEAT_IDLE, MNREMIX_TCB_CUSTOM_REPEAT_IDLE };
+static s32 sMNPlayersVSTwelveCBCopyTimer[2];
+static s32 sMNPlayersVSTwelveCBLegendSide[2] = { -1, -1 };
+
+static s32 mnPlayersVSTwelveCBGetRosterCount(void)
+{
+	s32 index;
+
+	if (sMNPlayersVSTwelveCBRosterCount == 0)
+	{
+		for (index = 0; index < (s32)(sizeof(sMNPlayersVSTwelveCBRosterEntries) / sizeof(sMNPlayersVSTwelveCBRosterEntries[0])); index++)
+		{
+			sMNPlayersVSTwelveCBRoster[index] = sMNPlayersVSTwelveCBRosterEntries[index].fkind;
+			sMNPlayersVSTwelveCBRosterCount++;
+		}
+	}
+	return sMNPlayersVSTwelveCBRosterCount;
+}
+
+static int mnPlayersVSTwelveCBPickRandomFkind(void)
+{
+	s32 fkind;
+
+	do
+	{
+		fkind = mnRemixRandomResolveFighterKind(kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)]);
+	}
+	while ((fkind == nFTKindNull) || (fkind == MNPLAYERSVS_TWELVECB_SANDBAG));
+
+	return fkind;
+}
+
+/** Slot of the token player's own half that the token hovers, MNREMIX_TCB_NO_SLOT when it hovers none. */
+static s32 mnPlayersVSTwelveCBGetHoveredSlot(s32 token_player)
+{
+	SObj *sobj = SObjGetStruct(sMNPlayersVSSlots[token_player].puck);
+
+	return mnRemixTwelveCBLayoutSlotAtPoint(token_player, (s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+}
+
+/** TRUE when the cursor edits the Custom set: it holds a token over a portrait of a Custom set before the battle started. */
+static sb32 mnPlayersVSTwelveCBIsEditingCustom(s32 token_player, s32 *slot)
+{
+	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+
+	if ((token_player < 0) || (token_player > 1) || (state == NULL) || (state->status != GMREMIX_TWELVECB_STATUS_NOT_STARTED) ||
+	    (gmRemixTwelveCBGetCssSet(token_player) != MNREMIX_TCB_CUSTOM_SET))
+	{
+		return FALSE;
+	}
+	*slot = mnPlayersVSTwelveCBGetHoveredSlot(token_player);
+
+	return (*slot != MNREMIX_TCB_NO_SLOT) ? TRUE : FALSE;
+}
+
+/** Applies the Custom set change of the buttons of this frame; returns TRUE when a portrait changed. */
+static sb32 mnPlayersVSTwelveCBApplyCustomInput(s32 cursor, s32 token_player, s32 slot)
+{
+	u16 held = gSYControllerDevices[cursor].button_hold;
+	u16 released = gSYControllerDevices[cursor].button_release;
+	u16 tapped = gSYControllerDevices[cursor].button_tap;
+	sb32 is_z_or_r_held = ((held & (Z_TRIG | R_TRIG)) != 0) ? TRUE : FALSE;
+	s32 direction = ((held & Z_TRIG) != 0) ? -1 : 1;
+
+	if (mnRemixTwelveCBCustomRepeat(&sMNPlayersVSTwelveCBCycleTimer[cursor], is_z_or_r_held) != 0)
+	{
+		return mnRemixTwelveCBCustomCycle(slot, direction, sMNPlayersVSTwelveCBRoster, mnPlayersVSTwelveCBGetRosterCount(),
+		                                  MNPLAYERSVS_TWELVECB_SANDBAG) != 0;
+	}
+	if (is_z_or_r_held != FALSE)
+	{
+		return FALSE;
+	}
+	if ((released & L_TRIG) != 0)
+	{
+		mnRemixTwelveCBCustomApplyAll(token_player, mnRemixTwelveCBCustomFkind(slot));
+		return TRUE;
+	}
+	if ((tapped & D_JPAD) != 0)
+	{
+		mnRemixTwelveCBCustomRandomize(token_player, mnPlayersVSTwelveCBPickRandomFkind);
+		return TRUE;
+	}
+	switch (mnRemixTwelveCBCustomDpadUp(&sMNPlayersVSTwelveCBCopyTimer[token_player], (held & U_JPAD) != 0, (released & U_JPAD) != 0))
+	{
+	case MNREMIX_TCB_CUSTOM_DPAD_UP_PRESET:
+		mnRemixTwelveCBCustomPreset(token_player);
+		return TRUE;
+
+	case MNREMIX_TCB_CUSTOM_DPAD_UP_COPY:
+		mnRemixTwelveCBCustomCopyOpponent(token_player);
+		return TRUE;
+
+	default:
+		return FALSE;
+	}
+}
+
+/** Edits the Custom set of the token the cursor holds and shows its legend (check_input_, draw_custom_portrait_indicators_). */
+static void mnPlayersVSTwelveCBUpdateCustom(s32 cursor)
+{
+	s32 token_player = sMNPlayersVSSlots[cursor].held_player;
+	s32 slot = MNREMIX_TCB_NO_SLOT;
+	sb32 is_editing = (cursor < 2) ? mnPlayersVSTwelveCBIsEditingCustom(token_player, &slot) : FALSE;
+
+	if ((sMNPlayersVSTwelveCBLegendSide[cursor] >= 0) && ((is_editing == FALSE) || (sMNPlayersVSTwelveCBLegendSide[cursor] != token_player)))
+	{
+		mnRemixTwelveCBCustomLegendUpdate(sMNPlayersVSTwelveCBLegendSide[cursor], FALSE, sMNPlayersVSFiles[0]);
+		sMNPlayersVSTwelveCBLegendSide[cursor] = -1;
+	}
+	if (is_editing == FALSE)
+	{
+		return;
+	}
+	mnRemixTwelveCBCustomLegendUpdate(token_player, TRUE, sMNPlayersVSFiles[0]);
+	sMNPlayersVSTwelveCBLegendSide[cursor] = token_player;
+
+	if ((gSYControllerDevices[cursor].button_tap & (A_BUTTON | U_CBUTTONS | D_CBUTTONS | L_CBUTTONS | R_CBUTTONS)) != 0)
+	{
+		return;
+	}
+	if (mnPlayersVSTwelveCBApplyCustomInput(cursor, token_player, slot) != FALSE)
+	{
+		mnPlayersVSTwelveCBRebuildHalf(token_player);
+		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+	}
 }
 
 /* CharacterSelect.asm update_stock_icon_and_count_indicators_ (5499-5915), always shown in the 12-Character Battle: the stocks left
@@ -1166,6 +1308,9 @@ void mnPlayersVSMakePortraitAll(void)
 		sMNPlayersVSTwelveCBCrownGObj = NULL;
 		sMNPlayersVSTwelveCBPortrait[0] = MNREMIX_TCB_NO_SLOT;
 		sMNPlayersVSTwelveCBPortrait[1] = MNREMIX_TCB_NO_SLOT;
+		sMNPlayersVSTwelveCBLegendSide[0] = -1;
+		sMNPlayersVSTwelveCBLegendSide[1] = -1;
+		mnRemixTwelveCBCustomLegendReset();
 
 		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
 		{
@@ -4720,6 +4865,11 @@ classic_arrows_consumed:;
 	}
 #ifdef REGION_REMIX
 	mnRemixVariantHandleInput(sMNPlayersVSSlots[player].held_player, gSYControllerDevices[player].button_tap);
+
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		mnPlayersVSTwelveCBUpdateCustom(player);
+	}
 
 	if
 	(
