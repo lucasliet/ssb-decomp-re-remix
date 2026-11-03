@@ -33,7 +33,9 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnplayers/mnremixtwelvecblayout.h"
 #include "if/ifremixsprite.h"
+#include <string.h>
 #include "remix/remix_debug.h"
+#include "remix/remix_hud_text.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
 #endif
@@ -63,6 +65,9 @@ u32 dMNPlayersVSFileIDs[/* */] =
 #ifdef REGION_REMIX
 	/* [8] Remix portrait sheet; the 30 grid portraits are sliced from it. */
 	, REMIX_CSS_PORTRAITS_FILE_ID
+	/* [9] Results sprites (the 12-Character Battle winner crown), [10] interface digits (its stock cross) */
+	, llMNVSResultsFileID
+	, llIFCommonDigitsFileID
 #endif
 };
 
@@ -516,6 +521,11 @@ void mnPlayersVSMakeRemixPortrait(s32 slot)
 /* 12-Character Battle CSS (TwelveCharBattle.asm): the character set (0 Default .. 3 Remix) each player shows in his half, and the
  * slot of the portrait each player's token sits on, MNREMIX_TCB_NO_SLOT when none. */
 static GObj *sMNPlayersVSTwelveCBPortraitGObjs[MNREMIX_TCB_SLOTS];
+static GObj *sMNPlayersVSTwelveCBDefeatedGObjs[MNREMIX_TCB_SLOTS];
+static GObj *sMNPlayersVSTwelveCBSetArrowGObjs[4];
+static GObj *sMNPlayersVSTwelveCBResetGObj;
+static GObj *sMNPlayersVSTwelveCBCrownGObj;
+static GObj *sMNPlayersVSTwelveCBCrossGObjs[2];
 static s32 sMNPlayersVSTwelveCBPortrait[2] = { MNREMIX_TCB_NO_SLOT, MNREMIX_TCB_NO_SLOT };
 
 /** Fighter kind shown by a slot, in the character set of the player that owns it. */
@@ -616,6 +626,7 @@ static void mnPlayersVSMakeTwelveCBDefeatedMarks(void)
 		gobj = gcMakeGObjSPAfter(0, NULL, 18, GOBJ_PRIORITY_DEFAULT);
 		gcAddGObjDisplay(gobj, mnPlayersVSTwelveCBDefeatedProcDisplay, 27, GOBJ_PRIORITY_DEFAULT, ~0);
 		gobj->user_data.s = slot;
+		sMNPlayersVSTwelveCBDefeatedGObjs[slot] = gobj;
 	}
 }
 
@@ -668,11 +679,73 @@ static void mnPlayersVSMakeTwelveCBSetArrows(void)
 		f32 left_x = sMNPlayersVSTwelveCBZoneX[player];
 		f32 right_x = sMNPlayersVSTwelveCBRightArrowX[player];
 
-		ifRemixSpriteMakeFromFile(sMNPlayersVSFiles[0], llMNPlayersCommonArrowLSprite, 25, 26, left_x, MNPLAYERSVS_TWELVECB_ARROW_Y,
-		                          MNPLAYERSVS_TWELVECB_ARROW_TINT, MNPLAYERSVS_TWELVECB_ARROW_PALETTE, MNPLAYERSVS_TWELVECB_ARROW_SCALE);
-		ifRemixSpriteMakeFromFile(sMNPlayersVSFiles[0], llMNPlayersCommonArrowRSprite, 25, 26, right_x, MNPLAYERSVS_TWELVECB_ARROW_Y,
-		                          MNPLAYERSVS_TWELVECB_ARROW_TINT, MNPLAYERSVS_TWELVECB_ARROW_PALETTE, MNPLAYERSVS_TWELVECB_ARROW_SCALE);
+		sMNPlayersVSTwelveCBSetArrowGObjs[player * 2] = ifRemixSpriteMakeFromFile(sMNPlayersVSFiles[0], llMNPlayersCommonArrowLSprite, 25, 26, left_x,
+		                          MNPLAYERSVS_TWELVECB_ARROW_Y, MNPLAYERSVS_TWELVECB_ARROW_TINT, MNPLAYERSVS_TWELVECB_ARROW_PALETTE,
+		                          MNPLAYERSVS_TWELVECB_ARROW_SCALE);
+		sMNPlayersVSTwelveCBSetArrowGObjs[(player * 2) + 1] = ifRemixSpriteMakeFromFile(sMNPlayersVSFiles[0], llMNPlayersCommonArrowRSprite, 25, 26,
+		                          right_x, MNPLAYERSVS_TWELVECB_ARROW_Y, MNPLAYERSVS_TWELVECB_ARROW_TINT, MNPLAYERSVS_TWELVECB_ARROW_PALETTE,
+		                          MNPLAYERSVS_TWELVECB_ARROW_SCALE);
 	}
+}
+
+/* TwelveCharBattle.asm 5124 and 5142-5150: the RESET button once the battle started (file 0x11 offset 0x187A8, at 136, 206), and
+ * the crown of the winner when it ended (arquivo 0x22, scale 0.625, at 84, 136 or 208, 136 when player 1 has no stocks). */
+#define MNPLAYERSVS_TWELVECB_RESET_OFFSET 0x187A8
+#define MNPLAYERSVS_TWELVECB_RESET_X 136.0F
+#define MNPLAYERSVS_TWELVECB_RESET_Y 206.0F
+#define MNPLAYERSVS_TWELVECB_CROWN_SCALE 0.625F
+#define MNPLAYERSVS_TWELVECB_CROWN_Y 136.0F
+#define MNPLAYERSVS_TWELVECB_CROWN_P1_X 84.0F
+#define MNPLAYERSVS_TWELVECB_CROWN_P2_X 208.0F
+#define MNPLAYERSVS_TWELVECB_FGM_RESET 0xA4
+
+static void mnPlayersVSMakeTwelveCBResetAndCrown(void)
+{
+	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+
+	if ((state == NULL) || (state->status == GMREMIX_TWELVECB_STATUS_NOT_STARTED))
+	{
+		return;
+	}
+	sMNPlayersVSTwelveCBResetGObj = ifRemixSpriteMakeFromFile(sMNPlayersVSFiles[0], MNPLAYERSVS_TWELVECB_RESET_OFFSET, 25, 26,
+	                                  MNPLAYERSVS_TWELVECB_RESET_X, MNPLAYERSVS_TWELVECB_RESET_Y, 0xFFFFFFFF, 0x000000FF, 1.0F);
+	if (state->status == GMREMIX_TWELVECB_STATUS_COMPLETE)
+	{
+		f32 crown_x = (state->players[0].stocks_remaining == 0) ? MNPLAYERSVS_TWELVECB_CROWN_P2_X : MNPLAYERSVS_TWELVECB_CROWN_P1_X;
+
+		sMNPlayersVSTwelveCBCrownGObj = ifRemixSpriteMakeFromFile(sMNPlayersVSFiles[9], llMNVSResultsWinnerSprite, 25, 26, crown_x,
+		                                  MNPLAYERSVS_TWELVECB_CROWN_Y, 0xFFFFFFFF, 0x000000FF, MNPLAYERSVS_TWELVECB_CROWN_SCALE);
+	}
+}
+
+/** The RESET button: the battle starts over, the CSS shows its first state again (handle_reset_). */
+static void mnPlayersVSTwelveCBResetBattle(void)
+{
+	s32 slot;
+
+	gmRemixTwelveCBReset();
+
+	for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
+	{
+		if (sMNPlayersVSTwelveCBDefeatedGObjs[slot] != NULL)
+		{
+			gcEjectGObj(sMNPlayersVSTwelveCBDefeatedGObjs[slot]);
+			sMNPlayersVSTwelveCBDefeatedGObjs[slot] = NULL;
+		}
+	}
+	if (sMNPlayersVSTwelveCBResetGObj != NULL)
+	{
+		gcEjectGObj(sMNPlayersVSTwelveCBResetGObj);
+		sMNPlayersVSTwelveCBResetGObj = NULL;
+	}
+	if (sMNPlayersVSTwelveCBCrownGObj != NULL)
+	{
+		gcEjectGObj(sMNPlayersVSTwelveCBCrownGObj);
+		sMNPlayersVSTwelveCBCrownGObj = NULL;
+	}
+	mnPlayersVSMakeTwelveCBSetArrows();
+	gmRemixTwelveCBTrySetStocks(sMNPlayersVSStockValue);
+	func_800269C0_275C0(MNPLAYERSVS_TWELVECB_FGM_RESET);
 }
 
 /**
@@ -690,6 +763,16 @@ static sb32 mnPlayersVSCheckTwelveCBPress(GObj *cursor_gobj)
 	if (state == NULL)
 	{
 		return FALSE;
+	}
+	if ((sMNPlayersVSTwelveCBResetGObj != NULL) && (hot_x >= MNPLAYERSVS_TWELVECB_RESET_X) && (hot_y >= MNPLAYERSVS_TWELVECB_RESET_Y))
+	{
+		Sprite *reset = &SObjGetStruct(sMNPlayersVSTwelveCBResetGObj)->sprite;
+
+		if ((hot_x < (MNPLAYERSVS_TWELVECB_RESET_X + reset->width)) && (hot_y < (MNPLAYERSVS_TWELVECB_RESET_Y + reset->height)))
+		{
+			mnPlayersVSTwelveCBResetBattle();
+			return TRUE;
+		}
 	}
 	if ((state->status == GMREMIX_TWELVECB_STATUS_NOT_STARTED) && (hot_y >= MNPLAYERSVS_TWELVECB_ZONE_Y) &&
 	    (hot_y <= MNPLAYERSVS_TWELVECB_ZONE_Y + MNPLAYERSVS_TWELVECB_ZONE_HEIGHT))
@@ -734,6 +817,102 @@ static sb32 mnPlayersVSCheckTwelveCBPress(GObj *cursor_gobj)
 		return TRUE;
 	}
 	return FALSE;
+}
+
+/* CharacterSelect.asm update_stock_icon_and_count_indicators_ (5499-5915), always shown in the 12-Character Battle: the stocks left
+ * of the portrait a player's token sits on, as "<icon> x N" against the right edge of the panel card. The number is Kabel text
+ * (overlay slots 47 and 48), the cross is text too (the asm draws a sprite of the interface digits file, not loaded here). */
+#define MNPLAYERSVS_TWELVECB_STOCK_Y 191.0F
+#define MNPLAYERSVS_TWELVECB_STOCK_SCALE 0.90625F
+#define MNPLAYERSVS_TWELVECB_STOCK_PADDING (-4.0F)
+#define MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP 18.0F
+#define MNPLAYERSVS_TWELVECB_STOCK_CROSS_GAP 9.0F
+#define MNPLAYERSVS_TWELVECB_STOCK_CROSS_Y 192.0F
+#define MNPLAYERSVS_TWELVECB_STOCK_NUMBER_SLOT 47
+
+static GObj *sMNPlayersVSTwelveCBStockIcons[2];
+
+static void mnPlayersVSTwelveCBHideStockIndicator(s32 player)
+{
+	remix_hud_text_hide(MNPLAYERSVS_TWELVECB_STOCK_NUMBER_SLOT + player);
+	if (sMNPlayersVSTwelveCBCrossGObjs[player] != NULL)
+	{
+		sMNPlayersVSTwelveCBCrossGObjs[player]->flags = GOBJ_FLAG_HIDDEN;
+	}
+
+	if (sMNPlayersVSTwelveCBStockIcons[player] != NULL)
+	{
+		sMNPlayersVSTwelveCBStockIcons[player]->flags = GOBJ_FLAG_HIDDEN;
+	}
+}
+
+/** Stock icon sprite of the fighter shown in a panel, drawn at (x, y); created on first use. */
+static void mnPlayersVSTwelveCBPlaceStockIcon(s32 player, FTStruct *fp, f32 x, f32 y)
+{
+	GObj *gobj = sMNPlayersVSTwelveCBStockIcons[player];
+	FTSprites *sprites = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
+	u32 *luts = (u32*)PORT_RESOLVE(sprites->stock_luts);
+	SObj *sobj;
+
+	if (gobj == NULL)
+	{
+		sMNPlayersVSTwelveCBStockIcons[player] = gobj = gcMakeGObjSPAfter(0, NULL, 22, GOBJ_PRIORITY_DEFAULT);
+		gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 28, GOBJ_PRIORITY_DEFAULT, ~0);
+		sobj = lbCommonMakeSObjForGObj(gobj, (Sprite*)PORT_RESOLVE(sprites->stock_sprite));
+	}
+	else sobj = SObjGetStruct(gobj);
+
+	sobj->sprite = *(Sprite*)PORT_RESOLVE(sprites->stock_sprite);
+	sobj->sprite.LUT = luts[fp->costume];
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+	sobj->pos.x = x;
+	sobj->pos.y = y;
+	gobj->flags = GOBJ_FLAG_NONE;
+}
+
+/** The "x" of the stock indicator: the cross sprite of the interface digits file (asm llIFCommonDigitsCrossSprite). */
+static void mnPlayersVSTwelveCBPlaceStockCross(s32 player, f32 x)
+{
+	GObj *gobj = sMNPlayersVSTwelveCBCrossGObjs[player];
+
+	if (gobj == NULL)
+	{
+		sMNPlayersVSTwelveCBCrossGObjs[player] = gobj = ifRemixSpriteMakeFromFile(sMNPlayersVSFiles[10], llIFCommonDigitsCrossSprite, 22, 28, x,
+		                                                MNPLAYERSVS_TWELVECB_STOCK_CROSS_Y, 0xFFFFFFFF, 0x000000FF, 0.875F);
+	}
+	if (gobj != NULL)
+	{
+		SObjGetStruct(gobj)->pos.x = x;
+		gobj->flags = GOBJ_FLAG_NONE;
+	}
+}
+
+static void mnPlayersVSUpdateTwelveCBStockIndicator(s32 player)
+{
+	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+	s32 slot = (sMNPlayersVSSlots[player].fkind == nFTKindNull) ? MNREMIX_TCB_NO_SLOT : mnPlayersVSTwelveCBGetPortrait(player, sMNPlayersVSSlots[player].fkind);
+	GObj *fighter_gobj = sMNPlayersVSSlots[player].player;
+	Sprite *card;
+	f32 right_edge;
+	f32 digits_x;
+	s32 stocks;
+
+	if ((state == NULL) || (slot == MNREMIX_TCB_NO_SLOT) || (fighter_gobj == NULL) ||
+	    (sMNPlayersVSSlots[player].fkind == nFTKindNull) || (mnPlayersVSTwelveCBSlotFkind(slot) != sMNPlayersVSSlots[player].fkind))
+	{
+		mnPlayersVSTwelveCBHideStockIndicator(player);
+		return;
+	}
+	stocks = gmRemixTwelveCBGetPortraitStocks(state, slot);
+	card = lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonRedCardSprite);
+	right_edge = (mnPlayersVSGetPanelIndex(player) * 69) + 22 + card->width + MNPLAYERSVS_TWELVECB_STOCK_PADDING;
+	digits_x = right_edge - remix_hud_text_measure((stocks > 9) ? "00" : "0", MNPLAYERSVS_TWELVECB_STOCK_SCALE);
+
+	remix_hud_text_putf(MNPLAYERSVS_TWELVECB_STOCK_NUMBER_SLOT + player, right_edge, MNPLAYERSVS_TWELVECB_STOCK_Y, 0xFFFFFFFF,
+	                    MNPLAYERSVS_TWELVECB_STOCK_SCALE, REMIX_HUD_ALIGN_RIGHT, "%d", (int)stocks);
+	mnPlayersVSTwelveCBPlaceStockCross(player, digits_x - MNPLAYERSVS_TWELVECB_STOCK_CROSS_GAP);
+	mnPlayersVSTwelveCBPlaceStockIcon(player, ftGetStruct(fighter_gobj), digits_x - MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP, MNPLAYERSVS_TWELVECB_STOCK_Y);
 }
 
 /** Player (0 or 1) whose token is the GObj, 0 when it is none of them. */
@@ -923,6 +1102,22 @@ void mnPlayersVSMakePortraitAll(void)
 
 	if (gmRemixTwelveCBIsActive() != FALSE)
 	{
+		/* the GObjs of the previous CSS visit are gone with their scene */
+		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
+		{
+			sMNPlayersVSTwelveCBPortraitGObjs[slot] = NULL;
+		}
+		sMNPlayersVSTwelveCBStockIcons[0] = NULL;
+		sMNPlayersVSTwelveCBStockIcons[1] = NULL;
+		sMNPlayersVSTwelveCBCrossGObjs[0] = NULL;
+		sMNPlayersVSTwelveCBCrossGObjs[1] = NULL;
+		memset(sMNPlayersVSTwelveCBDefeatedGObjs, 0, sizeof(sMNPlayersVSTwelveCBDefeatedGObjs));
+		memset(sMNPlayersVSTwelveCBSetArrowGObjs, 0, sizeof(sMNPlayersVSTwelveCBSetArrowGObjs));
+		sMNPlayersVSTwelveCBResetGObj = NULL;
+		sMNPlayersVSTwelveCBCrownGObj = NULL;
+		sMNPlayersVSTwelveCBPortrait[0] = MNREMIX_TCB_NO_SLOT;
+		sMNPlayersVSTwelveCBPortrait[1] = MNREMIX_TCB_NO_SLOT;
+
 		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
 		{
 			mnPlayersVSMakeTwelveCBPortrait(slot, TRUE);
@@ -5737,10 +5932,11 @@ static void mnPlayersVSTwelveCBFrameUpdate(void)
 	}
 	for (player = 0; player < 2; player++)
 	{
-		s32 slot = sMNPlayersVSTwelveCBPortrait[player];
+		s32 slot = (sMNPlayersVSSlots[player].fkind == nFTKindNull) ? MNREMIX_TCB_NO_SLOT : mnPlayersVSTwelveCBGetPortrait(player, sMNPlayersVSSlots[player].fkind);
 		sb32 is_valid = (slot != MNREMIX_TCB_NO_SLOT) && (mnPlayersVSTwelveCBSlotFkind(slot) == sMNPlayersVSSlots[player].fkind);
 
 		gmRemixTwelveCBSetCssPortrait(player, is_valid ? slot : -1);
+		mnPlayersVSUpdateTwelveCBStockIndicator(player);
 	}
 	for (player = 2; player < GMCOMMON_PLAYERS_MAX; player++)
 	{
@@ -6294,8 +6490,10 @@ void mnPlayersVSFuncStart(void)
 #if defined(PORT) && defined(REGION_REMIX)
 	if (gmRemixTwelveCBIsActive() != FALSE)
 	{
+		gmRemixTwelveCBTrySetStocks(sMNPlayersVSStockValue);
 		mnPlayersVSMakeTwelveCBSetArrows();
 		mnPlayersVSMakeTwelveCBDefeatedMarks();
+		mnPlayersVSMakeTwelveCBResetAndCrown();
 	}
 #endif
 	mnPlayersVSInitSlotAll();
