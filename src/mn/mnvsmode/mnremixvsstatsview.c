@@ -11,6 +11,7 @@
 #include "mn/mnvsmode/mnremixvsstatsrules.h"
 #include "mn/mnvsmode/mnremixvsstatspages.h"
 #include "mn/mnvsmode/mnremixvsstatsview.h"
+#include "gm/gmremixgroupdisplay.h"
 #include "remix/remix_hud_text.h"
 
 extern void *func_800269C0_275C0(u16 id);
@@ -29,6 +30,9 @@ extern void *func_800269C0_275C0(u16 id);
 #define MNVSSTATS_VIEW_HINT_NEXT_X 87.0F
 #define MNVSSTATS_VIEW_TEXT_SCALE 0.8125F
 #define MNVSSTATS_VIEW_WHITE 0xFFFFFFFF
+/* Display groups (gGCCommonLinks) VsStats.asm check_menu_toggle_ hides while a page shows. */
+#define MNVSSTATS_VIEW_GROUP_MENU_INSTRUCTIONS 0x0D
+#define MNVSSTATS_VIEW_GROUP_RESULTS_ROWS 0x16
 
 static s32 sMNRemixVSStatsViewPage;
 static sb32 sMNRemixVSStatsViewVisible;
@@ -55,6 +59,13 @@ static void mnRemixVSStatsViewStartPressBuffer(void)
     sMNRemixVSStatsViewPressBuffer = MNREMIX_VSSTATS_RULES_PRESS_BUFFER_PERIOD;
 }
 
+/** Hides or shows the normal results rows and the menu instructions behind the stats page (Render.toggle_group_display_). */
+static void mnRemixVSStatsViewSetResultsHidden(u32 hide)
+{
+    gmRemixGroupDisplaySet(MNVSSTATS_VIEW_GROUP_MENU_INSTRUCTIONS, hide);
+    gmRemixGroupDisplaySet(MNVSSTATS_VIEW_GROUP_RESULTS_ROWS, hide);
+}
+
 /** A shows the page (asm check_menu_toggle_ _check_status). */
 static void mnRemixVSStatsViewCheckShow(void)
 {
@@ -65,6 +76,7 @@ static void mnRemixVSStatsViewCheckShow(void)
     mnRemixVSStatsViewStartPressBuffer();
     func_800269C0_275C0(MNVSSTATS_VIEW_FGM_MENU_TOGGLE);
     sMNRemixVSStatsViewVisible = TRUE;
+    mnRemixVSStatsViewSetResultsHidden(1);
 }
 
 /** B hides the page and R moves to the next one (asm check_menu_toggle_ _match_status_up and _check_r). */
@@ -79,6 +91,7 @@ static void mnRemixVSStatsViewCheckHide(void)
         mnRemixVSStatsViewStartPressBuffer();
         func_800269C0_275C0(MNVSSTATS_VIEW_FGM_MENU_TOGGLE);
         sMNRemixVSStatsViewVisible = FALSE;
+        mnRemixVSStatsViewSetResultsHidden(0);
         return;
     }
     if (mnRemixVSStatsViewIsPressed(R_TRIG))
@@ -130,9 +143,6 @@ void mnRemixVSStatsViewRun(s32 results_tics, s32 allow_exit_wait)
 
     if (sMNRemixVSStatsViewVisible)
     {
-        /* REMIX-TODO(VsStats): VsStats.asm hides the normal results rows (Render.toggle_group_display_ group 0x16) and
-         * the menu instructions (group 0x0D) while the page shows. The port has no display group toggle, so the page is
-         * drawn over them with its background. */
         mnRemixVSStatsPagesDraw(sMNRemixVSStatsViewPage);
         mnRemixVSStatsViewDrawHints();
         return;

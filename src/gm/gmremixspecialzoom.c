@@ -19,6 +19,7 @@
 #include <gm/gmcamera.h>
 #include <gm/gmremixstamina.h>
 #include <gm/gmremixtoggle.h>
+#include "gm/gmremixgroupdisplay.h"
 #include "ft/ftremix/ftremixhooks.h"
 
 #define FTREMIX_SPECIAL_ZOOM_NONE 0
@@ -42,6 +43,9 @@
 /* Sound effects played when the stage is hidden for a KO zoom (SpecialZoom.asm apply_zoom) */
 #define FTREMIX_SPECIAL_ZOOM_FGM_HIDE_STAGE 152
 #define FTREMIX_SPECIAL_ZOOM_FGM_HIDE_STAGE_2 187
+/* Stage display groups (gGCCommonLinks) a KO zoom hides (SpecialZoom.asm apply_zoom hide_stage). */
+#define FTREMIX_SPECIAL_ZOOM_GROUP_STAGE_1 1
+#define FTREMIX_SPECIAL_ZOOM_GROUP_STAGE_2 2
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 
@@ -130,8 +134,11 @@ static void ftRemixSpecialZoomEnd(void)
     gGMCameraStruct.pzoom_fighter_gobj = sFTRemixSpecialZoomZoomedInGObjSave;
     gIFCommonPlayerInterface.magnify_mode = sFTRemixSpecialZoomMagnifyDisplaySave;
 
-    /* REMIX-TODO(Render): end_zoom shows the stage groups 1 and 2 again (temp_toggle_group_display_, Render.GROUP_TABLE);
-     * the group lists have no port yet. */
+    if (sFTRemixSpecialZoomType == FTREMIX_SPECIAL_ZOOM_KO)
+    {
+        gmRemixGroupDisplayTempSet(FTREMIX_SPECIAL_ZOOM_GROUP_STAGE_1, 0);
+        gmRemixGroupDisplayTempSet(FTREMIX_SPECIAL_ZOOM_GROUP_STAGE_2, 0);
+    }
     ftRemixSpecialZoomWallpaperHide();
 
     sFTRemixSpecialZoomTimer = 0;
@@ -163,8 +170,8 @@ static void ftRemixSpecialZoomApply(GObj *fighter_gobj, s32 zoom_flag)
 
     if (zoom_flag == FTREMIX_SPECIAL_ZOOM_KO)
     {
-        /* REMIX-TODO(Render): apply_zoom hides the stage groups 1 and 2 (temp_toggle_group_display_); the group lists have no
-         * port yet. */
+        gmRemixGroupDisplayTempSet(FTREMIX_SPECIAL_ZOOM_GROUP_STAGE_1, 1);
+        gmRemixGroupDisplayTempSet(FTREMIX_SPECIAL_ZOOM_GROUP_STAGE_2, 1);
         func_800269C0_275C0(FTREMIX_SPECIAL_ZOOM_FGM_HIDE_STAGE);
         func_800269C0_275C0(FTREMIX_SPECIAL_ZOOM_FGM_HIDE_STAGE_2);
     }
