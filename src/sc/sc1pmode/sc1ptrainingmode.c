@@ -10,6 +10,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixtraining.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
+#include "it/itremix/itremix.h"
 #endif
 #include <gr/ground.h>
 #include <if/interface.h>
@@ -80,6 +81,20 @@ static void sc1PTrainingModeFixupSprite(Sprite *sprite)
 #else
 #define sc1PTrainingModeResolveTS(ts)     ((ts)->sprite)
 #define sc1PTrainingModeResolveOpt(arr,i) ((arr)[i])
+#endif
+
+#if defined(PORT) && defined(REGION_REMIX)
+static u32 *sSC1PTrainingModeRemixItemMenuNames;
+static u32 *sSC1PTrainingModeRemixItemHudNames;
+
+/* Item.asm extend_training_mode_item_menu_ and extend_training_mode_hud_: the name of a custom item is a Sprite listed in a table of file 0xFE. */
+static Sprite* sc1PTrainingModeGetRemixItemName(u32 *names, s32 entry)
+{
+	Sprite *sprite = (Sprite*)PORT_RESOLVE(names[entry]);
+
+	sc1PTrainingModeFixupSprite(sprite);
+	return sprite;
+}
 #endif
 
 extern void syAudioSetBGMVolume(s32 playerID, u32 vol);
@@ -729,10 +744,6 @@ void sc1PTrainingModeFuncUpdate(void)
 #if defined(PORT) && defined(REGION_REMIX)
 	sc1PTrainingRemixDrawHud();
 
-	if ((gSCManagerBattleState->game_status == nSCBattleGameStatusPause) && (sSC1PTrainingModeMenu.item_menu_option >= nSC1PTrainingModeMenuItemEnumCount))
-	{
-		sc1PTrainingRemixDrawItemName(sSC1PTrainingModeMenu.item_menu_option - nSC1PTrainingModeMenuItemEnumCount);
-	}
 #endif
 }
 
@@ -830,6 +841,10 @@ void sc1PTrainingModeLoadSprites(void)
 #endif
 	sSC1PTrainingModeMenu.unk_trainmenu_0x34 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, llSC1PTrainingMode0x10CPosSpriteArray);
 	sSC1PTrainingModeMenu.unk_trainmenu_0x38 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, llSC1PTrainingMode0x1B8PosSpriteArray);
+#if defined(PORT) && defined(REGION_REMIX)
+	sSC1PTrainingModeRemixItemMenuNames = lbRelocGetFileData(u32*, file, SC1PTRAININGREMIX_ITEM_MENU_TABLE);
+	sSC1PTrainingModeRemixItemHudNames = lbRelocGetFileData(u32*, file, SC1PTRAININGREMIX_ITEM_HUD_TABLE);
+#endif
 }
 
 #ifdef PORT
@@ -1227,6 +1242,13 @@ void sc1PTrainingModeUpdateItemDisplaySprite(void)
 {
 	SObj *root_sobj = SObjGetStruct(sSC1PTrainingModeMenu.item_display_gobj)->next, *next_sobj = root_sobj->next;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sSC1PTrainingModeMenu.item_hold >= nSC1PTrainingModeMenuItemEnumCount)
+	{
+		root_sobj->sprite = *sc1PTrainingModeGetRemixItemName(sSC1PTrainingModeRemixItemHudNames, sSC1PTrainingModeMenu.item_hold - nSC1PTrainingModeMenuItemEnumCount);
+	}
+	else
+#endif
 	root_sobj->sprite = *sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, sSC1PTrainingModeMenu.item_hold + 10);
 
 	root_sobj->pos.x = 292 - root_sobj->sprite.width;
@@ -1252,6 +1274,13 @@ void sc1PTrainingModeItemDisplayProcDisplay(GObj *interface_gobj)
 				scManagerRunPrintGObjStatus();
 			}
 		}
+#if defined(PORT) && defined(REGION_REMIX)
+		if ((ip->kind >= ITREMIX_KIND_START) && (ip->kind < (ITREMIX_KIND_START + SC1PTRAININGREMIX_ITEM_COUNT)))
+		{
+			kind = nSC1PTrainingModeMenuItemEnumCount + (ip->kind - ITREMIX_KIND_START);
+		}
+		else
+#endif
 		kind = (ip->kind <= nITKindCommonEnd) ? ip->kind - (nITKindUtilityStart - 1) : nSC1PTrainingModeMenuItemNone;
 	}
 	else kind = nSC1PTrainingModeMenuItemNone;
@@ -1463,10 +1492,7 @@ void sc1PTrainingModeUpdateItemOptionSprite(void)
 #if defined(PORT) && defined(REGION_REMIX)
 	if (sSC1PTrainingModeMenu.item_menu_option >= nSC1PTrainingModeMenuItemEnumCount)
 	{
-		/* a custom item has no name sprite: the none sprite stands for it, hidden and as wide as its name */
-		sobj->sprite = *sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.menu_option_sprites, nSC1PTrainingModeMenuItemNone + nSC1PTrainingModeMenuOptionSpriteItemStart);
-		sobj->sprite.attr |= SP_HIDDEN;
-		sobj->sprite.width = sc1PTrainingRemixDrawItemName(sSC1PTrainingModeMenu.item_menu_option - nSC1PTrainingModeMenuItemEnumCount);
+		sobj->sprite = *sc1PTrainingModeGetRemixItemName(sSC1PTrainingModeRemixItemMenuNames, sSC1PTrainingModeMenu.item_menu_option - nSC1PTrainingModeMenuItemEnumCount);
 		sobj->pos.x = 191 - (sobj->sprite.width / 2);
 		sobj->pos.y = 85.0F;
 		return;

@@ -61,14 +61,9 @@ extern void sc1PTrainingRemixDrawHud(void);
  */
 extern s32 sc1PTrainingRemixGetItemKind(s32 entry);
 
-/** Draws the name of a custom item entry at the Item row of the pause menu. @param entry As in sc1PTrainingRemixGetItemKind. @return Width of the text. */
-extern s32 sc1PTrainingRemixDrawItemName(s32 entry);
-
-/*
- * REMIX-TODO(Training) step 8: the name of the item in hand in the Training HUD (Item.asm extend_training_mode_hud_, file 0xFE
- * TRAINING_HUD_IMAGE_TABLE). The port has no held-item name draw for the custom kinds (0x2D+); missing: a port symbol for the
- * file 0xFE name image table (no REMIX_SYM_ entry) and the vanilla held-item HUD draw routine to hook.
- */
+/** Offsets in the Training sprite file (0xFE) of the name image tables Remix appends (Item.asm TRAINING_MENU_IMAGE_TABLE and TRAINING_HUD_IMAGE_TABLE). */
+#define SC1PTRAININGREMIX_ITEM_MENU_TABLE 0x02A0
+#define SC1PTRAININGREMIX_ITEM_HUD_TABLE 0x0330
 
 /*
  * REMIX-TODO(Training) steps 10 to 13: the custom Z menu (Training.asm run_, setup_, the entries at :3899-3913 and the per-port

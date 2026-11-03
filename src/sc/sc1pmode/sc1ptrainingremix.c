@@ -9,7 +9,6 @@
 #include <gm/gmsound.h>
 #include <mp/map.h>
 #include <port_log.h>
-#include <string.h>
 #include "it/itremix/itremix.h"
 #include <sc/scene.h>
 #include "gm/gmremixtoggle.h"
@@ -32,11 +31,6 @@
 #define SC1PTRAININGREMIX_HUD_Y 25.0F
 #define SC1PTRAININGREMIX_HUD_SCALE 1.0F
 #define SC1PTRAININGREMIX_HUD_COLOR 0xFFFFFFFF
-#define SC1PTRAININGREMIX_ITEM_SLOT 26
-#define SC1PTRAININGREMIX_ITEM_X 191.0F
-#define SC1PTRAININGREMIX_ITEM_Y 82.0F
-#define SC1PTRAININGREMIX_ITEM_SCALE 0.75F
-#define SC1PTRAININGREMIX_CHAR_WIDTH 7
 
 static sb32 sSC1PTrainingRemixIsFrozen;
 static sb32 sSC1PTrainingRemixIsAdvancing;
@@ -226,26 +220,9 @@ sb32 sc1PTrainingRemixIsFrameHeld(void)
     return TRUE;
 }
 
-static const char *dSC1PTrainingRemixItemNames[SC1PTRAININGREMIX_ITEM_COUNT] =
-{
-    "Cloaking Device", "Super Mushroom", "Poison Mushroom", "Blue Shell", "Lightning", "Deku Nut", "Franklin Badge",
-    "Pitfall", "Golden Gun", "Dango", "P-Wing", "Mr. Saturn", "Stopwatch"
-};
-
 s32 sc1PTrainingRemixGetItemKind(s32 entry)
 {
     return ITREMIX_KIND_START + entry;
-}
-
-s32 sc1PTrainingRemixDrawItemName(s32 entry)
-{
-    const char *name = dSC1PTrainingRemixItemNames[((entry >= 0) && (entry < SC1PTRAININGREMIX_ITEM_COUNT)) ? entry : 0];
-
-    /* REMIX-TODO(Training): Remix draws the item name as an image of file 0xFE (Item.asm TRAINING_MENU_IMAGE_TABLE), not as text. */
-    remix_hud_text_put(SC1PTRAININGREMIX_ITEM_SLOT, name, SC1PTRAININGREMIX_ITEM_X, SC1PTRAININGREMIX_ITEM_Y,
-                       SC1PTRAININGREMIX_HUD_COLOR, SC1PTRAININGREMIX_ITEM_SCALE, REMIX_HUD_ALIGN_CENTER);
-
-    return (s32)strlen(name) * SC1PTRAININGREMIX_CHAR_WIDTH;
 }
 
 void sc1PTrainingRemixDrawHud(void)
