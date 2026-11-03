@@ -8,13 +8,21 @@
 #include "grremixrainbowchomp.h"
 #include "grremixrainbow.h"
 #include <gr/ground.h>
+#include <sys/utils.h>
 #include <wp/wpmanager.h>
 #include <wp/weapon.h>
+
+extern void *func_800269C0_275C0(u16 id);
 
 /* Projectile.id.RAINBOWROAD_CHAINCHOMP: 0x20 + add_projectile order in .toolchain/pkgs/smashremix-src/src/Projectile.asm. */
 #define GRREMIX_RAINBOW_CHOMP_KIND 0x002A
 #define GRREMIX_RAINBOW_CHOMP_LIFETIME 0x0546
 #define GRREMIX_RAINBOW_CHOMP_DAMAGE 25
+/* Hazards.asm chainchomp_hitbox_main_: roll of Global.get_random_int_(0x50) that must return 2, during frames 0-14. */
+#define GRREMIX_RAINBOW_CHOMP_SOUND_ROLL_RANGE 0x50
+#define GRREMIX_RAINBOW_CHOMP_SOUND_ROLL_HIT 2
+#define GRREMIX_RAINBOW_CHOMP_SOUND_FRAMES 0x0F
+#define GRREMIX_RAINBOW_CHOMP_FGM 0x0401
 
 /** Hurtbox, shield, shield edge and clang handler: the asm routine does nothing and never destroys the weapon. */
 static sb32 grRemixRainbowChompProcConnect(GObj *wp_gobj)
@@ -32,6 +40,27 @@ static void grRemixRainbowChompSyncPosition(GObj *wp_gobj)
 }
 
 /**
+ * Chain chomp growl of the first frames (chainchomp_hitbox_main_): rolls every frame of frames 0-14 and plays the FGM
+ * on a roll of 2. The asm reads the frame count at projectile offset 0x0E; the port derives it from the spawn lifetime,
+ * since no port field is mapped to that byte.
+ */
+static void grRemixRainbowChompRollSound(WPStruct *wp)
+{
+    s32 frame = GRREMIX_RAINBOW_CHOMP_LIFETIME - wp->lifetime;
+    s32 roll;
+
+    if (frame >= GRREMIX_RAINBOW_CHOMP_SOUND_FRAMES)
+    {
+        return;
+    }
+    roll = syUtilsRandIntRange(GRREMIX_RAINBOW_CHOMP_SOUND_ROLL_RANGE);
+    if (roll == GRREMIX_RAINBOW_CHOMP_SOUND_ROLL_HIT)
+    {
+        func_800269C0_275C0(GRREMIX_RAINBOW_CHOMP_FGM);
+    }
+}
+
+/**
  * Per-frame hitbox routine (chainchomp_hitbox_main_). Destroys the weapon when its lifetime is spent, otherwise counts
  * it down.
  */
@@ -40,7 +69,8 @@ static sb32 grRemixRainbowChompProcUpdate(GObj *wp_gobj)
     WPStruct *wp = wpGetStruct(wp_gobj);
 
     grRemixRainbowChompSyncPosition(wp_gobj);
-    /* REMIX-TODO(hitbox monitor): the asm refreshes three hitbox slots (projectile offsets 0x214 and 0x29C) and rolls a chomp sound from the frame count at 0x0E; no port equivalent is mapped. */
+    /* REMIX-TODO(hitbox monitor): the asm also refreshes three hitbox slots (offsets 0x214, 0x29C); not mapped in the port. */
+    grRemixRainbowChompRollSound(wp);
 
     if (wp->lifetime == 0)
     {

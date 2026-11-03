@@ -66,15 +66,49 @@ u8 grRemixYosterCloudMatrixKind(void)
     return nGCMatrixKindTra;
 }
 
+/* Hazards.type bits of Stages.asm stage_hazard_table (HAZARDS = 0x01, MOVEMENT = 0x02). */
+#define GRREMIX_HAZARD_TYPE_NONE 0x00
+#define GRREMIX_HAZARD_TYPE_HAZARDS 0x01
+#define GRREMIX_HAZARD_TYPE_MOVEMENT 0x02
+#define GRREMIX_HAZARD_TYPE_BOTH 0x03
+
+/* Stages.asm stage_hazard_table, indexed by stage id. Stage ids past the end of this table are NONE (asm fill). */
+static const u8 sGRRemixStageHazardTypes[] = {
+    [nGRRemixStage_PEACHS_CASTLE] = GRREMIX_HAZARD_TYPE_BOTH,
+    [nGRRemixStage_SECTOR_Z] = GRREMIX_HAZARD_TYPE_HAZARDS,
+    [nGRRemixStage_CONGO_JUNGLE] = GRREMIX_HAZARD_TYPE_BOTH,
+    [nGRRemixStage_PLANET_ZEBES] = GRREMIX_HAZARD_TYPE_BOTH,
+    [nGRRemixStage_HYRULE_CASTLE] = GRREMIX_HAZARD_TYPE_HAZARDS,
+    [nGRRemixStage_YOSHIS_ISLAND] = GRREMIX_HAZARD_TYPE_HAZARDS,
+    [nGRRemixStage_DREAM_LAND] = GRREMIX_HAZARD_TYPE_HAZARDS,
+    [nGRRemixStage_SAFFRON_CITY] = GRREMIX_HAZARD_TYPE_BOTH,
+    [nGRRemixStage_MUSHROOM_KINGDOM] = GRREMIX_HAZARD_TYPE_HAZARDS,
+    [nGRRemixStage_DREAM_LAND_BETA_1] = GRREMIX_HAZARD_TYPE_NONE,
+    [nGRRemixStage_DREAM_LAND_BETA_2] = GRREMIX_HAZARD_TYPE_MOVEMENT,
+};
+
+/** TRUE when the stage's Hazards.type has the MOVEMENT bit (the inverse of the asm dont_freeze_stage flag). */
+static sb32 grRemixStageHasMovement(s32 gkind)
+{
+    if ((gkind < 0) || (gkind >= ARRAY_COUNT(sGRRemixStageHazardTypes)))
+    {
+        return FALSE;
+    }
+    return ((sGRRemixStageHazardTypes[gkind] & GRREMIX_HAZARD_TYPE_MOVEMENT) != 0) ? TRUE : FALSE;
+}
+
 /**
- * REMIX-TODO(Stages.stage_hazard_table): the asm skips the platform movement when the stage's Hazards.type has no
- * MOVEMENT bit (dont_freeze_stage). Until that table is ported every stage is treated as freezable, which only differs
- * from the asm when a movement toggle is off.
+ * Platform movement gate of a ground display (Hazards.asm platform_movement_). A stage without the MOVEMENT bit always
+ * moves its platforms. Onett and the Tal Tal stages follow the hazard toggle, all other stages the movement toggle.
  */
 sb32 grRemixPlatformMovementIsOn(void)
 {
     s32 gkind = gSCManagerBattleState->gkind;
 
+    if (grRemixStageHasMovement(gkind) == FALSE)
+    {
+        return TRUE;
+    }
     if (grRemixStageMovesAsHazard(gkind))
     {
         return grRemixHazardToggleIsOn();

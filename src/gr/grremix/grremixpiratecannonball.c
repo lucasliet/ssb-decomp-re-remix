@@ -78,7 +78,8 @@ static void grRemixPirateCannonballApplyTrack(GObj *weapon_gobj, AObjEvent32 *an
 /**
  * Creates a cannonball at spawn_pos. Returns NULL when the weapon pool is full (asm: 0x801655C8 returns 0).
  * REMIX-TODO(launch velocity): the properties struct sets speed 100 at angle 270 (ground and air), gravity 0. The
- * projectile system's angle and facing convention is not ported yet, so the cannonball starts at rest.
+ * asm applies it in the vanilla generic projectile setup (0x801655C8, not in the Remix asm), which the port's
+ * wpManagerMakeWeapon does not read, so the cannonball starts at rest. Porting it needs the vanilla angle convention.
  */
 GObj* grRemixPirateCannonballMake(Vec3f *spawn_pos, void *hitbox_file, AObjEvent32 *anim_track)
 {
@@ -119,8 +120,10 @@ static void grRemixPirateCannonballUpdateSmoke(GObj *weapon_gobj)
 
 /**
  * Sets the explosion hitbox on the cannonball and starts its explosion timer (asm: cannonball_explosion_).
- * REMIX-TODO(samus bomb): the asm copies the Samus bomb hit-setup code from ROM 0xE396C and 0xE39A8 (vanilla
- * 0x80168F2C) and resets the four hit-object pointers. The copied code is not ported, so the hit records are kept.
+ * REMIX-TODO(samus bomb): the asm copies the Samus bomb hit-setup code from ROM 0xE396C (0x38 bytes) and 0xE39A8
+ * (0x28 bytes), vanilla 0x80168F2C, and drops its size line. The port equivalent is wpSamusBombExplodeInitVars
+ * (wpsamusbomb.c), but mapping those raw MIPS words to its statements needs the ROM bytes, which were not decoded, so
+ * the hit records are kept.
  */
 static void grRemixPirateCannonballExplode(GObj *weapon_gobj)
 {

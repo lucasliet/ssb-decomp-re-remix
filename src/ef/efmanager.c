@@ -6,6 +6,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixsizeness.h"
 #include "if/ifremixannouncer.h"
 #endif
 #ifdef PORT
@@ -1050,7 +1051,11 @@ EFDesc dEFManagerNessPsychicMagnetEffectDesc =
         0x00                                // ???
     },
 
+#ifdef REGION_REMIX
+    ftRemixSizeNessDSPProcUpdate,           // Proc Update
+#else
     gcPlayAnimAll,                          // Proc Update
+#endif
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
     llNessSpecial2PsychicMagnetDObjDesc,             // DObj Setup attributes offset (?)
@@ -1140,7 +1145,11 @@ EFDesc dEFManagerNessPKThunderWaveEffectDesc =
         0x00                                // ???
     },
 
+#ifdef REGION_REMIX
+    ftRemixSizeNessUSPProcUpdate,           // Proc Update
+#else
     gcPlayAnimAll,                          // Proc Update
+#endif
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
     llNessModelPKThunderWaveDObjDesc,             // DObj Setup attributes offset (?)
@@ -4313,7 +4322,8 @@ GObj* efManagerYoshiShieldMakeEffect(GObj *fighter_gobj)
 
 // 0x80101408
 /* REMIX-TODO(Size): Size.asm pikachu.adjust_gfx_size_ (0x8010146C) sets this DSP connect gfx x/y scale to the owner
- * multiplier. It needs the player struct, which this function does not take, so it is not applied. */
+ * multiplier. Needs a fighter/player argument, which efManagerThunderAmpMakeEffect(Vec3f *pos) lacks; its callers
+ * (ftparam.c effect dispatch, itremixlightning.c zap) are outside efmanager.c, so the scale is not applied. */
 LBParticle* efManagerThunderAmpMakeEffect(Vec3f *pos)
 {
     LBParticle *pc = lbParticleMakeScriptID(gEFManagerParticleBankID, 0x74);
@@ -5099,8 +5109,6 @@ GObj* efManagerKirbyCutterTrailMakeEffect(GObj *fighter_gobj)
 }
 
 // 0x801025D8
-/* REMIX-TODO(Size): Size.asm ness.dsp (0x8010260C) replaces the update with a wrapper that scales the animated joints
- * every frame. The port has no per-frame hook for this descriptor, so the scale is not applied. */
 GObj* efManagerNessPsychicMagnetMakeEffect(GObj *fighter_gobj)
 {
     GObj *effect_gobj;
@@ -5121,6 +5129,9 @@ GObj* efManagerNessPsychicMagnetMakeEffect(GObj *fighter_gobj)
 
     dobj->user_data.p = ftGetStruct(fighter_gobj)->joints[nFTPartsJointTopN];
 
+#ifdef REGION_REMIX
+    ftRemixSizeNessDSPInitialize(effect_gobj);
+#endif
     return effect_gobj;
 }
 
@@ -5257,8 +5268,6 @@ GObj* efManagerNessPKReflectTrailMakeEffect(GObj *weapon_gobj)
 }
 
 // 0x801029F8
-/* REMIX-TODO(Size): Size.asm ness.usp (0x80102A3C) replaces the update with a wrapper that scales the animated joints
- * every frame. The port has no per-frame hook for this descriptor, so the scale is not applied. */
 GObj* efManagerNessPKThunderWaveMakeEffect(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -5279,6 +5288,9 @@ GObj* efManagerNessPKThunderWaveMakeEffect(GObj *fighter_gobj)
         DObjGetStruct(effect_gobj)->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
         DObjGetStruct(effect_gobj)->translate.vec.f.z = 0.0F;
 
+#ifdef REGION_REMIX
+        ftRemixSizeNessUSPInitialize(effect_gobj);
+#endif
         return effect_gobj;
     }
 }

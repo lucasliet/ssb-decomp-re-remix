@@ -9,6 +9,7 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include <sys/utils.h>
 #include "remix/remix_symbols.h"
 #include <ft/ftchar/ftmario/ftmario.h>
@@ -17,6 +18,7 @@
 #include <ft/ftmain.h>
 #include <ft/ftphysics.h>
 #include <it/item.h>
+#include <it/itdisplay.h>
 #include <it/itmain.h>
 #include <it/itremix/itremixcloud.h>
 #include <ft/ftchar/ftsamus/ftsamusfunctions.h>
@@ -81,17 +83,43 @@ static void ftRemixGoemonUSPOnHit(GObj *fighter_gobj)
     GOEMON_USP_CHARGE_LEVEL(fp) = 0;
 }
 
+/* Size.asm item render_routine_ (ECB part): the cloud map collision box is its attribute box times the owner multiplier. */
+static void ftRemixGoemonUSPCloudApplySize(GObj *item_gobj)
+{
+    ITStruct *ip = itGetStruct(item_gobj);
+    ITAttributes *attr = ip->attr;
+    f32 multiplier = ftRemixSizeGetMultiplier(ftGetStruct(ip->owner_gobj)->player);
+
+    ip->coll_data.map_coll.top = attr->map_coll_top * multiplier;
+    ip->coll_data.map_coll.center = attr->map_coll_center * multiplier;
+    ip->coll_data.map_coll.bottom = attr->map_coll_bottom * multiplier;
+    ip->coll_data.map_coll.width = attr->map_coll_width * multiplier;
+}
+
+/* Size.asm item render_routine_: draws the cloud with the vanilla render, then applies the size to its ECB. */
+static void ftRemixGoemonUSPCloudProcDisplay(GObj *item_gobj)
+{
+    itDisplayColAnimOPAProcDisplay(item_gobj);
+    ftRemixGoemonUSPCloudApplySize(item_gobj);
+}
+
 /* GoemonUSP.attach_cloud_: installs the on-hit routine and attaches the Magic Cloud. */
 static void ftRemixGoemonUSPAttachCloud(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     Vec3f pos;
     Vec3f vel = { 0.0F, 0.0F, 0.0F };
+    GObj *cloud_gobj;
 
     fp->proc_damage = ftRemixGoemonUSPOnHit;
     ftSamusSpecialNGetChargeShotPosition(fp, &pos);
-    /* REMIX-TODO(Size): Remix also installs Size.item.render_routine_ on the cloud. */
-    GOEMON_USP_CLOUD_GOBJ(fp) = itRemixCloudMakeItem(fighter_gobj, &pos, &vel, 0);
+    cloud_gobj = itRemixCloudMakeItem(fighter_gobj, &pos, &vel, 0);
+    if (cloud_gobj != NULL)
+    {
+        cloud_gobj->proc_display = ftRemixGoemonUSPCloudProcDisplay;
+    }
+    /* REMIX-TODO(Size): Size.item.apply_size_to_animation_ (cloud joint scale, jump table 0x8003DE5C) is not ported. It needs the animation command interpreter. */
+    GOEMON_USP_CLOUD_GOBJ(fp) = cloud_gobj;
 }
 
 /* GoemonUSP.goemon_on_hit_subroutine_establishment_: sets the on-hit routine, clears the attached cloud and temp variable 1. */

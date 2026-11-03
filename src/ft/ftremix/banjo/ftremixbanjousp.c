@@ -10,6 +10,7 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_symbols.h"
 #include <ef/efmanager.h>
 #include <ft/ftchar/ftcaptain/ftcaptainfunctions.h>
@@ -20,6 +21,7 @@
 #include <ft/ftphysics.h>
 #include <mp/mpcommon.h>
 #include <mp/mpdef.h>
+#include <sys/utils.h>
 
 enum
 {
@@ -131,14 +133,18 @@ static void ftRemixBanjoUSPRecoilSetStatus(GObj *fighter_gobj)
 }
 
 /* BanjoUSP.wall_splat_initial_: starts the wall splat status and the quake. */
-static void ftRemixBanjoUSPWallSplatSetStatus(GObj *fighter_gobj)
+static void ftRemixBanjoUSPWallSplatSetStatus(GObj *fighter_gobj, Vec3f *wall_angle)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+    DObj *topjoint = (DObj *)fighter_gobj->obj;
+    Vec3f pos;
 
     ftMainSetStatus(fighter_gobj, nFTRemixBanjoStatusUSPWallSplat, 0.0F, 1.0F, 0);
     ftMainPlayAnimEventsAll(fighter_gobj);
-    /* REMIX-TODO(Size): Size.ground_gfx.save_player_struct_._wall_bounce and the atan2 0x8001863C
-     * that feeds it are skipped. The wall bounce graphic is missing. */
+    pos.x = topjoint->translate.vec.f.x;
+    pos.y = topjoint->translate.vec.f.y;
+    pos.z = 0.0F;
+    ftRemixSizeAttachGroundGfx(efManagerImpactWaveMakeEffect(&pos, SYVECTOR_AXIS_Z, syUtilsArcTan2(-wall_angle->x, wall_angle->y)), fighter_gobj);
     efManagerQuakeMakeEffect(BANJO_USP_WALL_SPLAT_QUAKE_MAGNITUDE);
     fp->physics.vel_air.y = BANJO_USP_SPLAT_Y_SPEED;
     fp->physics.vel_air.x = 0.0F;
@@ -427,7 +433,7 @@ static void ftRemixBanjoUSPAttackProcMap(GObj *fighter_gobj)
     {
         return;
     }
-    ftRemixBanjoUSPWallSplatSetStatus(fighter_gobj);
+    ftRemixBanjoUSPWallSplatSetStatus(fighter_gobj, wall_angle);
     topjoint->rotate.vec.f.x = wall_angle->y;
 }
 

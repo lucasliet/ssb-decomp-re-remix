@@ -170,7 +170,9 @@ static void grRemixMetallicLaserHitVictim(GObj *victim_gobj)
 
 /**
  * The asm compares the whole FTStruct word at 0x18C with the reflect (0x04000010) and psi magnet (0x08800110)
- * patterns. REMIX-TODO(FTStruct): the port checks the reflect and absorb bitfields instead of the whole word.
+ * patterns. REMIX-TODO(FTStruct): the port checks the reflect and absorb bitfields instead of the whole word. ft/fttypes.h
+ * has no word view of that bitfield group, so an exact word compare needs a union there; a fighter with other bits set
+ * is immune here but not in the asm.
  */
 static sb32 grRemixMetallicLaserIsImmune(FTStruct *fp)
 {

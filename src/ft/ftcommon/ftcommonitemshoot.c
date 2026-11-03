@@ -61,8 +61,7 @@ void ftCommonLGunShootProcAccessory(GObj *fighter_gobj)
 #ifdef REGION_REMIX
             /* GoldenGun.asm projectile_shoot_fgm_fix (0x80147134): the golden gun plays
              * FGM 0x04C2 where the ray gun plays nSYAudioFGMLGunShoot. The golden bullet
-             * itself is unported: REMIX-TODO(projectile) blocks GoldenGun.asm patches
-             * projectile_struct_fix (0x80175A6C) and projectile_properties_fix (0x80175A8C). */
+             * is spawned in itlgun.c (projectile_struct_fix and projectile_properties_fix). */
             func_800269C0_275C0((ip->kind == ITREMIX_GOLDENGUN_ID) ? 0x04C2 : nSYAudioFGMLGunShoot);
 #else
             func_800269C0_275C0(nSYAudioFGMLGunShoot);
