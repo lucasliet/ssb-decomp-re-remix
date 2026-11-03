@@ -10,6 +10,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixtraining.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
+#include "sc/sc1pmode/sc1ptrainingremixlegend.h"
 #include "it/itremix/itremix.h"
 #endif
 #include <gr/ground.h>
@@ -273,7 +274,12 @@ SCBattleState sSC1PTrainingModeBattleState;
 SC1PTrainingModeMenu sSC1PTrainingModeMenu;
 
 // 0x80190C40
+#if defined(PORT) && defined(REGION_REMIX)
+/* The Remix fighters, the per-port chain and the extension sprite files load past the 100 files of the vanilla buffer. */
+LBFileNode sSC1PTrainingModeStatusBuffer[256];
+#else
 LBFileNode sSC1PTrainingModeStatusBuffer[100];
+#endif
 
 // 0x80190F60
 LBFileNode sSC1PTrainingModeForceStatusBuffer[7];
@@ -844,6 +850,7 @@ void sc1PTrainingModeLoadSprites(void)
 #if defined(PORT) && defined(REGION_REMIX)
 	sSC1PTrainingModeRemixItemMenuNames = lbRelocGetFileData(u32*, file, SC1PTRAININGREMIX_ITEM_MENU_TABLE);
 	sSC1PTrainingModeRemixItemHudNames = lbRelocGetFileData(u32*, file, SC1PTRAININGREMIX_ITEM_HUD_TABLE);
+	sc1PTrainingRemixLegendMake();
 #endif
 }
 

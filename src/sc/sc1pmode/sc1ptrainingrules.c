@@ -176,3 +176,13 @@ int32_t sc1PTrainingRulesSpamTickTimer(int32_t timer, int32_t is_cpu, int32_t is
     }
     return timer - 1;
 }
+
+int32_t sc1PTrainingRulesIsDpadToggleLegendShown(int32_t dpad_setting)
+{
+    return (dpad_setting == SC1PTRAININGRULES_DPAD_ON) ? 1 : 0;
+}
+
+int32_t sc1PTrainingRulesIsDpadResetLegendShown(int32_t dpad_setting)
+{
+    return (dpad_setting != SC1PTRAININGRULES_DPAD_OFF) ? 1 : 0;
+}

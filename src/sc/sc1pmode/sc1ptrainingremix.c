@@ -17,6 +17,7 @@
 #include "remix/remix_symbols.h"
 #include "remix/remix_toggles.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
+#include "sc/sc1pmode/sc1ptrainingremixlegend.h"
 #include "sc/sc1pmode/sc1ptrainingportrules.h"
 #include <if/ifdef.h>
 #include "ft/ftremix/ftremixtraining.h"
@@ -227,6 +228,8 @@ s32 sc1PTrainingRemixGetItemKind(s32 entry)
 
 void sc1PTrainingRemixDrawHud(void)
 {
+    sc1PTrainingRemixLegendUpdate();
+
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusPause)
     {
         return;

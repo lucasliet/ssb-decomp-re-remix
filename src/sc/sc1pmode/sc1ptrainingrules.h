@@ -97,4 +97,15 @@ extern int32_t sc1PTrainingRulesSpamReloadTimer(int32_t is_random_interval, int3
  */
 extern int32_t sc1PTrainingRulesSpamTickTimer(int32_t timer, int32_t is_cpu, int32_t is_in_hitlag);
 
+/** "D-pad Controls" entry values (Training.asm entry_dpad_menu): 0 on, 1 reset only, 2 off. */
+#define SC1PTRAININGRULES_DPAD_ON 0
+#define SC1PTRAININGRULES_DPAD_RESET_ONLY 1
+#define SC1PTRAININGRULES_DPAD_OFF 2
+
+/** Whether the D-pad legend lines of the toggles (Toggle Pause, Frame Advance, Model Display; group 0x19) show: only with D-pad Controls on. */
+extern int32_t sc1PTrainingRulesIsDpadToggleLegendShown(int32_t dpad_setting);
+
+/** Whether the Quick Reset line of the D-pad legend (group 0x1A) shows: with D-pad Controls on or reset only. */
+extern int32_t sc1PTrainingRulesIsDpadResetLegendShown(int32_t dpad_setting);
+
 #endif
