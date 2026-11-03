@@ -15,6 +15,7 @@
 #include "gm/gmremixmagnify.h"
 #include "if/ifremixstaminahud.h"
 #include "if/ifremixpauselegend.h"
+#include "gm/gmremixbgm.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixmode.h"
@@ -3387,8 +3388,7 @@ void ifCommonBattlePauseUpdateInterface(void)
         s32 stick_y = gSYControllerDevices[sIFCommonBattlePausePlayer].stick_range.y;
 
 #ifdef REGION_REMIX
-        /* REMIX-TODO(BGM): Pause.asm set_alternate_music_ (entry_play_music) is not ported yet: it needs the stage track
-         * state (BGM.current_track, BGM.default_track) that the port does not read */
+        gmRemixBgmPauseUpdate(button_hold);
         ifRemixPauseLegendUpdate(button_tap, button_hold);
         if (ftRemixPauseKeepsSceneCamera())
         {

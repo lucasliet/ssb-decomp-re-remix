@@ -16,6 +16,15 @@
  */
 u32 grRemixRandomMusicPick(u32 default_bgm, sb32 salty_runback);
 
+/**
+ * Random track of the list for the pause D-pad Down (BGM.asm random_music_ with the D-pad bypass): ignores the Random Music
+ * toggle and does not touch the salty runback pick.
+ *
+ * @param default_bgm BGM id returned when no track is on.
+ * @return The BGM id to play.
+ */
+u32 grRemixRandomMusicPickForced(u32 default_bgm);
+
 #endif
 
 #endif

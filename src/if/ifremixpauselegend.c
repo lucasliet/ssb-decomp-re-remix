@@ -6,7 +6,7 @@
  * stops being drawn once its caller stops putting it, so leaving the pause clears the legends without a destroy call.
  *
  * Not ported: the music legend of group 0xF (track title and the Next/Random rows), which belongs to the alternate pause
- * music. REMIX-TODO(Pause): the button glyphs, the "/" separators and the "Legend" word of the asm are image sprites of file
+ * music (the D-pad song change itself is gmremixbgm.c). REMIX-TODO(Pause): the button glyphs, the "/" separators and the "Legend" word of the asm are image sprites of file
  * 0xC5 and 0xA06 (Pause.asm:181-182, 321-340); until the port draws those, the R glyph and the word are drawn as text at their
  * positions and the camera rows lack their glyphs.
  */

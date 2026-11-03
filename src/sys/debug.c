@@ -1021,6 +1021,9 @@ void syDebugPrintf(const char *fmt, ...)
         }
         if (sDebugPrintCount >= 1000) {
             port_log("SSB64: syDebugPrintf called 1000+ times — likely debug halt loop, aborting\n");
+            /* stdout and stderr hold the C runtime's own output; flush them so the diagnostics before the abort survive. */
+            fflush(stdout);
+            fflush(stderr);
             abort();
         }
         return;

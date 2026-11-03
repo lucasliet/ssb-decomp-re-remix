@@ -7,6 +7,8 @@
 #include "grremixstage.h"
 #include "grremixhazards.h"
 #include "grremixrandommusic.h"
+#include "gm/gmremixbgm.h"
+#include "gm/gmremixbgmrules.h"
 #include "gm/gmremixgameend.h"
 #include <gr/ground.h>
 #include <sc/scene.h>
@@ -183,17 +185,32 @@ s32 grRemixSelectGetStages(s32 *out_gkinds, s32 max_count)
     return count;
 }
 
-static u32 grRemixGetAlternateStageBGM(s32 gkind, u32 default_bgm)
+u32 grRemixGetStageDefaultTrack(s32 gkind, u32 default_bgm)
 {
     s32 override_track = grRemixGetDefaultMusicTrack(gkind);
+
+    return (override_track != 0) ? (u32)(override_track - 1) : default_bgm;
+}
+
+void grRemixGetStageAlternateTracks(s32 gkind, s32 *out_tracks)
+{
+    s32 slot;
+
+    for (slot = 0; slot < GMREMIX_BGM_ALT_SLOTS; slot++)
+    {
+        u32 alternate = grRemixReadHalf(REMIX_SYM_Stages__alternate_music_table + (gkind * 8) + (slot * 2));
+
+        out_tracks[slot] = (alternate == GRREMIX_ALT_MUSIC_NONE) ? GMREMIX_BGM_NO_TRACK : (s32)alternate;
+    }
+}
+
+static u32 grRemixGetAlternateStageBGM(s32 gkind, u32 default_bgm)
+{
     s32 roll;
     s32 slot;
     u32 alternate;
 
-    if (override_track != 0)
-    {
-        default_bgm = override_track - 1;
-    }
+    default_bgm = grRemixGetStageDefaultTrack(gkind, default_bgm);
     roll = syUtilsRandIntRange(100);
 
     if (roll < GRREMIX_ALT_MUSIC_CHANCE_MAIN)
@@ -220,8 +237,10 @@ static u32 grRemixGetAlternateStageBGM(s32 gkind, u32 default_bgm)
 u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm)
 {
     sb32 salty_runback = gmRemixGameEndIsSaltyRunback();
+    u32 stage_bgm = grRemixRandomMusicPick(grRemixGetAlternateStageBGM(gkind, default_bgm), salty_runback);
 
-    return grRemixRandomMusicPick(grRemixGetAlternateStageBGM(gkind, default_bgm), salty_runback);
+    gmRemixBgmSetStageTracks(gkind, grRemixGetStageDefaultTrack(gkind, default_bgm), stage_bgm);
+    return stage_bgm;
 }
 
 void grRemixMakeGround(void)

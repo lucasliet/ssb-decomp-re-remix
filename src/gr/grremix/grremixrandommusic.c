@@ -102,4 +102,16 @@ u32 grRemixRandomMusicPick(u32 default_bgm, sb32 salty_runback)
     return bgm_ids[grRemixRandomMusicPickIndex(count, salty_runback)];
 }
 
+u32 grRemixRandomMusicPickForced(u32 default_bgm)
+{
+    u32 bgm_ids[ARRAY_COUNT(sRandomTracks)];
+    s32 count = grRemixRandomMusicBuildList(bgm_ids);
+
+    if (count == 0)
+    {
+        return default_bgm;
+    }
+    return bgm_ids[syUtilsRandIntRange(count)];
+}
+
 #endif

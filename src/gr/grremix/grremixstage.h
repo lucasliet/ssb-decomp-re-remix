@@ -53,6 +53,12 @@ s32 grRemixGetBackgroundStage(s32 gkind);
  */
 u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm);
 
+/** Default BGM of a stage: the Stages.default_music_track_table override when it has one, else default_bgm (BGM.asm default_track). */
+u32 grRemixGetStageDefaultTrack(s32 gkind, u32 default_bgm);
+
+/** Occasional, rare and rare 2 tracks of a stage (Stages.alternate_music_table); GMREMIX_BGM_NO_TRACK for an empty slot. */
+void grRemixGetStageAlternateTracks(s32 gkind, s32 *out_tracks);
+
 #define GRREMIX_NAME_MAX 48
 
 /** Offset of the stage icon Sprite inside the Remix stage icon file (Stages.icon_offset_table; every icon is in file index 0). */

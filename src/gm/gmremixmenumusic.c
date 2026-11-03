@@ -56,8 +56,11 @@
 #define GMREMIX_BGM_MAIN_PERFECTDARK 312
 #define GMREMIX_BGM_MAIN_CTR 319
 #define GMREMIX_BGM_MAIN_K64 338
+/* MIDI.id.STAGESELBM64 and MIDI.id.SONIC_R (midi.asm:681, 683), the tracks of Menu Music 17 and 18. */
+#define GMREMIX_BGM_MAIN_BOMBERMAN 369
+#define GMREMIX_BGM_MAIN_SONIC_R 371
 
-/* Values 2 to 16 play the track listed here, in value order. */
+/* Values 2 to 18 play the track listed here, in value order. */
 static const u32 sMenuMusicTrackBGM[] =
 {
     GMREMIX_BGM_MAIN_MELEE,
@@ -75,6 +78,8 @@ static const u32 sMenuMusicTrackBGM[] =
     GMREMIX_BGM_MAIN_PERFECTDARK,
     GMREMIX_BGM_MAIN_CTR,
     GMREMIX_BGM_MAIN_K64,
+    GMREMIX_BGM_MAIN_BOMBERMAN,
+    GMREMIX_BGM_MAIN_SONIC_R,
 };
 
 /* Title screen chance roll out of 100, BGM.asm CHANCE_64 / CHANCE_MELEE / CHANCE_MENU2 / CHANCE_BRAWL. */
@@ -109,15 +114,15 @@ static u32 gmRemixMenuMusicTitleRoll(u32 default_bgm)
 }
 
 /**
- * Returns the BGM id of a fixed menu track value (2 to 16).
+ * Returns the BGM id of a fixed menu track value (2 to 18).
  *
- * @param value Menu Music value, 2 to 16.
- * @param default_bgm BGM id kept when the value has no port id (17 and 18, REMIX-TODO(MIDI ids)).
+ * @param value Menu Music value, 2 to 18.
+ * @param default_bgm BGM id kept when value is not a fixed track value.
  * @return The BGM id to play.
  */
 static u32 gmRemixMenuMusicTrackOf(s32 value, u32 default_bgm)
 {
-    if ((value < GMREMIX_MENU_MUSIC_MELEE) || (value > GMREMIX_MENU_MUSIC_K64))
+    if ((value < GMREMIX_MENU_MUSIC_MELEE) || (value > GMREMIX_MENU_MUSIC_SONIC_R))
     {
         return default_bgm;
     }
@@ -164,7 +169,7 @@ static sb32 gmRemixMenuMusicIsRandom(s32 value)
 }
 
 /**
- * Checks whether a BGM id is one of the menu tracks of sMenuMusicTrackBGM (values 2 to 16).
+ * Checks whether a BGM id is one of the menu tracks of sMenuMusicTrackBGM (values 2 to 18).
  *
  * @param bgm BGM id to check, -1 when no track is playing.
  * @return TRUE when bgm is a listed menu track.
