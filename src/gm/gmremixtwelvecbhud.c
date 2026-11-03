@@ -7,6 +7,7 @@
 #include <ssb_types.h>
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
+#include "mn/mnvsmode/mnremixvsstatsview.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_modes.h"
 
@@ -17,12 +18,15 @@
 #define GMREMIX_TWELVECB_HUD_SLOT_BEST_NAME 36
 #define GMREMIX_TWELVECB_HUD_SLOT_TKOS 38
 #define GMREMIX_TWELVECB_HUD_SLOT_GAME 40
+#define GMREMIX_TWELVECB_HUD_SLOT_SET_TITLE 44
+#define GMREMIX_TWELVECB_HUD_SLOT_SET_NAME 45
 #define GMREMIX_TWELVECB_HUD_CENTER_X 160.0F
 #define GMREMIX_TWELVECB_HUD_PLAYER_X 124.0F
 #define GMREMIX_TWELVECB_HUD_PLAYER_X_STEP 68.0F
 #define GMREMIX_TWELVECB_HUD_REMAINING_Y 126.0F
 #define GMREMIX_TWELVECB_HUD_POOL_Y 140.0F
 #define GMREMIX_TWELVECB_HUD_BEST_TITLE_Y 160.0F
+#define GMREMIX_TWELVECB_HUD_SET_NAME_Y 173.5F
 #define GMREMIX_TWELVECB_HUD_BEST_NAME_Y 174.0F
 #define GMREMIX_TWELVECB_HUD_TKOS_Y 187.0F
 #define GMREMIX_TWELVECB_HUD_BEST_NAME_MAX_WIDTH 72.0F
@@ -53,6 +57,35 @@ static void gmRemixTwelveCBHudDrawPools(const GMRemixTwelveCBState *state)
         remix_hud_text_putf(GMREMIX_TWELVECB_HUD_SLOT_POOL + port, gmRemixTwelveCBHudPlayerX(port), GMREMIX_TWELVECB_HUD_POOL_Y,
                             dGMRemixTwelveCBHudPlayerColors[port], GMREMIX_TWELVECB_HUD_TITLE_SCALE, REMIX_HUD_ALIGN_CENTER, "%d",
                             (int)state->players[port].stocks_remaining);
+    }
+}
+
+/* Names of the character sets (TwelveCharBattle.asm 5252): Default, Japanese, Polygon, Remix, Custom. */
+static const char *const dGMRemixTwelveCBHudSetNames[] = { "Default", "Japanese", "Polygon", "Remix", "Custom" };
+
+/** Character Set and the set of each player before the battle starts (asm items 4-6). */
+static void gmRemixTwelveCBHudDrawSets(const GMRemixTwelveCBState *state)
+{
+    s32 port;
+
+    if (state->status != GMREMIX_TWELVECB_STATUS_NOT_STARTED)
+    {
+        return;
+    }
+    remix_hud_text_put(GMREMIX_TWELVECB_HUD_SLOT_SET_TITLE, "Character Set", GMREMIX_TWELVECB_HUD_CENTER_X,
+                       GMREMIX_TWELVECB_HUD_BEST_TITLE_Y, GMREMIX_TWELVECB_HUD_WHITE, GMREMIX_TWELVECB_HUD_TITLE_SCALE,
+                       REMIX_HUD_ALIGN_CENTER);
+    for (port = 0; port < GMREMIX_TWELVECB_PLAYERS; port++)
+    {
+        s32 set = gmRemixTwelveCBGetCssSet(port);
+
+        if ((set < 0) || (set >= (s32)(sizeof(dGMRemixTwelveCBHudSetNames) / sizeof(dGMRemixTwelveCBHudSetNames[0]))))
+        {
+            continue;
+        }
+        remix_hud_text_put(GMREMIX_TWELVECB_HUD_SLOT_SET_NAME + port, dGMRemixTwelveCBHudSetNames[set], gmRemixTwelveCBHudPlayerX(port),
+                           GMREMIX_TWELVECB_HUD_SET_NAME_Y, dGMRemixTwelveCBHudPlayerColors[port], GMREMIX_TWELVECB_HUD_TITLE_SCALE,
+                           REMIX_HUD_ALIGN_CENTER);
     }
 }
 
@@ -99,6 +132,7 @@ void gmRemixTwelveCBHudDrawCSS(void)
         return;
     }
     gmRemixTwelveCBHudDrawPools(state);
+    gmRemixTwelveCBHudDrawSets(state);
     gmRemixTwelveCBHudDrawBest(state);
 }
 
@@ -109,6 +143,10 @@ void gmRemixTwelveCBHudDrawResults(void)
     if (gmRemixTwelveCBIsActive() == FALSE)
     {
         return;
+    }
+    if (mnRemixVSStatsViewIsPageVisible() != FALSE)
+    {
+        return; /* asm: "Game N" is in group 0x16, hidden by the stats page */
     }
     state = gmRemixTwelveCBGetState();
     remix_hud_text_putf(GMREMIX_TWELVECB_HUD_SLOT_GAME, GMREMIX_TWELVECB_HUD_GAME_X, GMREMIX_TWELVECB_HUD_GAME_Y,

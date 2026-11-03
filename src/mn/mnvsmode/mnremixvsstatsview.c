@@ -133,6 +133,11 @@ void mnRemixVSStatsViewSetup(void)
     mnRemixVSStatsSceneMake();
 }
 
+sb32 mnRemixVSStatsViewIsPageVisible(void)
+{
+    return sMNRemixVSStatsViewVisible;
+}
+
 void mnRemixVSStatsViewRun(s32 results_tics, s32 allow_exit_wait)
 {
     sMNRemixVSStatsViewPressBuffer = mnRemixVSStatsRulesTickBuffer(sMNRemixVSStatsViewPressBuffer);

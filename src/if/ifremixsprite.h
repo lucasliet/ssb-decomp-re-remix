@@ -29,6 +29,16 @@
  */
 extern GObj *ifRemixSpriteMake(s32 id, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 tint_rgba, u32 palette_rgba, f32 scale);
 
+/**
+ * Same as ifRemixSpriteMake for a sprite of a file the caller already loaded (the CSS files, for example).
+ *
+ * @param file Loaded file data.
+ * @param sprite_offset Offset of the Sprite header in the file.
+ * @return The GObj, or NULL when file is NULL.
+ */
+extern GObj *ifRemixSpriteMakeFromFile(void *file, u32 sprite_offset, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 tint_rgba,
+                                       u32 palette_rgba, f32 scale);
+
 /** Forgets the loaded sprite files; the scene heap that held them is gone. Called at each scene change. */
 extern void ifRemixSpriteSceneReset(void);
 

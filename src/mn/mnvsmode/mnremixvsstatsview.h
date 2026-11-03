@@ -17,4 +17,7 @@ void mnRemixVSStatsViewSetup(void);
  */
 void mnRemixVSStatsViewRun(s32 results_tics, s32 allow_exit_wait);
 
+/** TRUE while a stats page covers the results (the objects of the results group 0x16 are hidden then). */
+sb32 mnRemixVSStatsViewIsPageVisible(void);
+
 #endif

@@ -53,6 +53,32 @@ sb32 gmRemixTwelveCBIsComplete(void)
     return (sGMRemixTwelveCBIsInit != FALSE) && (sGMRemixTwelveCB.status == GMREMIX_TWELVECB_STATUS_COMPLETE);
 }
 
+static s32 sGMRemixTwelveCBCssSet[GMREMIX_TWELVECB_PLAYERS];
+
+s32 gmRemixTwelveCBGetCssSet(s32 port)
+{
+    return ((port >= 0) && (port < GMREMIX_TWELVECB_PLAYERS)) ? sGMRemixTwelveCBCssSet[port] : 0;
+}
+
+void gmRemixTwelveCBSetCssSet(s32 port, s32 set)
+{
+    if ((port >= 0) && (port < GMREMIX_TWELVECB_PLAYERS))
+    {
+        sGMRemixTwelveCBCssSet[port] = set;
+    }
+}
+
+sb32 gmRemixTwelveCBTrySetStocks(s32 stocks)
+{
+    gmRemixTwelveCBEnsureInit();
+    if (sGMRemixTwelveCB.status != GMREMIX_TWELVECB_STATUS_NOT_STARTED)
+    {
+        return FALSE;
+    }
+    gmRemixTwelveCBUpdateStocks(&sGMRemixTwelveCB, stocks);
+    return TRUE;
+}
+
 /* Portrait slot the CSS reported for each port, -1 when none. */
 static s32 sGMRemixTwelveCBCssPortrait[GMREMIX_TWELVECB_PLAYERS] = { -1, -1 };
 

@@ -57,6 +57,18 @@ extern sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind);
  */
 extern void gmRemixTwelveCBSetCssPortrait(s32 port, s32 slot);
 
+/** Character set (0 Default, 1 Japanese, 2 Polygon, 3 Remix) a player shows in his half of the CSS, and its setter. */
+extern s32 gmRemixTwelveCBGetCssSet(s32 port);
+extern void gmRemixTwelveCBSetCssSet(s32 port, s32 set);
+
+/**
+ * Applies a stock count change of the CSS selector (update_stock_fields_): every portrait and both pools restart from it.
+ *
+ * @param stocks New stock count, 0-based (0..98).
+ * @return FALSE when the battle already started (the count is locked, the CSS plays the denied sound), else TRUE.
+ */
+extern sb32 gmRemixTwelveCBTrySetStocks(s32 stocks);
+
 /** TRUE when the stock pool of a player is empty, which ends the battle. */
 extern sb32 gmRemixTwelveCBIsComplete(void);
 

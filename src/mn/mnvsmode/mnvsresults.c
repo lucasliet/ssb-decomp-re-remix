@@ -26,6 +26,7 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
 #include "mn/mnvsmode/mnremixvsstatsview.h"
 #endif
@@ -2548,7 +2549,12 @@ void mnVSResultsMakeLabel(void)
 		(
 			Sprite*,
 			sMNVSResultsFiles[2],
+#if defined(PORT) && defined(REGION_REMIX)
+			/* TwelveCharBattle.asm (hook 0x80136788): the 12-Character Battle header sprite of the game modes file. */
+			(gmRemixTwelveCBIsActive() != FALSE) ? 0x2048 : offsets[mnVSResultsCheckTeamBattle()]
+#else
 			offsets[mnVSResultsCheckTeamBattle()]
+#endif
 		),
 		nGCProcessKindFunc,
 #if defined(PORT) && defined(REGION_REMIX)

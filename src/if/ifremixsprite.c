@@ -65,19 +65,11 @@ static void ifRemixSpriteSetColors(SObj *sobj, u32 tint_rgba, u32 palette_rgba)
     sobj->envcolor.a = alpha;
 }
 
-GObj *ifRemixSpriteMake(s32 id, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 tint_rgba, u32 palette_rgba, f32 scale)
+GObj *ifRemixSpriteMakeFromFile(void *file, u32 sprite_offset, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 tint_rgba,
+                                u32 palette_rgba, f32 scale)
 {
-    const IFRemixSpriteEntry *entry = ifRemixSpriteRulesGetEntry(id);
-    void *file;
     GObj *gobj;
     SObj *sobj;
-
-    if (entry == NULL)
-    {
-        port_log("ifRemixSprite: sprite id %d is outside 0..%d\n", (int)id, IFREMIX_SPRITE_COUNT - 1);
-        return NULL;
-    }
-    file = ifRemixSpriteGetFile(entry->file_id);
 
     if (file == NULL)
     {
@@ -85,7 +77,7 @@ GObj *ifRemixSpriteMake(s32 id, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 ti
     }
     gobj = gcMakeGObjSPAfter(0, NULL, gobj_link, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, dl_link, GOBJ_PRIORITY_DEFAULT, ~0);
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, file, entry->sprite_offset));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, file, sprite_offset));
     sobj->sprite.attr = IFREMIX_SPRITE_ATTR;
     sobj->sprite.scalex = scale;
     sobj->sprite.scaley = scale;
@@ -93,6 +85,19 @@ GObj *ifRemixSpriteMake(s32 id, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 ti
     sobj->pos.y = y;
     ifRemixSpriteSetColors(sobj, tint_rgba, palette_rgba);
     return gobj;
+}
+
+GObj *ifRemixSpriteMake(s32 id, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 tint_rgba, u32 palette_rgba, f32 scale)
+{
+    const IFRemixSpriteEntry *entry = ifRemixSpriteRulesGetEntry(id);
+
+    if (entry == NULL)
+    {
+        port_log("ifRemixSprite: sprite id %d is outside 0..%d\n", (int)id, IFREMIX_SPRITE_COUNT - 1);
+        return NULL;
+    }
+    return ifRemixSpriteMakeFromFile(ifRemixSpriteGetFile(entry->file_id), entry->sprite_offset, gobj_link, dl_link, x, y,
+                                     tint_rgba, palette_rgba, scale);
 }
 
 #endif
