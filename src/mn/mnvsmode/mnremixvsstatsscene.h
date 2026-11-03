@@ -16,6 +16,13 @@
 /** Makes the camera, the background and the button sprites; the prompt group and the pages group start hidden. */
 extern void mnRemixVSStatsSceneMake(void);
 
+/**
+ * Makes the stock icon of every present fighter above its column of the stats pages (VsStats.asm draw_port_headers_ draws it at
+ * X 158 + 35 per column, Y 16). The fighters must exist, so the results screen calls it once they are made. The icons join the
+ * pages group and start hidden.
+ */
+extern void mnRemixVSStatsSceneMakeHeaderIcons(void);
+
 #endif
 
 #endif

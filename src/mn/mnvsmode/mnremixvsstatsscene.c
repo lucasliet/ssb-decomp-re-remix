@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ssb_types.h>
+#include <ft/fighter.h>
 #include <lb/lbcommon.h>
 #include <sys/obj.h>
 #include <sys/objman.h>
@@ -15,6 +16,8 @@
 #include "mn/mnvsmode/mnremixvsstatsscene.h"
 
 extern Gfx *gSYTaskmanDLHeads[4];
+extern GObj *sMNVSResultsFighterGObjs[GMCOMMON_PLAYERS_MAX];
+extern sb32 sMNVSResultsIsPresent[GMCOMMON_PLAYERS_MAX];
 
 /* Display links nothing else in the results scene uses (it takes 26 to 35), and the camera that draws them after the rows
  * (camera priority 15) and before the transition (10). */
@@ -45,6 +48,11 @@ extern Gfx *gSYTaskmanDLHeads[4];
 #define MNREMIX_VSSTATS_SCENE_R_TINT 0x848484FF
 #define MNREMIX_VSSTATS_SCENE_R_PALETTE 0x303030FF
 #define MNREMIX_VSSTATS_SCENE_R_SCALE 0.9375F
+
+/* VsStats.asm draw_port_headers_: start X of the first icon, the step between two columns and the icon Y. */
+#define MNREMIX_VSSTATS_SCENE_ICON_X 158.0F
+#define MNREMIX_VSSTATS_SCENE_ICON_STEP 35.0F
+#define MNREMIX_VSSTATS_SCENE_ICON_Y 16.0F
 
 static void mnRemixVSStatsSceneMakeCamera(void)
 {
@@ -107,6 +115,42 @@ void mnRemixVSStatsSceneMake(void)
                       MNREMIX_VSSTATS_SCENE_R_X, MNREMIX_VSSTATS_SCENE_R_Y, MNREMIX_VSSTATS_SCENE_R_TINT,
                       MNREMIX_VSSTATS_SCENE_R_PALETTE, MNREMIX_VSSTATS_SCENE_R_SCALE);
     gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PROMPT, 1);
+    gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PAGES, 1);
+}
+
+/** One stock icon sprite of a fighter, with the palette of its costume. */
+static void mnRemixVSStatsSceneMakeHeaderIcon(GObj *fighter_gobj, f32 x)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    FTSprites *sprites = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
+    u32 *luts = (u32*)PORT_RESOLVE(sprites->stock_luts);
+    GObj *gobj = gcMakeGObjSPAfter(0, NULL, MNREMIX_VSSTATS_GROUP_PAGES, GOBJ_PRIORITY_DEFAULT);
+    SObj *sobj;
+
+    gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, MNREMIX_VSSTATS_SCENE_DL_SPRITES, GOBJ_PRIORITY_DEFAULT, ~0);
+    sobj = lbCommonMakeSObjForGObj(gobj, (Sprite*)PORT_RESOLVE(sprites->stock_sprite));
+    sobj->sprite.LUT = luts[fp->costume];
+    sobj->sprite.attr &= ~SP_FASTCOPY;
+    sobj->sprite.attr |= SP_TRANSPARENT;
+    sobj->pos.x = x;
+    sobj->pos.y = MNREMIX_VSSTATS_SCENE_ICON_Y;
+}
+
+void mnRemixVSStatsSceneMakeHeaderIcons(void)
+{
+    s32 port;
+    s32 column_index = 0;
+
+    for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
+    {
+        if ((sMNVSResultsIsPresent[port] == FALSE) || (sMNVSResultsFighterGObjs[port] == NULL))
+        {
+            continue;
+        }
+        mnRemixVSStatsSceneMakeHeaderIcon(sMNVSResultsFighterGObjs[port],
+                                          MNREMIX_VSSTATS_SCENE_ICON_X + (MNREMIX_VSSTATS_SCENE_ICON_STEP * column_index));
+        column_index++;
+    }
     gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PAGES, 1);
 }
 

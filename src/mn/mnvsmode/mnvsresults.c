@@ -29,6 +29,7 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
+#include "mn/mnvsmode/mnremixvsstatsscene.h"
 #include "mn/mnvsmode/mnremixvsstatsview.h"
 #endif
 
@@ -2033,6 +2034,9 @@ void mnVSResultsMakeHeader(void)
 			stock_sobj->pos.y = arrow_sobj->pos.y;
 		}
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	mnRemixVSStatsSceneMakeHeaderIcons();
+#endif
 }
 
 // 0x80135670
