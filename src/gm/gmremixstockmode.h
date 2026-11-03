@@ -11,6 +11,9 @@
  */
 extern s32 gmRemixStockModeCount(s32 player, s32 match_stocks);
 
+/* TRUE when the StockMode option of the port's panel is Manual. */
+extern sb32 gmRemixStockModeIsManual(s32 player);
+
 /* Forgets the stock count the Last mode stored (the CSS reset of css/StockMode.asm _check_reset). */
 extern void gmRemixStockModeResetLast(void);
 

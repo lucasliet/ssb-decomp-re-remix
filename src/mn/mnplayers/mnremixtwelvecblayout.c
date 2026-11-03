@@ -134,4 +134,13 @@ int mnRemixTwelveCBLayoutSlotOfFkind(int set, int player, int fkind)
     return MNREMIX_TCB_NO_SLOT;
 }
 
+int mnRemixTwelveCBLayoutStockPadding(int has_arrows, int stocks_shown)
+{
+    if (has_arrows == 0)
+    {
+        return -4;
+    }
+    return (stocks_shown > 9) ? -7 : -10;
+}
+
 #endif

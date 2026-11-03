@@ -9,6 +9,7 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
+#include "gm/gmremixstockmode.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbrules.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
@@ -77,6 +78,26 @@ sb32 gmRemixTwelveCBTrySetStocks(s32 stocks)
     }
     gmRemixTwelveCBUpdateStocks(&sGMRemixTwelveCB, stocks);
     return TRUE;
+}
+
+sb32 gmRemixTwelveCBCanEditStocks(s32 port, s32 slot)
+{
+    gmRemixTwelveCBEnsureInit();
+    if ((port < 0) || (port >= GMREMIX_TWELVECB_PLAYERS) || (gmRemixStockModeIsManual(port) == FALSE))
+    {
+        return FALSE;
+    }
+    if (sGMRemixTwelveCB.status == GMREMIX_TWELVECB_STATUS_COMPLETE)
+    {
+        return FALSE;
+    }
+    return (gmRemixTwelveCBWasPortraitPlayed(&sGMRemixTwelveCB, port, slot) == 0) ? TRUE : FALSE;
+}
+
+void gmRemixTwelveCBStepStocks(s32 port, s32 slot, s32 delta)
+{
+    gmRemixTwelveCBEnsureInit();
+    gmRemixTwelveCBStepPortraitStocks(&sGMRemixTwelveCB, port, slot, delta);
 }
 
 s32 gmRemixTwelveCBGetWinnerPortrait(s32 port)

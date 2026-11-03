@@ -35,6 +35,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixtwelvecbcustom.h"
 #include "mn/mnplayers/mnremixtwelvecbcustomlegend.h"
 #include "mn/mnplayers/mnremixtwelvecblayout.h"
+#include "mn/mnplayers/mnremixtwelvecbstockmanual.h"
 #include "if/ifremixsprite.h"
 #include <string.h>
 #include "remix/remix_debug.h"
@@ -799,6 +800,14 @@ static void mnPlayersVSTwelveCBResetBattle(void)
 	func_800269C0_275C0(MNPLAYERSVS_TWELVECB_FGM_RESET);
 }
 
+/** Steps the stocks of a portrait of the Manual stock mode and refreshes the portraits of that half (update_remaining_stocks_). */
+static void mnPlayersVSTwelveCBStepManualStocks(s32 player, s32 slot, s32 delta)
+{
+	gmRemixTwelveCBStepStocks(player, slot, delta);
+	mnPlayersVSTwelveCBRebuildHalf(player);
+	func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+}
+
 /**
  * A press of the cursor on the 12-Character Battle controls: the set arrows of each player, and the stock arrows (the count
  * is locked once the battle started). Returns TRUE when the press was one of them.
@@ -848,6 +857,16 @@ static sb32 mnPlayersVSCheckTwelveCBPress(GObj *cursor_gobj)
 			gmRemixTwelveCBSetCssSet(player, set);
 			mnPlayersVSTwelveCBRebuildHalf(player);
 			func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+			return TRUE;
+		}
+	}
+	for (player = 0; player < 2; player++)
+	{
+		s32 direction = mnRemixTwelveCBStockManualArrowAt(player, hot_x, hot_y);
+
+		if (direction != 0)
+		{
+			mnPlayersVSTwelveCBStepManualStocks(player, mnPlayersVSTwelveCBGetPortrait(player, sMNPlayersVSSlots[player].fkind), direction);
 			return TRUE;
 		}
 	}
@@ -1010,12 +1029,32 @@ static void mnPlayersVSTwelveCBUpdateCustom(s32 cursor)
 	}
 }
 
+/** D-pad left and right on a portrait the token hovers change its stocks in the Manual stock mode (TwelveCharBattle.asm check_input_ 4098-4141). */
+static void mnPlayersVSTwelveCBUpdateManualStocks(s32 cursor)
+{
+	s32 token_player = (cursor < 2) ? sMNPlayersVSSlots[cursor].held_player : -1;
+	u16 tapped = gSYControllerDevices[cursor].button_tap;
+	s32 slot;
+
+	if ((token_player < 0) || (token_player > 1) || ((tapped & (L_JPAD | R_JPAD)) == 0) ||
+	    ((tapped & (A_BUTTON | U_CBUTTONS | D_CBUTTONS | L_CBUTTONS | R_CBUTTONS)) != 0))
+	{
+		return;
+	}
+	slot = mnPlayersVSTwelveCBGetHoveredSlot(token_player);
+
+	if ((slot == MNREMIX_TCB_NO_SLOT) || (gmRemixTwelveCBCanEditStocks(token_player, slot) == FALSE))
+	{
+		return;
+	}
+	mnPlayersVSTwelveCBStepManualStocks(token_player, slot, ((tapped & L_JPAD) != 0) ? -1 : 1);
+}
+
 /* CharacterSelect.asm update_stock_icon_and_count_indicators_ (5499-5915), always shown in the 12-Character Battle: the stocks left
  * of the portrait a player's token sits on, as "<icon> x N" against the right edge of the panel card. The number is Kabel text
  * (overlay slots 47 and 48), the cross is text too (the asm draws a sprite of the interface digits file, not loaded here). */
 #define MNPLAYERSVS_TWELVECB_STOCK_Y 191.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_SCALE 0.90625F
-#define MNPLAYERSVS_TWELVECB_STOCK_PADDING (-4.0F)
 #define MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP 18.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_CROSS_GAP 9.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_CROSS_Y 192.0F
@@ -1079,12 +1118,24 @@ static void mnPlayersVSTwelveCBPlaceStockCross(s32 player, f32 x)
 	}
 }
 
+/** Which Manual stock mode controls the panel of a player shows for the portrait he looks at. */
+static MNRemixTwelveCBStockControls mnPlayersVSGetTwelveCBStockControls(s32 player, s32 slot)
+{
+	if (gmRemixTwelveCBCanEditStocks(player, slot) == FALSE)
+	{
+		return MNREMIX_TCB_STOCK_CONTROLS_NONE;
+	}
+	return (sMNPlayersVSSlots[player].is_selected != FALSE) ? MNREMIX_TCB_STOCK_CONTROLS_ARROWS : MNREMIX_TCB_STOCK_CONTROLS_DPAD;
+}
+
 static void mnPlayersVSUpdateTwelveCBStockIndicator(s32 player)
 {
 	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
 	s32 slot = (sMNPlayersVSSlots[player].fkind == nFTKindNull) ? MNREMIX_TCB_NO_SLOT : mnPlayersVSTwelveCBGetPortrait(player, sMNPlayersVSSlots[player].fkind);
 	GObj *fighter_gobj = sMNPlayersVSSlots[player].player;
+	MNRemixTwelveCBStockControls controls;
 	Sprite *card;
+	f32 panel_x;
 	f32 right_edge;
 	f32 digits_x;
 	s32 stocks;
@@ -1093,17 +1144,21 @@ static void mnPlayersVSUpdateTwelveCBStockIndicator(s32 player)
 	    (sMNPlayersVSSlots[player].fkind == nFTKindNull) || (mnPlayersVSTwelveCBSlotFkind(slot) != sMNPlayersVSSlots[player].fkind))
 	{
 		mnPlayersVSTwelveCBHideStockIndicator(player);
+		mnRemixTwelveCBStockManualUpdate(player, MNREMIX_TCB_STOCK_CONTROLS_NONE, 0.0F, 0.0F, 0.0F, NULL);
 		return;
 	}
 	stocks = gmRemixTwelveCBGetPortraitStocks(state, slot);
+	controls = mnPlayersVSGetTwelveCBStockControls(player, slot);
 	card = lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonRedCardSprite);
-	right_edge = (mnPlayersVSGetPanelIndex(player) * 69) + 22 + card->width + MNPLAYERSVS_TWELVECB_STOCK_PADDING;
+	panel_x = (mnPlayersVSGetPanelIndex(player) * 69) + 22;
+	right_edge = panel_x + card->width + mnRemixTwelveCBLayoutStockPadding((controls == MNREMIX_TCB_STOCK_CONTROLS_ARROWS) ? 1 : 0, stocks);
 	digits_x = right_edge - remix_hud_text_measure((stocks > 9) ? "00" : "0", MNPLAYERSVS_TWELVECB_STOCK_SCALE);
 
 	remix_hud_text_putf(MNPLAYERSVS_TWELVECB_STOCK_NUMBER_SLOT + player, right_edge, MNPLAYERSVS_TWELVECB_STOCK_Y, 0xFFFFFFFF,
 	                    MNPLAYERSVS_TWELVECB_STOCK_SCALE, REMIX_HUD_ALIGN_RIGHT, "%d", (int)stocks);
 	mnPlayersVSTwelveCBPlaceStockCross(player, digits_x - MNPLAYERSVS_TWELVECB_STOCK_CROSS_GAP);
 	mnPlayersVSTwelveCBPlaceStockIcon(player, ftGetStruct(fighter_gobj), digits_x - MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP, MNPLAYERSVS_TWELVECB_STOCK_Y);
+	mnRemixTwelveCBStockManualUpdate(player, controls, panel_x, card->width, digits_x, sMNPlayersVSFiles[0]);
 }
 
 /** Player (0 or 1) whose token is the GObj, 0 when it is none of them. */
@@ -1311,6 +1366,7 @@ void mnPlayersVSMakePortraitAll(void)
 		sMNPlayersVSTwelveCBLegendSide[0] = -1;
 		sMNPlayersVSTwelveCBLegendSide[1] = -1;
 		mnRemixTwelveCBCustomLegendReset();
+		mnRemixTwelveCBStockManualReset();
 
 		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
 		{
@@ -4869,6 +4925,7 @@ classic_arrows_consumed:;
 	if (gmRemixTwelveCBIsActive() != FALSE)
 	{
 		mnPlayersVSTwelveCBUpdateCustom(player);
+		mnPlayersVSTwelveCBUpdateManualStocks(player);
 	}
 
 	if

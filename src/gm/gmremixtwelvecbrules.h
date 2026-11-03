@@ -87,6 +87,29 @@ extern int32_t gmRemixTwelveCBPortraitOf(int32_t fkind);
 extern int32_t gmRemixTwelveCBGetPortraitStocks(const GMRemixTwelveCBState *state, int32_t portrait);
 
 /**
+ * Whether a player already played a portrait in a finished or running game (was_portrait_played_).
+ *
+ * @param state Battle state.
+ * @param port Player port (0 or 1).
+ * @param portrait Portrait slot (0..23).
+ * @return 1 when one of the games up to the current one used that portrait, else 0.
+ */
+extern int32_t gmRemixTwelveCBWasPortraitPlayed(const GMRemixTwelveCBState *state, int32_t port, int32_t portrait);
+
+/**
+ * Moves the stocks of one portrait by one step, the way the Manual stock mode of the CSS does (update_remaining_stocks_ in the 12-Character
+ * Battle): the count runs through no stocks (defeated) up to the CSS stock count and wraps at both ends, and the pool of the player
+ * follows the change.
+ *
+ * @param state Battle state.
+ * @param port Player port (0 or 1) whose pool changes.
+ * @param portrait Portrait slot (0..23).
+ * @param delta -1 or +1.
+ * @return 1 when the portrait changed, 0 when the arguments are out of range.
+ */
+extern int32_t gmRemixTwelveCBStepPortraitStocks(GMRemixTwelveCBState *state, int32_t port, int32_t portrait, int32_t delta);
+
+/**
  * Remembers the portrait a player chose for the next game (the CSS writes it before the match starts).
  *
  * @param state Battle state.

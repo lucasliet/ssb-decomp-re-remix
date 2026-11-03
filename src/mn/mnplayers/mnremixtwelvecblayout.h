@@ -56,6 +56,16 @@ extern int mnRemixTwelveCBLayoutSlotOfFkind(int set, int player, int fkind);
 /** Player that owns a slot: 0 for the columns 0 to 3, 1 for 4 to 7; -1 for an invalid slot. */
 extern int mnRemixTwelveCBLayoutOwner(int slot);
 
+/**
+ * Padding between the right edge of the panel card and the right edge of the stock number (update_stock_icon_and_count_indicators_):
+ * -4 normally, and when the Manual stock arrows sit at the card edge -10 for a one digit number and -7 for two digits.
+ *
+ * @param has_arrows Non-zero when the Manual stock arrows are shown.
+ * @param stocks_shown Number the indicator shows (1-based).
+ * @return Padding in screen units, negative.
+ */
+extern int mnRemixTwelveCBLayoutStockPadding(int has_arrows, int stocks_shown);
+
 #endif
 
 #endif

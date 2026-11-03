@@ -94,6 +94,52 @@ int32_t gmRemixTwelveCBGetPortraitStocks(const GMRemixTwelveCBState *state, int3
     return state->stocks_by_portrait[portrait] + 1;
 }
 
+int32_t gmRemixTwelveCBWasPortraitPlayed(const GMRemixTwelveCBState *state, int32_t port, int32_t portrait)
+{
+    int32_t game;
+
+    if (gmRemixTwelveCBPortIsValid(port) == 0)
+    {
+        return 0;
+    }
+    for (game = 0; (game <= state->current_game) && (game < GMREMIX_TWELVECB_GAMES); game++)
+    {
+        if (state->players[port].matches[game].portrait == portrait)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int32_t gmRemixTwelveCBStepPortraitStocks(GMRemixTwelveCBState *state, int32_t port, int32_t portrait, int32_t delta)
+{
+    int32_t old_stocks;
+    int32_t new_one_based;
+    int32_t max_one_based;
+
+    if ((gmRemixTwelveCBPortIsValid(port) == 0) || (gmRemixTwelveCBPortraitIsValid(portrait) == 0))
+    {
+        return 0;
+    }
+    old_stocks = state->stocks_by_portrait[portrait];
+    max_one_based = state->num_stocks + 1;
+    new_one_based = old_stocks + delta + 1;
+
+    if (new_one_based < 0)
+    {
+        new_one_based = max_one_based;
+    }
+    if (new_one_based > max_one_based)
+    {
+        new_one_based = 0;
+    }
+    state->stocks_by_portrait[portrait] = (int8_t)(new_one_based - 1);
+    state->players[port].stocks_remaining += (new_one_based - 1) - old_stocks;
+
+    return 1;
+}
+
 void gmRemixTwelveCBSetNextPortrait(GMRemixTwelveCBState *state, int32_t port, int32_t portrait)
 {
     int32_t next_game = state->current_game + 1;

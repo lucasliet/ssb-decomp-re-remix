@@ -88,6 +88,24 @@ extern sb32 gmRemixTwelveCBIsComplete(void);
  */
 extern const GMRemixTwelveCBState* gmRemixTwelveCBGetState(void);
 
+/**
+ * Whether the Manual stock mode of the CSS lets a player change the stocks of a portrait: the panel is in Manual, the battle is not over
+ * and the player has not played the portrait yet (TwelveCharBattle.asm check_input_ 4098-4125).
+ *
+ * @param port Player port (0 or 1).
+ * @param slot Portrait slot (0..23).
+ */
+extern sb32 gmRemixTwelveCBCanEditStocks(s32 port, s32 slot);
+
+/**
+ * Moves the stocks of a portrait one step (CharacterSelect.asm update_remaining_stocks_).
+ *
+ * @param port Player port (0 or 1) whose pool follows.
+ * @param slot Portrait slot (0..23).
+ * @param delta -1 or +1.
+ */
+extern void gmRemixTwelveCBStepStocks(s32 port, s32 slot, s32 delta);
+
 /** Takes back the game in progress when both players accepted a Gentlemen's Reset of the pause (gmRemixTwelveCBUndoGame). */
 extern void gmRemixTwelveCBUndoCurrentGame(void);
 

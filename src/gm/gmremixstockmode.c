@@ -29,6 +29,7 @@ static s32 sStockModeInitialLastCount[GMREMIX_STOCK_MODE_PORTS] =
 /** Hooks for the CSS reset and the salty runback. Call them from the port; see docs/remix/notes/f14_stockmode_last.md. */
 void gmRemixStockModeResetLast(void);
 void gmRemixStockModeSaltyRunbackLast(void);
+sb32 gmRemixStockModeIsManual(s32 player);
 
 /**
  * Stock count of a fighter in Last mode (StockMode.asm set_initial_stock_count_, _use_last). The first match after a CSS
@@ -82,6 +83,11 @@ void gmRemixStockModeSaltyRunbackLast(void)
     {
         sStockModeLastCount[player] = sStockModeInitialLastCount[player];
     }
+}
+
+sb32 gmRemixStockModeIsManual(s32 player)
+{
+    return (gmRemixPanel(STOCK_MODE, player) == GMREMIX_STOCK_MODE_MANUAL) ? TRUE : FALSE;
 }
 
 /**
