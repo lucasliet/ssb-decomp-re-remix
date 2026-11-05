@@ -3,6 +3,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "it/itremix/itremix.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -270,7 +271,12 @@ sb32 itBoxCommonCheckSpawnItems(GObj *item_gobj)
     {
         kind = itMainGetWeightedItemKind(&gITManagerRandomWeights);
 
+#ifdef REGION_REMIX
+        /* Item.asm fix_item_id_check_item_generators_._crate_barrel (0x80179488) */
+        if ((kind <= nITKindCommonEnd) || itRemixIsCustomKind(kind))
+#else
         if (kind <= nITKindCommonEnd)
+#endif
         {
             random = syUtilsRandIntRange(5);
 

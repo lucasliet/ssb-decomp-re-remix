@@ -2,10 +2,18 @@
 #include <sc/scene.h>
 #include <reloc_data.h>
 #ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#include "it/itremix/itremixcloakingdevice.h"
 #include "mn/mnplayers/mnremixteams.h"
 #define FTSHADOW_TEAM_COLOR(team) mnRemixTeamsGetShadowColor(team)
+/* Size.asm adjust_player_shadow_ (0x8013B144): the shadow radius follows the size multiplier */
+#define FTSHADOW_RADIUS(fp) ftRemixSizeScaleValue(fp, (fp)->attr->shadow_size)
+/* CloakingDevice.asm prevent_shadow_when_cloaked_ (0x8013AFD4): the Cloaking Device item hides the shadow */
+#define FTSHADOW_IS_HIDDEN(fp) ((fp)->is_invisible || (fp)->is_shadow_hide || itRemixCloakingDeviceIsCloaked((fp)->player))
 #else
 #define FTSHADOW_TEAM_COLOR(team) dFTCommonDataShadowColorTeams[team]
+#define FTSHADOW_RADIUS(fp) ((fp)->attr->shadow_size)
+#define FTSHADOW_IS_HIDDEN(fp) ((fp)->is_invisible || (fp)->is_shadow_hide)
 #endif
 
 extern s32 gSYTaskmanTaskID;
@@ -114,7 +122,7 @@ void ftShadowProcDisplay(GObj *shadow_gobj)
 
     fp = ftGetStruct(fighter_gobj);
 
-    if (!(fp->is_invisible) && !(fp->is_shadow_hide))
+    if (!FTSHADOW_IS_HIDDEN(fp))
     {
         Vec3f ga_last;
         Vec3f pos_project;
@@ -149,7 +157,7 @@ void ftShadowProcDisplay(GObj *shadow_gobj)
             )
             {
                 shadow_center = DObjGetStruct(fighter_gobj)->translate.vec.f.x;
-                shadow_size = fp->attr->shadow_size;
+                shadow_size = FTSHADOW_RADIUS(fp);
                 shadow_calc_left = 0.0F, shadow_calc_right = 1984.0F;
 
                 mpCollisionGetFloorEdgeL(floor_line_id, &vertex_pos0);

@@ -11,6 +11,7 @@
 #include "ft/ftremix/ftremixpartimage.h"
 #include "ft/ftremix/ftremixeffects.h"
 #include "if/ifremixannouncer.h"
+#include "ef/efremixpuffsing.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -874,7 +875,11 @@ EFDesc dEFManagerPurinSingEffectDesc =
         0x00                                // ???
     },
 
+#ifdef REGION_REMIX
+    efRemixPurinSingProcUpdate,             // Proc Update
+#else
     efManagerHaveStructProcUpdate,          // Proc Update
+#endif
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
     llPurinSpecial2SingDObjDesc,                 // DObj Setup attributes offset (?)

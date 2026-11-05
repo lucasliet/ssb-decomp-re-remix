@@ -3364,6 +3364,15 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
         this_fp->damage_angle = wp_attack_coll->angle;
         this_fp->damage_element = wp_attack_coll->element;
 
+#ifdef REGION_REMIX
+        damage_lr = ftRemixMainWeaponHitLr(wp->kind, wp->lr, wp->physics.vel_air.x);
+
+        if (damage_lr == 0)
+        {
+            damage_lr = (DObjGetStruct(fighter_gobj)->translate.vec.f.x < DObjGetStruct(attacker_gobj)->translate.vec.f.x) ? +1 : -1;
+        }
+        this_fp->damage_lr = damage_lr;
+#else
         if (ABSF(wp->physics.vel_air.x) < 5.0F)
         {
             this_fp->damage_lr = damage_lr = (DObjGetStruct(fighter_gobj)->translate.vec.f.x < DObjGetStruct(attacker_gobj)->translate.vec.f.x) ? +1 : -1;
@@ -3374,6 +3383,7 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
 
             this_fp->damage_lr = damage_lr;
         }
+#endif
         if (this_fp->player == hitlog->attacker_player)
         {
             this_fp->damage_player_num = 0;

@@ -39,4 +39,25 @@ int ftRemixMainMarinaThrownFile(int victim_fkind)
     }
 }
 
+/* Weapon hit: vanilla ftMainProcessHitCollisionStatsMain threshold on |vel x|; beam_knockback_direction_fix threshold on |lr| */
+#define FTREMIXMAIN_WEAPON_HIT_VEL_MIN 5.0F
+#define FTREMIXMAIN_BEAM_HIT_LR_MIN 0.5F
+
+int ftRemixMainWeaponHitLr(int weapon_kind, int weapon_lr, float vel_x)
+{
+    float read_value = vel_x;
+    float read_min = FTREMIXMAIN_WEAPON_HIT_VEL_MIN;
+
+    if (weapon_kind == FTREMIXMAIN_WPKIND_WADDLEDOO_BEAM)
+    {
+        read_value = (float)weapon_lr;
+        read_min = FTREMIXMAIN_BEAM_HIT_LR_MIN;
+    }
+    if (((read_value < 0.0F) ? -read_value : read_value) < read_min)
+    {
+        return 0;
+    }
+    return (read_value < 0.0F) ? +1 : -1;
+}
+
 #endif

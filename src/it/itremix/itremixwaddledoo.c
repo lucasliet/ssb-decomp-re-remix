@@ -46,7 +46,7 @@ extern alSoundEffect* func_800269C0_275C0(u16 id);
 #define ITREMIX_WADDLEDOO_BEAM_ROTATION_AMOUNT 0.26171875F     /* 0x3E860000, per 2 frames */
 #define ITREMIX_WADDLEDOO_BEAM_CHILD_ANGLE_OFFSET 0.40625F     /* 0x3ED00000 */
 #define ITREMIX_WADDLEDOO_BEAM_HIT_FGM 0x16                      /* FGM.hit.ELECTRIC_S */
-#define ITREMIX_WADDLEDOO_BEAM_WPKIND 0x27                       /* Projectile.id.DEDEDE_WADDLEDOO_BEAM (8th add_projectile, after SONIC_SPRING 0x20) */
+#define ITREMIX_WADDLEDOO_BEAM_WPKIND 0x27                       /* Projectile.id.DEDEDE_WADDLEDOO_BEAM (8th add_projectile, after SONIC_SPRING 0x20); keep equal to FTREMIXMAIN_WPKIND_WADDLEDOO_BEAM (ftremixmainrules.h) */
 
 /* Remix item special struct fields beyond the vanilla ITStruct union. Offsets are the N64 ones. */
 typedef struct ITRemixWaddleDooVars

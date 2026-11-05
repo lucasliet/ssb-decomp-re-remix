@@ -17,6 +17,7 @@
 #include <it/itmain.h>
 #include <sys/utils.h>
 #include "it/itremix/itremix.h"
+#include "it/itremix/itremixpickupskip.h"
 
 #define FTREMIX_START_ITEM_RANDOM_INDEX 19
 #define FTREMIX_START_ITEM_HAMMER_TICS 0x2D0
@@ -106,7 +107,9 @@ static void ftRemixStartItemGive(GObj *fighter_gobj, s32 index)
     {
         return;
     }
+    itRemixPickupSkipSet(TRUE);
     itMainSetFighterHold(item_gobj, fighter_gobj);
+    itRemixPickupSkipSet(FALSE);
     if (kind == nITKindHammer)
     {
         fp->hammer_tics = FTREMIX_START_ITEM_HAMMER_TICS;

@@ -82,7 +82,7 @@ void ftRemixPoisonAdvanceTimer(void)
     sFTRemixPoisonTimer++;
 }
 
-/** Clears the poison durations between matches (asm: Poison.clear_poison_, called by Item.asm:1577, not wired yet). */
+/** Clears the poison durations between matches (asm: Poison.clear_poison_, called by Item.asm:1577 through itRemixClearActiveItems). */
 void ftRemixPoisonClear(void)
 {
     s32 port;

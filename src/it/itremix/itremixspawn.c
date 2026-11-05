@@ -6,6 +6,7 @@
 
 #include "itremix.h"
 #include "itremixspawn.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include "it/itremix/itremixcloakingdevice.h"
 #include "it/itremix/itremixfranklinbadge.h"
 #include "it/itremix/itremixlightning.h"
@@ -107,7 +108,7 @@ sb32 itRemixAnyStandardItemIsOn(void)
  * Item.asm clear_active_custom_items_ (called on every screen change to
  * CSS/VS/Training/VS Results): forget every per-item effect state so nothing
  * survives into the next scene. Item.asm:1577 also calls Poison.clear_poison_ (Poison.asm:269, clears
- * poisoned_players); ftRemixPoisonClear is not called here yet (docs/remix/patch_audit.md IT-4).
+ * poisoned_players), which is ftRemixPoisonClear.
  */
 void itRemixClearActiveItems(void)
 {
@@ -117,6 +118,7 @@ void itRemixClearActiveItems(void)
     itRemixFranklinBadgeClearAll();
     itRemixPwingClearActive();
     itRemixStopwatchClearActive();
+    ftRemixPoisonClear();
 }
 
 #endif

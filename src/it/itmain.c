@@ -5,6 +5,7 @@
 #include <it/item.h>
 #ifdef REGION_REMIX
 #include "it/itremix/itremix.h"
+#include "it/itremix/itremixpickupskip.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_roster_data.h" /* REMIX_ID_*: a Remix id is also its port fkind */
 #endif
@@ -570,6 +571,10 @@ void itMainSetFighterHold(GObj *item_gobj, GObj *fighter_gobj)
     pos.z = 0.0F;
 
     gmCollisionGetFighterPartsWorldPosition(fp->joints[joint_id], &pos);
+#ifdef REGION_REMIX
+    /* Item.asm skip_item_spawn_gfx_._pickup (0x80172DB8) */
+    if (itRemixPickupSkipIsActive() == FALSE)
+#endif
     efManagerItemGetSwirlProcUpdate(&pos);
     gcSetDObjTransformsForGObj(item_gobj, PORT_RESOLVE(ip->attr->data));
 
@@ -595,6 +600,10 @@ void itMainSetFighterHold(GObj *item_gobj, GObj *fighter_gobj)
 
     if (ip->weight == nITWeightLight)
     {
+#ifdef REGION_REMIX
+        /* Item.asm skip_item_pickup_sound_ (0x80172E10) */
+        if (itRemixPickupSkipIsActive() == FALSE)
+#endif
         func_800269C0_275C0(nSYAudioFGMItemGet);
     }
     else if (fp->attr->heavyget_sfx != nSYAudioFGMVoiceEnd)
@@ -766,12 +775,21 @@ sb32 itMainMakeContainerItem(GObj *parent_gobj)
         }
 #endif
 
+#ifdef REGION_REMIX
+        /* Item.asm fix_item_id_check_item_generators_._egg_capsule (0x801730FC): a Remix item is valid and uses index 0 for the vel.y lookup */
+        if ((kind <= nITKindCommonEnd) || itRemixIsCustomKind(kind))
+#else
         if (kind <= nITKindCommonEnd)
+#endif
         {
             vel.x = 0.0F;
 
             // Quite ridiculous especially since llITCommonDataContainerVelocitiesY is 0
+#ifdef REGION_REMIX
+            vel.y = *(f32*) ((intptr_t)llITCommonDataContainerVelocitiesY + ((uintptr_t) &((f32*)gITManagerCommonData)[itRemixIsCustomKind(kind) ? 0 : kind]));
+#else
             vel.y = *(f32*) ((intptr_t)llITCommonDataContainerVelocitiesY + ((uintptr_t) &((f32*)gITManagerCommonData)[kind]));
+#endif
             vel.z = 0;
 
             if
