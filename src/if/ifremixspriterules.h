@@ -30,6 +30,7 @@ typedef enum IFRemixSpriteId
     IFREMIX_SPRITE_MULTIMAN_POLYGON,
     IFREMIX_SPRITE_MULTIMAN_CROSS,
     IFREMIX_SPRITE_START_BUTTON,
+    IFREMIX_SPRITE_MENU_ARROW,
     IFREMIX_SPRITE_COUNT
 } IFRemixSpriteId;
 
@@ -49,6 +50,9 @@ typedef struct IFRemixSpriteEntry
 #define IFREMIX_SPRITE_FILE_DIGITS 0x24
 /** King of the Hill graphics file (File.KING_OF_THE_HILL_GFX): the score meter frame. */
 #define IFREMIX_SPRITE_FILE_KOTH 0x14F3
+
+/** Vanilla main menu images file (File 0x00, MNCommon): the right arrow of the item switch legend. */
+#define IFREMIX_SPRITE_FILE_MENU_COMMON 0x00
 
 /** Vanilla sound test file: the START button sprite (llMNSoundTestStartButtonSprite). */
 #define IFREMIX_SPRITE_FILE_SOUND_TEST 0xC4

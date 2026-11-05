@@ -1,5 +1,6 @@
 #include <ft/fighter.h>
 #include <it/item.h>
+#include "ft/ftremix/ftremixhooks.h"
 
 // // // // // // // // // // // //
 //                               //
@@ -38,6 +39,12 @@ sb32 ftCommonAttackDashCheckInterruptCommon(GObj *fighter_gobj)
         }
         if (attr->is_have_attackdash)
         {
+#ifdef REGION_REMIX
+            if (ftRemixDpadControlSkipsDashAttackOf(fp) != FALSE)
+            {
+                return TRUE;
+            }
+#endif
             ftCommonAttackDashSetStatus(fighter_gobj);
 
             return TRUE;

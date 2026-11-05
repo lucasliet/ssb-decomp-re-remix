@@ -7,6 +7,7 @@
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
+#include "gm/gmremixpractice.h"
 #endif
 #ifdef PORT
 #include <mn/mncommon/mncongra.h>
@@ -301,6 +302,30 @@ void sc1PManagerTrySaveBackup(sb32 is_complete_spgame)
     }
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Prepares the replay of the current stage after a Practice_1P retry (Practice_1P.asm hold_l_to_retry_stage_clear_): every
+ * port gets its starting stocks back, and the score of the run is cleared when the retry came from the stage clear screen.
+ *
+ * @param is_clear_score TRUE for the retry from the STAGE CLEAR screen, which also zeroes score, continues and bonus count.
+ */
+static void sc1PManagerSetupPracticeRetry(sb32 is_clear_score)
+{
+    s32 player;
+
+    for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)
+    {
+        gSCManager1PGameBattleState.players[player].stock_count = gSCManagerBackupData.spgame_stock_count;
+    }
+    if (is_clear_score != FALSE)
+    {
+        gSCManagerSceneData.spgame_score = 0;
+        gSCManagerSceneData.continues_used = 0;
+        gSCManagerSceneData.bonus_count = 0;
+    }
+}
+#endif
+
 // 0x800D67DC
 void sc1PManagerUpdateScene(void)
 {
@@ -318,6 +343,9 @@ void sc1PManagerUpdateScene(void)
     s32 spgame_stage;
 
     sSC1PManagerScenePrev = gSCManagerSceneData.scene_prev;
+#if defined(PORT) && defined(REGION_REMIX)
+    gmRemixPracticeBegin(gSCManagerSceneData.player);
+#endif
 
     gSCManager1PGameBattleState.is_team_battle = TRUE;
     gSCManager1PGameBattleState.game_rules = (SCBATTLE_GAMERULE_1PGAME | SCBATTLE_GAMERULE_TIME);
@@ -530,7 +558,8 @@ void sc1PManagerUpdateScene(void)
             gSCManagerSceneData.scene_curr = nSCKind1PIntro;
 
 #if defined(PORT) && defined(REGION_REMIX)
-            if ((sc1PRemixMultimanIsActive() == FALSE) && (sc1PRemixHrcIsActive() == FALSE) && (sc1PRemixAllstarIsActive() == FALSE))
+            if ((sc1PRemixMultimanIsActive() == FALSE) && (sc1PRemixHrcIsActive() == FALSE) && (sc1PRemixAllstarIsActive() == FALSE) &&
+                (gmRemixPracticeConsumeIntroSkip() == FALSE))
 #endif
             {
                 sc1PIntroStartScene();
@@ -611,6 +640,13 @@ void sc1PManagerUpdateScene(void)
 
                 return;
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            if (gmRemixPracticeConsumeRetry() != FALSE)
+            {
+                sc1PManagerSetupPracticeRetry(FALSE);
+                continue;
+            }
+#endif
             if (is_player_lose != FALSE)
             {
                 syDmaLoadOverlay(&dSC1PManagerSubsysOverlay);
@@ -696,6 +732,13 @@ void sc1PManagerUpdateScene(void)
 
                     sc1PStageClearStartScene();
                     SC1P_PORT_RESET_BAIL();
+#if defined(PORT) && defined(REGION_REMIX)
+                    if (gmRemixPracticeConsumeRetry() != FALSE)
+                    {
+                        sc1PManagerSetupPracticeRetry(TRUE);
+                        continue;
+                    }
+#endif
                 }
             }
 #if defined(PORT) && defined(REGION_REMIX)

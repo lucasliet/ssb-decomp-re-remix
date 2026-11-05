@@ -104,6 +104,9 @@ s32 ftCommonKneeBendGetInputTypeCommon(FTStruct *fp)
 #else
     sb32 tap_jump_disabled = FALSE;
 #endif
+#ifdef REGION_REMIX
+    tap_jump_disabled = tap_jump_disabled || ftRemixDpadControlDisablesStickJump(fp);
+#endif
 
     if (!tap_jump_disabled && (fp->input.pl.stick_range.y >= FTCOMMON_KNEEBEND_STICK_RANGE_MIN) && (fp->tap_stick_y <= FTCOMMON_KNEEBEND_BUFFER_TICS_MAX))
     {
@@ -144,6 +147,9 @@ s32 ftCommonKneeBendGetInputTypeRun(FTStruct *fp)
     sb32 tap_jump_disabled = port_enhancement_tap_jump_disabled(fp->player);
 #else
     sb32 tap_jump_disabled = FALSE;
+#endif
+#ifdef REGION_REMIX
+    tap_jump_disabled = ftRemixDpadControlHandlesRunStickUp(fp) || tap_jump_disabled;
 #endif
 
     if (!tap_jump_disabled && (fp->input.pl.stick_range.y > FTCOMMON_KNEEBEND_RUN_STICK_RANGE_MIN) && (fp->tap_stick_y <= FTCOMMON_KNEEBEND_BUFFER_TICS_MAX))

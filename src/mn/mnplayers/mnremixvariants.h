@@ -9,6 +9,7 @@
 
 extern void mnRemixVariantHandleInput(s32 held_player, u16 button_tap);
 extern s32 mnRemixRandomResolveFighterKind(s32 fkind);
+extern s32 mnRemixRandomPickFighterKind(void);
 extern s32 mnRemixVariantLookup(s32 fkind, s32 slot);
 extern s32 mnRemixVariantGetFighterKind(s32 held_player, s32 fkind);
 extern s32 mnRemixVariantGetOffset(s32 held_player);

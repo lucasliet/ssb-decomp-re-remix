@@ -11,6 +11,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include <ft/fighter.h>
 #include <sys/objdef.h>
+#include <it/itdef.h>
 #include "gm/gmremixtoggle.h"
 #include "remix/remix_roster_data.h"
 
@@ -132,6 +133,30 @@ u16 ftRemixJapaneseProjectileSoundFgm(GObj *owner_gobj, u16 fgm_id)
         return fgm_id + diff;
     }
     return fgm_id;
+}
+
+/**
+ * Returns the fgm id of the hit sound of an item at spawn (japanese_sfx_link_bomb_collide_, 0x8016E548 in
+ * itManagerMakeItem, where the asm stores ITStruct.attack_coll.fgm_id; Link's bomb is the case the Remix label names).
+ *
+ * DEVIATION: the asm reads the owner from stack slot 0x20(sp) of itManagerMakeItem, which the function never writes
+ * (the slot holds whatever the caller chain left there, and is only used if it equals a player struct). The port takes
+ * the fighter that spawns the item (ITEM_FLAG_PARENT_FIGHTER) as the owner and no owner otherwise. Toggle Always and
+ * Never behave as in the asm.
+ *
+ * @param parent_gobj Parent GObj given to itManagerMakeItem.
+ * @param flags Spawn flags given to itManagerMakeItem.
+ * @param fgm_id Hit sound id of the item attributes.
+ */
+u16 ftRemixJapaneseItemSoundFgm(GObj *parent_gobj, u32 flags, u16 fgm_id)
+{
+    GObj *owner_gobj = NULL;
+
+    if ((flags & ITEM_MASK_PARENT) == ITEM_FLAG_PARENT_FIGHTER)
+    {
+        owner_gobj = parent_gobj;
+    }
+    return ftRemixJapaneseProjectileSoundFgm(owner_gobj, fgm_id);
 }
 
 #endif

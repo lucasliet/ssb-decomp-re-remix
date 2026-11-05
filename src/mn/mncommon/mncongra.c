@@ -7,6 +7,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include <mn/mncommon/mnremixgallery.h>
+#include <mn/mncommon/mnremixgalleryrules.h>
 #endif
 
 extern void* func_800269C0_275C0(u16);
@@ -286,9 +287,18 @@ void mnCongraFuncStart(void)
 	 * BOTTOM file id; TOP is BOTTOM+1 and both halves share offset 0x20718
 	 * (Crash.asm:701, File.asm:2997-2998, SinglePlayer.asm:2293-2333). */
 	MNCongraPicture pic;
+#ifdef REGION_REMIX
+	/* The registry never receives the ending image of the Remix fighters; replace_victory_image_ (SinglePlayer.asm
+	 * 2423-2520) reads custom_victory_file_table for every Character.id from 12, which includes Boss and the
+	 * polygon fighters below nFTKindEnumCount. */
+	if (mnRemixGalleryRulesGetVictoryFileId(sMNCongraFighterKind) != 0)
+	{
+		u32 file_id = (u32)mnRemixGalleryRulesGetVictoryFileId(sMNCongraFighterKind);
+#else
 	if (sMNCongraFighterKind >= nFTKindEnumCount)
 	{
 		u32 file_id = (u32)port_fighter_remix_1p_ending_image_file_id(sMNCongraFighterKind);
+#endif
 		if (file_id == 0)
 		{
 			/* Required asset is missing. Never fall back to the vanilla

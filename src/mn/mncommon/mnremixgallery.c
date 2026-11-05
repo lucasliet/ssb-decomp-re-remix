@@ -1,30 +1,15 @@
+#if defined(PORT) && defined(REGION_REMIX)
+
 #include <ft/fighter.h>
 #include <mn/mncommon/mncongra.h>
 #include <sc/scene.h>
 #include <sys/controller.h>
 #include <sys/taskman.h>
 #include <mn/mncommon/mnremixgallery.h>
+#include <mn/mncommon/mnremixgalleryrules.h>
+#include "remix/remix_roster_data.h"
 
 #define MN_REMIX_GALLERY_STICK_THRESHOLD 40
-
-/* Gallery.asm id_table order (Character.id) mapped to the fighter kinds that
- * index the vanilla Congratulations picture table. The remaining 28 Remix
- * gallery entries need the synth fighter kinds: REMIX-TODO(gallery-remix-fighters). */
-static const s32 sMNRemixGalleryFighterKinds[] =
-{
-    nFTKindMario,
-    nFTKindDonkey,
-    nFTKindLink,
-    nFTKindSamus,
-    nFTKindYoshi,
-    nFTKindKirby,
-    nFTKindFox,
-    nFTKindPikachu,
-    nFTKindLuigi,
-    nFTKindCaptain,
-    nFTKindNess,
-    nFTKindPurin,
-};
 
 static sb32 sMNRemixGalleryIsActive;
 static s32 sMNRemixGalleryIndex;
@@ -49,9 +34,7 @@ static void mnRemixGalleryLeave(void)
 
 static void mnRemixGalleryStep(s32 step)
 {
-    s32 count = ARRAY_COUNT(sMNRemixGalleryFighterKinds);
-
-    sMNRemixGalleryIndex = (sMNRemixGalleryIndex + step + count) % count;
+    sMNRemixGalleryIndex = mnRemixGalleryRulesStepIndex(sMNRemixGalleryIndex, step);
     mnRemixGalleryReloadScene();
 }
 
@@ -108,7 +91,7 @@ sb32 mnRemixGalleryIsActive(void)
 
 s32 mnRemixGalleryGetFighterKind(void)
 {
-    return sMNRemixGalleryFighterKinds[sMNRemixGalleryIndex];
+    return REMIX_ID_TO_PORT_FKIND(mnRemixGalleryRulesGetCharacterId(sMNRemixGalleryIndex));
 }
 
 void mnRemixGalleryUpdateInput(void)
@@ -126,3 +109,5 @@ void mnRemixGalleryUpdateInput(void)
         mnRemixGalleryStep(step);
     }
 }
+
+#endif

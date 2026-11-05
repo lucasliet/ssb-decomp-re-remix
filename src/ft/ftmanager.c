@@ -1192,6 +1192,7 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     fp->input.button_mask_z = desc->button_mask_z;
 #ifdef REGION_REMIX
     fp->input.button_mask_l = ftRemixTauntButtonMaskFor(fp, desc->button_mask_l);
+    ftRemixDpadControlSetButtonMasks(fp);
 #else
     fp->input.button_mask_l = desc->button_mask_l;
 #endif

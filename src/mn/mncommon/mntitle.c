@@ -10,6 +10,9 @@
 #ifdef PORT
 #include "remix/remix_debug.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include <mn/mncommon/mnremixtitleversion.h>
+#endif
 extern void *func_800269C0_275C0(u16 id);
 extern void func_800266A0_272A0(void);
 
@@ -536,6 +539,9 @@ void mnTitleFuncRun(GObj *gobj)
 	s32 i;
 	u16 buttons;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	mnRemixTitleVersionPut();
+#endif
 	if (sMNTitleIsStartActorProcess == FALSE)
 	{
 		sMNTitleIsStartActorProcess++;

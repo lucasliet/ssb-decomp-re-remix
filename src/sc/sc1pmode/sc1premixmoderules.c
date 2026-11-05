@@ -7,6 +7,7 @@
 #include "sc/sc1pmode/sc1premixmoderules.h"
 #include "sc/sc1pmode/sc1premixmodename.h"
 
+#define SC1PREMIX_START_CHEER_SKIP_BONUS 2
 #define SC1PREMIX_SEED_FRAME_MASK 0x3F
 #define SC1PREMIX_MULTIMAN_ENEMY_HANDICAP 0x15
 #define SC1PREMIX_CRUEL_ENEMY_HANDICAP 0x18
@@ -25,6 +26,19 @@ int sc1PRemixModeLeavesBonusCSSFor1P(int mode)
     default:
         return 0;
     }
+}
+
+int sc1PRemixModeSkipsBonusStartCheer(int toggle_value, int mode, int is_bonus_practice)
+{
+    if (toggle_value < SC1PREMIX_START_CHEER_SKIP_BONUS)
+    {
+        return 0;
+    }
+    if ((mode == SC1PREMIX_MODE_BONUS3) || (mode == SC1PREMIX_MODE_HRC))
+    {
+        return 1;
+    }
+    return (is_bonus_practice != 0) ? 1 : 0;
 }
 
 unsigned int sc1PRemixModeSeedAdvanceCount(unsigned int frame_count)

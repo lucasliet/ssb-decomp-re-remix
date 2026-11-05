@@ -13,6 +13,9 @@
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
 #include "mn/mnmaps/mnremixemblem.h"
+#include "mn/mnmaps/mnremixstagepanel.h"
+#include "mn/mnmaps/mnremixstageroulette.h"
+#include "mn/mnmaps/mnremixstagetournament.h"
 #include "mn/mnmaps/mnremixstagevariant.h"
 #endif
 #ifdef PORT
@@ -307,6 +310,9 @@ f32 sMNMapsPreviewBaseAtY;
 #ifdef REGION_REMIX
 static s32 sMNMapsPageCount = 1;
 s32 dMNMapsPageGkinds[nMNMapsPageCountMax][nMNMapsSlotCount];
+/* Page of the 18 square Remix tournament grid each slot came from; the page decides the forced hazard mode of a stage. */
+static s32 sMNMapsRemixSourcePage[nMNMapsPageCountMax][nMNMapsSlotCount];
+static MNRemixRoulette sMNMapsRemixRoulette;
 #else
 s32 dMNMapsPageGkinds[nMNMapsPageCount][nMNMapsSlotCount] =
 {
@@ -326,14 +332,24 @@ s32 dMNMapsPageGkinds[nMNMapsPageCount][nMNMapsSlotCount] =
 #endif
 
 #ifdef REGION_REMIX
-/* Pages of nMNMapsSlotRandom stages in Stages.stage_table_normal order, Random in the last slot of every page. */
+/*
+ * Pages of nMNMapsSlotRandom stages in Stages.stage_table_normal order (Stages.stage_table_tournament order on the tournament
+ * layout), Random in the last slot of every page.
+ */
 static void mnMapsBuildRemixPages(void)
 {
 	s32 stages[GRREMIX_SELECT_ENTRIES_MAX];
-	s32 count = grRemixSelectGetStages(stages, GRREMIX_SELECT_ENTRIES_MAX);
+	s32 source_pages[GRREMIX_SELECT_ENTRIES_MAX] = { 0 };
+	s32 count;
 	s32 page;
 	s32 slot;
 	s32 index = 0;
+
+	if (mnRemixTournamentLatchLayout() != FALSE)
+	{
+		count = mnRemixTournamentGetStages(stages, source_pages, GRREMIX_SELECT_ENTRIES_MAX);
+	}
+	else count = grRemixSelectGetStages(stages, GRREMIX_SELECT_ENTRIES_MAX);
 
 	sMNMapsPageCount = (count + nMNMapsSlotRandom - 1) / nMNMapsSlotRandom;
 	if (sMNMapsPageCount < 1)
@@ -348,8 +364,10 @@ static void mnMapsBuildRemixPages(void)
 	{
 		for (slot = 0; slot < nMNMapsSlotRandom; slot++)
 		{
+			sMNMapsRemixSourcePage[page][slot] = (index < count) ? source_pages[index] : 0;
 			dMNMapsPageGkinds[page][slot] = (index < count) ? stages[index++] : nMNMapsEmptyGKind;
 		}
+		sMNMapsRemixSourcePage[page][nMNMapsSlotRandom] = 0;
 		dMNMapsPageGkinds[page][nMNMapsSlotRandom] = nMNMapsRandomGKind;
 	}
 	port_log("[mnmaps] remix stage pages: %d stages in %d pages\n", count, sMNMapsPageCount);
@@ -788,9 +806,15 @@ void mnMapsLabelsProcDisplay(GObj *gobj)
 	gDPSetCombineMode(gSYTaskmanDLHeads[0]++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
 	gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2);
 	gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0x57, 0x60, 0x88, 0xFF);
+#ifdef REGION_REMIX
+	/* Stages.asm 0x801321C4 lowers the bar to 134.5..140.5 (the fill macro takes whole pixels) and 0x801321D4 drops the
+	 * shadow of the name plate */
+	gDPFillRectangle(gSYTaskmanDLHeads[0]++, 160, 134, 320, 140);
+#else
 	gDPFillRectangle(gSYTaskmanDLHeads[0]++, 160, 128, 320, 134);
 	gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0x00, 0x00, 0x00, 0x33);
 	gDPFillRectangle(gSYTaskmanDLHeads[0]++, 194, 189, 268, 193);
+#endif
 	gDPPipeSync(gSYTaskmanDLHeads[0]++);
 	gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
 	gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_1CYCLE);
@@ -827,7 +851,13 @@ void mnMapsMakeLabels(void)
 	sobj->sprite.blue = 0xCC;
 
 	sobj->pos.x = 172.0F;
+#ifdef REGION_REMIX
+	/* Stages.asm 0x80132310 lowers the "Stage Select" image and 0x80132354 skips the yellow name plate */
+	sobj->pos.y = 128.0F;
+	return;
+#else
 	sobj->pos.y = 122.0F;
+#endif
 
 #ifdef PORT
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMapsFiles[2], llMNMapsPlateLeftSprite));
@@ -1091,48 +1121,6 @@ void mnMapsSetNamePosition(SObj *sobj, s32 gkind)
 }
 
 
-#ifdef REGION_REMIX
-#define nMNMapsRemixNameCenterX	230.0F
-#define nMNMapsRemixNameY	196.0F
-
-/* Remix stages have no pre-rendered nameplate; the name is typeset with the CSS font and centered on the plate. */
-static void mnMapsMakeRemixName(GObj *gobj, s32 gkind)
-{
-	char name[GRREMIX_NAME_MAX];
-	u32 color[3] = { 0x00, 0x00, 0x00 };
-	SObj *sobj;
-	SObj *last = NULL;
-	f32 left;
-	f32 right;
-
-	grRemixGetStageName(gkind, name);
-
-	for (sobj = SObjGetStruct(gobj); sobj != NULL; sobj = SObjGetNext(sobj))
-	{
-		last = sobj;
-	}
-	mnMapsMakeString(gobj, name, 0.0F, nMNMapsRemixNameY, color);
-
-	sobj = (last != NULL) ? SObjGetNext(last) : SObjGetStruct(gobj);
-
-	if (sobj == NULL)
-	{
-		return;
-	}
-	left = sobj->pos.x;
-	right = left;
-
-	for (last = sobj; last != NULL; last = SObjGetNext(last))
-	{
-		right = last->pos.x + last->sprite.width;
-	}
-	for (; sobj != NULL; sobj = SObjGetNext(sobj))
-	{
-		sobj->pos.x += nMNMapsRemixNameCenterX - ((left + right) * 0.5F);
-	}
-}
-#endif
-
 // 0x80132738
 void mnMapsMakeName(GObj *gobj, s32 gkind)
 {
@@ -1162,6 +1150,10 @@ void mnMapsMakeName(GObj *gobj, s32 gkind)
 #endif
 	};
 
+#ifdef REGION_REMIX
+	/* Stages.asm 0x80132738: no name plate, the stage name is text drawn by mnRemixStagePanelUpdate */
+	return;
+#endif
 #ifdef PORT
 	// Generic per-stage nameplate sprite (96x10 synthesized plate — PNG
 	// override or the compiled-in baked fallback). Same color-override pattern
@@ -1195,18 +1187,10 @@ void mnMapsMakeName(GObj *gobj, s32 gkind)
 	// an out-of-range gkind; leave the plate blank instead. (The old
 	// runtime-rasterized subtitle-font fallback was deleted with the baked
 	// plates — it rendered chewed, mis-kerned glyphs at fractional scales.)
-#ifdef REGION_REMIX
-	if (gkind > nGRKindBattleEnd)
-	{
-		mnMapsMakeRemixName(gobj, gkind);
-		return;
-	}
-#else
 	if (gkind > nGRKindBattleEnd)
 	{
 		return;
 	}
-#endif
 #endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMapsFiles[2], offsets[gkind]));
 	mnMapsSetNamePosition(sobj, gkind);
@@ -2619,6 +2603,12 @@ void mnMapsSaveSceneData(void)
 		{
 			gSCManagerSceneData.gkind = mnMapsGetGroundKind(0);
 		}
+#ifdef REGION_REMIX
+		if (mnRemixTournamentIsActive() != FALSE)
+		{
+			mnRemixTournamentApplyRandomHazardMode(gSCManagerSceneData.gkind);
+		}
+#endif
 #else
 		do
 		{
@@ -2651,6 +2641,7 @@ void mnMapsInitVars(void)
 	s32 saved_page;
 #ifdef REGION_REMIX
 	mnMapsBuildRemixPages();
+	mnRemixRouletteReset(&sMNMapsRemixRoulette);
 #endif
 	port_enhancement_music_select_reset(); // reset hook for music selection
 	sMNMapsStageSelectTextSObj = NULL; // reset our text tracking pointers
@@ -2749,6 +2740,145 @@ void mnMapsSaveSceneData2(void)
 	mnMapsSaveSceneData();
 }
 
+#ifdef REGION_REMIX
+#define nMNMapsRemixFGMToggle	163 /* FGM.menu.TOGGLE */
+#define nMNMapsRemixFGMScroll	164 /* FGM.menu.SCROLL */
+
+/** TRUE when any connected controller released one of the buttons this frame (Joypad.check_buttons_all_ with RELEASED). */
+static sb32 mnMapsRemixCheckReleased(u16 buttons)
+{
+	s32 player;
+
+	for (player = 0; player < ARRAY_COUNT(gSYControllerDevices); player++)
+	{
+		if ((scSubsysControllerCheckConnected(player) != FALSE) && (gSYControllerDevices[player].button_release & buttons))
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/** Slots of the current page the Roulette can land on: every unlocked stage, the RANDOM square left out (random_stage_roulette rerolls it). */
+static u32 mnMapsRemixGetRouletteSlotMask(void)
+{
+	u32 slot_mask = 0;
+	s32 slot;
+
+	for (slot = 0; slot < nMNMapsSlotCount; slot++)
+	{
+		s32 gkind = mnMapsGetGroundKind(slot);
+
+		if ((gkind != nMNMapsRandomGKind) && (mnMapsCheckLocked(gkind) == FALSE))
+		{
+			slot_mask |= 1U << slot;
+		}
+	}
+	return slot_mask;
+}
+
+/** One Roulette jump: the cursor goes to a random stage of the page and the name and emblem follow; the preview stays put. */
+static void mnMapsRemixMoveRouletteCursor(void)
+{
+	u32 slot_mask = mnMapsRemixGetRouletteSlotMask();
+	s32 slot_count = mnRemixRouletteCountSlots(slot_mask);
+
+	if (slot_count == 0)
+	{
+		mnRemixRouletteStop(&sMNMapsRemixRoulette);
+		return;
+	}
+	sMNMapsCursorSlot = mnRemixRouletteNthSlot(slot_mask, syUtilsRandTimeUCharRange(slot_count));
+	port_log("[mnmaps] roulette jumps to slot %d stage %d\n", (int)sMNMapsCursorSlot, (int)mnMapsGetGroundKind(sMNMapsCursorSlot));
+	func_800269C0_275C0(nMNMapsRemixFGMScroll);
+	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
+	mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
+}
+
+/** Ends the Roulette on the hovered stage and shows its preview (random_stage_roulette stop_roulette, then _update_preview). */
+static void mnMapsRemixStopRoulette(void)
+{
+	port_log("[mnmaps] roulette stops on slot %d\n", (int)sMNMapsCursorSlot);
+	mnRemixRouletteStop(&sMNMapsRemixRoulette);
+	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
+	mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
+	mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
+}
+
+/**
+ * One frame of a running Roulette. A or Start is swallowed, the preview shows the hovered stage and the stage is chosen on the
+ * next frame; B, L and C-down end the Roulette (B does not leave the screen); otherwise the timer decides if the cursor jumps.
+ */
+static void mnMapsRemixUpdateRoulette(sb32 *is_select_tapped, sb32 *is_back_tapped, sb32 is_l_or_cdown_released)
+{
+	if (*is_select_tapped != FALSE)
+	{
+		*is_select_tapped = FALSE;
+		port_log("[mnmaps] roulette picks slot %d on the next frame\n", (int)sMNMapsCursorSlot);
+		mnRemixRouletteMarkSelect(&sMNMapsRemixRoulette);
+		mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
+		return;
+	}
+	if ((*is_back_tapped != FALSE) || (is_l_or_cdown_released != FALSE))
+	{
+		*is_back_tapped = FALSE;
+		mnMapsRemixStopRoulette();
+		return;
+	}
+	if (mnRemixRouletteTick(&sMNMapsRemixRoulette) != FALSE)
+	{
+		mnMapsRemixMoveRouletteCursor();
+	}
+}
+
+/**
+ * Remix controls of the stage select on top of the vanilla ones (Stages.asm right_check_): the Roulette, L to switch the hazard
+ * mode and C-down to start the Roulette over RANDOM or to cycle the variants of a stage. Takes the A, Start and B taps away from
+ * the caller while the Roulette owns them.
+ */
+static void mnMapsRemixUpdateControls(sb32 *is_select_tapped, sb32 *is_back_tapped)
+{
+	s32 gkind = mnMapsGetGroundKind(sMNMapsCursorSlot);
+	sb32 is_cdown_released = mnMapsRemixCheckReleased(D_CBUTTONS);
+	sb32 is_l_released = mnMapsRemixCheckReleased(L_TRIG);
+
+	if (mnRemixRouletteTakeSelect(&sMNMapsRemixRoulette) != FALSE)
+	{
+		*is_select_tapped = TRUE;
+		return;
+	}
+	if (mnRemixRouletteIsActive(&sMNMapsRemixRoulette) != FALSE)
+	{
+		mnMapsRemixUpdateRoulette(is_select_tapped, is_back_tapped, (is_l_released != FALSE) || (is_cdown_released != FALSE));
+		return;
+	}
+	if ((is_l_released != FALSE) && (mnRemixTournamentIsActive() == FALSE))
+	{
+		if (mnRemixStagePanelToggleHazards(gkind, mnMapsGetDisplayGroundKind(sMNMapsCursorSlot)) != FALSE)
+		{
+			func_800269C0_275C0(nMNMapsRemixFGMToggle);
+		}
+		return;
+	}
+	if (is_cdown_released == FALSE)
+	{
+		return;
+	}
+	if (gkind == nMNMapsRandomGKind)
+	{
+		port_log("[mnmaps] roulette starts\n");
+		mnRemixRouletteStart(&sMNMapsRemixRoulette);
+		return;
+	}
+	if (mnRemixMapsCycleVariant(gkind) != FALSE)
+	{
+		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+		mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
+		mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
+	}
+}
+#endif
+
 // 0x80133D80
 void mnMapsFuncRun(GObj *gobj)
 {
@@ -2756,9 +2886,16 @@ void mnMapsFuncRun(GObj *gobj)
 	s32 stick_input;
 	s32 button_input;
 	s32 next_slot;
+#ifdef REGION_REMIX
+	sb32 is_select_tapped;
+	sb32 is_back_tapped;
+#endif
 
 	sMNMapsTotalTimeTics++;
 
+#ifdef REGION_REMIX
+	mnRemixStagePanelUpdate(sMNMapsCursorGObj, mnMapsGetGroundKind(sMNMapsCursorSlot), mnMapsGetDisplayGroundKind(sMNMapsCursorSlot), sMNMapsRemixSourcePage[sMNMapsCursorPage][sMNMapsCursorSlot]);
+#endif
 #ifdef PORT
 	// Page-slide animation has the floor — while sliding, block all input and
 	// don't run the rest of the per-frame logic. mnMapsTickScrollAnimation
@@ -2800,19 +2937,14 @@ void mnMapsFuncRun(GObj *gobj)
 		}
 
 #ifdef REGION_REMIX
-		if
-		(
-			(scSubsysControllerGetPlayerTapButtons(D_CBUTTONS)) &&
-			(mnMapsGetGroundKind(sMNMapsCursorSlot) != nMNMapsRandomGKind) &&
-			(mnRemixMapsCycleVariant(mnMapsGetGroundKind(sMNMapsCursorSlot)) != FALSE)
-		)
-		{
-			func_800269C0_275C0(nSYAudioFGMMenuScroll2);
-			mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
-			mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
-		}
-#endif
+		is_select_tapped = scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON);
+		is_back_tapped = scSubsysControllerGetPlayerTapButtons(B_BUTTON);
+		mnMapsRemixUpdateControls(&is_select_tapped, &is_back_tapped);
+
+		if (is_select_tapped != FALSE)
+#else
 		if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON))
+#endif
 		{
 			#ifdef PORT
 			s32 action = port_enhancement_music_select_handle_a(mnMapsGetBGMForGKind(mnMapsGetGroundKind(sMNMapsCursorSlot)));
@@ -2853,7 +2985,11 @@ void mnMapsFuncRun(GObj *gobj)
 			syTaskmanSetLoadScene();
 		}
 
+#ifdef REGION_REMIX
+		if (is_back_tapped != FALSE)
+#else
 		if (scSubsysControllerGetPlayerTapButtons(B_BUTTON))
+#endif
 		{
 			#ifdef PORT
 			if (port_enhancement_music_select_handle_b() == 1)
@@ -2861,6 +2997,9 @@ void mnMapsFuncRun(GObj *gobj)
 				// Cancel music selection and return to stage selection
 				func_800269C0_275C0(nSYAudioFGMMenuDenied); // Back sound
 				mnMapsSetCursorColor(0xFF, 0x00, 0x00);     // Turn cursor Red
+#ifdef REGION_REMIX
+				mnRemixStagePanelInvalidateCursorColor();
+#endif
 				mnMapsSetLabelState(FALSE); // Restore "Stage Select" text
 				return;
 			}
@@ -2879,7 +3018,11 @@ void mnMapsFuncRun(GObj *gobj)
 			}
 			syTaskmanSetLoadScene();
 		}
+#ifdef REGION_REMIX
+		if ((sMNMapsScrollWait == 0) && (mnRemixRouletteIsActive(&sMNMapsRemixRoulette) == FALSE))
+#else
 		if (sMNMapsScrollWait == 0)
+#endif
 		{
 			button_input = scSubsysControllerGetPlayerHoldButtons(U_JPAD | U_CBUTTONS);
 
@@ -3031,6 +3174,9 @@ void mnMapsFuncStart(void)
 #endif
 	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 	mnMapsMakeCursor();
+#ifdef REGION_REMIX
+	mnRemixStagePanelMake();
+#endif
 	mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 }
 

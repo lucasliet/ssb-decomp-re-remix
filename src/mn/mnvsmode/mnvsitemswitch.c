@@ -12,6 +12,9 @@ extern void *func_800269C0_275C0(u16 id);
 #ifdef REGION_REMIX
 #include "it/itremix/itremixspawn.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include <mn/mnvsmode/mnremixitemswitchlegend.h>
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -1061,6 +1064,10 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
     sb32 is_button;
     
     sMNVSItemSwitchTotalTimeTics++;
+
+#if defined(PORT) && defined(REGION_REMIX)
+    mnRemixItemSwitchLegendPut();
+#endif
     
     if (sMNVSItemSwitchTotalTimeTics >= 10)
     {
@@ -1325,6 +1332,9 @@ void mnVSItemSwitchFuncStart(void)
     mnVSItemSwitchMakeItemList();
     mnVSItemSwitchMakeCursor(sMNVSItemSwitchOptionSelectID);
     mnVSItemSwitchInitToggles();
+#if defined(PORT) && defined(REGION_REMIX)
+    mnRemixItemSwitchLegendMake();
+#endif
 
     mnItemSwitchMakeSubtitle(sMNVSItemSwitchOptionSelectID);
 }

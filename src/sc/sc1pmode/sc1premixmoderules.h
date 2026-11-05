@@ -19,6 +19,18 @@
 extern int sc1PRemixModeLeavesBonusCSSFor1P(int mode);
 
 /**
+ * Whether the crowd cheer that opens a Bonus stage or a 1P game run stays silent (Training.asm skip_crowd_cheer_._bonus):
+ * the "skip start cheer" toggle must be 2 (Training and Bonus), and the run must be Bonus 3, the Home-Run Contest or a
+ * Bonus practice entered from the Bonus 1/2 CSS. Runs of the 1P game itself keep the cheer.
+ *
+ * @param toggle_value Value of the skip start cheer toggle (0 off, 1 Training only, 2 Training and Bonus).
+ * @param mode Mode id (SC1PREMIX_MODE_*).
+ * @param is_bonus_practice Non-zero when the previous screen was the Bonus 1 or Bonus 2 CSS.
+ * @return Non-zero when the cheer is skipped.
+ */
+extern int sc1PRemixModeSkipsBonusStartCheer(int toggle_value, int mode, int is_bonus_practice);
+
+/**
  * Times the RNG is stepped when a mode leaves the Bonus 2 CSS, so the polygon fighters of the first match differ between runs:
  * one to 64 steps by the frame count of the screen.
  *

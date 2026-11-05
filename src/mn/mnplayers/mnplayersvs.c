@@ -29,7 +29,11 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixtoggle.h"
 #include "gm/gmremixstockmode.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixcssbonus.h"
+#include "mn/mnplayers/mnremixcssindicators.h"
+#include "mn/mnplayers/mnremixcssrules.h"
 #include "mn/mnplayers/mnremixcpulevel.h"
+#include "mn/mnplayers/mnremixcpulevelrules.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnplayers/mnremixtwelvecbcustom.h"
@@ -448,11 +452,19 @@ void func_ovl26_80132110(void)
 
 f32 mnPlayersVSRemixCellX(s32 slot)
 {
+	if (slot == MNREMIX_CSS_BONUS_BOOKEND_SLOT)
+	{
+		return (f32)MNREMIX_CSS_BOOKEND_X;
+	}
 	return (f32)(MN_PLAYERS_VS_REMIX_GRID_LEFT + (REMIX_CSS_PORTRAIT_WIDTH * (slot % REMIX_CSS_NUM_COLUMNS)));
 }
 
 f32 mnPlayersVSRemixCellY(s32 slot)
 {
+	if (slot == MNREMIX_CSS_BONUS_BOOKEND_SLOT)
+	{
+		return (f32)MNREMIX_CSS_BOOKEND_Y;
+	}
 	return (f32)(MN_PLAYERS_VS_REMIX_GRID_TOP + (REMIX_CSS_PORTRAIT_HEIGHT * (slot / REMIX_CSS_NUM_COLUMNS)));
 }
 
@@ -479,8 +491,8 @@ s32 mnPlayersVSRemixGetFighterKind(s32 slot)
 	return kRemixCssSlotIds[slot];
 }
 
-/* Inverse of mnPlayersVSRemixGetFighterKind. A D-pad variant maps to the cell of the fighter it varies; other fkinds
- * without a grid cell map to slot 0. */
+/* Inverse of mnPlayersVSRemixGetFighterKind. A D-pad variant maps to the cell of the fighter it varies, a bonus fighter to
+ * the bonus bookend (portrait_id_table override BOOKEND_BONUS_PORTRAIT); other fkinds without a grid cell map to slot 0. */
 s32 mnPlayersVSRemixGetPortrait(s32 fkind)
 {
 	s32 slot, variant_slot;
@@ -502,7 +514,26 @@ s32 mnPlayersVSRemixGetPortrait(s32 fkind)
 			}
 		}
 	}
+	for (slot = 0; slot < REMIX_CSS_NUM_BONUS_CHARS; slot++)
+	{
+		if (kRemixCssBonusIds[slot] == fkind)
+		{
+			return MNREMIX_CSS_BONUS_BOOKEND_SLOT;
+		}
+	}
 	return 0;
+}
+
+/* Width and height of the cell of a portrait slot; the bonus bookend is narrower and taller than a grid cell (CharacterSelect.asm
+ * fix_right_boundary_check_ and fix_bottom_boundary_check_). */
+static f32 mnPlayersVSRemixCellWidth(s32 slot)
+{
+	return (slot == MNREMIX_CSS_BONUS_BOOKEND_SLOT) ? (f32)MNREMIX_CSS_BOOKEND_WIDTH : (f32)REMIX_CSS_PORTRAIT_WIDTH;
+}
+
+static f32 mnPlayersVSRemixCellHeight(s32 slot)
+{
+	return (slot == MNREMIX_CSS_BONUS_BOOKEND_SLOT) ? (f32)MNREMIX_CSS_BOOKEND_HEIGHT : (f32)REMIX_CSS_PORTRAIT_HEIGHT;
 }
 
 void mnPlayersVSMakeRemixPortrait(s32 slot)
@@ -1374,10 +1405,14 @@ void mnPlayersVSMakePortraitAll(void)
 		}
 		return;
 	}
+	mnRemixCssBonusReset();
+	mnRemixCssIndicatorsReset();
+
 	for (slot = 0; slot < REMIX_CSS_NUM_SLOTS; slot++)
 	{
 		mnPlayersVSMakeRemixPortrait(slot);
 	}
+	mnRemixCssBonusMakeBookend(sMNPlayersVSFiles[11], 18, 27);
 #else
 	s32 i;
 
@@ -3761,6 +3796,20 @@ void mnPlayersVSMakePortraitFlash(s32 player)
 	gobj->user_data.s = player;
 	gcAddGObjProcess(gobj, mnPlayersVSPortraitFlashThreadUpdate, nGCProcessKindThread, 1);
 
+#ifdef REGION_REMIX
+	if ((gmRemixTwelveCBIsActive() == FALSE) && (portrait == MNREMIX_CSS_BONUS_BOOKEND_SLOT))
+	{
+		/* set_white_flash_texture: the bookend flash image sits 0xC60 after the bookend image and takes its place and scale */
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[11], REMIX_CSS_BONUS_BOOKEND_OFFSET + 0x0C60));
+		sobj->pos.x = MNREMIX_CSS_BOOKEND_X;
+		sobj->pos.y = MNREMIX_CSS_BOOKEND_Y;
+		sobj->sprite.scalex = MNREMIX_CSS_BONUS_BOOKEND_SCALE_X;
+		sobj->sprite.scaley = MNREMIX_CSS_BONUS_BOOKEND_SCALE_Y;
+		sobj->sprite.attr &= ~SP_FASTCOPY;
+		sobj->sprite.attr |= SP_TRANSPARENT;
+		return;
+	}
+#endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[5], llMNPlayersPortraitsWhiteSquareSprite));
 #ifdef REGION_REMIX
 	if (gmRemixTwelveCBIsActive() != FALSE)
@@ -4109,6 +4158,11 @@ void mnPlayersVSMakeHandicapLevelValue(s32 player)
 		mnRemixVSMakeCPULevelTens(gobj, player, sMNPlayersVSFiles[1]);
 		return;
 	}
+	if ((sMNPlayersVSSlots[player].pkind == nFTPlayerKindMan) && (mnRemixHandicapNeedsIcon(value) != 0))
+	{
+		mnRemixCssMakeHandicapIcon(gobj, value, (mnPlayersVSGetPanelIndex(player) * 69) + 35, sMNPlayersVSFiles[11], sMNPlayersVSFiles[1]);
+		return;
+	}
 #endif
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[1], offsets[value]));
 	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 67;
@@ -4434,7 +4488,13 @@ s32 mnPlayersVSGetRemixPuckFighterKind(s32 player)
 
 	if (slot < 0)
 	{
-		return nFTKindNull;
+		if (mnRemixCssBonusBookendContains((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12) == FALSE)
+		{
+			return nFTKindNull;
+		}
+		fkind = mnRemixCssBonusGetFighterKind(player);
+
+		return (mnPlayersVSCheckFighterLocked(fkind) != FALSE) ? nFTKindNull : mnRemixVariantGetFighterKind(player, fkind);
 	}
 	fkind = mnPlayersVSRemixGetFighterKind(slot);
 
@@ -4791,6 +4851,31 @@ s32 mnPlayersVSCheckBackInRange(GObj *gobj)
 	else return FALSE;
 }
 
+#ifdef REGION_REMIX
+/**
+ * Z and R held scroll the bonus fighters while the token held by the cursor of `player` is over the bonus bookend
+ * (CharacterSelect.asm check_variant_input_ _shared). Any other frame rearms the repeat timer of the cursor.
+ */
+static void mnPlayersVSRemixUpdateBonusScroll(s32 player)
+{
+	s32 token = sMNPlayersVSSlots[player].held_player;
+	sb32 is_over_bookend;
+
+	if (token < 0)
+	{
+		mnRemixCssBonusScroll(player, player, 0, FALSE);
+		return;
+	}
+	is_over_bookend = ((sMNPlayersVSSlots[token].fkind != nFTKindNull) &&
+	                   (mnPlayersVSRemixGetPortrait(sMNPlayersVSSlots[token].fkind) == MNREMIX_CSS_BONUS_BOOKEND_SLOT)) ? TRUE : FALSE;
+
+	if (mnRemixCssBonusScroll(token, player, gSYControllerDevices[player].button_hold, is_over_bookend) != FALSE)
+	{
+		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+	}
+}
+#endif
+
 // 0x801382E0
 void mnPlayersVSCursorProcUpdate(GObj *gobj)
 {
@@ -4927,6 +5012,7 @@ classic_arrows_consumed:;
 		mnPlayersVSTwelveCBUpdateCustom(player);
 		mnPlayersVSTwelveCBUpdateManualStocks(player);
 	}
+	else mnPlayersVSRemixUpdateBonusScroll(player);
 
 	if
 	(
@@ -4944,7 +5030,11 @@ classic_arrows_consumed:;
 		mnPlayersVSSelectFighterPuck(player, nMNPlayersSelectButtonA);
 	}
 #endif
+#ifdef REGION_REMIX
+	if (mnRemixCssCostumeButtonsActive(sMNPlayersVSIsTeamBattle, sMNPlayersVSSlots[player].is_fighter_selected, sMNPlayersVSSlots[player].held_player) != FALSE)
+#else
 	if (sMNPlayersVSIsTeamBattle == FALSE)
+#endif
 	{
 		if
 		(
@@ -5042,8 +5132,8 @@ void mnPlayersVSCenterPuckInPortrait(GObj *gobj, s32 fkind)
 		SObjGetStruct(gobj)->pos.y = mnRemixTwelveCBLayoutCellY(portrait) + ((MNREMIX_TCB_CELL_SIZE / 2) - 12);
 		return;
 	}
-	SObjGetStruct(gobj)->pos.x = mnPlayersVSRemixCellX(portrait) + ((REMIX_CSS_PORTRAIT_WIDTH / 2) - 13);
-	SObjGetStruct(gobj)->pos.y = mnPlayersVSRemixCellY(portrait) + ((REMIX_CSS_PORTRAIT_HEIGHT / 2) - 12);
+	SObjGetStruct(gobj)->pos.x = mnPlayersVSRemixCellX(portrait) + ((mnPlayersVSRemixCellWidth(portrait) / 2) - 13);
+	SObjGetStruct(gobj)->pos.y = mnPlayersVSRemixCellY(portrait) + ((mnPlayersVSRemixCellHeight(portrait) / 2) - 12);
 #else
 	if (portrait >= 6)
 	{
@@ -5073,7 +5163,7 @@ s32 mnPlayersVSRandFighterKind(GObj *gobj)
 	}
 	do
 	{
-		fkind = mnRemixRandomResolveFighterKind(kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)]);
+		fkind = mnRemixRandomPickFighterKind();
 	}
 	while ((fkind == nFTKindNull) || (mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE));
 #else
@@ -5450,8 +5540,8 @@ void mnPlayersVSPuckAdjustPortraitEdge(s32 player)
 	sb32 is_twelvecb = (gmRemixTwelveCBIsActive() != FALSE) ? TRUE : FALSE;
 	f32 portrait_edge_x = is_twelvecb ? mnRemixTwelveCBLayoutCellX(portrait) : mnPlayersVSRemixCellX(portrait);
 	f32 portrait_edge_y = is_twelvecb ? mnRemixTwelveCBLayoutCellY(portrait) : mnPlayersVSRemixCellY(portrait);
-	f32 portrait_width = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : REMIX_CSS_PORTRAIT_WIDTH;
-	f32 portrait_height = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : REMIX_CSS_PORTRAIT_HEIGHT;
+	f32 portrait_width = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : mnPlayersVSRemixCellWidth(portrait);
+	f32 portrait_height = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : mnPlayersVSRemixCellHeight(portrait);
 #else
 	f32 portrait_edge_x = ((portrait >= 6) ? portrait - 6 : portrait) * 45 + 25;
 	f32 portrait_edge_y = ((portrait >= 6) ? 1 : 0) * 43 + 36;
@@ -5620,7 +5710,10 @@ void mnPlayersVSCostumeSyncProcUpdate(GObj *gobj)
 		{
 			if (sMNPlayersVSSlots[i].fkind != nFTKindNull)
 			{
+#ifndef REGION_REMIX
+				/* Costumes.asm disable_update (0x80139A84): Remix keeps the shade picked with the C buttons in team battle */
 				sMNPlayersVSSlots[i].shade = mnPlayersVSGetShade(i);
+#endif
 				ftParamInitAllParts(sMNPlayersVSSlots[i].player, sMNPlayersVSSlots[i].costume, sMNPlayersVSSlots[i].shade);
 			}
 		}
@@ -5673,6 +5766,7 @@ void mnPlayersVSSpotlightProcUpdate(GObj *gobj)
 #endif
 			DObjGetStruct(gobj)->scale.vec.f.x = sz;
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;
+			/* The ROM stores y twice (swc1 to DObj+0x44 at 0x80139C54 and 0x80139C70) and never z; Remix does not patch these stores */
 			DObjGetStruct(gobj)->scale.vec.f.y = sz;
 		}
 #else
@@ -6225,6 +6319,36 @@ void mnPlayersVSPauseSlotProcesses(void)
 	}
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Brings the variant indicators (D-pad, variant images, flags) and the bonus scroll hint of the four panels up to date
+ * (CharacterSelect.asm update_variant_indicators_ and draw_bonus_scroll_indicators_, which run every frame).
+ */
+static void mnPlayersVSRemixIndicatorsFrameUpdate(void)
+{
+	MNRemixCssPanelState states[GMCOMMON_PLAYERS_MAX];
+	s32 player;
+
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		return;
+	}
+	for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)
+	{
+		sb32 is_token_held = ((sMNPlayersVSSlots[player].holder_player != GMCOMMON_PLAYERS_MAX) && (sMNPlayersVSSlots[player].is_selected == FALSE)) ? TRUE : FALSE;
+		s32 fkind = (sMNPlayersVSSlots[player].pkind == nFTPlayerKindNot) ? nFTKindNull : sMNPlayersVSSlots[player].fkind;
+
+		states[player].fkind = fkind;
+		states[player].is_selected = sMNPlayersVSSlots[player].is_selected;
+		states[player].is_token_held = is_token_held;
+
+		mnRemixCssBonusUpdateHint(player, ((is_token_held != FALSE) && (fkind != nFTKindNull) &&
+		                                   (mnPlayersVSRemixGetPortrait(fkind) == MNREMIX_CSS_BONUS_BOOKEND_SLOT)) ? TRUE : FALSE, sMNPlayersVSFiles[0]);
+	}
+	mnRemixCssIndicatorsUpdate(sMNPlayersVSFiles[11], states, GMCOMMON_PLAYERS_MAX);
+}
+#endif
+
 // 0x8013A920
 #if defined(PORT) && defined(REGION_REMIX)
 /**
@@ -6277,6 +6401,7 @@ void mnPlayersVSFuncRun(GObj *gobj)
 	s32 *gkinds;
 #if defined(PORT) && defined(REGION_REMIX)
 	mnPlayersVSTwelveCBFrameUpdate();
+	mnPlayersVSRemixIndicatorsFrameUpdate();
 #endif
 
 	// lock game rules UI when competitive ruleset is enabled

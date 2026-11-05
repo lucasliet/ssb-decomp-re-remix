@@ -1,16 +1,17 @@
 /**
  * gmremixmenumusic.c - Menu Music toggle of the Remix settings (BGM.asm alt_menu_music_, Toggles.asm entry_menu_music).
  *
- * Not ported: RANDOM ALL picks (BGM.random_music_ without the Random Music gate, RANDOM ALL plays default_bgm), the GameBoy
- * easter egg when no stage track is on, and the menu tracks with no port id yet (BOMBERMAN 64 and SONIC R use
- * assembly-time MIDI ids). Those fall back to default_bgm. The "do not restart the track already playing" check
- * (BGM.safe_id) is ported in gmRemixMenuMusicKeepsCurrent.
+ * RANDOM ALL picks from the Random Music list without its gate (BGM.asm 635-668); the custom MIDI entries of that list
+ * have assembly-time ids with no symbol in remix_symbols.h and are not listed (grremixrandommusic.c), so the pick covers
+ * the 16 stage and menu tracks. The "do not restart the track already playing" check (BGM.safe_id) is ported in
+ * gmRemixMenuMusicKeepsCurrent.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixmenumusic.h"
 #include "gm/gmremixtoggle.h"
+#include "gr/grremix/grremixrandommusic.h"
 #include <gm/gmsound.h>
 #include <sys/audio.h>
 #include <sys/utils.h>
@@ -81,6 +82,11 @@ static const u32 sMenuMusicTrackBGM[] =
     GMREMIX_BGM_MAIN_BOMBERMAN,
     GMREMIX_BGM_MAIN_SONIC_R,
 };
+
+/* BGM.asm 649-653: with no track on in the Random Music list RANDOM ALL plays one of four hidden GameBoy songs. */
+#define GMREMIX_MENU_MUSIC_GAMEBOY_SONGS 4
+#define GMREMIX_BGM_GAMEBOY_FIRST 0xA2
+#define GMREMIX_MENU_MUSIC_NO_RANDOM_TRACK 0xFFFFFFFFU
 
 /* Title screen chance roll out of 100, BGM.asm CHANCE_64 / CHANCE_MELEE / CHANCE_MENU2 / CHANCE_BRAWL. */
 #define GMREMIX_MENU_MUSIC_CHANCE_ROLL 100
@@ -154,6 +160,23 @@ static u32 gmRemixMenuMusicRandomTrack(s32 value, u32 default_bgm)
         return default_bgm;
     }
     return gmRemixMenuMusicTrackOf(random_value, default_bgm);
+}
+
+/**
+ * Picks the RANDOM ALL track: a track of the Random Music list ignoring the Random Music toggle (BGM.asm random_music_
+ * with menu_randomizing_all set), or one of the hidden GameBoy songs when the list is empty (BGM.asm _random_song).
+ *
+ * @return The BGM id to play.
+ */
+static u32 gmRemixMenuMusicRandomAllTrack(void)
+{
+    u32 bgm = grRemixRandomMusicPickForced(GMREMIX_MENU_MUSIC_NO_RANDOM_TRACK);
+
+    if (bgm != GMREMIX_MENU_MUSIC_NO_RANDOM_TRACK)
+    {
+        return bgm;
+    }
+    return GMREMIX_BGM_GAMEBOY_FIRST + syUtilsRandIntRange(GMREMIX_MENU_MUSIC_GAMEBOY_SONGS);
 }
 
 /**
@@ -247,7 +270,7 @@ static u32 gmRemixMenuMusicChoose(u32 default_bgm, sb32 from_title_screen)
     }
     if (value == GMREMIX_MENU_MUSIC_RANDOM_ALL)
     {
-        return default_bgm;
+        return gmRemixMenuMusicRandomAllTrack();
     }
     return gmRemixMenuMusicTrackOf(value, default_bgm);
 }

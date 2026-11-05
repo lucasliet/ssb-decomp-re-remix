@@ -449,13 +449,15 @@ sb32 ftRemixPerfectShieldItem(GObj *item_gobj);
 /* Japanese.asm settings, ftremix/ftremixhitlag.c, ftremixshieldstun.c, ftremixjstunsleep.c and ftremixjapanesesounds.c:
  * the Hitlag formula of ftParamGetHitLag (vanilla_add is the vanilla constant of the formula), the Shield Stun frames of
  * ftCommonGuardSetOffSetStatus, the Fura Fura and Fura Sleep breakout waits, and the fgm ids of PlayFGM motion events
- * (ftMainParseMotionEvent), projectile hits (ftMainUpdateDamageStatWeapon) */
+ * (ftMainParseMotionEvent), projectile hits (ftMainUpdateDamageStatWeapon), and the hit sound a weapon (wpManagerMakeWeapon,
+ * japanese_sfx_link_boomerang_collide_) or an item (itManagerMakeItem, japanese_sfx_link_bomb_collide_) gets at spawn */
 s32 ftRemixHitlagTics(s32 damage, f32 hitlag_mul, f32 vanilla_add);
 f32 ftRemixShieldStunFrames(FTStruct *fp, f32 vanilla_frames);
 s32 ftRemixFuraFuraBreakoutWait(s32 breakout_wait);
 s32 ftRemixFuraSleepBreakoutWait(s32 breakout_wait);
 u16 ftRemixJapaneseMotionSoundFgm(FTStruct *fp, u32 value);
 u16 ftRemixJapaneseProjectileSoundFgm(GObj *owner_gobj, u16 fgm_id);
+u16 ftRemixJapaneseItemSoundFgm(GObj *parent_gobj, u32 flags, u16 fgm_id);
 
 /* Charge Smashes setting (Toggles.asm entry_charged_smashes), ftremix/ftremixchargesmash.c (ChargeSmashAttacks.asm): the
  * logic run on action change (ftMainSetStatus), the wait hold of ftAnimEndSetWait, and the shake offset of ftDisplayMainProcDisplay
@@ -618,12 +620,27 @@ sb32 ftRemixTauntButtonAllowsJump(FTStruct *fp, u16 pressed);
 /* Remix CSS panel Start With and Taunt Item, ftremix/ftremixstartitem.c (Item.asm match_begin_with_item_,
  * respawn_with_item_, taunt_spawn_item_): the item given at the GO hook, on respawn and on a taunt */
 void ftRemixStartItemMatchBegin(GObj *fighter_gobj);
+void ftRemixStartItemTrainingBegin(void);
 void ftRemixStartItemRespawn(GObj *fighter_gobj);
 void ftRemixTauntItemSpawn(GObj *fighter_gobj);
 
 /* Remix CSS panel D-pad Control, ftremix/ftremixdpad.c (DpadControl.asm css_cursor_and_dpad_controls_, set_R_macro): the
  * controller sample a human fighter reads with Stick Swap, Stickless or their J variants (ftMainProcUpdateInterrupt) */
 SYController *ftRemixDpadControlController(FTStruct *fp, SYController *controller);
+
+/* Remix CSS panel D-pad Map, ftremix/ftremixdpadmap.c (DpadFunctions.asm dpad_macro_check_ and dpad_macro_check_held_): the
+ * Smash, Tilt and Special macros that turn a D-pad press into a button press and a stick position (ftMainProcUpdateInterrupt) */
+void ftRemixDpadMapApplyPress(FTStruct *fp, u16 *button_hold, u16 *button_tap_mask);
+u16 ftRemixDpadMapHeldButtons(FTStruct *fp, u16 button_hold);
+
+/* Remix CSS panel D-pad Control actions, ftremix/ftremixdpad.c (DpadControl.asm check_jump_type_idle_,
+ * check_jump_type_running_, dash_attack_check_, set_shield_mask_): the stick jump, run up smash/special and dash attack of
+ * Stick Swap and Stickless (ftcommonkneebend.c, ftcommonrun.c, ftcommonattackdash.c), and the shield and taunt masks
+ * (ftManagerMakeFighter) */
+sb32 ftRemixDpadControlDisablesStickJump(FTStruct *fp);
+sb32 ftRemixDpadControlHandlesRunStickUp(FTStruct *fp);
+sb32 ftRemixDpadControlSkipsDashAttackOf(FTStruct *fp);
+void ftRemixDpadControlSetButtonMasks(FTStruct *fp);
 
 /* Remix CSS panel Handicap, ftremix/ftremixhandicap.c (Handicap.asm use_handicap_): the handicap byte of a fighter at
  * creation, the panel value of a CPU port when it is not 0, vanilla otherwise */
@@ -633,6 +650,7 @@ u8 ftRemixHandicapGetFighterValue(FTStruct *fp, u8 vanilla_handicap);
  * tag sprite offset of the battle indicator, and TRUE when the indicator stays shown */
 intptr_t ifRemixPlayerTagSpriteOffset(s32 player, intptr_t vanilla_offset);
 sb32 ifRemixPlayerTagAlwaysShown(s32 player);
+void ifRemixPlayerTagDrawName(s32 player, f32 center_x, f32 top_y, u32 rgba);
 
 /* Remix CSS panel Input Display, ftremix/ftremixinputdisplay.c (InputDisplay.asm update_input_display_): the controller
  * sample of a fighter sent to the port overlay (ftMainProcUpdateInterrupt), and the overlay clear at each scene change

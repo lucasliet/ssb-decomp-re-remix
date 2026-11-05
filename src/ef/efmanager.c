@@ -6,6 +6,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "sc/sc1pmode/sc1premixenemy.h"
 #include "ft/ftremix/ftremixsizeness.h"
 #include "if/ifremixannouncer.h"
 #endif
@@ -4280,7 +4281,11 @@ GObj* efManagerShieldMakeEffect(GObj *fighter_gobj)
 
     DObjGetStruct(effect_gobj)->user_data.p = fp->joints[nFTPartsJointYRotN];
 
+#ifdef REGION_REMIX
+    ep->effect_vars.shield.player = sc1PRemixEnemyShieldPlayer(fp);
+#else
     ep->effect_vars.shield.player = fp->player;
+#endif
     ep->effect_vars.shield.is_damage_shield = FALSE;
 
     return effect_gobj;

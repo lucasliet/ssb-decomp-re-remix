@@ -67,6 +67,9 @@ u32 grRemixGetStageIconOffset(s32 gkind);
 /** Display name of the stage (Stages.string_table), upper-cased and reduced to the CSS font charset (A-Z ' . % space). */
 void grRemixGetStageName(s32 gkind, char *out_name);
 
+/** Stage name as the Remix stage select prints it (Stages.string_table), unfiltered; empty when the stage has none. */
+void grRemixGetStageTitle(s32 gkind, char *out_title);
+
 /** Preview model scale (Stages.zoom_table). */
 f32 grRemixGetPreviewZoom(s32 gkind);
 

@@ -7,6 +7,9 @@
 #include <port_log.h>
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "remix/remix_debug.h"
+#include "gm/gmremixtoggle.h"
+#include "sc/sc1pmode/sc1premixmoderules.h"
+#include <sc/scene.h>
 
 s32 gSC1PRemixMode = SC1PREMIX_MODE_STANDARD;
 
@@ -47,6 +50,15 @@ s32 sc1PRemixModeGet(void)
 sb32 sc1PRemixModeIs(s32 mode)
 {
     return (sc1PRemixModeGet() == mode) ? TRUE : FALSE;
+}
+
+sb32 sc1PRemixIsBonusStartCheerSkipped(void)
+{
+    s32 scene_prev = gSCManagerSceneData.scene_prev;
+    sb32 is_bonus_practice = ((scene_prev == nSCKind1PBonus1Players) || (scene_prev == nSCKind1PBonus2Players)) ? TRUE : FALSE;
+    s32 toggle_value = gmRemixToggle(skip_start_cheer);
+
+    return (sc1PRemixModeSkipsBonusStartCheer(toggle_value, sc1PRemixModeGet(), is_bonus_practice) != 0) ? TRUE : FALSE;
 }
 
 #endif

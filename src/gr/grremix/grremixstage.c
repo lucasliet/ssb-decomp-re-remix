@@ -129,6 +129,24 @@ void grRemixGetStageName(s32 gkind, char *out_name)
     out_name[count] = '\0';
 }
 
+void grRemixGetStageTitle(s32 gkind, char *out_title)
+{
+    u32 text = grRemixReadWord(REMIX_SYM_Stages__string_table + (gkind * 4));
+    s32 count = 0;
+
+    while ((text != 0) && (count < (GRREMIX_NAME_MAX - 1)))
+    {
+        s32 c = grRemixReadByte(text + count);
+
+        if (c == 0)
+        {
+            break;
+        }
+        out_title[count++] = c;
+    }
+    out_title[count] = '\0';
+}
+
 f32 grRemixGetPreviewZoom(s32 gkind)
 {
     union

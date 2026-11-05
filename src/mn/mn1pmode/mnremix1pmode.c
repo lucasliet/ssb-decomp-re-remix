@@ -11,6 +11,7 @@
 #include "mn/mn1pmode/mn1pmode.h"
 #include "mn/mn1pmode/mnremix1pmode.h"
 #include "sc/sc1pmode/sc1premixmode.h"
+#include "sc/sc1pmode/sc1premixenemy.h"
 
 #define MNREMIX_1PMODE_BIG_TAB_PIECES 16
 #define MNREMIX_1PMODE_PAGE_1_LAST 5
@@ -162,6 +163,7 @@ void mnRemix1PModeSelect(s32 option, s32 player)
 
     gSC1PRemixMode = row->mode;
     gMNRemix1PModePage = row->page;
+    sc1PRemixEnemyClear();
 
     gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
     gSCManagerSceneData.scene_curr = mnRemix1PModeGetScene(row);

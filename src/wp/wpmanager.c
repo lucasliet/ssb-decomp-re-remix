@@ -2,6 +2,9 @@
 #include <sys/netsync.h>
 #include <it/item.h>
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 #ifdef PORT
 #include <config.h>
@@ -238,7 +241,11 @@ GObj* wpManagerMakeWeapon(GObj *parent_gobj, WPDesc *wp_desc, Vec3f *spawn_pos, 
     wp->attack_coll.shield_damage = attr->shield_damage;
 #endif
 
+#ifdef REGION_REMIX
+    wp->attack_coll.fgm_id = ftRemixJapaneseProjectileSoundFgm(wp->owner_gobj, attr->sfx);
+#else
     wp->attack_coll.fgm_id = attr->sfx;
+#endif
 
     wp->attack_coll.priority = attr->priority;
 

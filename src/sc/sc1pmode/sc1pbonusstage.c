@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1premixmode.h"
+#endif
 #ifdef PORT
 extern void port_coroutine_yield(void);
 #endif
@@ -1219,7 +1222,15 @@ void sc1PBonusStageFuncStart(void)
 	sc1PBonusStageMakeTaskSprites();
 	sc1PBonusStageMakeInterface();
 	mpCollisionSetPlayBGM();
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Training.asm skip_crowd_cheer_ _bonus (patch 0x8018E868). */
+	if (sc1PRemixIsBonusStartCheerSkipped() == FALSE)
+	{
+		func_800269C0_275C0(nSYAudioVoicePublicExcited);
+	}
+#else
 	func_800269C0_275C0(nSYAudioVoicePublicExcited);
+#endif
 	sc1PBonusStageMakeTimer();
 	sc1PBonusStageInitCamera();
 

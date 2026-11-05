@@ -367,7 +367,11 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
 #else
     ip->attack_coll.shield_damage    = attr->shield_damage;
 #endif
+#ifdef REGION_REMIX
+    ip->attack_coll.fgm_id           = ftRemixJapaneseItemSoundFgm(parent_gobj, flags, attr->hit_sfx);
+#else
     ip->attack_coll.fgm_id           = attr->hit_sfx;
+#endif
     ip->attack_coll.priority         = attr->priority;
     ip->attack_coll.can_rehit_item   = attr->can_rehit_item;
     ip->attack_coll.can_rehit_fighter= attr->can_rehit_fighter;

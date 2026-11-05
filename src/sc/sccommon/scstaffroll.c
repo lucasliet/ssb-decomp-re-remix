@@ -17,7 +17,6 @@ extern void *func_800269C0_275C0(u16 id);
 // 0x80135260
 s32 dSCStaffrollNameCharacters[/* */] =
 {
-/* REMIX-TODO(credits-glyphs): scroll glyphs 0x50-0x61 (digits, _ ! - / * ( ) @ ~) are open. Credits.asm add_new_character gives size and offset, and the texture is in File.REMIX_CREDITS (0xDF1, reloc_misc/file_3569), but the offsets 0x7958-0x88B8 hit encoded name words, not texture bytes. tools/gen_remix_credits.py also maps these glyphs to spaces. See docs/remix/notes/f14_credits_left.md. */
 #ifdef REGION_REMIX
 	#include "credits/remix/staff.credits.encoded"
 #else
@@ -432,7 +431,28 @@ SCStaffrollSprite dSCStaffrollNameAndJobSpriteInfo[/* */] =
 	{  8, 11, llSCStaffrollNameAndJobCommaImage },
 	{  8, 11, llSCStaffrollNameAndJobApostropheImage },
 #if defined(REGION_US)
-	{ 16, 22, llSCStaffrollNameAndJob4Image }
+	{ 16, 22, llSCStaffrollNameAndJob4Image },
+#endif
+#ifdef REGION_REMIX
+	/* Credits.asm add_new_character (62-76): glyph ids 0x50-0x61 are appended to the vanilla staff roll file (offsets in that file, width and height as in the asm). Ids 0x38-0x4F stay empty. */
+	[0x50] = { 0x10, 0x16, 0x7958 }, // 0
+	{ 0x0C, 0x16, 0x7A18 }, // 1
+	{ 0x10, 0x16, 0x7AE0 }, // 2
+	{ 0x10, 0x16, 0x7BA8 }, // 3
+	{ 0x12, 0x18, 0x7C70 }, // _
+	{ 0x10, 0x16, 0x7E10 }, // 5
+	{ 0x10, 0x16, 0x7ED8 }, // 6
+	{ 0x10, 0x16, 0x7FA0 }, // 7
+	{ 0x10, 0x16, 0x8068 }, // 8
+	{ 0x10, 0x16, 0x8130 }, // 9
+	{ 0x08, 0x16, 0x81F8 }, // !
+	{ 0x0A, 0x16, 0x82C0 }, // -
+	{ 0x10, 0x16, 0x8388 }, // /
+	{ 0x0B, 0x16, 0x8470 }, // *
+	{ 0x0C, 0x1F, 0x8538 }, // (
+	{ 0x0C, 0x1F, 0x8640 }, // )
+	{ 0x14, 0x16, 0x8748 }, // @
+	{ 0x0F, 0x16, 0x88B8 }  // ~ (a tilde a)
 #endif
 };
 
@@ -541,7 +561,9 @@ Gfx dSCStaffrollTextBoxDisplayList[/* */] =
 s32 sSCStaffrollPad0x8013A7D0[2];
 
 // 0x8013A7D8
-#if defined(REGION_US)
+#if defined(REGION_REMIX)
+Gfx *sSCStaffrollNameAndJobDisplayLists[0x62];
+#elif defined(REGION_US)
 Gfx *sSCStaffrollNameAndJobDisplayLists[56];
 #else
 Gfx *sSCStaffrollNameAndJobDisplayLists[55];
@@ -1472,7 +1494,7 @@ void scStaffrollFuncRun(GObj *gobj)
 			if (sSCStaffrollRollSpeed == 0.0037500001F)
 			{
 #ifdef REGION_REMIX
-				/* REMIX-TODO(credits-speed-assist): open. Credits.asm:1310 (remix_credits_speed_assist_) simulates Start when the 2nd player tag is "afk", the name id is 0x55 (sSCStaffrollNameID) and the speed is not the normal one. The port keeps no custom tag names (src/if/ifremixplayertag.c), and the boot tag 2 is empty in remix.z64. See docs/remix/notes/f14_credits_left.md. */
+				/* n/a: Credits.asm:1310 (remix_credits_speed_assist_) only simulates Start when the second player tag is "afk" (string_table + 8 compared with 0x61666B00 at 1318-1321). The port keeps no custom player tags (if/ifremixplayertag.c), so the condition never holds. */
 				sSCStaffrollRollSpeed = 0.11F;
 #else
 				sSCStaffrollRollSpeed = 0.049999997F;
@@ -2123,6 +2145,14 @@ void scStaffrollInitNameAndJobDisplayLists(void)
 
 	for (i = 0; i < (ARRAY_COUNT(sSCStaffrollNameAndJobDisplayLists) + ARRAY_COUNT(dSCStaffrollNameAndJobSpriteInfo)) / 2; i++)
 	{
+#ifdef REGION_REMIX
+		if (dSCStaffrollNameAndJobSpriteInfo[i].width == 0)
+		{
+			sSCStaffrollNameAndJobDisplayLists[i] = NULL;
+
+			continue;
+		}
+#endif
 		vtx_base = vtx_curr = syTaskmanMalloc(sizeof(Vtx) * 4, 0x8);
 
 		for (j = 0; j < 4; j++, vtx_curr++)

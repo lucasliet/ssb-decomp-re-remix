@@ -11,6 +11,14 @@
  */
 extern s32 gmRemixPracticeStartStage(s32 player, s32 stage);
 
+/* Practice state of a 1P run (Practice_1P.asm practice_active) and the L retry; see gmremixpractice.c. */
+extern void gmRemixPracticeBegin(s32 player);
+extern sb32 gmRemixPracticeIsActive(void);
+extern sb32 gmRemixPracticeTryRetryByHold(void);
+extern sb32 gmRemixPracticeTryRetryByPause(u16 button_tap);
+extern sb32 gmRemixPracticeConsumeRetry(void);
+extern sb32 gmRemixPracticeConsumeIntroSkip(void);
+
 #endif
 
 #endif

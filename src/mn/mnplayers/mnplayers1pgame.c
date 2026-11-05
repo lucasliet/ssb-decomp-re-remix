@@ -24,6 +24,8 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixvariants.h"
+#include "mn/mnplayers/mnremixenemylabel.h"
+#include "sc/sc1pmode/sc1premixenemy.h"
 #endif
 extern void *func_800269C0_275C0(u16 id);
 extern void func_80026738_27338(void *arg0);
@@ -2938,6 +2940,12 @@ void mnPlayers1PGameBackTo1PMode(void)
 // 0x80136D04
 void mnPlayers1PGameDetectBack(s32 player)
 {
+#ifdef REGION_REMIX
+	if (sMNPlayers1PGameTotalTimeTics >= 10)
+	{
+		sc1PRemixEnemyOnSelectB(player);
+	}
+#endif
 	if ((sMNPlayers1PGameTotalTimeTics >= 10) && (gSYControllerDevices[player].button_tap & B_BUTTON))
 	{
 		mnPlayers1PGameBackTo1PMode();
@@ -3675,6 +3683,14 @@ void mnPlayers1PGameFuncRun(GObj *gobj)
 		{
 			sMNPlayers1PGameReturnTic = sMNPlayers1PGameTotalTimeTics + I_MIN_TO_TICS(5);
 		}
+#ifdef REGION_REMIX
+		mnRemixEnemyLabelUpdate();
+
+		if (sMNPlayers1PGameIsStart == FALSE)
+		{
+			sc1PRemixEnemyOnSelectZ(sMNPlayers1PGameManPlayer);
+		}
+#endif
 		if (sMNPlayers1PGameIsStart != FALSE)
 		{
 			sMNPlayers1PGameStartProceedWait--;
@@ -3871,6 +3887,9 @@ void mnPlayers1PGameFuncStart(void)
 	mnPlayers1PGameMakePortraitAll();
 	mnPlayers1PGameInitSlot(sMNPlayers1PGameManPlayer);
 	mnPlayers1PGameMakeLabels();
+#ifdef REGION_REMIX
+	mnRemixEnemyLabelMake(sMNPlayers1PGameFiles[0]);
+#endif
 	mnPlayers1PGameMakeTotalRecord();
 	mnPlayers1PGameMakeLevelOption();
 	mnPlayers1PGameMakeStockOption();

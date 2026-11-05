@@ -18,6 +18,9 @@ void ftCommonRunProcInterrupt(GObj *fighter_gobj)
         (ftCommonGuardOnCheckInterruptDashRun(fighter_gobj, 4) == FALSE)&&
         (ftCommonAppealCheckInterruptCommon(fighter_gobj) == FALSE)     &&
         (ftCommonKneeBendCheckInterruptRun(fighter_gobj) == FALSE)      &&
+#ifdef REGION_REMIX
+        (ftGetStruct(fighter_gobj)->status_id == nFTCommonStatusRun)    &&
+#endif
         (ftCommonTurnRunCheckInterruptRun(fighter_gobj) == FALSE)
     )
     {

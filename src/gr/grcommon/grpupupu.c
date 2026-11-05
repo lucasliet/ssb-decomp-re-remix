@@ -205,6 +205,27 @@ void grPupupuWhispySetWindPush(void)
 {
     GObj *fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
     sb32 lr_wind = gGRCommonStruct.pupupu.lr_players;
+#ifdef REGION_REMIX
+    GRRemixDreamLandWindBox wind_box;
+    f32 wind_top;
+    f32 wind_bottom;
+    f32 wind_edge_left;
+    f32 wind_edge_right;
+    f32 wind_origin_x;
+
+    grRemixDreamLandGetWindBox(&wind_box);
+    wind_top = wind_box.top;
+    wind_bottom = wind_box.bottom;
+    wind_edge_left = wind_box.edge_left;
+    wind_edge_right = wind_box.edge_right;
+    wind_origin_x = wind_box.origin_x;
+#else
+    f32 wind_top = GRPUPUPU_WHISPY_WINDBOX_TOP;
+    f32 wind_bottom = GRPUPUPU_WHISPY_WINDBOX_BOTTOM;
+    f32 wind_edge_left = GRPUPUPU_WHISPY_WINDBOX_EDGELEFT;
+    f32 wind_edge_right = GRPUPUPU_WHISPY_WINDBOX_EDGERIGHT;
+    f32 wind_origin_x = GRPUPUPU_WHISPY_POS_X;
+#endif
 
     while (fighter_gobj != NULL)
     {
@@ -214,15 +235,15 @@ void grPupupuWhispySetWindPush(void)
         Vec3f push;
         f32 pos_x = joint->translate.vec.f.x, pos_y = joint->translate.vec.f.y;
 
-        if ((pos_y <= GRPUPUPU_WHISPY_WINDBOX_TOP) && (pos_y >= GRPUPUPU_WHISPY_WINDBOX_BOTTOM))
+        if ((pos_y <= wind_top) && (pos_y >= wind_bottom))
         {
             if
             (
-                ((lr_wind == 0) && (pos_x >= GRPUPUPU_WHISPY_WINDBOX_EDGELEFT)  && (pos_x <= GRPUPUPU_WHISPY_POS_X)) ||
-                ((lr_wind != 0) && (pos_x <= GRPUPUPU_WHISPY_WINDBOX_EDGERIGHT) && (pos_x >= GRPUPUPU_WHISPY_POS_X))
+                ((lr_wind == 0) && (pos_x >= wind_edge_left)  && (pos_x <= wind_origin_x)) ||
+                ((lr_wind != 0) && (pos_x <= wind_edge_right) && (pos_x >= wind_origin_x))
             )
             {
-                dist_x = ((pos_x < GRPUPUPU_WHISPY_POS_X) ? -(pos_x - GRPUPUPU_WHISPY_POS_X) : (pos_x - GRPUPUPU_WHISPY_POS_X));
+                dist_x = ((pos_x < wind_origin_x) ? -(pos_x - wind_origin_x) : (pos_x - wind_origin_x));
 
 #ifdef REGION_REMIX
                 push.x = grRemixDreamLandWindSpeedMax() - (dist_x * grRemixDreamLandWindDistDecay());

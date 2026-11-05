@@ -19,6 +19,7 @@ extern void port_dump_backtrace(void);
 #include "ft/ftremix/ftremixswordtrail.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
+#include "sc/sc1pmode/sc1ptrainingremixsbm.h"
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"
 #include "it/itremix/itremixfranklinbadge.h"
@@ -1464,9 +1465,9 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
             button_hold = controller->button_hold;
 #if defined(PORT) && defined(REGION_REMIX)
             {
-                u16 button_tap_unused = 0;
+                u16 button_tap_input = controller->button_tap;
 
-                ftRemixSingleButtonModeFilter(&button_hold, &button_tap_unused, FTREMIX_SBM_GATE_OPEN);
+                ftRemixSingleButtonModeFilter(&button_hold, &button_tap_input, sc1PTrainingRemixGetSingleButtonGate());
             }
 #endif
 
@@ -1478,12 +1479,18 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
             pl->stick_range.y = controller->stick_range.y;
 
             button_tap_mask = (button_hold ^ pl->button_hold) & button_hold;
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixDpadMapApplyPress(this_fp, &button_hold, &button_tap_mask);
+#endif
 
             pl->button_tap = (this_fp->hitlag_tics != 0) ? pl->button_tap | button_tap_mask : button_tap_mask;
 
             button_tap_mask = (button_hold ^ pl->button_hold) & pl->button_hold;
 
             pl->button_release = (this_fp->hitlag_tics != 0) ? pl->button_release | button_tap_mask : button_tap_mask;
+#if defined(PORT) && defined(REGION_REMIX)
+            button_hold = ftRemixDpadMapHeldButtons(this_fp, button_hold);
+#endif
 
             pl->button_hold = button_hold;
             break;
@@ -5296,16 +5303,20 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             
             fp->anim_desc.word = motion_desc->anim_desc.word;
 #ifdef REGION_REMIX
-            /* DEVIATION from the Remix data (docs/bugs/remix_entry_effects_and_polygon_entry_2026-10-14.md): polygon
-             * variants (NDrMario, NWario, NWolf...) enter with ftCommonEntryNullProcUpdate and no physics, and their
-             * motion row still carries 0x40000000. With that bit the port poses the polygon crouched into the floor;
-             * without it they stand. The N64 almost certainly does not sink, so some engine difference is still
-             * unexplained. Lead: this bit sends the status through the TransN hidden part (ftMainAddHiddenPartID reparent
-             * dance), which may hit a different joint in the polygon skeletons. */
+            /* Polygon entry statuses (NDrMario, NWario, NWolf...) run ftCommonEntryNullProcUpdate with no physics. The Remix
+             * ROM rows of all of them (checked: 36 statuses of fighters 0x4D..0x5F, e.g. NDrMario 0xDD/0xDE motions 196/197
+             * from edit_action_parameters(NDRM, 0xDD, 0x1F3, 0x80000000, 0x00000000)) have flags 0, no hidden joints.
+             * The 0x40000000 (and 0x80000000 for NYoungLink) these rows carry in the port is not Remix data: it is merged
+             * from the parent's row by ftPortCopyMotionArray (ftPortParentHiddenJointFlags), a port workaround so the
+             * parent's routines never read a missing hidden joint (the N64 reads RDRAM page zero instead). This status
+             * runs no parent routine, so the rule is the ROM's: no hidden joints. Keeping the merged TransN poses the
+             * polygon crouched into the floor. */
             if ((status_struct != NULL) && (status_struct[status_struct_id].proc_update == ftCommonEntryNullProcUpdate)
                 && (status_struct[status_struct_id].proc_physics == NULL))
             {
+                fp->anim_desc.flags.is_use_xrotn_joint = FALSE;
                 fp->anim_desc.flags.is_use_transn_joint = FALSE;
+                fp->anim_desc.flags.is_use_yrotn_joint = FALSE;
             }
 #endif
 

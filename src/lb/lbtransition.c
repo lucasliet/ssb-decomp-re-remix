@@ -274,10 +274,46 @@ void lbTransitionProcUpdate(GObj *gobj)
     }
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+extern char *getenv(const char *name);
+extern int atoi(const char *text);
+extern void port_log(const char *fmt, ...);
+
+/**
+ * Test hook: SSB64_TRANSITION_ID forces the transition the VS results screen plays (0-14; the Smash and Remix logos are
+ * 13 and 14), since the asm picks one of the 15 at random.
+ *
+ * @param transition_id Transition picked by the caller.
+ * @return The forced transition when SSB64_TRANSITION_ID is a valid index, otherwise transition_id.
+ */
+static s32 lbTransitionGetForcedId(s32 transition_id)
+{
+    const char *env = getenv("SSB64_TRANSITION_ID");
+    s32 forced_id;
+
+    if (env == NULL)
+    {
+        return transition_id;
+    }
+    forced_id = atoi(env);
+
+    if ((forced_id < 0) || (forced_id >= ARRAY_COUNT(dLBTransitionDescs)))
+    {
+        port_log("SSB64_TRANSITION_ID=%s is outside 0..%d, keeping transition %d\n", env, (int)ARRAY_COUNT(dLBTransitionDescs) - 1, (int)transition_id);
+        return transition_id;
+    }
+    return forced_id;
+}
+#endif
+
 // 0x800D430C
 GObj* lbTransitionMakeTransition(s32 transition_id, u32 id, s32 link, void (*proc_display)(GObj*), u8 dl_link_id, void (*func)(GObj*))
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    LBTransitionDesc *transition_desc = &dLBTransitionDescs[lbTransitionGetForcedId(transition_id)];
+#else
     LBTransitionDesc *transition_desc = &dLBTransitionDescs[transition_id];
+#endif
     GObj *gobj;
 
     lbRelocGetExternHeapFile(transition_desc->file_id, sLBTransitionFileHeap);

@@ -6,6 +6,9 @@
 #include <sys/rdp.h>
 #include <reloc_data.h>
 #include <sys/audio.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixpractice.h"
+#endif
 #ifdef PORT
 #include <bridge/framebuffer_capture.h>
 extern void portFixupSprite(void *sprite);
@@ -2163,6 +2166,15 @@ void sc1PStageClearFuncRun(GObj *gobj)
 				sSC1PStageClearCommonAdvanceTic = sSC1PStageClearTotalTimeTics;
 			}
 		}
+#if defined(PORT) && defined(REGION_REMIX)
+		/* Practice_1P.asm hold_l_to_retry_stage_clear_: L held on STAGE CLEAR replays the stage of a practice run. */
+		if (gmRemixPracticeTryRetryByHold() != FALSE)
+		{
+			syTaskmanSetLoadScene();
+
+			return;
+		}
+#endif
 		switch (sSC1PStageClearKind)
 		{
 		case nSC1PStageClearKindGame:

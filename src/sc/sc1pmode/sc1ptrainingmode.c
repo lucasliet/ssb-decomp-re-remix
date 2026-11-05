@@ -2204,6 +2204,9 @@ void sc1PTrainingModeFuncStart(void)
 	sc1PTrainingModeUpdateDummyBehavior();
 	ftManagerSetupFilesPlayablesAll();
 	sc1PTrainingModeSetGameStatusGo();
+#if defined(PORT) && defined(REGION_REMIX)
+	ftRemixStartItemTrainingBegin();
+#endif
 	gmCameraMakePlayerArrowsCamera();
 	ifCommonPlayerArrowsInitInterface();
 	gmCameraMakePlayerMagnifyCamera();

@@ -126,6 +126,22 @@ void ftRemixStartItemMatchBegin(GObj *fighter_gobj)
 }
 
 /**
+ * Item of every fighter at the start of the Training scene (Item.asm start_with_item_, called by Render.asm _training after
+ * Training.setup_): the panel Start With value of each port. The scene calls it once the fighters exist, in place of the GO
+ * announcement that Training does not have.
+ */
+void ftRemixStartItemTrainingBegin(void)
+{
+    GObj *fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
+
+    while (fighter_gobj != NULL)
+    {
+        ftRemixStartItemMatchBegin(fighter_gobj);
+        fighter_gobj = fighter_gobj->link_next;
+    }
+}
+
+/**
  * Item on respawn (Item.asm respawn_with_item_, action Revive1): the panel Start With value of the port.
  */
 void ftRemixStartItemRespawn(GObj *fighter_gobj)

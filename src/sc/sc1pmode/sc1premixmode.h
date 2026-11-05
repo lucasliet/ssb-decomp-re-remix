@@ -18,6 +18,12 @@ extern s32 sc1PRemixModeGet(void);
 /** TRUE when the current 1P run is the Remix 1P mode `mode` (SC1PREMIX_MODE_*). */
 extern sb32 sc1PRemixModeIs(s32 mode);
 
+/**
+ * Whether the crowd cheer at the start of a Bonus stage or a 1P game run is skipped (skip start cheer toggle set to Bonus; see
+ * sc1PRemixModeSkipsBonusStartCheer). Reads the toggle, the Remix 1P mode and the scene the run came from.
+ */
+extern sb32 sc1PRemixIsBonusStartCheerSkipped(void);
+
 #endif
 
 #endif

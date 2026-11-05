@@ -6,6 +6,9 @@
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
 #include "sc/sc1pmode/sc1premixhrcrun.h"
+#include "sc/sc1pmode/sc1premixmode.h"
+#include "sc/sc1pmode/sc1premixenemy.h"
+#include "gm/gmremixpractice.h"
 #include <port_log.h>
 #endif
 #include <ft/fighter.h>
@@ -1204,6 +1207,13 @@ void sc1PGameSetupStageAll(void)
         gSCManagerBattleState->time_limit = gSCManagerSceneData.spgame_time_limit;
         break;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    /* SinglePlayerModes.asm _time_limit: a practice run has infinite time. */
+    if (gmRemixPracticeIsActive() != FALSE)
+    {
+        gSCManagerBattleState->time_limit = SCBATTLE_TIMELIMIT_INFINITE;
+    }
+#endif
     gSCManagerBattleState->item_toggles = stagesetup->item_toggles;
     gSCManagerBattleState->item_appearance_rate = comsetup->item_appearance_rate;
 #if defined(PORT) && defined(REGION_REMIX)
@@ -1777,7 +1787,11 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
 
         desc.pkind = gSCManagerBattleState->players[player].pkind;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        desc.controller = sc1PRemixEnemyRespawnController(sSC1PGamePlayerSetups[player].mapobj_kind, &gSYControllerDevices[player]);
+#else
         desc.controller = &gSYControllerDevices[player];
+#endif
 
         desc.figatree_heap = figatree;
 
@@ -2756,6 +2770,9 @@ void sc1PGameFuncStart(void)
         {
             continue;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        sc1PRemixEnemySetupSlot(i, sSC1PGamePlayerSetups[i].mapobj_kind);
+#endif
         ftManagerSetupFilesAllKind(gSCManagerBattleState->players[i].fkind);
 
         desc.fkind = gSCManagerBattleState->players[i].fkind;
@@ -2799,7 +2816,11 @@ void sc1PGameFuncStart(void)
 
         desc.pkind = gSCManagerBattleState->players[i].pkind;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        desc.controller = sc1PRemixEnemySetupController(sSC1PGamePlayerSetups[i].mapobj_kind, &gSYControllerDevices[i]);
+#else
         desc.controller = &gSYControllerDevices[i];
+#endif
 
         desc.figatree_heap = (sSC1PGamePlayerSetups[i].figatree != NULL) ? sSC1PGamePlayerSetups[i].figatree : ftManagerAllocFigatreeHeapKind(gSCManagerBattleState->players[i].fkind);
 
@@ -2845,7 +2866,15 @@ void sc1PGameFuncStart(void)
     else
     {
         mpCollisionSetPlayBGM();
+#if defined(PORT) && defined(REGION_REMIX)
+        /* Training.asm skip_crowd_cheer_ _bonus (patch 0x8018FCF0). */
+        if (sc1PRemixIsBonusStartCheerSkipped() == FALSE)
+        {
+            func_800269C0_275C0(nSYAudioVoicePublicExcited);
+        }
+#else
         func_800269C0_275C0(nSYAudioVoicePublicExcited);
+#endif
     }
     sc1PGameInitTimeUpMessage();
     ifCommonTimerMakeDigits();

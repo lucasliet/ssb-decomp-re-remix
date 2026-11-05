@@ -15,7 +15,9 @@
 #include "gm/gmremixtoggle.h"
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
+#include "mn/mnplayers/mnremixcssrules.h"
 #include "mn/mnplayers/mnremixvariants.h"
+#include "remix/remix_css_data.h"
 
 #define MNREMIX_VARIANT_PLAYERS_MAX 4
 #define MNREMIX_VARIANT_SLOTS MNREMIX_VARIANT_SLOT_COUNT
@@ -130,6 +132,19 @@ s32 mnRemixRandomResolveFighterKind(s32 fkind)
     default:
         return fkind;
     }
+}
+
+/**
+ * One draw of the random pick (CharacterSelect.asm get_random_char_id_): an entry of the pool, which is the 30 grid fighters
+ * and, when the Random Select setting is not the default, the ten bonus fighters, then the Random Select setting applied to
+ * it. Returns nFTKindNull when the pick must be rolled again.
+ */
+s32 mnRemixRandomPickFighterKind(void)
+{
+    s32 index = syUtilsRandTimeUCharRange(mnRemixCssRandomPoolSize(gmRemixToggle(variant_random), REMIX_CSS_NUM_SLOTS));
+    s32 base = (mnRemixCssRandomPoolIsBonus(index, REMIX_CSS_NUM_SLOTS) != 0) ? kRemixCssBonusIds[index - REMIX_CSS_NUM_SLOTS] : kRemixCssSlotIds[index];
+
+    return mnRemixRandomResolveFighterKind(base);
 }
 
 #endif

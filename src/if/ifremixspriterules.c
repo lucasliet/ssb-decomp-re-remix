@@ -26,6 +26,7 @@ static const IFRemixSpriteEntry sIFRemixSpriteEntries[IFREMIX_SPRITE_COUNT] =
     { IFREMIX_SPRITE_FILE_STOCK_ICONS, 0x0080 }, /* the polygon stock icon of the Multi-Man counter (SinglePlayerModes.asm 2312) */
     { IFREMIX_SPRITE_FILE_DIGITS, 0x0828 },      /* the "x" of the Multi-Man counter (llIFCommonDigitsCrossSprite) */
     { IFREMIX_SPRITE_FILE_SOUND_TEST, 0x1D50 },  /* the START button of the Gentlemen's Reset request (TwelveCharBattle.asm 3610) */
+    { IFREMIX_SPRITE_FILE_MENU_COMMON, 0xDD90 }, /* the right arrow of the item switch legend (Item.asm item_switch_setup_) */
 };
 
 const IFRemixSpriteEntry *ifRemixSpriteRulesGetEntry(int id)

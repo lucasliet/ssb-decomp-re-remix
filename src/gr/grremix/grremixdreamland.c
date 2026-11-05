@@ -6,6 +6,7 @@
 
 #include "gm/gmremixtoggle.h"
 #include "grremixdreamland.h"
+#include "grremixids.h"
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <sc/scmanager.h>
@@ -20,6 +21,11 @@
 #define GRREMIX_DREAMLAND_HYPER_WIND_SPEED_MAX 30.0F
 #define GRREMIX_DREAMLAND_JAPANESE_WIND_DECAY 0.0003F
 #define GRREMIX_DREAMLAND_SUPER_WIND_DECAY 0.0006F
+#define GRREMIX_DREAMLAND_SUPER_BOX_SCALE 1.09375F
+#define GRREMIX_DREAMLAND_HYPER_BOX_SCALE 1.1953125F
+#define GRREMIX_DREAM_GREENS_EDGE_RIGHT 3811.0F
+#define GRREMIX_DREAM_GREENS_EDGE_LEFT (-3811.0F)
+#define GRREMIX_DREAM_GREENS_ORIGIN_X 0.0F
 
 /** Toggles.entry_whispy_mode (Whispy Mode setting). */
 static s32 grRemixDreamLandWhispyMode(void)
@@ -74,6 +80,8 @@ f32 grRemixDreamLandWindSpeedMax(void)
         return GRPUPUPU_WHISPY_WIND_VEL_BASE;
     }
 
+    /* dreamland_wind_speed_max_ (Hazards.asm:3094-3125) has no screen check, so the 1P game also gets this value in
+       Super and Hyper Mode. The 1P exceptions of the Whispy Mode live in the other four hooks. */
     /* Hazards.asm:3109-3117 compares the Japanese id (t2, never reloaded) with the Super id, so Super never takes the
        20.0 branch and gets the Hyper value 30.0 from the lui at line 3117. Kept as the asm behaves. */
     return GRREMIX_DREAMLAND_HYPER_WIND_SPEED_MAX;
@@ -96,6 +104,52 @@ f32 grRemixDreamLandWindDistDecay(void)
         return GRPUPUPU_WHISPY_WIND_DIST_DECAY;
     }
     return GRREMIX_DREAMLAND_SUPER_WIND_DECAY;
+}
+
+/**
+ * Box scale of Super and Hyper Mode (asm 0x3F8C0000 and 0x3F990000), or 1.0 for the 1P game and the other modes
+ * (asm `_end` jumps skip the multiplication).
+ */
+static f32 grRemixDreamLandWindBoxScale(void)
+{
+    if (grRemixDreamLandIsOneP())
+    {
+        return 1.0F;
+    }
+    switch (grRemixDreamLandWhispyMode())
+    {
+    case GRREMIX_WHISPY_MODE_SUPER:
+        return GRREMIX_DREAMLAND_SUPER_BOX_SCALE;
+
+    case GRREMIX_WHISPY_MODE_HYPER:
+        return GRREMIX_DREAMLAND_HYPER_BOX_SCALE;
+
+    default:
+        return 1.0F;
+    }
+}
+
+void grRemixDreamLandGetWindBox(GRRemixDreamLandWindBox *wind_box)
+{
+    f32 scale;
+
+    wind_box->edge_left = GRPUPUPU_WHISPY_WINDBOX_EDGELEFT;
+    wind_box->edge_right = GRPUPUPU_WHISPY_WINDBOX_EDGERIGHT;
+    wind_box->top = GRPUPUPU_WHISPY_WINDBOX_TOP;
+    wind_box->bottom = GRPUPUPU_WHISPY_WINDBOX_BOTTOM;
+    wind_box->origin_x = GRPUPUPU_WHISPY_POS_X;
+
+    if (gSCManagerBattleState->gkind == nGRRemixStage_DREAM_LAND_SR)
+    {
+        wind_box->edge_left = GRREMIX_DREAM_GREENS_EDGE_LEFT;
+        wind_box->edge_right = GRREMIX_DREAM_GREENS_EDGE_RIGHT;
+        wind_box->origin_x = GRREMIX_DREAM_GREENS_ORIGIN_X;
+        return;
+    }
+    scale = grRemixDreamLandWindBoxScale();
+    wind_box->edge_left *= scale;
+    wind_box->edge_right *= scale;
+    wind_box->top *= scale;
 }
 
 #endif

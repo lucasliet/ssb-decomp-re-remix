@@ -4,9 +4,9 @@
  * DpadFunctions.asm dpad_macro_check_ (_dpad_macro_move_setup .. _dpad_move_end).
  *
  * ftRemixDpadControlController (ftMainProcUpdateInterrupt, after ftRemixInputDelayController) returns the controller
- * sample the human fighter reads this frame. Not ported here: the jump type and dash attack checks of the J variants
- * (check_jump_type_idle_, check_jump_type_running_, dash_attack_check_) and the shield mask override
- * (set_shield_mask_).
+ * sample the human fighter reads this frame. The action side of the option is at the end of the file: the stick jump and
+ * dash attack checks of the non-J modes (check_jump_type_idle_, check_jump_type_running_, dash_attack_check_; the J
+ * modes keep the vanilla ones, so they have no code) and the shield and taunt masks (set_shield_mask_).
  *
  * Fighter fields behind the asm player struct offsets: 0x08 FTStruct.fkind, 0x0D FTStruct.player, 0x1C
  * FTStruct.status_total_tics, 0x24 FTStruct.status_id, 0x14C FTStruct.ga, 0xF0 FTStruct.coll_data.floor_dist (the asm
@@ -28,11 +28,8 @@
 #include <PR/os.h>
 #include <sys/controller.h>
 #include "remix/remix_roster_data.h"
-
-#define FTREMIX_DPAD_CONTROL_STICK_SWAP 1
-#define FTREMIX_DPAD_CONTROL_STICKLESS 2
-#define FTREMIX_DPAD_CONTROL_STICK_SWAP_J 3
-#define FTREMIX_DPAD_CONTROL_STICKLESS_J 4
+#include "fighter_registry.h"
+#include "ft/ftremix/ftremixdpadcontrolrules.h"
 
 #define FTREMIX_DPAD_BUTTONS (U_JPAD | D_JPAD | L_JPAD | R_JPAD)
 #define FTREMIX_DPAD_SWAP_DEADZONE_X 40
@@ -525,6 +522,107 @@ SYController *ftRemixDpadControlController(FTStruct *fp, SYController *controlle
     sample->button_hold = ftRemixDpadControlRMacro(hold);
     ftRemixDpadWriteStick(fp, sample, (sample->button_hold & ~FTREMIX_DPAD_BUTTONS) | dpad);
     return sample;
+}
+
+/**
+ * Returns the D-pad Control panel value of a human fighter, 0 for any other fighter.
+ */
+static s32 ftRemixDpadControlModeOf(FTStruct *fp)
+{
+    if ((fp->pkind != nFTPlayerKindMan) || (fp->player >= GMCOMMON_PLAYERS_MAX))
+    {
+        return FTREMIX_DPAD_CONTROL_OFF;
+    }
+    return gmRemixPanel(DPAD_CONTROL, fp->player);
+}
+
+/**
+ * Returns TRUE when the stick jump of a standing, walking or shielding human fighter is off (check_jump_type_idle_):
+ * Stick Swap and Stickless keep the stick pointed up for the up smash and up special, so only the C buttons jump. Called
+ * from ftCommonKneeBendGetInputTypeCommon.
+ */
+sb32 ftRemixDpadControlDisablesStickJump(FTStruct *fp)
+{
+    return (ftRemixDpadControlIsStandardMode(ftRemixDpadControlModeOf(fp)) != 0) ? TRUE : FALSE;
+}
+
+/**
+ * Starts the ground up special of the fighter (check_jump_type_running_ _up_special), nothing when the fighter has none.
+ */
+static void ftRemixDpadControlStartGroundUpSpecial(FTStruct *fp)
+{
+    PortFTSpecialEnterFn special_hi = port_fighter_special_handler(fp->fkind, PORT_FIGHTER_SPECIAL_HI);
+
+    if ((special_hi == NULL) || (fp->attr->is_have_specialhi == FALSE))
+    {
+        return;
+    }
+    special_hi(fp->fighter_gobj);
+}
+
+/**
+ * Handles a stick pointed up while a human fighter dashes or runs (check_jump_type_running_). With Stick Swap or Stickless
+ * it never jumps: B held (not pressed this frame) starts the ground up special, A held (not pressed this frame) starts the
+ * up smash. Called from ftCommonKneeBendGetInputTypeRun. The asm then leaves the run action chain (the return address check
+ * of 0x8013EEB4), which ftCommonRunProcInterrupt does by testing that the status is still Run.
+ *
+ * @return TRUE when the stick jump of this frame must be skipped.
+ */
+sb32 ftRemixDpadControlHandlesRunStickUp(FTStruct *fp)
+{
+    s32 mode = ftRemixDpadControlModeOf(fp);
+
+    if (ftRemixDpadControlIsStandardMode(mode) == 0)
+    {
+        return FALSE;
+    }
+    if (fp->input.pl.stick_range.y <= FTCOMMON_KNEEBEND_RUN_STICK_RANGE_MIN)
+    {
+        return FALSE;
+    }
+    switch (ftRemixDpadControlRunUpAction(mode, fp->input.pl.button_tap, fp->input.pl.button_hold))
+    {
+    case nFTRemixDpadControlRunUpSmash:
+        ftCommonAttackHi4SetStatus(fp->fighter_gobj);
+        break;
+
+    case nFTRemixDpadControlRunUpSpecial:
+        ftRemixDpadControlStartGroundUpSpecial(fp);
+        break;
+
+    default:
+        break;
+    }
+    return TRUE;
+}
+
+/**
+ * Returns TRUE when the dash attack of a human fighter is swallowed (dash_attack_check_): with Stick Swap or Stickless an
+ * A press with the stick pointed up does nothing here, the up smash comes from ftRemixDpadControlHandlesRunStickUp. Called
+ * from ftCommonAttackDashCheckInterruptCommon.
+ */
+sb32 ftRemixDpadControlSkipsDashAttackOf(FTStruct *fp)
+{
+    return (ftRemixDpadControlSkipsDashAttack(ftRemixDpadControlModeOf(fp), fp->input.pl.stick_range.y) != 0) ? TRUE : FALSE;
+}
+
+/**
+ * Moves the shield of a human fighter to L and its default taunt to Z when D-pad Control is on (set_shield_mask_). A taunt
+ * moved by the Taunt Button option stays and the shield answers to both L and Z. Called from ftManagerMakeFighter after the
+ * taunt mask is set.
+ */
+void ftRemixDpadControlSetButtonMasks(FTStruct *fp)
+{
+    s32 mode = ftRemixDpadControlModeOf(fp);
+    sb32 is_taunt_button_custom;
+
+    if (mode == FTREMIX_DPAD_CONTROL_OFF)
+    {
+        return;
+    }
+    is_taunt_button_custom = (gmRemixPanel(TAUNT_BUTTON, fp->player) != 0) ? TRUE : FALSE;
+    fp->input.button_mask_z = ftRemixDpadControlShieldMask(mode, is_taunt_button_custom);
+    fp->input.button_mask_l = ftRemixDpadControlTauntMask(mode, is_taunt_button_custom, fp->input.button_mask_l);
 }
 
 #endif

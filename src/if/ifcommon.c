@@ -17,6 +17,7 @@
 #include "if/ifremixgentlemensreset.h"
 #include "if/ifremixpauselegend.h"
 #include "gm/gmremixbgm.h"
+#include "gm/gmremixpractice.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixmode.h"
@@ -2094,6 +2095,12 @@ void ifCommonPlayerTagProcDisplay(GObj *interface_gobj)
 #endif
                 SObjGetStruct(interface_gobj)->pos.x = (s32) ((gGMCameraStruct.viewport_center_x + x) - (SObjGetStruct(interface_gobj)->sprite.width * 0.5F));
                 SObjGetStruct(interface_gobj)->pos.y = (s32) ((gGMCameraStruct.viewport_center_y - y) - SObjGetStruct(interface_gobj)->sprite.height);
+#ifdef REGION_REMIX
+                ifRemixPlayerTagDrawName(player, SObjGetStruct(interface_gobj)->pos.x + (SObjGetStruct(interface_gobj)->sprite.width * 0.5F),
+                                         SObjGetStruct(interface_gobj)->pos.y,
+                                         ((u32)SObjGetStruct(interface_gobj)->sprite.red << 24) | ((u32)SObjGetStruct(interface_gobj)->sprite.green << 16) |
+                                         ((u32)SObjGetStruct(interface_gobj)->sprite.blue << 8) | 0xFF);
+#endif
 
                 lbCommonDrawSObjAttr(interface_gobj);
             }
@@ -3177,7 +3184,8 @@ void ifCommonBattlePauseMakeSObjsAll(GObj *interface_gobj)
 #if defined(PORT) && defined(REGION_REMIX)
     /* SinglePlayerModes.asm _reset_button: Bonus 3, Multi-Man and Cruel Multi-Man show the retry legend of the bonus practice */
     if (((gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) && (gSCManagerSceneData.scene_prev != nSCKind1PGame)) ||
-        (sc1PRemixModeIs(SC1PREMIX_MODE_BONUS3) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_MULTIMAN) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_CRUEL) != FALSE))
+        (sc1PRemixModeIs(SC1PREMIX_MODE_BONUS3) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_MULTIMAN) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_CRUEL) != FALSE) ||
+        (gmRemixPracticeIsActive() != FALSE))
 #else
     if ((gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) && (gSCManagerSceneData.scene_prev != nSCKind1PGame)) 
 #endif
@@ -3475,6 +3483,16 @@ void ifCommonBattlePauseUpdateInterface(void)
 
             return;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        if (gmRemixPracticeTryRetryByPause(button_tap) != FALSE)
+        {
+            func_800266A0_272A0();
+            gmRumbleInitPlayers();
+            syTaskmanSetLoadScene();
+
+            return;
+        }
+#endif
         if ((button_tap & L_TRIG) && (gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) && (gSCManagerSceneData.scene_prev != nSCKind1PGame))
         {
             func_800266A0_272A0();
@@ -3544,6 +3562,17 @@ void ifCommonBattleEndUpdateInterface(void)
 // 0x80114724
 void ifCommonBattleBossDefeatUpdateInterface(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    /* Practice_1P.asm hold_l_to_retry_: L held while GAME SET shows replays the stage of a practice run. */
+    if ((gSCManagerSceneData.scene_curr == nSCKind1PGame) && (gmRemixPracticeTryRetryByHold() != FALSE))
+    {
+        func_800266A0_272A0();
+        gmRumbleInitPlayers();
+        syTaskmanSetLoadScene();
+
+        return;
+    }
+#endif
     if (sIFCommonBattlePauseCameraRestoreWait != 0)
     {
         sIFCommonBattlePauseCameraRestoreWait--;
