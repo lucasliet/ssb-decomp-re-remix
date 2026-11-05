@@ -15,6 +15,9 @@ extern void port_coroutine_yield(void);
 #include "fighter_registry.h"
 #include "sc/sccommon/scremixvsdemo.h"
 #endif
+#ifdef REGION_REMIX
+#include "if/ifremixdragonkinghud.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 extern void func_800266A0_272A0(void);
 
@@ -677,7 +680,11 @@ void scAutoDemoInitSObjs(void)
 		sobj->sprite.attr = SP_TEXSHUF | SP_HIDDEN | SP_TRANSPARENT;
 
 		sobj->pos.x = (s32) (160.0F - (sobj->sprite.width * 0.5F));
+#ifdef REGION_REMIX
+		sobj->pos.y = (s32) (ifRemixDragonKingHudPickY(50.0F, IFREMIX_DKHUD_Y_VS_DEMO_NAME) - (sobj->sprite.height * 0.5F));
+#else
 		sobj->pos.y = (s32) (50.0F - (sobj->sprite.height * 0.5F));
+#endif
 	}
 }
 

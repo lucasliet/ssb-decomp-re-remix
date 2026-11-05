@@ -370,7 +370,7 @@ static void ftRemixMarinaSpecialNAirProcPhysics(GObj *fighter_gobj)
 static void ftRemixMarinaSpecialNGroundEndMovePhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    f32 friction = dMPCollisionMaterialFrictions[fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK] * MARINA_NSP_GROUND_TRACTION;
+    f32 friction = grRemixSurfaceFriction(fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK) * MARINA_NSP_GROUND_TRACTION;
 
     ftPhysicsSetGroundVelFriction(fp, friction);
     ftPhysicsSetGroundVelTransferAir(fighter_gobj);

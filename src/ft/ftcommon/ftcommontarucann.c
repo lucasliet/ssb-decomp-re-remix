@@ -3,6 +3,9 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "gr/grremix/grremixbarrelexit.h"
+#endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
 #endif
@@ -100,7 +103,9 @@ void ftCommonTaruCannSetStatus(GObj *fighter_gobj, GObj *tarucann_gobj)
 void ftCommonTaruCannShootFighter(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+    FTThrowHitDesc *tarucann = (FTThrowHitDesc*) (((uintptr_t)gMPCollisionGroundData - grRemixBarrelExitGetMapHeader()) + (intptr_t)llGRJungleMapTaruCannThrowHitDesc);
+#elif defined(PORT)
     FTThrowHitDesc *tarucann = (FTThrowHitDesc*) (((uintptr_t)gMPCollisionGroundData - (intptr_t)llGRJungleMapMapHeader) + (intptr_t)llGRJungleMapTaruCannThrowHitDesc);
 #else
     FTThrowHitDesc *tarucann = (FTThrowHitDesc*) (((uintptr_t)gMPCollisionGroundData - (intptr_t)&llGRJungleMapMapHeader) + (intptr_t)&llGRJungleMapTaruCannThrowHitDesc);
@@ -112,12 +117,19 @@ void ftCommonTaruCannShootFighter(GObj *fighter_gobj)
 
     knockback = ftParamGetGroundHazardKnockback(fp->percent_damage, tarucann->damage, tarucann->damage, tarucann->knockback_weight, tarucann->knockback_scale, tarucann->knockback_base, fp->attr->weight, 9, 9);
 
+#ifdef REGION_REMIX
+    angle = ((I_CLC_RTOD32(grJungleTaruCannGetRotateOf(fp->status_vars.common.tarucann.tarucann_gobj)) * -fp->lr) + 90); /* barrel_angle_fix_ */
+#else
     angle = ((I_CLC_RTOD32(grJungleTaruCannGetRotate()) * -fp->lr) + 90);
+#endif
     angle -= (angle / 360) * 360;
 
     ftCommonDamageInitDamageVars(fighter_gobj, nFTCommonStatusDamageFlyRoll, tarucann->damage, knockback, angle, fp->lr, 0, tarucann->element, 0, TRUE, TRUE, FALSE);
     ftParamUpdate1PGameDamageStats(fp, GMCOMMON_PLAYERS_MAX, nFTHitLogObjectGround, nGMHitEnvironmentTaruCann, 0, 0);
 
     fp->playertag_wait = 0;
+#ifdef REGION_REMIX
+    grRemixBarrelExitSetHitbox(fp); /* congo_falls_hazard */
+#endif
     fp->tarucann_wait = FTCOMMON_TARUCANN_PICKUP_WAIT;
 }

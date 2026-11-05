@@ -202,10 +202,20 @@ s32 sMNVSResultsMakeResultsTic;
 s32 sMNVSResultsInitFightersAllTic;
 
 // 0x80139C50
+#ifdef REGION_REMIX
+/* Four Remix fighters load their main files plus extern dependencies; 120 overflowed after a four-fighter match
+ * (docs/bugs/remix_vs_results_status_buffer_2026-11-05.md). */
+LBFileNode sMNVSResultsStatusBuffer[256];
+#else
 LBFileNode sMNVSResultsStatusBuffer[120];
+#endif
 
 // 0x8013A010
+#ifdef REGION_REMIX
+LBFileNode sMNVSResultsForceStatusBuffer[64];
+#else
 LBFileNode sMNVSResultsForceStatusBuffer[7];
+#endif
 
 // 0x8013A048
 void *sMNVSResultsFiles[ARRAY_COUNT(dMNVSResultsFileIDs)];

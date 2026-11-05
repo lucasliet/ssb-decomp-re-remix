@@ -2,6 +2,7 @@
 #include <sys/netsync.h>
 #ifdef REGION_REMIX
 #include "it/itremix/itremix.h"
+#include "it/itremix/itremixdisplaylinkrules.h"
 #include "it/itremix/itremixspawn.h"
 #include "remix/remix_debug.h"
 #include "ft/ftremix/ftremixhooks.h"
@@ -281,7 +282,11 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
     }
     else proc_display = (attr->is_display_xlu) ? itDisplayXLUProcDisplay : itDisplayOPAProcDisplay;
 
+#ifdef REGION_REMIX
+    gcAddGObjDisplay(item_gobj, proc_display, itRemixDisplayLinkRulesForKind(item_desc->kind), GOBJ_PRIORITY_DEFAULT, ~0);
+#else
     gcAddGObjDisplay(item_gobj, proc_display, 11, GOBJ_PRIORITY_DEFAULT, ~0);
+#endif
 
     item_gobj->user_data.p = ip;
 

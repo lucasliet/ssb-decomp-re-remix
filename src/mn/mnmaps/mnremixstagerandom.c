@@ -15,6 +15,7 @@
 #include "gr/grremix/grremixids.h"
 #include "mn/mnmaps/mnremixstagerandom.h"
 #include "mn/mnmaps/mnremixstagerandomrules.h"
+#include "mn/mnmaps/mnremixstagetournament.h"
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #include "remix/remix_toggles.h"
@@ -114,6 +115,18 @@ s32 mnRemixStageRandomPick(sb32 is_tournament)
     port_log("[mnmaps] random stage 0x%02X drawn from %d stages\n", (unsigned int)stage_id, (int)count);
 
     return stage_id;
+}
+
+s32 mnRemixStageRandomPickStageSelectOff(void)
+{
+    sb32 is_tournament = mnRemixTournamentLatchLayout();
+    s32 gkind = mnRemixStageRandomPick(is_tournament);
+
+    if ((gkind >= 0) && (is_tournament != FALSE))
+    {
+        mnRemixTournamentApplyRandomHazardMode(gkind);
+    }
+    return gkind;
 }
 
 #endif

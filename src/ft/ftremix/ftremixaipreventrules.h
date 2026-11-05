@@ -14,6 +14,50 @@
 #define FTREMIX_AI_PREVENT_INPUT_SMASH_DSP 0x41
 #define FTREMIX_AI_PREVENT_CPU_LEVEL_LVL10 10
 
+/* Vanilla routine addresses a Character.ai_attack_prevent entry can hold (AI.asm PREVENT_ATTACK.ROUTINE, vanilla part). */
+#define FTREMIX_AI_PREVENT_ADDR_NONE 0x80133520u
+#define FTREMIX_AI_PREVENT_ADDR_MARIO 0x801334ECu
+#define FTREMIX_AI_PREVENT_ADDR_KIRBY 0x80133500u
+#define FTREMIX_AI_PREVENT_ADDR_YOSHI_FALCON 0x80133510u
+#define FTREMIX_AI_PREVENT_ADDR_SKIP_ATTACK 0x80133A14u
+
+/* What a routine does to a candidate attack: nothing, set is_attempt_cliffcatch (the ledge probe of the picker may drop the
+ * candidate), or drop the candidate (jump to 0x80133A14). */
+#define FTREMIX_AI_PREVENT_VERDICT_ALLOW 0
+#define FTREMIX_AI_PREVENT_VERDICT_CLIFF_CHECK 1
+#define FTREMIX_AI_PREVENT_VERDICT_SKIP 2
+
+/* Routine kinds (one per PREVENT_ATTACK.ROUTINE label that a fighter registers). */
+typedef enum FTRemixAiPreventRoutineKind
+{
+    FTREMIX_AI_PREVENT_ROUTINE_UNKNOWN = -1,
+    FTREMIX_AI_PREVENT_ROUTINE_NONE,
+    FTREMIX_AI_PREVENT_ROUTINE_MARIO,
+    FTREMIX_AI_PREVENT_ROUTINE_KIRBY,
+    FTREMIX_AI_PREVENT_ROUTINE_YOSHI_FALCON,
+    FTREMIX_AI_PREVENT_ROUTINE_SKIP_ATTACK,
+    FTREMIX_AI_PREVENT_ROUTINE_FALCO_NSP,
+    FTREMIX_AI_PREVENT_ROUTINE_FOX_USP,
+    FTREMIX_AI_PREVENT_ROUTINE_BOWSER_USP_DSP,
+    FTREMIX_AI_PREVENT_ROUTINE_GBOWSER,
+    FTREMIX_AI_PREVENT_ROUTINE_USP,
+    FTREMIX_AI_PREVENT_ROUTINE_SONIC_DSP,
+    FTREMIX_AI_PREVENT_ROUTINE_WARIO,
+    FTREMIX_AI_PREVENT_ROUTINE_MARINA_NSP,
+    FTREMIX_AI_PREVENT_ROUTINE_CONKER_GRENADE,
+    FTREMIX_AI_PREVENT_ROUTINE_CRASH
+} FTRemixAiPreventRoutineKind;
+
+/* Fighter state the routines read (the registers t1 = input, s0 = fighter of the asm). */
+typedef struct FTRemixAiPreventContext
+{
+    int input_kind;
+    int cpu_level;
+    int is_airborne;
+    int is_soft_platform;
+    int grenade_word;
+} FTRemixAiPreventContext;
+
 /** TRUE when the candidate input is the given input id. */
 extern int ftRemixAiPreventRulesIsInput(int input_kind, int vetoed_input);
 
@@ -43,6 +87,19 @@ extern int ftRemixAiPreventRulesConkerGrenadeVeto(int input_kind, int grenade_wo
  * surface flag 0x4000 of the fighter's floor flags).
  */
 extern int ftRemixAiPreventRulesCrashSoftPlatformVeto(int input_kind, int is_soft_platform);
+
+/**
+ * Routine kind of a vanilla address held by the table, or FTREMIX_AI_PREVENT_ROUTINE_UNKNOWN for Remix code (the caller
+ * resolves it through the fighters that register the Remix routines).
+ */
+extern int ftRemixAiPreventRulesVanillaKind(unsigned int routine_addr);
+
+/**
+ * Effect of a routine on a candidate attack (FTREMIX_AI_PREVENT_VERDICT_*). A routine that makes the asm set t2 = 1
+ * returns CLIFF_CHECK, one that jumps to SKIP_ATTACK (0x80133A14) returns SKIP. The vanilla MARIO, KIRBY and
+ * YOSHI_FALCON routines only set t2. Unknown and NONE kinds allow.
+ */
+extern int ftRemixAiPreventRulesVerdict(int routine_kind, const FTRemixAiPreventContext *context);
 
 #endif
 

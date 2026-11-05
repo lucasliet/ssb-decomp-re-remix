@@ -9,7 +9,7 @@
 /* CPU level selector of the VS CSS: the right arrow reaches level 10 (AI.asm handle_right_arrow_press_, render_right_arrow_,
  * render_10_). The pkind argument is nFTPlayerKindMan or nFTPlayerKindCom from ft/ftdef.h. */
 
-/** TRUE when the right arrow may raise the value under it: CPU levels up to 10, human handicap the vanilla limit. */
+/** TRUE when the right arrow may raise the value under it: CPU levels up to 10, human handicap up to 40. */
 extern sb32 mnRemixVSCanRaiseArrowValue(s32 pkind, s32 value);
 
 /** TRUE when the right arrow must be hidden for the value under it (the value reached its limit). */

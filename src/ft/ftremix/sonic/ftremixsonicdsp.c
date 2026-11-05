@@ -11,6 +11,7 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_symbols.h"
 #include <ef/efmanager.h>
 #include <ft/ftanimend.h>
@@ -384,7 +385,7 @@ static void ftRemixSonicDSPAirMoveProcInterrupt(GObj *fighter_gobj)
 static void ftRemixSonicDSPGroundMoveProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    f32 friction = dMPCollisionMaterialFrictions[fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK] * SONIC_DSP_GROUND_TRACTION;
+    f32 friction = grRemixSurfaceFriction(fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK) * SONIC_DSP_GROUND_TRACTION;
 
     ftPhysicsSetGroundVelFriction(fp, friction);
     ftPhysicsSetGroundVelTransferAir(fighter_gobj);

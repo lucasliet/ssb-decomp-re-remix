@@ -3,6 +3,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixbowserbombs.h"
+#include "gr/grremix/grremixrollingbombs.h"
 #endif
 
 // // // // // // // // // // // //
@@ -109,6 +110,30 @@ enum itTaruBombStatus
 //                               //
 // // // // // // // // // // // //
 
+#ifdef REGION_REMIX
+static ITDesc sITTaruBombRemixItemDesc;
+#endif
+
+/**
+ * Item descriptor of the rolling bomb. The bombs of the Remix bonus stages read their item file from the Remix slot, not from
+ * the Race to the Finish variables that the targets and platforms of those stages use (rolling_bomb_explosion_1/2/3).
+ *
+ * @return The vanilla descriptor, or a copy of it with the Remix item file slot on the stages with a Remix bomb spawner.
+ */
+static ITDesc* itTaruBombGetItemDesc(void)
+{
+#ifdef REGION_REMIX
+    if (grRemixRollingBombsIsStage())
+    {
+        sITTaruBombRemixItemDesc = dITTaruBombItemDesc;
+        sITTaruBombRemixItemDesc.p_file = grRemixRollingBombsGetItemHeadSlot();
+
+        return &sITTaruBombRemixItemDesc;
+    }
+#endif
+    return &dITTaruBombItemDesc;
+}
+
 // 0x80184A70
 void itTaruBombContainerSmashUpdateEffect(GObj *effect_gobj) // RTTF bomb explode GFX process
 {
@@ -164,7 +189,8 @@ void itTaruBombContainerSmashMakeEffect(Vec3f *pos)
              * crashing the GFX dispatcher when the slot has been generation-
              * bumped after a scene-arena recycle. */
             {
-                u32 _attr_token = *(u32*)((uintptr_t)*dITTaruBombItemDesc.p_file + dITTaruBombItemDesc.o_attributes);
+                ITDesc *_item_desc = itTaruBombGetItemDesc();
+                u32 _attr_token = *(u32*)((uintptr_t)*_item_desc->p_file + _item_desc->o_attributes);
                 void *_resolved = PORT_RESOLVE(_attr_token);
                 dl = (_resolved != NULL)
                     ? (Gfx*)(((uintptr_t)_resolved - (uintptr_t)llGRBonus3MapTaruBombDataStart) + (uintptr_t)llGRBonus3MapTaruBombEffectDisplayList)
@@ -329,7 +355,7 @@ sb32 itTaruBombExplodeProcUpdate(GObj *item_gobj)
         return TRUE;
     }
 #ifdef PORT
-    else itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITTaruBombItemDesc, llGRBonus3MapTaruBombAttackEvents));
+    else itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(*itTaruBombGetItemDesc(), llGRBonus3MapTaruBombAttackEvents));
 #else
     else itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITTaruBombItemDesc, &llGRBonus3MapTaruBombAttackEvents));
 #endif
@@ -378,7 +404,7 @@ sb32 itTaruBombRollProcMap(GObj *item_gobj)
 // 0x8018518C
 GObj* itTaruBombMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {
-    GObj *item_gobj = itManagerMakeItem(parent_gobj, &dITTaruBombItemDesc, pos, vel, flags);
+    GObj *item_gobj = itManagerMakeItem(parent_gobj, itTaruBombGetItemDesc(), pos, vel, flags);
 
     if (item_gobj != NULL)
     {
@@ -413,7 +439,7 @@ void itTaruBombExplodeInitVars(GObj *item_gobj)
 
     itMainRefreshAttackColl(item_gobj);
 #ifdef PORT
-    itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITTaruBombItemDesc, llGRBonus3MapTaruBombAttackEvents));
+    itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(*itTaruBombGetItemDesc(), llGRBonus3MapTaruBombAttackEvents));
 #else
     itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITTaruBombItemDesc, &llGRBonus3MapTaruBombAttackEvents));
 #endif

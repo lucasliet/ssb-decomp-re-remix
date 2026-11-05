@@ -4,7 +4,8 @@
 
 /**
  * Fastfall gate of AI.asm prevent_fastfall: all jumps used, an offstage opponent, or a CPU within 2000 units of the
- * ground (the asm compares floor_dist < -2000 and skips when it is not) deny the fastfall.
+ * ground (the asm compares floor_dist < -2000 and skips when it is not) deny the fastfall. With no opponent the asm jumps
+ * to the fastfall at once (`beqz t1, _original`), before the floor test.
  */
 int ftRemixAiMovementRulesFastfallAllowed(int jumps_used, int jumps_max, int has_target, int target_floor_line_id,
                                           float floor_dist)
@@ -13,7 +14,11 @@ int ftRemixAiMovementRulesFastfallAllowed(int jumps_used, int jumps_max, int has
     {
         return 0;
     }
-    if (has_target && (target_floor_line_id == -1))
+    if (has_target == 0)
+    {
+        return 1;
+    }
+    if (target_floor_line_id == -1)
     {
         return 0;
     }
@@ -60,21 +65,24 @@ int ftRemixAiMovementRulesJumpInNeutralInput(int roll)
 }
 
 /**
- * Stage clamp of AI.asm clamp_target_pos_to_stage, with the comparison sense fixed (see the port notes): a target beyond
- * an edge is pulled back to that edge plus the padding, a target inside is kept.
+ * Stage clamp of AI.asm clamp_target_pos_to_stage (AI.asm 4903-4960). The asm reads 0x28(s3) and 0x2C(s3) of
+ * gMPCollisionBounds, which are current.right and current.left (the vanilla code at 0x80132A20 compares the fighter X with
+ * the same words as right and left), although its comments call them left and right. Each `c.le.s` plus `bc1fl` applies the
+ * clamp when the compare is true, so the target is pulled inside [left + padding, right - padding]: first the right side,
+ * then the left side.
  */
 float ftRemixAiMovementRulesClampTargetX(float target_x, float left_edge, float right_edge)
 {
-    float left_limit = left_edge - FTREMIX_AI_MOVEMENT_LEDGE_PADDING;
-    float right_limit = right_edge + FTREMIX_AI_MOVEMENT_LEDGE_PADDING;
+    float right_limit = right_edge - FTREMIX_AI_MOVEMENT_LEDGE_PADDING;
+    float left_limit = left_edge + FTREMIX_AI_MOVEMENT_LEDGE_PADDING;
 
-    if (target_x < left_limit)
+    if (right_limit <= target_x)
     {
-        return left_limit;
+        target_x = right_limit;
     }
-    if (target_x > right_limit)
+    if (target_x <= left_limit)
     {
-        return right_limit;
+        target_x = left_limit;
     }
     return target_x;
 }

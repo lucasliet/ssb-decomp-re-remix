@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include "ft/ftremix/ftremixhooks.h"
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixaicpuinput.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -115,7 +118,8 @@ void ftCommonDashSetStatus(GObj *fighter_gobj, u32 flag)
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
 #ifdef REGION_REMIX
-    ftMainSetStatus(fighter_gobj, ftRemixTrippingEnterStatus(fp, nFTCommonStatusDash), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+    /* prevent_dash (GBowser/gbowser.asm): a CPU Giga Bowser enters the fast walk instead of the dash */
+    ftMainSetStatus(fighter_gobj, ftRemixAiDashStatus(fp, ftRemixTrippingEnterStatus(fp, nFTCommonStatusDash)), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
 #else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusDash, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
 #endif

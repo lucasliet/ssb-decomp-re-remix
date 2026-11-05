@@ -1,5 +1,6 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
+#include "ft/ftremix/ftremixcliffplatform.h"
 #include "ft/ftremix/ftremixhooks.h"
 #endif
 
@@ -195,6 +196,13 @@ void ftCommonCliffCommon2ProcPhysics(GObj *fighter_gobj)
         pos.x += vel.x;
         pos.z += vel.z;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        if (ftRemixCliffPlatformHasVanished(fp->status_vars.common.cliffmotion.cliff_id))
+        {
+            ftCommonFallSetStatus(fighter_gobj);
+            return;
+        }
+#endif
         mpCollisionGetSpeedLineID(fp->status_vars.common.cliffmotion.cliff_id, &vel);
 
         pos.x += vel.x;

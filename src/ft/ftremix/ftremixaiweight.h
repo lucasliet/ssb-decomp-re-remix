@@ -14,7 +14,8 @@ sb32 ftRemixAiWeightAttackOptionsApplies(FTStruct *fp);
 
 /**
  * Chance of one candidate attack of this_fp against target_fp (AI.asm weight_attack_options). Starts at 1.0 and is
- * scaled by the own landing, the opponent hitstun or combo, the slow move and the grab against shield rules. It
+ * scaled by the own landing, the opponent hitstun or combo, the slow move and the grab against shield rules, and last by the
+ * fighter's Character.cpu_attack_weight routine. It
  * consumes the same random numbers, in the same order, as the asm.
  */
 f32 ftRemixAiWeightAttackOption(FTStruct *this_fp, FTStruct *target_fp, FTComputerAttack *comattack);

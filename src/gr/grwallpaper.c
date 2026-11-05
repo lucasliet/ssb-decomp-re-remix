@@ -2,7 +2,7 @@
 #include <sc/scene.h>
 #include <sc/sc1pmode/sc1pgameboss.h>
 #ifdef REGION_REMIX
-#include "gr/grremix/grremixids.h"
+#include "gr/grremix/grremixwallpaper.h"
 #include "remix/remix_training.h"
 #include "sc/sc1pmode/sc1premixhrcclouds.h"
 #endif
@@ -155,6 +155,7 @@ void grWallpaperCommonProcUpdate(GObj *wallpaper_gobj)
     grWallpaperCalcPersp(SObjGetStruct(wallpaper_gobj));
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixHrcCloudsApply(SObjGetStruct(wallpaper_gobj));
+    grRemixBlueBackgroundApply(SObjGetStruct(wallpaper_gobj));
 #endif
 }
 
@@ -381,12 +382,8 @@ void grWallpaperMakeDecideKind(void)
 #ifdef REGION_REMIX
     else if (gSCManagerBattleState->gkind > nGRKindBonusStageEnd)
     {
-        /* Stages.bg_type: every Remix stage uses the common wallpaper except Remix RTTF, which has none */
-        if (gSCManagerBattleState->gkind == nGRRemixStage_REMIX_RTTF)
-        {
-            grWallpaperMakeBonus3();
-        }
-        else grWallpaperMakeCommon();
+        /* Stages.asm id_fix_1_: Remix RTTF has no wallpaper, stages without a function table entry take the static one */
+        grRemixWallpaperMake(gSCManagerBattleState->gkind);
     }
 #endif
     else if (gSCManagerBattleState->gkind >= nGRKindBonusStageStart)

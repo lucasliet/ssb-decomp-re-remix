@@ -38,6 +38,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcssindicators.h"
 #include "mn/mnplayers/mnremixcssmode.h"
 #include "mn/mnplayers/mnremixtagteamcss.h"
+#include "mn/mnmaps/mnremixstagerandom.h"
 #include "mn/mnplayers/mnremixcssrandom.h"
 #include "mn/mnplayers/mnremixcssslide.h"
 #include "mn/mnplayers/mnremixcssrules.h"
@@ -7035,6 +7036,10 @@ void mnPlayersVSFuncRun(GObj *gobj)
 			else
 			{
 				gSCManagerSceneData.scene_curr = nSCKindVSBattle;
+#if defined(PORT) && defined(REGION_REMIX)
+				gkind = mnRemixStageRandomPickStageSelectOff();
+				if (gkind < 0)
+#endif
 				{
 					// Port-introduced playable stages (Final Destination, Metal Cavern,
 					// Battlefield) participate in the VS random pool from the start —

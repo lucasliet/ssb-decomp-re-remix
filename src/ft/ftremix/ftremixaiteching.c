@@ -55,17 +55,32 @@ static sb32 ftRemixAiIsOffStage(FTStruct *fp)
     return (fp->is_magnify_show != FALSE) ? TRUE : FALSE;
 }
 
-/** Vanilla tech checks, the same two calls the replaced chain used, short-circuited the same way. */
-static sb32 ftRemixAiTechVanilla(GObj *fighter_gobj)
-{
-    return (ftCommonPassiveStandCheckInterruptDamage(fighter_gobj) != FALSE) ||
-           (ftCommonPassiveCheckInterruptDamage(fighter_gobj) != FALSE);
-}
-
-/** Counts a CPU tech that did not happen (AI.asm random_teching_ _fail, VsStats.tech_miss_tracker). */
+/** Counts a tech that did not happen (AI.asm random_teching_ _fail, VsStats.tech_miss_tracker). */
 static void ftRemixAiTechCountMiss(FTStruct *fp)
 {
     mnRemixVSStatsCountTracker(fp->player, nMNRemixVSStatsTrackerTechMiss);
+}
+
+/** Failed tech: counts the miss and reports that the fighter did not tech (AI.asm random_teching_ _fail). */
+static sb32 ftRemixAiTechFail(FTStruct *fp)
+{
+    ftRemixAiTechCountMiss(fp);
+
+    return FALSE;
+}
+
+/**
+ * Vanilla tech checks, the same two calls the replaced chain used, short-circuited the same way. The asm routes the
+ * end of the vanilla chain through _fail, so a missed vanilla tech is counted too (humans included).
+ */
+static sb32 ftRemixAiTechVanilla(GObj *fighter_gobj, FTStruct *fp)
+{
+    if ((ftCommonPassiveStandCheckInterruptDamage(fighter_gobj) != FALSE) ||
+        (ftCommonPassiveCheckInterruptDamage(fighter_gobj) != FALSE))
+    {
+        return TRUE;
+    }
+    return ftRemixAiTechFail(fp);
 }
 
 /** Starts a tech roll in the direction (forward or backward) the fighter faces. TRUE as the fighter teched. */
@@ -103,8 +118,7 @@ static sb32 ftRemixAiTechByMenu(GObj *fighter_gobj, FTStruct *fp, s32 option)
         return ftRemixAiTechStartRoll(fighter_gobj, (fp->lr == +1) ? nFTCommonStatusPassiveStandF : nFTCommonStatusPassiveStandB);
 
     default:
-        ftRemixAiTechCountMiss(fp);
-        return FALSE;
+        return ftRemixAiTechFail(fp);
     }
 }
 
@@ -125,9 +139,7 @@ static sb32 ftRemixAiTechRoll(GObj *fighter_gobj, FTStruct *fp)
         ftCommonPassiveSetStatus(fighter_gobj);
         return TRUE;
     }
-    ftRemixAiTechCountMiss(fp);
-
-    return FALSE;
+    return ftRemixAiTechFail(fp);
 }
 
 /**
@@ -142,9 +154,9 @@ static sb32 ftRemixAiTechUsesRoll(FTStruct *fp)
 }
 
 /**
- * random_teching_ (AI.asm): sandbags never tech. Humans keep the vanilla checks. Single Button Mode only restricts CPUs,
- * the comment in the asm says "don't let CPU tech". CPUs without the improved path keep the vanilla checks.
- * A CPU in Training follows the menu tech option unless it is Random.
+ * random_teching_ (AI.asm): sandbags never tech, and Single Button Mode A, B, A+C and B+C blocks the tech of every player
+ * (the asm gate runs before the CPU/human split). Humans then keep the vanilla checks, as do CPUs without the improved
+ * path. A CPU in Training follows the menu tech option unless it is Random. Every failure is counted as a missed tech.
  */
 sb32 ftRemixAiTechIsHandled(GObj *fighter_gobj)
 {
@@ -152,19 +164,19 @@ sb32 ftRemixAiTechIsHandled(GObj *fighter_gobj)
 
     if (fp->fkind == REMIX_ID_SANDBAG)
     {
-        return FALSE;
-    }
-    if (fp->pkind != nFTPlayerKindCom)
-    {
-        return ftRemixAiTechVanilla(fighter_gobj);
+        return ftRemixAiTechFail(fp);
     }
     if (ftRemixAiTechSingleButtonAllows(ftRemixAiSingleButtonMode()) == FALSE)
     {
-        return FALSE;
+        return ftRemixAiTechFail(fp);
+    }
+    if (fp->pkind != nFTPlayerKindCom)
+    {
+        return ftRemixAiTechVanilla(fighter_gobj, fp);
     }
     if (ftRemixAiTechUsesRoll(fp) == FALSE)
     {
-        return ftRemixAiTechVanilla(fighter_gobj);
+        return ftRemixAiTechVanilla(fighter_gobj, fp);
     }
     if (ftRemixAiIsTrainingScreen() && (remix_training_get(REMIX_TRAINING_TECH) != 0))
     {

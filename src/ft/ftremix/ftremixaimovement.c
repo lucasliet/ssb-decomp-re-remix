@@ -94,8 +94,9 @@ sb32 ftRemixAiMovementTargetsOffstage(FTStruct *fp)
 }
 
 /**
- * clamp_target_pos_to_stage. The X bounds are the current map bounds (MPAllBounds.current, left and right). The Y clamp
- * is the asm one, applied after the X clamp.
+ * clamp_target_pos_to_stage. The X bounds are the current map bounds (MPAllBounds.current, left and right); the target is
+ * kept 300 inside them (the asm reads current.right and current.left through 0x28/0x2C(s3), see
+ * ftRemixAiMovementRulesClampTargetX). The Y clamp is the asm one, applied after the X clamp.
  */
 void ftRemixAiMovementClampTarget(FTStruct *fp, Vec2f *target)
 {

@@ -7,6 +7,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixsmashketballcamera.h"
+#include "gm/gmremixcamerapan.h"
 #endif
 #ifdef PORT
 #include <sys/debug.h>
@@ -771,8 +772,16 @@ void gmCameraUpdatePlayerZoom(GObj *camera_gobj)
 #endif
 
     gmCameraAdjustFOV(gGMCameraStruct.pzoom_fov);
+#ifdef REGION_REMIX
+    gmRemixCameraPanApplyFov(gGMCameraStruct.pzoom_fov);
+#endif
 
     gGMCameraStruct.target_dist = gGMCameraStruct.pzoom_dist;
+#ifdef REGION_REMIX
+    /* Size.asm adjust_camera_zoom_multiplier_ (RAM 0x8010C9C4), then Camera.asm vs_pause_pan_ (RAM 0x8010C9CC) */
+    gGMCameraStruct.target_dist *= ftRemixSizeGetMultiplier(fp->player);
+    gmRemixCameraPanApply(&pos, &gGMCameraStruct.target_dist);
+#endif
 
     gmCameraPan(cobj, &pos, gGMCameraStruct.pzoom_pan_scale);
 

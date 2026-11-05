@@ -7,6 +7,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #ifdef REGION_REMIX
 #include "it/itremix/itremixspawn.h"
 #include "if/ifremixhud.h"
+#include "if/ifremixdragonkinghud.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixtraining.h"
 #include "sc/sc1pmode/sc1ptrainingleftoverrules.h"
@@ -17,7 +18,9 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenudraw.h"
 #include "sc/sc1pmode/sc1ptrainingremixspawn.h"
+#include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixtoggle.h"
+#include "gr/grremix/grremixtrainingbackground.h"
 #include "it/itremix/itremix.h"
 #endif
 #include <gr/ground.h>
@@ -936,9 +939,19 @@ void sc1PTrainingModeLoadSprites(void)
  * wallpaper instead of faulting. */
 extern void port_log(const char *fmt, ...);
 
+/* Remix indexes the tables with the parent stage of Stages.background_table (Stages.asm training_id_fix_). */
+static s32 sc1PTrainingModeWallpaperGkind(void)
+{
+#ifdef REGION_REMIX
+	return grRemixTrainingBackgroundGkind(gSCManagerBattleState->gkind);
+#else
+	return gSCManagerBattleState->gkind;
+#endif
+}
+
 static s32 sc1PTrainingModeWallpaperID(void)
 {
-	s32 gkind = gSCManagerBattleState->gkind;
+	s32 gkind = sc1PTrainingModeWallpaperGkind();
 	s32 id;
 
 	if ((gkind < 0) || (gkind >= ARRAY_COUNT(dSC1PTrainingModeWallpaperIDs)))
@@ -958,7 +971,7 @@ static s32 sc1PTrainingModeWallpaperID(void)
 
 static intptr_t sc1PTrainingModeWallpaperHeapOffset(void)
 {
-	s32 gkind = gSCManagerBattleState->gkind;
+	s32 gkind = sc1PTrainingModeWallpaperGkind();
 
 	if ((gkind < 0) || (gkind >= ARRAY_COUNT(dSC1PTrainingModeWallpaperHeapOffsets)))
 	{
@@ -1040,6 +1053,9 @@ void sc1PTrainingModeMakeStatDisplayText(void)
 	for (i = 0; i < 4; i++)
 	{
 		SObj *sobj = sc1PTrainingModeMakeStatDisplay(interface_gobj, &sSC1PTrainingModeMenu.display_label_sprites[i]);
+#ifdef REGION_REMIX
+		sobj->pos.y += ifRemixDragonKingHudTrainingLabelOffsetY();
+#endif
 
 		sobj->sprite.red = 0xAF;
 		sobj->sprite.green = 0xAE;
@@ -1163,13 +1179,21 @@ void sc1PTrainingModeMakeDamageDisplay(void)
 	{
 		sobj = lbCommonMakeSObjForGObj(interface_gobj, sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, 0));
 		sc1PTrainingModeInitSpriteEnvColors(sobj);
+#ifdef REGION_REMIX
+		sobj->pos.y = ifRemixDragonKingHudPickY(20.0F, IFREMIX_DKHUD_Y_TRAINING_DAMAGE);
+#else
 		sobj->pos.y = 20.0F;
+#endif
 	}
 	sc1PTrainingModeUpdateDamageDisplay(interface_gobj, 0);
 	sobj = lbCommonMakeSObjForGObj(interface_gobj, sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, 38));
 	sc1PTrainingModeInitSpriteEnvColors(sobj);
 
+#ifdef REGION_REMIX
+	sobj->pos.y = ifRemixDragonKingHudPickY(20.0F, IFREMIX_DKHUD_Y_TRAINING_DAMAGE);
+#else
 	sobj->pos.y = 20.0F;
+#endif
 	sobj->pos.x = 100.0F;
 }
 
@@ -1246,7 +1270,11 @@ void sc1PTrainingModeMakeComboDisplay(void)
 	{
 		SObj *sobj = lbCommonMakeSObjForGObj(interface_gobj, sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, 0));
 		sc1PTrainingModeInitSpriteEnvColors(sobj);
+#ifdef REGION_REMIX
+		sobj->pos.y = ifRemixDragonKingHudPickY(36.0F, IFREMIX_DKHUD_Y_TRAINING_COMBO);
+#else
 		sobj->pos.y = 36.0F;
+#endif
 	}
 	sc1PTrainingModeUpdateComboDisplay(interface_gobj, 0);
 }
@@ -1276,7 +1304,11 @@ void sc1PTrainingModeMakeSpeedDisplay(void)
 	sobj = lbCommonMakeSObjForGObj(interface_gobj, sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, sSC1PTrainingModeMenu.speed_menu_option + 27));
 
 	sobj->pos.x = 276.0F;
+#ifdef REGION_REMIX
+	sobj->pos.y = ifRemixDragonKingHudPickY(20.0F, IFREMIX_DKHUD_Y_TRAINING_SPEED_ENEMY);
+#else
 	sobj->pos.y = 20.0F;
+#endif
 
 	sc1PTrainingModeInitSpriteEnvColors(sobj);
 }
@@ -1310,7 +1342,11 @@ void sc1PTrainingModeMakeCPDisplay(void)
 #else
 	sobj->pos.x = 193.0F;
 #endif
+#ifdef REGION_REMIX
+	sobj->pos.y = ifRemixDragonKingHudPickY(20.0F, IFREMIX_DKHUD_Y_TRAINING_SPEED_ENEMY);
+#else
 	sobj->pos.y = 20.0F;
+#endif
 
 	sc1PTrainingModeInitSpriteEnvColors(sobj);
 }
@@ -1392,15 +1428,27 @@ void sc1PTrainingModeMakeItemDisplay(void)
 
 	sobj = lbCommonMakeSObjForGObj(interface_gobj, sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, 37));
 	sobj->pos.x = 292.0F;
+#ifdef REGION_REMIX
+	sobj->pos.y = ifRemixDragonKingHudPickY(36.0F, IFREMIX_DKHUD_Y_TRAINING_ITEM);
+#else
 	sobj->pos.y = 36.0F;
+#endif
 	sc1PTrainingModeInitSpriteEnvColors(sobj);
 
 	sobj = lbCommonMakeSObjForGObj(interface_gobj, sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, 0));
+#ifdef REGION_REMIX
+	sobj->pos.y = ifRemixDragonKingHudPickY(36.0F, IFREMIX_DKHUD_Y_TRAINING_ITEM);
+#else
 	sobj->pos.y = 36.0F;
+#endif
 	sc1PTrainingModeInitSpriteEnvColors(sobj);
 
 	sobj = lbCommonMakeSObjForGObj(interface_gobj, sc1PTrainingModeResolveOpt(sSC1PTrainingModeMenu.display_option_sprites, 36));
+#ifdef REGION_REMIX
+	sobj->pos.y = ifRemixDragonKingHudPickY(36.0F, IFREMIX_DKHUD_Y_TRAINING_ITEM);
+#else
 	sobj->pos.y = 36.0F;
+#endif
 	sc1PTrainingModeInitSpriteEnvColors(sobj);
 }
 
@@ -2253,6 +2301,7 @@ void sc1PTrainingModeFuncStart(void)
 
 #if defined(PORT) && defined(REGION_REMIX)
 		mpCollisionGetPlayerMapObjPosition(sc1PTrainingRemixSpawnPort(player), &desc.pos);
+		gmRemixTrainingSpawnApply(sc1PTrainingRemixSpawnPort(player), &desc.pos);
 #else
 		mpCollisionGetPlayerMapObjPosition(player, &desc.pos);
 #endif

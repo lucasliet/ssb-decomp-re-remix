@@ -2,6 +2,7 @@
 #include <wp/weapon.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixaishared.h"
 #endif
 
 // // // // // // // // // // // //
@@ -44,6 +45,9 @@ void ftNessSpecialHiMakePKThunder(GObj *fighter_gobj)
     Vec3f pos;
     Vec3f vel;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    ftRemixAiPkThunderSaveLedge(fighter_gobj);
+#endif
     pos.x = 0.0F;
     pos.y = 0.0F;
     pos.z = 0.0F;

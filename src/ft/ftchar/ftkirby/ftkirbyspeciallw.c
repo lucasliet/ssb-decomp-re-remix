@@ -237,7 +237,11 @@ void ftKirbySpecialLwHoldProcPhysics(GObj *fighter_gobj)
         fp->physics.vel_ground.x = -FTKIRBY_STONE_SLIDE_CLAMP_VEL_X;
     }
 
+#ifdef REGION_REMIX
+    ftPhysicsSetGroundVelFriction(fp, (grRemixSurfaceFriction(fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK) * attr->traction * FTKIRBY_STONE_SLIDE_TRACTION_MUL));
+#else
     ftPhysicsSetGroundVelFriction(fp, (dMPCollisionMaterialFrictions[fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK] * attr->traction * FTKIRBY_STONE_SLIDE_TRACTION_MUL));
+#endif
     ftPhysicsSetGroundVelTransferAir(fighter_gobj);
 }
 

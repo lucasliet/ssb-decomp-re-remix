@@ -230,4 +230,91 @@ int ftRemixAiWeightRulesTruncFrames(float frames)
     return (int)frames;
 }
 
+/** The three states in which an opponent shields (ShieldOn, Shield, ShieldStun). */
+static int ftRemixAiWeightRulesTargetShields(const FTRemixAiWeightCustomContext *context)
+{
+    return ftRemixAiWeightRulesIsShieldStatus(context->target_status_id);
+}
+
+/** Shield check shared by the NSP and DSP routines: 100 against a shield, the chance otherwise. */
+static float ftRemixAiWeightRulesShieldChance(const FTRemixAiWeightCustomContext *context, float chance)
+{
+    return ftRemixAiWeightRulesTargetShields(context) ? FTREMIX_AI_WEIGHT_CUSTOM_SHIELD_CHANCE : chance;
+}
+
+/** Up special of Ganondorf, Dragon King and Captain Falcon: 0 with the opponent 100 or more below, 100 against a shield. */
+static float ftRemixAiWeightRulesUspChance(const FTRemixAiWeightCustomContext *context, float chance)
+{
+    if (!(FTREMIX_AI_WEIGHT_CUSTOM_BELOW_LIMIT <= context->target_height_diff))
+    {
+        return 0.0F;
+    }
+    return ftRemixAiWeightRulesShieldChance(context, chance);
+}
+
+/** Crash/AI/Attacks.asm: no level gate, NSP and the dash NSP drop to 0 against a shield. */
+static float ftRemixAiWeightRulesCrashChance(const FTRemixAiWeightCustomContext *context, float chance)
+{
+    int is_nsp = (context->input_kind == FTREMIX_AI_WEIGHT_INPUT_NSP) ||
+                 (context->input_kind == FTREMIX_AI_WEIGHT_INPUT_CRASH_DASH_NSP);
+
+    if (is_nsp && ftRemixAiWeightRulesTargetShields(context))
+    {
+        return 0.0F;
+    }
+    return chance;
+}
+
+/** captainshared.asm: up smash inputs doubled, USP like Ganondorf. */
+static float ftRemixAiWeightRulesCaptainChance(const FTRemixAiWeightCustomContext *context, float chance)
+{
+    int input_kind = context->input_kind;
+
+    if ((input_kind == FTREMIX_AI_WEIGHT_INPUT_USMASH) || (input_kind == FTREMIX_AI_WEIGHT_INPUT_DASH_GRAB) ||
+        (input_kind == FTREMIX_AI_WEIGHT_INPUT_DASH_USMASH))
+    {
+        return chance * FTREMIX_AI_WEIGHT_CUSTOM_USMASH_FACTOR;
+    }
+    if (input_kind == FTREMIX_AI_WEIGHT_INPUT_USP)
+    {
+        return ftRemixAiWeightRulesUspChance(context, chance);
+    }
+    return chance;
+}
+
+/** Level 10 routine of the kind, for the candidate input of the context. */
+static float ftRemixAiWeightRulesLevelTenChance(int custom_kind, const FTRemixAiWeightCustomContext *context, float chance)
+{
+    int input_kind = context->input_kind;
+
+    switch (custom_kind)
+    {
+    case FTREMIX_AI_WEIGHT_CUSTOM_NSP_VS_SHIELD:
+        return (input_kind == FTREMIX_AI_WEIGHT_INPUT_NSP) ? ftRemixAiWeightRulesShieldChance(context, chance) : chance;
+    case FTREMIX_AI_WEIGHT_CUSTOM_PIANO:
+        return (input_kind == FTREMIX_AI_WEIGHT_INPUT_DSP) ? ftRemixAiWeightRulesShieldChance(context, chance) : chance;
+    case FTREMIX_AI_WEIGHT_CUSTOM_USP_VS_BELOW:
+        return (input_kind == FTREMIX_AI_WEIGHT_INPUT_USP) ? ftRemixAiWeightRulesUspChance(context, chance) : chance;
+    case FTREMIX_AI_WEIGHT_CUSTOM_CAPTAIN:
+        return ftRemixAiWeightRulesCaptainChance(context, chance);
+    case FTREMIX_AI_WEIGHT_CUSTOM_PUFF:
+        return (input_kind == FTREMIX_AI_WEIGHT_INPUT_NSP) ? chance * FTREMIX_AI_WEIGHT_CUSTOM_PUFF_NSP_FACTOR : chance;
+    default:
+        return chance;
+    }
+}
+
+float ftRemixAiWeightRulesCustomChance(int custom_kind, const FTRemixAiWeightCustomContext *context, float chance)
+{
+    if (custom_kind == FTREMIX_AI_WEIGHT_CUSTOM_CRASH)
+    {
+        return ftRemixAiWeightRulesCrashChance(context, chance);
+    }
+    if (context->cpu_level < FTREMIX_AI_WEIGHT_CUSTOM_LEVEL)
+    {
+        return chance;
+    }
+    return ftRemixAiWeightRulesLevelTenChance(custom_kind, context, chance);
+}
+
 #endif

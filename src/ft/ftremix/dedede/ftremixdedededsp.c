@@ -139,6 +139,15 @@ void ftRemixDededeDSPFreeMinion(GObj *owner_gobj, GObj *minion_gobj)
     }
 }
 
+/* Dedede.recovery_logic: TRUE when both field slots (N64 0x0ADC and 0x0AE0) hold a minion that is still on the field. */
+sb32 ftRemixDededeDSPFieldMinionsFull(FTStruct *fp)
+{
+    GObj **slots = sFTRemixDededeDSPFieldMinions[fp->player];
+
+    return (slots[0] != NULL) && ftRemixDededeDSPIsLinked(slots[0], nGCCommonLinkIDItem) && (slots[1] != NULL) &&
+           ftRemixDededeDSPIsLinked(slots[1], nGCCommonLinkIDItem);
+}
+
 /* Reads a down special word at its N64 FTStruct offset. */
 static s32 *ftRemixDededeDSPWord(FTStruct *fp, u32 n64_offset)
 {

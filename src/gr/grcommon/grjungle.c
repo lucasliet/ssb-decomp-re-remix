@@ -4,6 +4,8 @@
 #ifdef REGION_REMIX
 #include <sc/scene.h>
 #include <gr/grremix/grremixids.h>
+#include "gr/grremix/grremixjunglebarrels.h"
+#include "it/itremix/itremixbasketball.h"
 #endif
 
 // // // // // // // // // // // //
@@ -156,27 +158,41 @@ void grJungleMakeTaruCann(void)
 
 #ifdef REGION_REMIX
 /**
- * Remix stages that reuse the Congo Jungle maker but have no taru cann map nodes
- * (Stages.asm function table). Spawning a taru cann there dereferences missing map
- * joints and crashes, so only the Congo Jungle family may spawn one (Hazards.asm
- * congo_jungle_barrel_, 0x80109FBC).
+ * Hazards.asm add_barrel_ (0x80109E84 body): makes one static barrel at a position, with the enter and exit animations and
+ * an optional animation track. The barrel is registered as a ground obstacle, so the fighters enter it.
+ *
+ * @param map_head Base of the jungle map file the barrel model is read from (Banjo's Board the Platforms has its own).
+ * @param x X of the barrel.
+ * @param y Y of the barrel.
+ * @param rotate_z Rotation z of the barrel in radians (the exit direction).
+ * @param anim_joints Animation track of the barrel, NULL for none.
+ * @return The barrel object.
  */
-sb32 grJungleStageHasTaruCann(void)
+GObj* grJungleRemixMakeTaruCannAt(void *map_head, f32 x, f32 y, f32 rotate_z, AObjEvent32 **anim_joints)
 {
-    s32 gkind = gSCManagerBattleState->gkind;
+    GObj *tarucann_gobj;
+    DObj *dobj;
 
-    switch (gkind)
+    gGRCommonStruct.jungle.map_head = map_head;
+
+    tarucann_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
+
+    gcAddGObjDisplay(tarucann_gobj, gcDrawDObjTreeForGObj, 6, GOBJ_PRIORITY_DEFAULT, ~0);
+    grModelSetupGroundDObjs(tarucann_gobj, (DObjDesc*) ((intptr_t)llGRJungleMapMapHead + (uintptr_t)map_head), NULL, dGRJungleTaruCannTransformKinds);
+
+    dobj = DObjGetStruct(tarucann_gobj);
+    dobj->translate.vec.f.x = x;
+    dobj->translate.vec.f.y = y;
+    dobj->rotate.vec.f.z = rotate_z;
+
+    if (anim_joints != NULL)
     {
-    case nGRRemixStage_CONGO_JUNGLE:
-    case nGRRemixStage_SMASHKETBALL:
-    case nGRRemixStage_FALLS:
-    case nGRRemixStage_CONGOJ_DL:
-    case nGRRemixStage_CONGOJ_O:
-        return TRUE;
-
-    default:
-        return FALSE;
+        gcAddAnimJointAll(tarucann_gobj, anim_joints, 0.0F);
     }
+    gcAddGObjProcess(tarucann_gobj, gcPlayAnimAll, nGCProcessKindFunc, 5);
+    ftMainCheckAddGroundObstacle(tarucann_gobj, grJungleTaruCannCheckGetDamageKind);
+
+    return tarucann_gobj;
 }
 #endif
 
@@ -184,10 +200,7 @@ sb32 grJungleStageHasTaruCann(void)
 GObj* grJungleMakeGround(void)
 {
 #ifdef REGION_REMIX
-    if (grJungleStageHasTaruCann())
-    {
-        grJungleMakeTaruCann();
-    }
+    grRemixJungleBarrelsMakeGround();
 #else
     grJungleMakeTaruCann();
 #endif
@@ -195,56 +208,105 @@ GObj* grJungleMakeGround(void)
     return NULL;
 }
 
+/**
+ * Overlap test shared by the fighters and the Smashketball ball (the tail of 0x80109FD8, entered at 0x8010A018 by the ball):
+ * within 280 units of the barrel on both axes and no other fighter inside it.
+ *
+ * @param ground_gobj Barrel object.
+ * @param subject_gobj Fighter or ball object that tries to enter.
+ * @param kind Receives the hit environment kind of the barrel.
+ * @return TRUE when the subject enters the barrel; the fill animation is started then.
+ */
+static sb32 grJungleTaruCannCheckEnter(GObj *ground_gobj, GObj *subject_gobj, s32 *kind)
+{
+    DObj *gr_dobj = DObjGetStruct(ground_gobj);
+    DObj *subject_dobj = DObjGetStruct(subject_gobj);
+    f32 dist_x;
+    f32 dist_y;
+
+    if (gr_dobj->translate.vec.f.x < subject_dobj->translate.vec.f.x)
+    {
+        dist_x = -(gr_dobj->translate.vec.f.x - subject_dobj->translate.vec.f.x);
+    }
+    else dist_x = gr_dobj->translate.vec.f.x - subject_dobj->translate.vec.f.x;
+
+    if (gr_dobj->translate.vec.f.y < subject_dobj->translate.vec.f.y)
+    {
+        dist_y = -(gr_dobj->translate.vec.f.y - subject_dobj->translate.vec.f.y);
+    }
+    else dist_y = gr_dobj->translate.vec.f.y - subject_dobj->translate.vec.f.y;
+
+    if ((dist_x < 280.0F) && (dist_y < 280.0F))
+    {
+        GObj *other_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
+
+        while (other_gobj != NULL)
+        {
+            if (other_gobj != subject_gobj)
+            {
+                FTStruct *other_fp = ftGetStruct(other_gobj);
+
+                if ((other_fp->status_id == nFTCommonStatusTaruCann) && (ground_gobj == other_fp->status_vars.common.tarucann.tarucann_gobj))
+                {
+                    return FALSE;
+                }
+            }
+            other_gobj = other_gobj->link_next;
+        }
+#ifdef REGION_REMIX
+        if (itRemixBasketballIsBarrelOccupied()) /* Basketball.asm prevent_fighter_enter_barrel_ (0x8010A0E0) */
+        {
+            return FALSE;
+        }
+#endif
+        *kind = nGMHitEnvironmentTaruCann;
+
+        grJungleTaruCannAddAnimFill(ground_gobj);
+
+        return TRUE;
+    }
+    return FALSE;
+}
+
 // 0x80109FD8
 sb32 grJungleTaruCannCheckGetDamageKind(GObj *ground_gobj, GObj *fighter_gobj, s32 *kind)
 {
     FTStruct *this_fp = ftGetStruct(fighter_gobj);
-    f32 dist_x;
-    f32 dist_y;
 
     if ((this_fp->tarucann_wait == 0) && (this_fp->status_id != nFTCommonStatusTaruCann) && !(this_fp->capture_immune_mask & FTCATCHKIND_MASK_TARUCANN))
     {
-        DObj *gr_dobj = DObjGetStruct(ground_gobj);
-        DObj *ft_dobj = DObjGetStruct(fighter_gobj);
-
-        if (gr_dobj->translate.vec.f.x < ft_dobj->translate.vec.f.x)
-        {
-            dist_x = -(gr_dobj->translate.vec.f.x - ft_dobj->translate.vec.f.x);
-        }
-        else dist_x = gr_dobj->translate.vec.f.x - ft_dobj->translate.vec.f.x;
-
-        if (gr_dobj->translate.vec.f.y < ft_dobj->translate.vec.f.y)
-        {
-            dist_y = -(gr_dobj->translate.vec.f.y - ft_dobj->translate.vec.f.y);
-        }
-        else dist_y = gr_dobj->translate.vec.f.y - ft_dobj->translate.vec.f.y;
-
-        if ((dist_x < 280.0F) && (dist_y < 280.0F))
-        {
-            GObj *other_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
-
-            while (other_gobj != NULL)
-            {
-                if (other_gobj != fighter_gobj)
-                {
-                    FTStruct *other_fp = ftGetStruct(other_gobj);
-
-                    if ((other_fp->status_id == nFTCommonStatusTaruCann) && (ground_gobj == other_fp->status_vars.common.tarucann.tarucann_gobj))
-                    {
-                        return FALSE;
-                    }
-                }
-                other_gobj = other_gobj->link_next;
-            }
-            *kind = nGMHitEnvironmentTaruCann;
-
-            grJungleTaruCannAddAnimFill(ground_gobj);
-
-            return TRUE;
-        }
+        return grJungleTaruCannCheckEnter(ground_gobj, fighter_gobj, kind);
     }
     return FALSE;
 }
+
+#ifdef REGION_REMIX
+/**
+ * Basketball.asm check_basketball_barrel_collision_ (the jump into 0x8010A018): the overlap test of a barrel with the ball.
+ *
+ * @param ground_gobj Barrel object.
+ * @param item_gobj Basketball object.
+ * @return TRUE when the ball enters the barrel.
+ */
+sb32 grJungleTaruCannCheckBasketball(GObj *ground_gobj, GObj *item_gobj)
+{
+    s32 kind;
+
+    return grJungleTaruCannCheckEnter(ground_gobj, item_gobj, &kind);
+}
+
+/**
+ * barrel_angle_fix_ (0x8010A12C): the rotation of the barrel a fighter is in, read from the fighter instead of the single
+ * barrel object of the stage, so extra barrels shoot along their own rotation.
+ *
+ * @param tarucann_gobj Barrel object (status_vars.common.tarucann.tarucann_gobj of the fighter).
+ * @return Rotation z of the barrel in radians.
+ */
+f32 grJungleTaruCannGetRotateOf(GObj *tarucann_gobj)
+{
+    return DObjGetStruct(tarucann_gobj)->rotate.vec.f.z;
+}
+#endif
 
 // 0x8010A104
 void grJungleTaruCannGetPosition(Vec3f *pos)

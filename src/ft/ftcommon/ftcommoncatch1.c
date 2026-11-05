@@ -2,6 +2,9 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixaicpuinput.h"
+#endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
 #endif
@@ -196,12 +199,12 @@ sb32 ftCommonCatchCheckInterruptAttack11(GObj *fighter_gobj)
 
         return TRUE;
     }
-    /*
-     * REMIX-TODO(AI): auto_jab_grab_ (AI.asm 3584-3631). A level 10 CPU should grab during the jab from frame 3 when
-     * Single Button Mode is off or R/R+C, without the Z tap. Not wired: the asm runs a polygon check (0x80149E84) before
-     * the grab, and that vanilla code is not in the decomp or the Remix asm.
-     */
+#if defined(PORT) && defined(REGION_REMIX)
+    /* auto_jab_grab_ (AI.asm 3584): a level 10 CPU grabs during the jab without the Z tap. is_have_catch is the "polygon check" of the asm. */
+    else if (((fp->input.pl.button_tap & fp->input.button_mask_z) || (ftRemixAiAutoJabGrab(fp) != FALSE)) && (attr->is_have_catch))
+#else
     else if ((fp->input.pl.button_tap & fp->input.button_mask_z) && (attr->is_have_catch))
+#endif
     {
         ftCommonCatchSetStatus(fighter_gobj);
 

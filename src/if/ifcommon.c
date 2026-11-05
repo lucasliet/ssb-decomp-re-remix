@@ -10,6 +10,10 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
+#include "gr/grremix/grremixstage.h"
+#include "if/ifremixcountdown.h"
+#include "if/ifremixdragonkinghud.h"
+#include "gm/gmremixcamerapan.h"
 #include "gm/gmremixmusictitle.h"
 #include "gm/gmremixtagteam.h"
 #include "gm/gmremixsmashketball.h"
@@ -567,6 +571,56 @@ ub8 sIFCommonIsAnnouncedSecond[5];
 //                               //
 // // // // // // // // // // // //
 
+/**
+ * Sprite offset of a damage digit in the damage file: the Dragon King HUD set when that layout applies.
+ *
+ * @param image_id 0 to 9 digits, 10 the % sign, 11 H.P.
+ * @return Offset of the digit sprite in gGMCommonFiles[2].
+ */
+static intptr_t ifCommonPlayerDamageGetDigitSpriteOffset(s32 image_id)
+{
+#ifdef REGION_REMIX
+    if (ifRemixDragonKingHudIsOn() != FALSE)
+    {
+        return ifRemixDragonKingHudDigitOffset(image_id);
+    }
+#endif
+    return dIFCommonPlayerDamageDigitSpriteOffsets[image_id];
+}
+
+/**
+ * Width a damage digit takes in the spacing of the digits: the Dragon King HUD widths when that layout applies.
+ * Only the placement loop of ifCommonPlayerDamageUpdateDigits uses it; the total width of the string keeps the vanilla widths,
+ * as in the asm (DragonKingHUD.asm set_horizontal_spacing_ patches the loop only).
+ *
+ * @param image_id 0 to 9 digits, 10 the % sign, 11 H.P.
+ * @return Width of the digit.
+ */
+static s32 ifCommonPlayerDamageGetDigitSpacing(s32 image_id)
+{
+#ifdef REGION_REMIX
+    if (ifRemixDragonKingHudIsOn() != FALSE)
+    {
+        return ifRemixDragonKingHudDigitWidth(image_id);
+    }
+#endif
+    return dIFCommonPlayerDamageDigitWidths[image_id];
+}
+
+/**
+ * Y of the match timer digits and colon (vanilla 30; Remix: Dragon King HUD and the Input Display of port 4).
+ *
+ * @return Y of the vertical middle of the digits.
+ */
+static f32 ifCommonTimerGetDigitsY(void)
+{
+#ifdef REGION_REMIX
+    return ifRemixTimerGetDigitsY();
+#else
+    return 30.0F;
+#endif
+}
+
 // 0x8010E690
 void ifCommonPlayerDamageSetShowInterface(void)
 {
@@ -751,7 +805,7 @@ void ifCommonPlayerDamageUpdateDigits(GObj *interface_gobj)
 
             ifchar->image_id = sprite_id;
 
-            offset = dIFCommonPlayerDamageDigitWidths[sprite_id] * scale;
+            offset = ifCommonPlayerDamageGetDigitSpacing(sprite_id) * scale;
 
             ifchar->pos.x = (pos_x - (offset * 0.5F));
             ifchar->pos.y = gIFCommonPlayerInterface.player_pos_y;
@@ -925,10 +979,13 @@ void ifCommonPlayerDamageProcDisplay(GObj *interface_gobj)
             color_g = (s32) ((dIFCommonPlayerDamageDigitColorsG[color_id] - 0x14) * damage_scale) + 0x14;
             color_b = (s32) ((dIFCommonPlayerDamageDigitColorsB[color_id] - 0x14) * damage_scale) + 0x14;
         }
+#ifdef REGION_REMIX
+        ifRemixDragonKingHudApplyDamageColor(player, &color_r, &color_g, &color_b);
+#endif
         sobj = sobj->next;
         ifchar = sobj->user_data.p;
 
-        sobj->sprite = *lbRelocGetFileData(Sprite*, gGMCommonFiles[2], dIFCommonPlayerDamageDigitSpriteOffsets[ifchar->image_id]);
+        sobj->sprite = *lbRelocGetFileData(Sprite*, gGMCommonFiles[2], ifCommonPlayerDamageGetDigitSpriteOffset(ifchar->image_id));
 
         sobj->pos.x = (ifchar->pos.x - (sobj->sprite.width * 0.5F * scale));
         sobj->pos.y = (ifchar->pos.y - (sobj->sprite.height * 0.5F * scale));
@@ -956,7 +1013,7 @@ void ifCommonPlayerDamageProcDisplay(GObj *interface_gobj)
             {
                 ifchar = sobj->user_data.p;
 
-                sobj->sprite = *lbRelocGetFileData(Sprite*, gGMCommonFiles[2], dIFCommonPlayerDamageDigitSpriteOffsets[ifchar->image_id]);
+                sobj->sprite = *lbRelocGetFileData(Sprite*, gGMCommonFiles[2], ifCommonPlayerDamageGetDigitSpriteOffset(ifchar->image_id));
 
                 pos_x = ifchar->pos.x - (sobj->sprite.width * 0.5F * scale);
                 pos_y = ifchar->pos.y - (sobj->sprite.height * 0.5F * scale);
@@ -1000,13 +1057,26 @@ void ifCommonPlayerDamageSetDigitAttr(void)
 #endif
         lbRelocGetFileData(Sprite*, gGMCommonFiles[2], dIFCommonPlayerDamageDigitSpriteOffsets[i])->attr = SP_TEXSHUF | SP_TRANSPARENT;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ifRemixDragonKingHudIsOn() != FALSE)
+    {
+        for (i = 0; i < ARRAY_COUNT(dIFCommonPlayerDamageDigitSpriteOffsets); i++)
+        {
+            ifCommonPortFixupSpriteFull(lbRelocGetFileData(Sprite*, gGMCommonFiles[2], ifRemixDragonKingHudDigitOffset(i)));
+        }
+    }
+#endif
 }
 
 // 0x8010F3A0
 void ifCommonPlayerDamageSetDigitPositions(void)
 {
     gIFCommonPlayerInterface.player_pos_x = dIFCommonPlayerDamagePositionOffsetsX;
+#ifdef REGION_REMIX
+    gIFCommonPlayerInterface.player_pos_y = ifRemixDragonKingHudDamageY(210, FALSE);
+#else
     gIFCommonPlayerInterface.player_pos_y = 210;
+#endif
 }
 
 // 0x8010F3C0
@@ -1067,6 +1137,14 @@ void ifCommonPlayerDamageInitInterface(void)
                 sobj->sprite.blue = gMPCollisionGroundData->emblem_colors[emblem].b;
 
                 sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
+#ifdef REGION_REMIX
+                /* DragonKingHUD.asm hide_series_logo_: the width is zeroed after the position is computed */
+                if (ifRemixDragonKingHudIsOn() != FALSE)
+                {
+                    sobj->sprite.width = 0;
+                    sobj->sprite.attr |= SP_HIDDEN;
+                }
+#endif
             }
             else
             {
@@ -1104,7 +1182,11 @@ void ifCommonPlayerDamageStartBreakAnim(FTStruct *fp)
     for (i = 0; i < sIFCommonPlayerDamageInterface[player].char_display_count; i++)
     {
         sIFCommonPlayerDamageInterface[player].chars[i].vel.x = (syUtilsRandFloat() * 2) + (-1.0F);
+#ifdef REGION_REMIX
+        sIFCommonPlayerDamageInterface[player].chars[i].vel.y = ifRemixDragonKingHudPickY(-10.0F, IFREMIX_DKHUD_KO_DIGIT_SPEED_Y);
+#else
         sIFCommonPlayerDamageInterface[player].chars[i].vel.y = -10.0F;
+#endif
 
         sIFCommonPlayerDamageInterface[player].chars[i].is_lock_movement = FALSE;
     }
@@ -2398,19 +2480,31 @@ void ifCommonCountdownThread(GObj *interface_gobj)
         case I_SEC_TO_TICS(2):
             main_status = lamp_status = 6;
 
+#ifdef REGION_REMIX
+            ifRemixCountdownPlayStep(nIFRemixCountdownStepThree, nSYAudioVoiceAnnounceThree);
+#else
             func_800269C0_275C0(nSYAudioVoiceAnnounceThree);
+#endif
             break;
 
         case I_SEC_TO_TICS(3):
             main_status = lamp_status = 7;
 
+#ifdef REGION_REMIX
+            ifRemixCountdownPlayStep(nIFRemixCountdownStepTwo, nSYAudioVoiceAnnounceTwo);
+#else
             func_800269C0_275C0(nSYAudioVoiceAnnounceTwo);
+#endif
             break;
 
         case I_SEC_TO_TICS(4):
             main_status = lamp_status = 8;
 
+#ifdef REGION_REMIX
+            ifRemixCountdownPlayStep(nIFRemixCountdownStepOne, nSYAudioVoiceAnnounceOne);
+#else
             func_800269C0_275C0(nSYAudioVoiceAnnounceOne);
+#endif
             break;
 
         case I_SEC_TO_TICS(5):
@@ -2420,7 +2514,11 @@ void ifCommonCountdownThread(GObj *interface_gobj)
 
             main_status = lamp_status = 9;
 
+#ifdef REGION_REMIX
+            ifRemixCountdownPlayStep(nIFRemixCountdownStepGo, nSYAudioVoiceAnnounceGo);
+#else
             func_800269C0_275C0(nSYAudioVoiceAnnounceGo);
+#endif
 
             break;
 
@@ -2713,7 +2811,7 @@ void ifCommonTimerProcDisplay(GObj *interface_gobj)
         sobj->sprite = *lbRelocGetFileData(Sprite*, gGMCommonFiles[3], dIFCommonTimerDigitSpriteOffsets[0]);
 
         sobj->pos.x = (s32)(dIFCommonTimerDigitsSpritePositionsX[3] - (sobj->sprite.width * 0.5F));
-        sobj->pos.y = (s32)(30.0F - (sobj->sprite.height * 0.5F));
+        sobj->pos.y = (s32)(ifCommonTimerGetDigitsY() - (sobj->sprite.height * 0.5F));
     }
     else
     {
@@ -2734,7 +2832,7 @@ void ifCommonTimerProcDisplay(GObj *interface_gobj)
                 sobj->sprite = *lbRelocGetFileData(Sprite*, gGMCommonFiles[3], dIFCommonTimerDigitSpriteOffsets[digit]);
 
                 sobj->pos.x = (s32)(dIFCommonTimerDigitsSpritePositionsX[i] - (sobj->sprite.width * 0.5F));
-                sobj->pos.y = (s32)(30.0F - (sobj->sprite.height * 0.5F));
+                sobj->pos.y = (s32)(ifCommonTimerGetDigitsY() - (sobj->sprite.height * 0.5F));
 
                 sIFCommonTimerDigitsInterface[i] = digit;
             }
@@ -2802,7 +2900,7 @@ SObj* ifCommonTimerMakeDigits(void)
     sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerSymbolColonSprite));
 
     sobj->pos.x = (s32)(260.0F - (sobj->sprite.width * 0.5F));
-    sobj->pos.y = (s32)(30.0F - (sobj->sprite.height * 0.5F));
+    sobj->pos.y = (s32)(ifCommonTimerGetDigitsY() - (sobj->sprite.height * 0.5F));
 
     sIFCommonTimerDigitsInterface[0] = sIFCommonTimerDigitsInterface[1] = sIFCommonTimerDigitsInterface[2] = sIFCommonTimerDigitsInterface[3] = 10;
 
@@ -3367,7 +3465,11 @@ void ifCommonBattleGoUpdateInterface(void)
                             sIFCommonBattlePauseKindInterface = nIFPauseKindBonus;
 #endif
                         }
+#ifdef REGION_REMIX
+                        else if (gmRemixCameraPanCheckPauseOutBounds(&DObjGetStruct(fighter_gobj)->translate.vec.f) != FALSE)
+#else
                         else if (gmCameraCheckPausePlayerOutBounds(&DObjGetStruct(fighter_gobj)->translate.vec.f) != FALSE)
+#endif
                         {
                             sIFCommonBattlePauseKindInterface = nIFPauseKindPlayerNA;
                         }
@@ -3425,6 +3527,19 @@ void ifCommonBattleInterfaceProcSet(void)
     sIFCommonBattlePauseCameraRestoreWait = 3;
 }
 
+#ifdef REGION_REMIX
+/* Camera.asm 0x80130C94: the pause camera stick limits become +-100, so the camera can rotate freely */
+#define IFCOMMON_PAUSE_EYE_X_MAX 100.0F
+#define IFCOMMON_PAUSE_EYE_X_MIN -100.0F
+#define IFCOMMON_PAUSE_EYE_Y_MAX 100.0F
+#define IFCOMMON_PAUSE_EYE_Y_MIN -100.0F
+#else
+#define IFCOMMON_PAUSE_EYE_X_MAX F_CLC_DTOR32(50.0F)
+#define IFCOMMON_PAUSE_EYE_X_MIN F_CLC_DTOR32(-50.0F)
+#define IFCOMMON_PAUSE_EYE_Y_MAX F_CLC_DTOR32(20.0F)
+#define IFCOMMON_PAUSE_EYE_Y_MIN F_CLC_DTOR32(-20.0F)
+#endif
+
 // 0x801142EC
 void ifCommonBattlePauseUpdateInterface(void)
 {
@@ -3440,6 +3555,7 @@ void ifCommonBattlePauseUpdateInterface(void)
         gmRemixBgmPauseUpdate(button_hold);
         ifRemixPauseLegendUpdate(button_tap, button_hold);
         ifRemixGentlemensResetUpdate();
+        gmRemixCameraPanUpdate(button_hold);
         if (ftRemixPauseKeepsSceneCamera())
         {
             sIFCommonBattlePauseCameraEyeXOrigin = gGMCameraPauseCameraEyeX;
@@ -3451,26 +3567,26 @@ void ifCommonBattlePauseUpdateInterface(void)
         {
             gGMCameraPauseCameraEyeX += (stick_x * 0.000333F);
 
-            if (gGMCameraPauseCameraEyeX > F_CLC_DTOR32(50.0F))
+            if (gGMCameraPauseCameraEyeX > IFCOMMON_PAUSE_EYE_X_MAX)
             {
-                gGMCameraPauseCameraEyeX = F_CLC_DTOR32(50.0F);
+                gGMCameraPauseCameraEyeX = IFCOMMON_PAUSE_EYE_X_MAX;
             }
-            else if (gGMCameraPauseCameraEyeX < F_CLC_DTOR32(-50.0F))
+            else if (gGMCameraPauseCameraEyeX < IFCOMMON_PAUSE_EYE_X_MIN)
             {
-                gGMCameraPauseCameraEyeX = F_CLC_DTOR32(-50.0F);
+                gGMCameraPauseCameraEyeX = IFCOMMON_PAUSE_EYE_X_MIN;
             }
         }
         if (ABS(stick_y) > 8.0F)
         {
             gGMCameraPauseCameraEyeY -= (stick_y * 0.000333F);
 
-            if (gGMCameraPauseCameraEyeY > F_CLC_DTOR32(20.0F))
+            if (gGMCameraPauseCameraEyeY > IFCOMMON_PAUSE_EYE_Y_MAX)
             {
-                gGMCameraPauseCameraEyeY = F_CLC_DTOR32(20.0F);
+                gGMCameraPauseCameraEyeY = IFCOMMON_PAUSE_EYE_Y_MAX;
             }
-            else if (gGMCameraPauseCameraEyeY < F_CLC_DTOR32(-20.0F))
+            else if (gGMCameraPauseCameraEyeY < IFCOMMON_PAUSE_EYE_Y_MIN)
             {
-                gGMCameraPauseCameraEyeY = F_CLC_DTOR32(-20.0F);
+                gGMCameraPauseCameraEyeY = IFCOMMON_PAUSE_EYE_Y_MIN;
             }
         }
     }
@@ -3562,6 +3678,7 @@ void ifCommonBattlePauseRestoreInterfaceAll(void)
     grWallpaperResumePerspUpdate();
 
 #ifdef REGION_REMIX
+    gmRemixCameraPanClear();
     gIFCommonPlayerInterface.is_magnify_display = gmRemixCameraRestorePauseHud();
 #else
     gIFCommonPlayerInterface.is_magnify_display = TRUE;
@@ -3729,6 +3846,12 @@ void ifCommonPlayerScoreMakeEffect(FTStruct *fp, s32 score)
 #ifdef REGION_REMIX
     /* ComboMeter.asm hide_for_score_sprite_ (0x801149D8) */
     ifRemixComboMeterHideForScore(fp->player);
+
+    /* DragonKingHUD.asm hide_score_sprite_ (0x80114A28) */
+    if (ifRemixDragonKingHudIsOn() != FALSE)
+    {
+        return;
+    }
 #endif
 
     pos.x = ((gIFCommonPlayerInterface.player_pos_x[fp->player] + dIFCommonPlayerScorePositionOffsetsX[fp->player]) << 2);
@@ -3818,7 +3941,11 @@ void ifCommon1PGameInterfaceProcSet(void)
 // 0x80114C80
 void ifCommonAnnounceEndMessage(void)
 {
+#ifdef REGION_REMIX
+    if (grRemixStageEndsWithGameSet(gSCManagerBattleState->gkind) == FALSE)
+#else
     if (gSCManagerBattleState->gkind >= nGRKindBonusStageStart)
+#endif
     {
         ifCommonBattleSetInterface(ifCommonBattleInterfaceProcUpdate, ifCommonBattleInterfaceProcSet, nSYAudioVoiceAnnounceFailure, 90);
         ifCommonAnnounceFailureMakeInterface();

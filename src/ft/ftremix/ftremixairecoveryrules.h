@@ -11,10 +11,10 @@
 
 /**
  * TRUE when the CPU may repeat its up-B recovery (the vanilla "already used special up" check is skipped).
- * A level 10 CPU always repeats. Vanilla 1P/RTTF (classic mode) never repeats. Otherwise the improved AI decides.
- * The Remix 1P automatic improved AI is not part of this rule yet (REMIX-TODO(AI)).
+ * Remix 1P (automatic improved AI) and a level 10 CPU always repeat. Vanilla 1P/RTTF (classic mode) never repeats.
+ * Otherwise the improved AI decides. The Remix 1P test comes first because Remix 1P also reports the 1P game type.
  */
-extern int ftRemixAiRecoveryUpBRepeatAllowed(int cpu_level, int is_classic_mode, int improved_ai);
+extern int ftRemixAiRecoveryUpBRepeatAllowed(int cpu_level, int is_classic_mode, int improved_ai, int is_remix_1p);
 
 /**
  * Clamps a target X inside the blastzone shrunk by FTREMIX_AI_RECOVERY_BLASTZONE_PADDING, so a CPU does not walk off

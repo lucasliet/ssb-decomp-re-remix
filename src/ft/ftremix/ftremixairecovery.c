@@ -13,6 +13,7 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "remix/remix_roster_data.h"
+#include "sc/sc1pmode/sc1premix1p.h"
 #include "ft/ftremix/ftremixairecovery.h"
 #include "ft/ftremix/ftremixairecoveryrules.h"
 
@@ -30,12 +31,13 @@ sb32 ftRemixAiRecoveryIsClassicMode(void)
 }
 
 /**
- * recovery_fix_ (AI.asm): the vanilla up-B limit is skipped for CPUs at level 10 or with the improved AI, and never for
- * vanilla 1P/RTTF.
+ * recovery_fix_ (AI.asm): the vanilla up-B limit is skipped in Remix 1P, for CPUs at level 10 or with the improved AI,
+ * and never for vanilla 1P/RTTF.
  */
 sb32 ftRemixAiRecoveryAllowsUpBRepeat(FTStruct *fp)
 {
-    return ftRemixAiRecoveryUpBRepeatAllowed(fp->level, ftRemixAiRecoveryIsClassicMode(), gmRemixToggle(improved_ai));
+    return ftRemixAiRecoveryUpBRepeatAllowed(fp->level, ftRemixAiRecoveryIsClassicMode(), gmRemixToggle(improved_ai),
+                                             sc1PRemix1PIsActive());
 }
 
 /**

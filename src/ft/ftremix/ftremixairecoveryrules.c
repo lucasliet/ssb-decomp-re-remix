@@ -6,9 +6,13 @@
 #define FTREMIX_AI_RECOVERY_BANJO_FLAP_FRAME 21
 #define FTREMIX_AI_RECOVERY_NO_FLOOR_LINE (-1)
 
-/** Level 10 and the improved AI repeat up-B, vanilla 1P/RTTF never does. */
-int ftRemixAiRecoveryUpBRepeatAllowed(int cpu_level, int is_classic_mode, int improved_ai)
+/** Remix 1P and level 10 repeat up-B, then vanilla 1P/RTTF never does, then the improved AI decides. */
+int ftRemixAiRecoveryUpBRepeatAllowed(int cpu_level, int is_classic_mode, int improved_ai, int is_remix_1p)
 {
+    if (is_remix_1p)
+    {
+        return 1;
+    }
     if (cpu_level >= FTREMIX_AI_RECOVERY_CPU_LEVEL_MAX)
     {
         return 1;

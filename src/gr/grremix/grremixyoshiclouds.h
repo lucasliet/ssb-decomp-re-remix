@@ -9,8 +9,14 @@
 
 #include <ssb_types.h>
 
-/** Hazards off: disables the clipping of the three cloud collision DObjs so they are not hidden at the stage centre. */
-void grRemixYosterDisableCloudClipping(void);
+/**
+ * Hazards off: disables the clipping of the three cloud collision DObjs so they are not hidden at the stage centre
+ * (Hazards.asm yoshis_island_clouds_).
+ *
+ * @return TRUE when the hazards are off and the caller must skip the rest of the ground setup (the asm jumps to the end of
+ * grYosterMakeGround, so no ground GObj and no clouds exist), FALSE when nothing was changed.
+ */
+sb32 grRemixYosterDisableCloudClipping(void);
 
 /** Matrix kind of the cloud DObjs: the scale kind when the cloud scale toggle is on, otherwise the vanilla translate kind. */
 u8 grRemixYosterCloudMatrixKind(void);

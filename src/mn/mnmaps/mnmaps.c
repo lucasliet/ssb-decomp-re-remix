@@ -12,6 +12,7 @@
 #include <mn/mncommon/mnremixtimeouts.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
+#include "gr/grremix/grremixtrainingbackground.h"
 #include "mn/mnmaps/mnremixemblem.h"
 #include "mn/mnmaps/mnremixstagegridrules.h"
 #include "mn/mnmaps/mnremixstagepager.h"
@@ -1708,6 +1709,11 @@ GObj* mnMapsMakePreviewWallpaper(s32 gkind)
 	GObj *gobj;
 	SObj *sobj;
 	s32 x;
+#ifdef REGION_REMIX
+	s32 wallpaper_gkind = grRemixTrainingBackgroundGkind(gkind);
+#else
+	s32 wallpaper_gkind = gkind;
+#endif
 
 	gobj = gcMakeGObjSPAfter(0, NULL, 9, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, mnMapsPreviewWallpaperProcDisplay, 7, GOBJ_PRIORITY_DEFAULT, ~0);
@@ -1741,8 +1747,8 @@ GObj* mnMapsMakePreviewWallpaper(s32 gkind)
 	{
 		// If not Random, check if Training Mode
 #ifdef REGION_REMIX
-		/* The training wallpaper tables only cover the vanilla and port stages; custom Remix stages use their own preview wallpaper. */
-		if ((sMNMapsIsTrainingMode == TRUE) && (gkind < ARRAY_COUNT(dMNMapsTrainingModeWallpaperIDs)))
+		/* Training indexes the wallpaper tables with the parent stage of Stages.background_table (Stages.asm random_fix_3_). */
+		if ((sMNMapsIsTrainingMode == TRUE) && (wallpaper_gkind < ARRAY_COUNT(dMNMapsTrainingModeWallpaperIDs)))
 #else
 		if (sMNMapsIsTrainingMode == TRUE)
 #endif
@@ -1755,11 +1761,11 @@ GObj* mnMapsMakePreviewWallpaper(s32 gkind)
 			 * it leniently). */
 #ifdef PORT
 			void *training_wallpaper_arg =
-				(void*) ((uintptr_t)PORT_RESOLVE(sMNMapsGroundInfo->wallpaper) - dMNMapsWallpaperOffsets[gkind]);
+				(void*) ((uintptr_t)PORT_RESOLVE(sMNMapsGroundInfo->wallpaper) - dMNMapsWallpaperOffsets[wallpaper_gkind]);
 			intptr_t training_blue_offset = llGRWallpaperTrainingBlueSprite;
 #else
 			void *training_wallpaper_arg =
-				(void*) ((uintptr_t)sMNMapsGroundInfo->wallpaper - dMNMapsWallpaperOffsets[gkind]);
+				(void*) ((uintptr_t)sMNMapsGroundInfo->wallpaper - dMNMapsWallpaperOffsets[wallpaper_gkind]);
 			intptr_t training_blue_offset = (intptr_t)&llGRWallpaperTrainingBlueSprite;
 #endif
 			// If Training Mode, use Smash logo bg
@@ -1771,7 +1777,7 @@ GObj* mnMapsMakePreviewWallpaper(s32 gkind)
 					Sprite*,
 					lbRelocGetForceExternHeapFile
 					(
-						dMNMapsTrainingModeFileInfos[dMNMapsTrainingModeWallpaperIDs[gkind]].file_id,
+						dMNMapsTrainingModeFileInfos[dMNMapsTrainingModeWallpaperIDs[wallpaper_gkind]].file_id,
 						training_wallpaper_arg
 					),
 					training_blue_offset

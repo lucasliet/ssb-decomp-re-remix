@@ -66,4 +66,95 @@ int ftRemixAiPreventRulesCrashSoftPlatformVeto(int input_kind, int is_soft_platf
     return is_crash_input && (is_soft_platform != 0);
 }
 
+/** Table entries that hold vanilla code: the NONE branch, the three vanilla routines and the debug skip. */
+int ftRemixAiPreventRulesVanillaKind(unsigned int routine_addr)
+{
+    switch (routine_addr)
+    {
+    case FTREMIX_AI_PREVENT_ADDR_NONE:
+        return FTREMIX_AI_PREVENT_ROUTINE_NONE;
+    case FTREMIX_AI_PREVENT_ADDR_MARIO:
+        return FTREMIX_AI_PREVENT_ROUTINE_MARIO;
+    case FTREMIX_AI_PREVENT_ADDR_KIRBY:
+        return FTREMIX_AI_PREVENT_ROUTINE_KIRBY;
+    case FTREMIX_AI_PREVENT_ADDR_YOSHI_FALCON:
+        return FTREMIX_AI_PREVENT_ROUTINE_YOSHI_FALCON;
+    case FTREMIX_AI_PREVENT_ADDR_SKIP_ATTACK:
+        return FTREMIX_AI_PREVENT_ROUTINE_SKIP_ATTACK;
+    default:
+        return FTREMIX_AI_PREVENT_ROUTINE_UNKNOWN;
+    }
+}
+
+/** Maps a veto of the asm (t2 = 1) to the cliff check verdict. */
+static int ftRemixAiPreventRulesCliffVerdict(int is_vetoed)
+{
+    return (is_vetoed != 0) ? FTREMIX_AI_PREVENT_VERDICT_CLIFF_CHECK : FTREMIX_AI_PREVENT_VERDICT_ALLOW;
+}
+
+/** Maps a jump to SKIP_ATTACK to the skip verdict. */
+static int ftRemixAiPreventRulesSkipVerdict(int is_skipped)
+{
+    return (is_skipped != 0) ? FTREMIX_AI_PREVENT_VERDICT_SKIP : FTREMIX_AI_PREVENT_VERDICT_ALLOW;
+}
+
+/** Falco: the NSP check, whose Up Special case jumps to the Fox Up Special routine. */
+static int ftRemixAiPreventRulesFalcoVerdict(const FTRemixAiPreventContext *context)
+{
+    if (context->input_kind == FTREMIX_AI_PREVENT_INPUT_USPG)
+    {
+        return ftRemixAiPreventRulesSkipVerdict(ftRemixAiPreventRulesFoxUspVeto(context->input_kind, context->cpu_level));
+    }
+    return ftRemixAiPreventRulesCliffVerdict(ftRemixAiPreventRulesFalcoNspVeto(context->input_kind, context->is_airborne));
+}
+
+/** The vanilla routines (MARIO 0x801334EC, KIRBY 0x80133500, YOSHI_FALCON 0x80133510) only set t2. */
+static int ftRemixAiPreventRulesVanillaVerdict(int routine_kind, int input_kind)
+{
+    switch (routine_kind)
+    {
+    case FTREMIX_AI_PREVENT_ROUTINE_MARIO:
+        return ftRemixAiPreventRulesCliffVerdict(input_kind == FTREMIX_AI_PREVENT_INPUT_USPG);
+    case FTREMIX_AI_PREVENT_ROUTINE_KIRBY:
+        return ftRemixAiPreventRulesCliffVerdict(ftRemixAiPreventRulesIsDspOrUsp(input_kind));
+    case FTREMIX_AI_PREVENT_ROUTINE_YOSHI_FALCON:
+        return ftRemixAiPreventRulesCliffVerdict(input_kind == FTREMIX_AI_PREVENT_INPUT_DSPG);
+    default:
+        return FTREMIX_AI_PREVENT_VERDICT_ALLOW;
+    }
+}
+
+int ftRemixAiPreventRulesVerdict(int routine_kind, const FTRemixAiPreventContext *context)
+{
+    int input_kind = context->input_kind;
+
+    switch (routine_kind)
+    {
+    case FTREMIX_AI_PREVENT_ROUTINE_SKIP_ATTACK:
+        return FTREMIX_AI_PREVENT_VERDICT_SKIP;
+    case FTREMIX_AI_PREVENT_ROUTINE_FALCO_NSP:
+        return ftRemixAiPreventRulesFalcoVerdict(context);
+    case FTREMIX_AI_PREVENT_ROUTINE_FOX_USP:
+        return ftRemixAiPreventRulesSkipVerdict(ftRemixAiPreventRulesFoxUspVeto(input_kind, context->cpu_level));
+    case FTREMIX_AI_PREVENT_ROUTINE_BOWSER_USP_DSP:
+        return ftRemixAiPreventRulesCliffVerdict(ftRemixAiPreventRulesIsDspOrUsp(input_kind));
+    case FTREMIX_AI_PREVENT_ROUTINE_GBOWSER:
+    case FTREMIX_AI_PREVENT_ROUTINE_SONIC_DSP:
+        return ftRemixAiPreventRulesCliffVerdict(input_kind == FTREMIX_AI_PREVENT_INPUT_DSPG);
+    case FTREMIX_AI_PREVENT_ROUTINE_USP:
+        return ftRemixAiPreventRulesCliffVerdict(input_kind == FTREMIX_AI_PREVENT_INPUT_USPG);
+    case FTREMIX_AI_PREVENT_ROUTINE_WARIO:
+        return ftRemixAiPreventRulesCliffVerdict(ftRemixAiPreventRulesIsWarioRisky(input_kind));
+    case FTREMIX_AI_PREVENT_ROUTINE_MARINA_NSP:
+        return ftRemixAiPreventRulesCliffVerdict(input_kind == FTREMIX_AI_PREVENT_INPUT_NSPG);
+    case FTREMIX_AI_PREVENT_ROUTINE_CONKER_GRENADE:
+        return ftRemixAiPreventRulesSkipVerdict(ftRemixAiPreventRulesConkerGrenadeVeto(input_kind, context->grenade_word));
+    case FTREMIX_AI_PREVENT_ROUTINE_CRASH:
+        return ftRemixAiPreventRulesCliffVerdict(
+            ftRemixAiPreventRulesCrashSoftPlatformVeto(input_kind, context->is_soft_platform));
+    default:
+        return ftRemixAiPreventRulesVanillaVerdict(routine_kind, input_kind);
+    }
+}
+
 #endif

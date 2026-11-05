@@ -15,7 +15,8 @@
 
 /**
  * evade_fix_ (AI.asm): the improved AI skips the evade check while the CPU has Starman or respawn invincibility.
- * Remix 1P also forces the improved AI in asm; that part is REMIX-TODO(AI) until the Remix 1P flag is ported.
+ * The asm's Remix 1P term compares the mode flag with v1, which holds -1 (the ftComputerGetObjectiveStatus result at the
+ * only call site, 0x801369EC), so it never fires and the toggle alone decides.
  */
 sb32 ftRemixAiCombatEvadeIsSuppressed(FTStruct *fp)
 {

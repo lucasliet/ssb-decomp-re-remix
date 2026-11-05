@@ -1,6 +1,8 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "gr/grremix/grremixbonusrules.h"
+#include <sc/scene.h>
 #endif
 #ifdef PORT
 #include <gr/grcommon/grinishie.h>
@@ -222,7 +224,11 @@ void ftCommonDokanWaitSetStatus(GObj *fighter_gobj)
 
     mpCollisionGetMapObjPositionID(line_id, &fp->status_vars.common.dokan.target_pos);
 
+#ifdef REGION_REMIX
+    if (syUtilsRandFloat() <= grRemixBonusRulesGetDokanSideThreshold(gSCManagerBattleState->gkind)) /* peach_btt_pipe_override */
+#else
     if (syUtilsRandFloat() <= 0.25F)
+#endif
     {
         fp->status_vars.common.dokan.mapobj_kind = nMPMapObjKindDokanWall;
 

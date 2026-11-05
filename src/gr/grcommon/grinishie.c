@@ -5,6 +5,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixgating.h"
+#include "gr/grremix/grremixids.h"
 #include "ft/ftremix/ftremixhooks.h"
 #endif
 #include "gr/grremix/grremixhardcoding.h"
@@ -612,10 +613,13 @@ void grInishieInitHeaders(void)
 }
 
 #ifdef REGION_REMIX
-/* Mushroom Kingdom clones have no scale platforms (Hazards.asm mk_clone_hazard_removal_). */
+/* Only SMBBF and SMBO have no scale platforms (Hazards.asm mk_clone_hazard_removal_); Mushroom Kingdom Remix keeps them,
+ * which is why mk_remix_hardcoding_1 to 7 give it its own file offsets (GRREMIX_MK_OFFSET). */
 static sb32 grInishieRemixHasScale(void)
 {
-    return grRemixIsMushroomKingdomClone(gSCManagerBattleState->gkind) == FALSE;
+    s32 gkind = gSCManagerBattleState->gkind;
+
+    return ((gkind == nGRRemixStage_SMBBF) || (gkind == nGRRemixStage_SMBO)) ? FALSE : TRUE;
 }
 
 /* Piranha plants need a non-clone stage and the hazard toggle (Hazards.asm mushroom_kingdom_piranha_plants_). */

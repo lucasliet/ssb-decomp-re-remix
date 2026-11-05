@@ -8,15 +8,16 @@
 #include <ft/fighter.h>
 #include <ft/ftcomputer.h>
 #include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixaishared.h"
 #include "ft/ftremix/ftremixaispecials.h"
 #include "ft/ftremix/ftremixaispecialsrules.h"
 
 #define FTREMIX_AI_SPECIALS_PRESS_Z_COMMAND 0xC
 
-/** The vanilla cancel switch uses the copied fighter for Kirby, so the Remix cases do too. */
+/** The vanilla cancel switch uses the copied fighter for Kirby and J Kirby, so the Remix cases do too. */
 static s32 ftRemixAiSpecialsSwitchKind(FTStruct *fp)
 {
-    return (fp->fkind == nFTKindKirby) ? fp->passive_vars.kirby.copy_id : fp->fkind;
+    return ftRemixAiCopiedPowerKind(fp);
 }
 
 /**

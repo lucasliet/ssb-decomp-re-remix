@@ -4,6 +4,7 @@
 
 #ifdef PORT
 
+#include "grremixcasino.h"
 #include "grremixhazards.h"
 #include "remix/remix_symbols.h"
 #include <it/item.h>
@@ -50,6 +51,8 @@ sb32 grRemixHazardCasino(s32 gkind, u32 function)
     {
         return FALSE;
     }
+    grRemixCasinoLogBumperWalls();
+
     if (grRemixHazardsAreOn())
     {
         grRemixCasinoSpawnBumper();

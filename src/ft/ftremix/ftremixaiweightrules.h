@@ -74,6 +74,48 @@ float ftRemixAiWeightRulesGrabVsShieldChance(float chance, int input_kind, int s
 /** Truncates a frame count like the MIPS trunc.w.s: values out of the s32 range become 0x7FFFFFFF. */
 int ftRemixAiWeightRulesTruncFrames(float frames);
 
+/* Character.cpu_attack_weight routines (<Fighter>/AI/Attacks.asm, <family>shared.asm), one kind per distinct routine. */
+typedef enum FTRemixAiWeightCustomKind
+{
+    FTREMIX_AI_WEIGHT_CUSTOM_NONE,
+    FTREMIX_AI_WEIGHT_CUSTOM_CRASH,
+    FTREMIX_AI_WEIGHT_CUSTOM_NSP_VS_SHIELD,
+    FTREMIX_AI_WEIGHT_CUSTOM_PIANO,
+    FTREMIX_AI_WEIGHT_CUSTOM_USP_VS_BELOW,
+    FTREMIX_AI_WEIGHT_CUSTOM_CAPTAIN,
+    FTREMIX_AI_WEIGHT_CUSTOM_PUFF
+} FTRemixAiWeightCustomKind;
+
+#define FTREMIX_AI_WEIGHT_INPUT_NSP 0x09
+#define FTREMIX_AI_WEIGHT_INPUT_USP 0x0D
+#define FTREMIX_AI_WEIGHT_INPUT_USMASH 0x19
+#define FTREMIX_AI_WEIGHT_INPUT_DSP 0x1B
+#define FTREMIX_AI_WEIGHT_INPUT_DASH_USMASH 0x46
+#define FTREMIX_AI_WEIGHT_INPUT_CRASH_DASH_NSP 0x55
+#define FTREMIX_AI_WEIGHT_CUSTOM_LEVEL 10
+#define FTREMIX_AI_WEIGHT_CUSTOM_SHIELD_CHANCE 100.0F
+#define FTREMIX_AI_WEIGHT_CUSTOM_USMASH_FACTOR 2.0F
+#define FTREMIX_AI_WEIGHT_CUSTOM_PUFF_NSP_FACTOR 0.0625F
+#define FTREMIX_AI_WEIGHT_CUSTOM_BELOW_LIMIT (-100.0F)
+
+/* State a cpu_attack_weight routine reads: the candidate input, the CPU level, the opponent action and the opponent height over the CPU. */
+typedef struct FTRemixAiWeightCustomContext
+{
+    int input_kind;
+    int cpu_level;
+    int target_status_id;
+    float target_height_diff;
+} FTRemixAiWeightCustomContext;
+
+/**
+ * New chance of a candidate attack after a fighter's cpu_attack_weight routine (AI.asm _custom_weight_table). Every kind
+ * but Crash applies at level 10 only. Crash drops NSP and its dash against a shielding opponent, Dedede, Marina, Kirby and
+ * Yoshi raise NSP to 100 against a shield, Piano does the same with DSP, Ganondorf and Dragon King drop USP when the opponent
+ * is 100 or more below and raise it against a shield, Captain Falcon doubles up smash and dash grab and dash up smash and
+ * treats USP like Ganondorf, Jigglypuff scales NSP by 1/16.
+ */
+extern float ftRemixAiWeightRulesCustomChance(int custom_kind, const FTRemixAiWeightCustomContext *context, float chance);
+
 #endif
 
 #endif

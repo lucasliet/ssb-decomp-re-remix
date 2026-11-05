@@ -1,5 +1,6 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
+#include "ft/ftremix/ftremixcliffplatform.h"
 #include "ft/ftremix/ftremixhooks.h"
 #endif
 
@@ -22,6 +23,13 @@ void ftCommonCliffCommonProcPhysics(GObj *fighter_gobj)
     DObj *topn_joint = fp->joints[nFTPartsJointTopN], *transn_joint = fp->joints[nFTPartsJointTransN];
     Vec3f vel;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixCliffPlatformHasVanished(fp->coll_data.cliff_id))
+    {
+        ftCommonFallSetStatus(fighter_gobj);
+        return;
+    }
+#endif
     if (fp->lr == +1)
     {
         mpCollisionGetFloorEdgeL(fp->coll_data.cliff_id, &vel);

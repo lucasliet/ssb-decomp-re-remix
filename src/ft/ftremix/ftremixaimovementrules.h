@@ -28,6 +28,7 @@
 /**
  * TRUE when a level 10 CPU may press the fastfall input. FALSE when all jumps are used, when the opponent is offstage
  * (floor_line_id -1), or when the CPU is not more than 2000 units above the ground (floor_dist is negative above ground).
+ * With no opponent (has_target 0) it is TRUE whatever the floor distance.
  */
 extern int ftRemixAiMovementRulesFastfallAllowed(int jumps_used, int jumps_max, int has_target, int target_floor_line_id,
                                                  float floor_dist);
@@ -45,8 +46,9 @@ extern int ftRemixAiMovementRulesShorthopInput(float diff, int vanilla_input);
 extern int ftRemixAiMovementRulesJumpInNeutralInput(int roll);
 
 /**
- * Pulls a target X that is beyond the stage edges back to the edge padded by FTREMIX_AI_MOVEMENT_LEDGE_PADDING.
- * Targets inside [left_edge, right_edge] are returned unchanged.
+ * Keeps a target X inside the stage, FTREMIX_AI_MOVEMENT_LEDGE_PADDING away from each edge: a target at or beyond
+ * right_edge - padding becomes that value, then a target at or below left_edge + padding becomes that value (the left
+ * clamp runs last, so it wins on a stage narrower than twice the padding). Targets between the limits are unchanged.
  */
 extern float ftRemixAiMovementRulesClampTargetX(float target_x, float left_edge, float right_edge);
 

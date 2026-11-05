@@ -11,6 +11,7 @@
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixenemy.h"
 #include "gm/gmremixpractice.h"
+#include "if/ifremixdragonkinghud.h"
 #include <port_log.h>
 #endif
 #include <ft/fighter.h>
@@ -1852,7 +1853,11 @@ void sc1PGameSetPlayerInterfacePositions(void)
         pos++;
     }
     gIFCommonPlayerInterface.player_pos_x = sSC1PGamePlayerInterfacePositionsX;
+#ifdef REGION_REMIX
+    gIFCommonPlayerInterface.player_pos_y = ifRemixDragonKingHudDamageY(210, TRUE);
+#else
     gIFCommonPlayerInterface.player_pos_y = 210;
+#endif
 }
 
 // 0x8018E670
@@ -2170,7 +2175,11 @@ void sc1PGameTeamStockDisplayProcDisplay(GObj *interface_gobj)
                 else
                 {
                     sobj->pos.x = (ix * 10) + 20;
+#ifdef REGION_REMIX
+                    sobj->pos.y = (iy * 10) + ifRemixDragonKingHudPickIntY(20, IFREMIX_DKHUD_Y_MULTI_ENEMY_ICONS);
+#else
                     sobj->pos.y = (iy * 10) + 20;
+#endif
 
                     ix++;
 

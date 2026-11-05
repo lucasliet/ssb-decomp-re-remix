@@ -23,6 +23,7 @@
 #include "ft/ftcommon/ftcommonfunctions.h"
 #include "if/ifcommon.h"
 #include "gr/grcommon/grjungle.h"
+#include "gr/grremix/grremixjunglebarrels.h"
 #include <lb/lbcommon.h>
 #include <math.h>
 
@@ -97,6 +98,8 @@
 #define ITREMIX_BASKETBALL_FGM_FIRE_START_2 183
 #define ITREMIX_BASKETBALL_FGM_FIRE_END 275
 #define ITREMIX_BASKETBALL_FGM_BARREL_SHOOT 281
+#define ITREMIX_BASKETBALL_FGM_BARREL_ENTER 282 /* nSYAudioFGMJungleTaruCannEnter */
+#define ITREMIX_BASKETBALL_FGM_CROWD_GASP 0x269
 #define ITREMIX_BASKETBALL_FGM_WHOOSH 18
 #define ITREMIX_BASKETBALL_BOUNCE_SCALE_SPEED 40.0F            /* 0x42200000: bounce_patch_ squash threshold */
 #define ITREMIX_BASKETBALL_BOUNCE_HITLAG_SCALE 0.030029296875F /* 0x3CF60000 */
@@ -171,6 +174,7 @@ static void itRemixBasketballAdjustHitbox(GObj *item_gobj);
 static void itRemixBasketballAnimateImage(GObj *item_gobj);
 static void itRemixBasketballUpdateGroundedMovement(GObj *item_gobj);
 static void itRemixBasketballUpdateAerialMovement(GObj *item_gobj);
+static void itRemixBasketballCheckBarrel(GObj *item_gobj);
 static void itRemixBasketballUpdateAnimation(GObj *item_gobj);
 static void itRemixBasketballUpdateTimers(GObj *item_gobj);
 static void itRemixBasketballUpdateHitboxRefresh(GObj *item_gobj);
@@ -751,10 +755,41 @@ static void itRemixBasketballUpdateGroundedMovement(GObj *item_gobj)
 }
 
 /**
- * Basketball.main_ (aerial): spin, gravity (off while falling fast), spin again.
- * SKIPPED(barrel): check_basketball_barrel_collision_ (Basketball.asm line 909) jumps into the middle of the vanilla
- * grJungleTaruCannCheckGetDamageKind (0x8010A018, grjungle.c) with the ball as its fighter argument. That entry point
- * reads the argument as a fighter, so its result for a ball was not verified. Not ported.
+ * Basketball.check_basketball_barrel_collision_ (Basketball.asm line 909): the ball enters the first barrel it overlaps
+ * (grJungleTaruCannCheckBasketball is the jump into 0x8010A018 of the asm), unless the barrel refresh timer runs.
+ * The ball stops, is scoreable, its hitbox goes off and it takes the barrel status; the barrel status then hides it,
+ * waits and shoots it up.
+ * item_gobj: item object.
+ */
+static void itRemixBasketballCheckBarrel(GObj *item_gobj)
+{
+    ITStruct *ip = itGetStruct(item_gobj);
+    ITRemixBasketballVars *vars = itRemixBasketballGetVars(item_gobj);
+    GObj *barrel_gobj;
+
+    if (vars->state_timer != 0)
+    {
+        return;
+    }
+    barrel_gobj = grRemixJungleBarrelsFindForBasketball(item_gobj);
+    if (barrel_gobj == NULL)
+    {
+        return;
+    }
+    vars->barrel_gobj = barrel_gobj;
+    vars->state_timer = 0;
+    vars->hitbox_refresh_timer = 0;
+    vars->is_fire = FALSE;
+    vars->gfx_timer = 0;
+    ip->attack_coll.attack_state = nGMAttackStateOff;
+    vars->is_scoreable = TRUE;
+    itMainSetStatus(item_gobj, sITRemixBasketballStatusDescs, nITRemixBasketballStatusBarrel);
+    func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_BARREL_ENTER);
+    func_800269C0_275C0(ITREMIX_BASKETBALL_FGM_CROWD_GASP);
+}
+
+/**
+ * Basketball.main_ (aerial): the barrel check, spin, gravity (off while falling fast), spin again.
  * item_gobj: item object.
  */
 static void itRemixBasketballUpdateAerialMovement(GObj *item_gobj)
@@ -762,6 +797,7 @@ static void itRemixBasketballUpdateAerialMovement(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
     f32 gravity = (ip->physics.vel_air.y >= ITREMIX_BASKETBALL_FALL_SPEED) ? ITREMIX_BASKETBALL_GRAVITY : 0.0F;
 
+    itRemixBasketballCheckBarrel(item_gobj);
     itVisualsUpdateSpin(item_gobj);
     itMainApplyGravityClampTVel(ip, gravity, ITREMIX_BASKETBALL_MAX_SPEED);
     itVisualsUpdateSpin(item_gobj);
@@ -1239,6 +1275,27 @@ static sb32 itRemixBasketballRespawnProcUpdate(GObj *item_gobj)
 #define ITREMIX_BASKETBALL_HOOP_OFFSET 267.0F        /* Smashketball.asm basketball_main_ HOOP_OFFSET (0x43858000) */
 #define ITREMIX_BASKETBALL_HOOP_MIN_X 3504.0F        /* HOOP_MIN (0x455B0000): the ball must be past this |x| */
 #define ITREMIX_BASKETBALL_GOAL_X 4288.0F            /* soccer goal |x| (0x45860000) */
+
+/**
+ * Basketball.asm prevent_fighter_enter_barrel_ (RAM 0x8010A0E0): in Smashketball a fighter cannot enter a barrel while the ball
+ * is inside one (the ball is in the barrel status).
+ * Returns: TRUE when the ball of a Smashketball match is in a barrel.
+ */
+sb32 itRemixBasketballIsBarrelOccupied(void)
+{
+    GObj *item_gobj;
+
+    if (gmRemixSmashketballIsActive() == FALSE)
+    {
+        return FALSE;
+    }
+    item_gobj = itRemixBasketballFind();
+    if (item_gobj == NULL)
+    {
+        return FALSE;
+    }
+    return (itGetStruct(item_gobj)->proc_update == itRemixBasketballBarrelProcUpdate) ? TRUE : FALSE;
+}
 
 /**
  * Smashketball.asm basketball_main_: the first ball in the item list.

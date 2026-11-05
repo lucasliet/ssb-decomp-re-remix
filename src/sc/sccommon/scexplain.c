@@ -9,6 +9,9 @@
 #include <gr/grcommonsetup.h>
 #include <gr/grwallpaper.h>
 #include <wp/wpmanager.h>
+#ifdef REGION_REMIX
+#include "if/ifremixdragonkinghud.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 
 #ifdef PORT
@@ -264,7 +267,11 @@ void scExplainMakeWindowCamera(void)
 void scExplainSetPlayerInterfacePositions(void)
 {
     gIFCommonPlayerInterface.player_pos_x = dSCExplainInterfacePositions;
+#ifdef REGION_REMIX
+    gIFCommonPlayerInterface.player_pos_y = ifRemixDragonKingHudDamageY(150, FALSE);
+#else
     gIFCommonPlayerInterface.player_pos_y = 150;
+#endif
 }
 
 // 0x8018D460

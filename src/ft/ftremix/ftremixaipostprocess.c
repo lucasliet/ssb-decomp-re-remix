@@ -2,21 +2,26 @@
 
 #include <ft/fighter.h>
 #include <gm/gmremixtoggle.h>
+#include <port_log.h>
 #include <sys/taskman.h>
 #include "ft/ftcomputer.h"
 #include "ft/ftremix/ftremixailv10rules.h"
+#include "ft/ftremix/ftremixaipostcommon.h"
+#include "ft/ftremix/ftremixaipostedge.h"
+#include "ft/ftremix/ftremixaipostinput.h"
+#include "ft/ftremix/ftremixaipostmarina.h"
+#include "ft/ftremix/ftremixaipostnsp.h"
 #include "ft/ftremix/ftremixaipostprocess.h"
 #include "ft/ftremix/ftremixaipostsheik.h"
+#include "ft/ftremix/ftremixaipostusp.h"
+#include "remix/remix_ram_image.h"
 #include "remix/remix_roster_data.h"
+#include "remix/remix_symbols.h"
 
-/**
- * Tells if the CPU is about to run the given input script: the command pointer is compared with the script of the id,
- * as the asm compares p_command with the AI.command_table entry.
- */
-static sb32 ftRemixAiCommandIs(FTStruct *fp, s32 input_kind)
-{
-    return fp->computer.p_command == ftComputerGetInputScript(input_kind);
-}
+#define FTREMIX_AI_POST_TABLE_ENTRY_BYTES 4
+#define FTREMIX_AI_POST_LOG_FKIND_MAX 64
+
+static u64 sFtRemixAiPostLoggedFkinds;
 
 /**
  * _check_respawn (AI.asm): with Improved AI on, a dead CPU (status Sleep) mashes START to respawn.
@@ -40,7 +45,7 @@ static void ftRemixAiMashStartWhenDead(FTStruct *fp)
  */
 static void ftRemixAiCancelUnreadyDashAttack(FTStruct *fp)
 {
-    sb32 is_dash_attack = ftRemixAiCommandIs(fp, FTREMIX_AI_LV10_ROUTINE_DASH_ATTACK);
+    sb32 is_dash_attack = ftRemixAiPostCommandIs(fp, FTREMIX_AI_LV10_ROUTINE_DASH_ATTACK);
     sb32 is_idle_or_run = (fp->status_id == nFTCommonStatusWait) || (fp->status_id == nFTCommonStatusRun);
 
     if (ftRemixAiDashAttackCancelNeeded(is_dash_attack, is_idle_or_run))
@@ -60,12 +65,12 @@ static void ftRemixAiJumpCancelDashCommand(FTStruct *fp)
     {
         return;
     }
-    if (ftRemixAiCommandIs(fp, FTREMIX_AI_LV10_INPUT_USMASH))
+    if (ftRemixAiPostCommandIs(fp, FTREMIX_AI_LV10_INPUT_USMASH))
     {
         ftComputerSetCommandImmediate(fp, FTREMIX_AI_LV10_ROUTINE_JUMPCANCEL_UPSMASH);
         return;
     }
-    if (ftRemixAiCommandIs(fp, FTREMIX_AI_LV10_INPUT_USP))
+    if (ftRemixAiPostCommandIs(fp, FTREMIX_AI_LV10_INPUT_USP))
     {
         ftComputerSetCommandImmediate(fp, FTREMIX_AI_LV10_ROUTINE_JUMPCANCEL_USP);
     }
@@ -77,27 +82,143 @@ static void ftRemixAiJumpCancelDashCommand(FTStruct *fp)
  */
 static void ftRemixAiLv10CustomUsp(FTStruct *fp)
 {
-    if (ftRemixAiCommandIs(fp, FTREMIX_AI_LV10_INPUT_USP))
+    if (ftRemixAiPostCommandIs(fp, FTREMIX_AI_LV10_INPUT_USP))
     {
         ftComputerSetCommandImmediate(fp, FTREMIX_AI_LV10_ROUTINE_USP_TOWARDS);
     }
 }
 
 /**
- * Per-fighter entries of Character.cpu_post_process (AI.asm 3867-3878), keyed by fkind. Only Sheik is ported.
- * REMIX-TODO(AI): the other entries are not ported: Falco and Fox/JFox (Falco/AI/Attacks.asm, foxshared.asm), Captain
- * Falcon/JFalcon (captainshared.asm), Link family (linkshared.asm), DK/JDK (dkshared.asm), Bowser, GBowser (Bowser/AI,
- * GBowser/AI), Wario, Marth, Dedede, Wolf, Ganondorf, Mewtwo, Roy, Marina, DragonKing, Jigglypuff and Kirby families
- * (jigglypuffkirbyshared.asm), Pikachu family (pikashared.asm:144), Yoshi/JYoshi (yoshishared.asm).
+ * Address of the Character.cpu_post_process routine of a fighter kind, 0 when the kind has none. The routines are Remix
+ * code, so the port runs the C equivalent that ftRemixAiPostProcessFighter picks by kind.
  */
-static void ftRemixAiPostProcessFighter(FTStruct *fp)
+static u32 ftRemixAiPostGetTableEntry(s32 fkind)
+{
+    return remix_ram_image_read_word(REMIX_SYM_Character__cpu_post_process__table +
+                                     (fkind * FTREMIX_AI_POST_TABLE_ENTRY_BYTES));
+}
+
+/**
+ * Logs the first run of each fighter kind's routine, so a match shows which post process fired without flooding the log.
+ * Kinds >= FTREMIX_AI_POST_LOG_FKIND_MAX are not logged.
+ */
+static void ftRemixAiPostLogFirstRun(FTStruct *fp, u32 routine_addr, sb32 is_ported)
+{
+    u64 kind_bit;
+
+    if ((fp->fkind < 0) || (fp->fkind >= FTREMIX_AI_POST_LOG_FKIND_MAX))
+    {
+        return;
+    }
+    kind_bit = (u64)1 << fp->fkind;
+    if ((sFtRemixAiPostLoggedFkinds & kind_bit) != 0)
+    {
+        return;
+    }
+    sFtRemixAiPostLoggedFkinds |= kind_bit;
+    port_log("ftRemixAiPostProcess: fkind 0x%X level %d routine 0x%08X %s\n", fp->fkind, fp->level, routine_addr,
+             (is_ported != FALSE) ? "first run" : "not ported");
+}
+
+/**
+ * Runs the C port of the routine that a fighter kind's Character.cpu_post_process entry points to (AI.asm 3867-3878).
+ * The shared files register one routine for a family: Fox/JFox, Pikachu/EPika/JPika, Jigglypuff/JPuff/EPuff, Kirby/JKirby,
+ * Yoshi/JYoshi, DK/JDK, Captain/JFalcon and the four Links. Returns FALSE for a kind with no port.
+ */
+static sb32 ftRemixAiPostProcessFighter(FTStruct *fp)
 {
     switch (fp->fkind)
     {
+    case REMIX_ID_BOWSER:
+    case REMIX_ID_GBOWSER:
+        ftRemixAiPostProcessBowser(fp);
+        return TRUE;
+    case REMIX_ID_DRAGONKING:
+        ftRemixAiPostProcessDragonKing(fp);
+        return TRUE;
+    case REMIX_ID_GND:
+        ftRemixAiPostProcessGanondorf(fp);
+        return TRUE;
+    case REMIX_ID_CAPTAIN:
+    case REMIX_ID_JFALCON:
+        ftRemixAiPostProcessCaptain(fp);
+        return TRUE;
+    case REMIX_ID_FOX:
+    case REMIX_ID_JFOX:
+        ftRemixAiPostProcessFox(fp);
+        return TRUE;
+    case REMIX_ID_PIKACHU:
+    case REMIX_ID_EPIKA:
+    case REMIX_ID_JPIKA:
+        ftRemixAiPostProcessPikachu(fp);
+        return TRUE;
+    case REMIX_ID_FALCO:
+        ftRemixAiPostProcessFalco(fp);
+        return TRUE;
+    case REMIX_ID_WARIO:
+        ftRemixAiPostProcessWario(fp);
+        return TRUE;
+    case REMIX_ID_WOLF:
+        ftRemixAiPostProcessWolf(fp);
+        return TRUE;
+    case REMIX_ID_DONKEY:
+    case REMIX_ID_JDK:
+        ftRemixAiPostProcessDonkeyKong(fp);
+        return TRUE;
+    case REMIX_ID_MARTH:
+    case REMIX_ID_ROY:
+        ftRemixAiPostProcessSwordNsp(fp);
+        return TRUE;
+    case REMIX_ID_MTWO:
+        ftRemixAiPostProcessMewtwo(fp);
+        return TRUE;
+    case REMIX_ID_JIGGLY:
+    case REMIX_ID_JPUFF:
+    case REMIX_ID_EPUFF:
+        ftRemixAiPostProcessPuff(fp);
+        return TRUE;
+    case REMIX_ID_KIRBY:
+    case REMIX_ID_JKIRBY:
+        ftRemixAiPostProcessKirby(fp);
+        return TRUE;
+    case REMIX_ID_YOSHI:
+    case REMIX_ID_JYOSHI:
+        ftRemixAiPostProcessYoshi(fp);
+        return TRUE;
+    case REMIX_ID_LINK:
+    case REMIX_ID_JLINK:
+    case REMIX_ID_ELINK:
+    case REMIX_ID_YLINK:
+        ftRemixAiPostProcessLink(fp);
+        return TRUE;
+    case REMIX_ID_DEDEDE:
+        ftRemixAiPostProcessDedede(fp);
+        return TRUE;
+    case REMIX_ID_MARINA:
+        ftRemixAiPostProcessMarina(fp);
+        return TRUE;
     case REMIX_ID_SHEIK:
         ftRemixAiPostProcessSheik(fp);
-        break;
+        return TRUE;
+    default:
+        return FALSE;
     }
+}
+
+/**
+ * _post_process_function (AI.asm): runs the per-fighter routine when the kind has a Character.cpu_post_process entry.
+ */
+static void ftRemixAiPostProcessTableEntry(FTStruct *fp)
+{
+    u32 routine_addr = ftRemixAiPostGetTableEntry(fp->fkind);
+    sb32 is_ported;
+
+    if (routine_addr == 0)
+    {
+        return;
+    }
+    is_ported = ftRemixAiPostProcessFighter(fp);
+    ftRemixAiPostLogFirstRun(fp, routine_addr, is_ported);
 }
 
 /**
@@ -112,7 +233,7 @@ void ftRemixAiPostProcess(FTStruct *fp)
         ftRemixAiJumpCancelDashCommand(fp);
         ftRemixAiLv10CustomUsp(fp);
     }
-    ftRemixAiPostProcessFighter(fp);
+    ftRemixAiPostProcessTableEntry(fp);
 }
 
 #endif

@@ -13,20 +13,14 @@
 #include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixcpulevelrules.h"
 
-/*
- * REMIX-TODO(AI): the human handicap keeps the vanilla limit of 9 here. The Remix extension of the handicap to 40
- * (AI.asm handle_right_arrow_press_ and render_right_arrow_, icons for 10 and above) is not ported to the VS CSS yet.
- */
-#define MNREMIX_VS_HANDICAP_VANILLA_MAX 9
-
 #define MNREMIX_VS_CSS_DIGIT_Y 200.0F
 #define MNREMIX_VS_CSS_TENS_X_OFFSET 67
 #define MNREMIX_VS_CSS_UNITS_X_OFFSET 75
 #define MNREMIX_VS_CSS_PLAYER_STRIDE 69
 
 /**
- * TRUE when the right arrow may raise the value under it. A CPU level is raised up to level 10, a human handicap only up
- * to the vanilla limit.
+ * TRUE when the right arrow may raise the value under it (AI.asm handle_right_arrow_press_). A CPU level is raised up to
+ * level 10, a human handicap up to 40. The icons for 10 and above are drawn by mnRemixCssMakeHandicapIcon.
  */
 sb32 mnRemixVSCanRaiseArrowValue(s32 pkind, s32 value)
 {
@@ -34,12 +28,12 @@ sb32 mnRemixVSCanRaiseArrowValue(s32 pkind, s32 value)
     {
         return mnRemixCpuLevelCanRaise(value) ? TRUE : FALSE;
     }
-    return (value < MNREMIX_VS_HANDICAP_VANILLA_MAX) ? TRUE : FALSE;
+    return mnRemixHandicapCanRaise(value) ? TRUE : FALSE;
 }
 
 /**
- * TRUE when the right arrow hides because the value under it reached its limit: CPU level 10 for a CPU, the vanilla
- * handicap limit for a human.
+ * TRUE when the right arrow hides because the value under it reached its limit (AI.asm render_right_arrow_): CPU level 10
+ * for a CPU, handicap 40 for a human.
  */
 sb32 mnRemixVSIsArrowRightLimit(s32 pkind, s32 value)
 {
@@ -47,7 +41,7 @@ sb32 mnRemixVSIsArrowRightLimit(s32 pkind, s32 value)
     {
         return mnRemixCpuLevelCanRaise(value) ? FALSE : TRUE;
     }
-    return (value == MNREMIX_VS_HANDICAP_VANILLA_MAX) ? TRUE : FALSE;
+    return mnRemixHandicapCanRaise(value) ? FALSE : TRUE;
 }
 
 /**

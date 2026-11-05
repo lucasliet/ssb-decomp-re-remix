@@ -28,6 +28,8 @@ extern void port_dump_backtrace(void);
 #include "if/ifremixannouncer.h"
 #include "it/itremix/itremixstopwatch.h"
 #include "gr/grremix/grremixbowserbombs.h"
+#include "gr/grremix/grremixbarrel.h"
+#include "gr/grremix/grremixsurface.h"
 #endif
 #include <sys/controller.h>
 
@@ -141,7 +143,12 @@ FTStatusDesc *dFTMainSpecialStatusDescs[/* */] =
 // // // // // // // // // // // //
 
 // 0x80131180 - stage moving hazards
+#ifdef REGION_REMIX
+// Hazards.asm many_barrels_fix_: Board the Platforms (Banjo) uses 12 slots, the capacity check is in ftMainCheckAddGroundObstacle
+GRObstacle sFTMainGroundObstacles[GRREMIX_BARREL_OBSTACLES_BANJO];
+#else
 GRObstacle sFTMainGroundObstacles[2];
+#endif
 
 // 0x80131190 - stage environmental obstacles
 GRHazard sFTMainGroundHazards[1];
@@ -1860,8 +1867,13 @@ void ftMainClearGroundElementsAll(void)
 sb32 ftMainCheckAddGroundObstacle(GObj *gobj, sb32(*proc_update)(GObj*, GObj*, s32*))
 {
     s32 i;
+#ifdef REGION_REMIX
+    s32 obstacles_max = grRemixBarrelGetObstacleCapacity();
+#else
+    s32 obstacles_max = ARRAY_COUNT(sFTMainGroundObstacles);
+#endif
 
-    for (i = 0; i < ARRAY_COUNT(sFTMainGroundObstacles); i++)
+    for (i = 0; i < obstacles_max; i++)
     {
         if (sFTMainGroundObstacles[i].gobj == NULL)
         {
@@ -2990,6 +3002,12 @@ void ftMainUpdateDamageStatGround(GObj *special_gobj, GObj *fighter_gobj, FTStru
 
         sFTMainHitLogID++;
     }
+#ifdef REGION_REMIX
+    if (grRemixSurfaceApplyFgmOverride(fp, gr_attack_coll) != FALSE)
+    {
+        return;
+    }
+#endif
     switch (kind)
     {
     case nGMHitEnvironmentAcid:
@@ -4070,6 +4088,9 @@ void ftMainSearchHitItem(GObj *fighter_gobj)
 // 0x800E5C30
 sb32 ftMainGetGroundHitObstacle(FTStruct *fp, GRAttackColl **p_gr_attack_coll)
 {
+#ifdef REGION_REMIX
+    return grRemixSurfaceGetGroundHit(fp, p_gr_attack_coll);
+#else
     if ((fp->damagefloor_wait == 0) && (fp->ga == nMPKineticsGround) && (fp->coll_data.floor_line_id != -1) && (fp->coll_data.floor_line_id != -2))
     {
         switch (fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK)
@@ -4103,6 +4124,7 @@ sb32 ftMainGetGroundHitObstacle(FTStruct *fp, GRAttackColl **p_gr_attack_coll)
         }
     }
     else return FALSE;
+#endif
 }
 
 // 0x800E5D20

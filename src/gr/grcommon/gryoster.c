@@ -297,10 +297,16 @@ void grYosterInitAll(void)
 // 0x80108C80
 GObj* grYosterMakeGround(void)
 {
-    GObj *ground_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
-
 #ifdef REGION_REMIX
-    grRemixYosterDisableCloudClipping();
+    GObj *ground_gobj;
+
+    if (grRemixYosterDisableCloudClipping() != FALSE)
+    {
+        return NULL;
+    }
+    ground_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
+#else
+    GObj *ground_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
 #endif
     grYosterInitAll();
     gcAddGObjProcess(ground_gobj, grYosterProcUpdate, nGCProcessKindFunc, 4);

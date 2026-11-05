@@ -40,6 +40,12 @@ u32 grRemixGetGroundFunction(s32 gkind);
 /** Stages.class_table entry (GRRemixStageClass). */
 s32 grRemixGetStageClass(s32 gkind);
 
+/** TRUE when the end of a match on the stage shows GAME SET, FALSE for FAILURE (Stages.asm id_fix_5_). */
+sb32 grRemixStageEndsWithGameSet(s32 gkind);
+
+/** TRUE when a KO on the stage plays the small explosion SFX (Stages.asm id_fix_6_). */
+sb32 grRemixStageHasSmallExplosion(s32 gkind);
+
 /** Stages.default_music_track_table entry (track + 1; 0 = none). */
 s32 grRemixGetDefaultMusicTrack(s32 gkind);
 

@@ -11,7 +11,10 @@
 #include "ft/ftremix/ftremixaicombat.h"
 #include "ft/ftremix/ftremixaispecials.h"
 #include "ft/ftremix/ftremixairecovery.h"
+#include "ft/ftremix/ftremixairecoverydrift.h"
+#include "ft/ftremix/ftremixairecoverylogic.h"
 #include "ft/ftremix/ftremixaiprevent.h"
+#include "ft/ftremix/ftremixaipreventrules.h"
 #include "ft/ftremix/ftremixaicommands.h"
 #include "ft/ftremix/ftremixtraining.h"
 #include "ft/ftremix/ftremixaidi.h"
@@ -29,6 +32,8 @@
 #include "ft/ftremix/ftremixaimovement.h"
 #include "ft/ftremix/ftremixaiprediction.h"
 #include "ft/ftremix/ftremixailog.h"
+#include "ft/ftremix/ftremixaishared.h"
+#include "ft/ftremix/ftremixaistage.h"
 #include "gm/gmremixtoggle.h"
 #endif
 #endif
@@ -4237,6 +4242,20 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                     break;
                 }
             }
+#if defined(PORT) && defined(REGION_REMIX)
+            switch (ftRemixAiPreventCandidate(this_fp, comattack->input_kind))
+            {
+            case FTREMIX_AI_PREVENT_VERDICT_CLIFF_CHECK:
+                is_attempt_cliffcatch = TRUE;
+                break;
+
+            case FTREMIX_AI_PREVENT_VERDICT_SKIP:
+                goto l_continue;
+
+            default:
+                break;
+            }
+#else
             switch (this_fp->fkind)
             {
             case nFTKindMario:
@@ -4277,6 +4296,7 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
             case nFTKindGDonkey:
                 break;
             }
+#endif
             if (is_attempt_cliffcatch != FALSE)
             {
                 this_detect_pos.y = this_fp->joints[nFTPartsJointTopN]->translate.vec.f.y;
@@ -4618,28 +4638,6 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                 }
                 else com->input_repeat_count = 0;
 
-#ifdef PORT
-                /* PORT: SR ai_attack_prevent dispatch (AI.asm PREVENT_ATTACK,
-                 * Crash routine 3034-3056). A per-fkind routine may veto this
-                 * attack at commit time - SR sets t2=1 to abort the SD; here a
-                 * nonzero return means "don't commit", same as the Purin guard
-                 * below. */
-                {
-                    int (*ai_prevent)(FTStruct *, int) =
-                        (int (*)(FTStruct *, int))port_fighter_ai_attack_prevent_routine(this_fp->fkind);
-                    if ((ai_prevent != NULL) && (ai_prevent(this_fp, input_kinds[i]) != 0))
-                    {
-                        return FALSE;
-                    }
-                }
-#endif
-#if defined(PORT) && defined(REGION_REMIX)
-                if (ftRemixAiPreventAttack(this_fp, input_kinds[i]))
-                {
-                    return FALSE;
-                }
-#endif
-
                 ftComputerSetCommandWaitShort(this_fp, input_kinds[i]);
 
                 com->input_kind = input_kinds[i];
@@ -4693,7 +4691,11 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                 default:
                     break;
                 }
+#if defined(PORT) && defined(REGION_REMIX)
+                if (ftRemixAiUspIsPuffAttackSkipKind(this_fp->fkind) && (com->input_kind == nFTComputerInputStickSmashHiButtonB) && (syUtilsRandFloat() < 0.9F))
+#else
                 if ((this_fp->fkind == nFTKindPurin) && (com->input_kind == nFTComputerInputStickSmashHiButtonB) && (syUtilsRandFloat() < 0.9F))
+#endif
                 {
                     return FALSE;
                 }
@@ -4922,6 +4924,10 @@ void func_ovl3_801346D4(FTStruct *fp)
             range *= 0.5F;
             break;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        case REMIX_ID_JNESS:
+        case REMIX_ID_LUCAS:
+#endif
         case nFTKindNess:
             range = -com->jump_predict;
             break;
@@ -5231,7 +5237,15 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
             com->target_pos.y = sp90.y;
         }
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    else if (ftRemixAiWalkExitsInDededeUsp(fp))
+    {
+        return;
+    }
+    else if ((fp->ga == nMPKineticsGround) || (fp->physics.vel_air.y < 0.0F) || ftRemixAiWalkUsesMultiJumpBranch(fp))
+#else
     else if ((fp->ga == nMPKineticsGround) || (fp->physics.vel_air.y < 0.0F) || (fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindPurin))
+#endif
     {
         if (fp->joints[nFTPartsJointTopN]->translate.vec.f.x < com->target_pos.x)
         {
@@ -5292,6 +5306,9 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
             /* fallthrough */
         default:
         block_52:
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixAiRecoveryDrift(fp);
+#endif
             if (fp->joints[nFTPartsJointTopN]->translate.vec.f.y < com->target_pos.y)
             {
                 if ((com->objective != nFTComputerObjectiveRecover) && ((com->target_pos.y - 200.0F) < fp->joints[nFTPartsJointTopN]->translate.vec.f.y))
@@ -5350,7 +5367,11 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                     if ((com->objective == nFTComputerObjectiveRecover) && !(com->is_attempt_specialhi_recovery))
 #endif
                     {
+#if defined(PORT) && defined(REGION_REMIX)
+                        if (ftRemixAiRecoveryMayUseUsp(fp))
+#else
                         if ((fp->fkind != nFTKindYoshi) && (fp->fkind != nFTKindPurin))
+#endif
                         {
                             if
                             (
@@ -6149,7 +6170,11 @@ sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
 // 0x80136C0C
 sb32 ftComputerCheckTryCancelSpecialN(FTStruct *fp)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    switch (ftRemixAiCopiedPowerKind(fp))
+#else
     switch ((fp->fkind == nFTKindKirby) ? fp->passive_vars.kirby.copy_id : fp->fkind)
+#endif
     {
     case nFTKindDonkey:
     case nFTKindGDonkey:
@@ -6335,7 +6360,15 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
     }
     else com->target_find_wait = 0;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiInhaleSpitsHeldVictim(this_fp))
+    {
+        return 0;
+    }
+    if (ftRemixAiInhaleUsesKirbyBlock(this_fp))
+#else
     if (this_fp->fkind == nFTKindKirby)
+#endif
     {
         if
         (
@@ -6355,7 +6388,11 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
             return 0;
         }
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiIsPkThunderKind(this_fp->fkind))
+#else
     if (this_fp->fkind == nFTKindNess)
+#endif
     {
         if ((this_fp->status_id == nFTNessStatusSpecialHiHold) || (this_fp->status_id == nFTNessStatusSpecialAirHiHold))
         {
@@ -6369,7 +6406,11 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
                 }
                 else com->target_pos.x -= 200.0F;
 
+#if defined(PORT) && defined(REGION_REMIX)
+                com->target_pos.y = ftRemixAiPkThunderTargetY(this_fp);
+#else
                 com->target_pos.y = this_fp->joints[nFTPartsJointTopN]->translate.vec.f.y - 100.0F;
+#endif
             }
             else ftComputerCheckFindTarget(this_fp);
 
@@ -6461,7 +6502,11 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
 
         return 1;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiZebesAcidApplies())
+#else
     if (gSCManagerBattleState->gkind == nGRKindZebes)
+#endif
     {
         grZebesAcidGetLevelInfo(&acid_level_curr, &acid_level_step);
 
@@ -6868,19 +6913,8 @@ void ftComputerFollowObjectiveRecover(FTStruct *fp)
 
         ftComputerFollowObjectiveWalk(fp);
 
-#ifdef PORT
-        /* PORT: SR custom_recovery_logic dispatch (AI.asm:384-411). After the
-         * vanilla walk-toward step, a per-fkind recovery routine may steer the
-         * CPU back to the ledge (Crash fires NSP_TOWARDS - Attacks.asm 67-145).
-         * SR runs this for every character with a recovery_logic table entry. */
-        {
-            void (*ai_recover)(FTStruct *) =
-                (void (*)(FTStruct *))port_fighter_ai_recovery_routine(fp->fkind);
-            if (ai_recover != NULL)
-            {
-                ai_recover(fp);
-            }
-        }
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixAiRecoveryLogicRunFighter(fp);
 #endif
     }
 }
@@ -7211,6 +7245,10 @@ void func_ovl3_8013877C(FTStruct *this_fp)
                 break;
 #endif
 
+#if defined(PORT) && defined(REGION_REMIX)
+            case REMIX_ID_JNESS:
+            case REMIX_ID_LUCAS:
+#endif
             case nFTKindNess:
                 if (syUtilsRandFloat() < 0.25F)
                 {
@@ -7360,7 +7398,11 @@ sb32 func_ovl3_80138EE4(FTStruct *fp)
     {
         return FALSE;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    fkind = ftRemixAiCopiedPowerKind(fp);
+#else
     fkind = (fp->fkind == nFTKindKirby) ? fp->passive_vars.kirby.copy_id : fp->fkind;
+#endif
 
     if (fkind == nFTKindSamus)
     {
@@ -7379,7 +7421,13 @@ sb32 func_ovl3_80138EE4(FTStruct *fp)
             return FALSE;
         }
     }
-#if defined(REGION_US)
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiEvadeIsMarinaCargo(fp))
+    {
+        return FALSE;
+    }
+    if ((fkind == nFTKindDonkey) || (fkind == nFTKindNDonkey) || (fkind == nFTKindGDonkey) || (fkind == REMIX_ID_JDK))
+#elif defined(REGION_US)
     if ((fkind == nFTKindDonkey) || (fkind == nFTKindNDonkey) || (fkind == nFTKindGDonkey))
 #else
     if ((fkind == nFTKindDonkey))

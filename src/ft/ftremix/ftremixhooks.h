@@ -78,6 +78,7 @@ void ftRemixConkerDSPSetActiveGrenade(FTStruct *fp, GObj *grenade_gobj);
 /* Dedede, ftremixdedededsp.c: the minion slots (N64 0x0ADC/0x0AE0 field, 0x0B20 held) that the minion items update */
 void ftRemixDededeDSPAddFieldMinion(GObj *owner_gobj, GObj *minion_gobj);
 void ftRemixDededeDSPFreeMinion(GObj *owner_gobj, GObj *minion_gobj);
+sb32 ftRemixDededeDSPFieldMinionsFull(FTStruct *fp);
 
 /* Mad Piano, ftremixpianodsp.c: Ness's absorb enters Piano's own absorb status */
 sb32 ftRemixPianoDSPAbsorbRedirect(FTStruct *fp, GObj *fighter_gobj);

@@ -13,6 +13,7 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_symbols.h"
 #include <ft/fighter.h>
 #include "ft/ftcommon.h"
@@ -344,7 +345,7 @@ static void ftRemixWarioSpecialNAirProcUpdate(GObj *fighter_gobj)
 static void ftRemixWarioSpecialNGroundProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    f32 friction = dMPCollisionMaterialFrictions[fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK];
+    f32 friction = grRemixSurfaceFriction(fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK);
 
     ftPhysicsSetGroundVelFriction(fp, friction * WARIO_GROUND_TRACTION);
     ftPhysicsSetGroundVelTransferAir(fighter_gobj);

@@ -5,6 +5,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
+#include "gr/grremix/grremixstage.h"
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixtugofwar.h"
 #include "gm/gmremixtwelvecb.h"
@@ -27,6 +28,31 @@ void ftCommonDeadAddDeadSFXSoundQueue(u16 sfx_id)
 {
     func_800269C0_275C0(sfx_id);
     ifCommonBattleEndAddSoundQueueID(sfx_id);
+}
+
+/**
+ * Chooses the explosion SFX of a KO by the stage of the match (Remix: Stages.asm id_fix_6_ class test; vanilla: bonus stage ids).
+ *
+ * @return The small explosion FGM id on bonus stages, the large one elsewhere.
+ */
+static u32 ftCommonDeadGetExplodeSFXID(void)
+{
+#ifdef REGION_REMIX
+    if (grRemixStageHasSmallExplosion(gSCManagerBattleState->gkind) != FALSE)
+    {
+        return nSYAudioFGMDeadExplodeS;
+    }
+#else
+    if
+    (
+        ((gSCManagerBattleState->gkind >= nGRKindBonus1Start) && (gSCManagerBattleState->gkind <= nGRKindBonus1End)) ||
+        ((gSCManagerBattleState->gkind >= nGRKindBonus2Start) && (gSCManagerBattleState->gkind <= nGRKindBonus2End))
+    )
+    {
+        return nSYAudioFGMDeadExplodeS;
+    }
+#endif
+    return nSYAudioFGMDeadExplodeL;
 }
 
 // 0x8013BC8C
@@ -325,15 +351,7 @@ void ftCommonDeadDownSetStatus(GObj *fighter_gobj)
     efManagerDeadExplodeMakeEffect(&pos, fp->player, 0);
     ifScreenFlashSetColAnimID(nGMColAnimScreenFlashDeadExplode, 0);
 
-    if 
-    (
-        ((gSCManagerBattleState->gkind >= nGRKindBonus1Start) && (gSCManagerBattleState->gkind <= nGRKindBonus1End)) ||
-        ((gSCManagerBattleState->gkind >= nGRKindBonus2Start) && (gSCManagerBattleState->gkind <= nGRKindBonus2End))
-    )
-    {
-        sfx_id = nSYAudioFGMDeadExplodeS;
-    }
-    else sfx_id = nSYAudioFGMDeadExplodeL;
+    sfx_id = ftCommonDeadGetExplodeSFXID();
 
     ftCommonDeadAddDeadSFXSoundQueue(sfx_id);
 }
@@ -367,15 +385,7 @@ void ftCommonDeadRightSetStatus(GObj *fighter_gobj)
     efManagerDeadExplodeMakeEffect(&pos, fp->player, 1);
     ifScreenFlashSetColAnimID(nGMColAnimScreenFlashDeadExplode, 0);
 
-    if 
-    (
-        ((gSCManagerBattleState->gkind >= nGRKindBonus1Start) && (gSCManagerBattleState->gkind <= nGRKindBonus1End)) ||
-        ((gSCManagerBattleState->gkind >= nGRKindBonus2Start) && (gSCManagerBattleState->gkind <= nGRKindBonus2End))
-    )
-    {
-        sfx_id = nSYAudioFGMDeadExplodeS;
-    }
-    else sfx_id = nSYAudioFGMDeadExplodeL;
+    sfx_id = ftCommonDeadGetExplodeSFXID();
 
     ftCommonDeadAddDeadSFXSoundQueue(sfx_id);
 }
@@ -408,15 +418,7 @@ void ftCommonDeadLeftSetStatus(GObj *fighter_gobj)
     efManagerDeadExplodeMakeEffect(&pos, fp->player, 3);
     ifScreenFlashSetColAnimID(nGMColAnimScreenFlashDeadExplode, 0);
 
-    if 
-    (
-        ((gSCManagerBattleState->gkind >= nGRKindBonus1Start) && (gSCManagerBattleState->gkind <= nGRKindBonus1End)) ||
-        ((gSCManagerBattleState->gkind >= nGRKindBonus2Start) && (gSCManagerBattleState->gkind <= nGRKindBonus2End))
-    )
-    {
-        sfx_id = nSYAudioFGMDeadExplodeS;
-    }
-    else sfx_id = nSYAudioFGMDeadExplodeL;
+    sfx_id = ftCommonDeadGetExplodeSFXID();
 
     ftCommonDeadAddDeadSFXSoundQueue(sfx_id);
 }
@@ -588,6 +590,7 @@ void ftCommonDeadUpFallProcUpdate(GObj *fighter_gobj)
 
             ftCommonDeadUpdateScore(fp);
 
+            /* The up-star KO keeps the vanilla id ranges: Stages.asm id_fix_6_ patches only the down, right and left KO. */
             if 
             (
                 ((gSCManagerBattleState->gkind >= nGRKindBonus1Start) && (gSCManagerBattleState->gkind <= nGRKindBonus1End)) ||

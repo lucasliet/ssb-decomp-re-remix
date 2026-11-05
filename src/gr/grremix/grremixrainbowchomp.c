@@ -173,9 +173,19 @@ static void grRemixRainbowChompSpawnPosition(GObj *chomp_gobj, Vec3f *spawn_pos)
     spawn_pos->z = 0.0F;
 }
 
-/** Applies the hitbox properties the asm writes after spawn: reflectable, lifetime and damage. */
+/**
+ * Blast zone callback (Hazards.asm blast_zone_destroy_prevent): the chomp weapon is never destroyed for leaving the map
+ * bounds; the asm skips the whole bounds block for its projectile id.
+ */
+static sb32 grRemixRainbowChompProcDead(GObj *wp_gobj)
+{
+    return FALSE;
+}
+
+/** Applies the hitbox properties the asm writes after spawn: reflectable, lifetime, damage and the blast zone callback. */
 static void grRemixRainbowChompSetProperties(WPStruct *wp)
 {
+    wp->proc_dead = grRemixRainbowChompProcDead;
     wp->attack_coll.can_reflect = TRUE;
     wp->lifetime = GRREMIX_RAINBOW_CHOMP_LIFETIME;
     wp->attack_coll.damage = GRREMIX_RAINBOW_CHOMP_DAMAGE;

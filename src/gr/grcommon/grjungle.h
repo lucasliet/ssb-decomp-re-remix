@@ -17,4 +17,11 @@ extern sb32 grJungleTaruCannCheckGetDamageKind(GObj *ground_gobj, GObj *fighter_
 extern void grJungleTaruCannGetPosition(Vec3f *pos);
 extern f32 grJungleTaruCannGetRotate(void);
 
+#ifdef REGION_REMIX
+/* Hazards.asm add_barrel_, barrel_angle_fix_ and Basketball.asm check_basketball_barrel_collision_ */
+extern GObj* grJungleRemixMakeTaruCannAt(void *map_head, f32 x, f32 y, f32 rotate_z, AObjEvent32 **anim_joints);
+extern sb32 grJungleTaruCannCheckBasketball(GObj *ground_gobj, GObj *item_gobj);
+extern f32 grJungleTaruCannGetRotateOf(GObj *tarucann_gobj);
+#endif
+
 #endif

@@ -1,20 +1,25 @@
 /**
  * gmremixspawnsetup.c - Smash Remix VS setup: neutral spawn positions (Spawn.asm, load_spawn_ hook at
  * 0x800FAF64) and the default CPU level applied when the VS battle setup starts (AI.asm, 0x8013AF2C).
- * Only the VS path is ported. Training and bonus spawns stay vanilla; Smashketball always uses its own neutral spawns.
+ * VS and Training are ported (bonus and 1P spawns stay vanilla); Smashketball always uses its own neutral spawns.
+ * The neutral and original rows of every stage id are read from the Remix image.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include <string.h>
 #include <ft/fighter.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixspawnrules.h"
 #include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixtoggle.h"
+#include "gr/grremix/grremixstage.h"
+#include "remix/remix_ram_image.h"
+#include "remix/remix_symbols.h"
 
 #define GMREMIX_SPAWN_PLAYERS_NUM 4
-#define GMREMIX_SPAWN_STAGES_NUM 0x11
 #define GMREMIX_SPAWN_TYPE_NOT 2
 #define GMREMIX_SPAWN_TYPE_ACTIVE 0
 #define GMREMIX_DEFAULT_CPU_LEVEL 3
@@ -27,28 +32,42 @@ typedef struct GMRemixSpawnSetup
     s8 slot[GMREMIX_SPAWN_PLAYERS_NUM];
 } GMRemixSpawnSetup;
 
-/* Spawn.asm neutral_table, one row per VS stage id (the stage id is the gkind, 0x00 = Peach's Castle
- * to 0x10 = Final Destination). Each row holds the x, y of the four neutral slots. */
-static const f32 sGMRemixNeutralSpawns[GMREMIX_SPAWN_STAGES_NUM][GMREMIX_SPAWN_PLAYERS_NUM][2] =
+#define GMREMIX_SPAWN_COORD_SIZE 4
+
+/**
+ * Reads a coordinate of a Spawn table (original_table or neutral_table) from the Remix image.
+ * @param table Image address of the table.
+ * @param offset Byte offset of the slot, from gmRemixSpawnRulesTableOffset.
+ * @param coord 0 for x, 1 for y.
+ * @return The coordinate.
+ */
+static f32 gmRemixSpawnReadTableCoord(u32 table, s32 offset, s32 coord)
 {
-    { { -0x1.9340000000000p+10f, 0x1.8480000000000p+10f }, { 0x1.9340000000000p+10f, 0x1.6100000000000p+10f }, { -0x1.4c80000000000p+9f, 0x1.4b00000000000p+9f }, { 0x1.4c80000000000p+9f, 0x1.4b00000000000p+9f } }, /* 0x00 */
-    { { -0x1.9ca0000000000p+11f, 0x1.d340000000000p+10f }, { 0x1.2800000000000p+8f, 0x1.b2c0000000000p+10f }, { -0x1.05c0000000000p+11f, 0x1.ab00000000000p+10f }, { -0x1.c100000000000p+9f, 0x1.8e40000000000p+10f } }, /* 0x01 */
-    { { -0x1.b2c0000000000p+10f, 0x1.0000000000000p+1f }, { 0x1.b2c0000000000p+10f, 0x1.0000000000000p+1f }, { -0x1.3b00000000000p+9f, -0x1.a400000000000p+7f }, { 0x1.3b00000000000p+9f, -0x1.a400000000000p+7f } }, /* 0x02 */
-    { { -0x1.3f80000000000p+11f, 0x1.1e00000000000p+9f }, { 0x1.b440000000000p+10f, -0x1.0600000000000p+8f }, { -0x1.1c40000000000p+10f, 0x1.6000000000000p+3f }, { 0x0.0p+0f, 0x1.3a00000000000p+8f } }, /* 0x03 */
-    { { -0x1.2c00000000000p+11f, 0x1.0480000000000p+10f }, { 0x1.7700000000000p+10f, 0x1.0480000000000p+10f }, { -0x1.1580000000000p+10f, 0x1.0480000000000p+10f }, { 0x1.e000000000000p+7f, 0x1.0480000000000p+10f } }, /* 0x04 */
-    { { 0x1.3a80000000000p+9f, -0x1.8000000000000p+6f }, { 0x1.6800000000000p+6f, 0x1.2d20000000000p+11f }, { 0x1.7a00000000000p+9f, 0x1.7a40000000000p+10f }, { -0x1.ef00000000000p+9f, 0x1.0200000000000p+10f } }, /* 0x05 */
-    { { -0x1.5e00000000000p+10f, 0x1.c700000000000p+9f }, { 0x1.5e00000000000p+10f, 0x1.c700000000000p+9f }, { -0x1.5e00000000000p+10f, 0x1.4000000000000p+2f }, { 0x1.5e00000000000p+10f, 0x1.4000000000000p+2f } }, /* 0x06 */
-    { { 0x1.2c00000000000p+10f, 0x1.9500000000000p+9f }, { -0x1.4a00000000000p+9f, -0x1.0e00000000000p+8f }, { 0x1.fe00000000000p+8f, 0x1.6800000000000p+6f }, { -0x1.2c00000000000p+10f, -0x1.0e00000000000p+8f } }, /* 0x07 */
-    { { -0x1.c200000000000p+10f, 0x1.4980000000000p+10f }, { 0x1.7700000000000p+10f, 0x1.e100000000000p+9f }, { -0x1.7700000000000p+10f, 0x1.3000000000000p+7f }, { 0x1.c200000000000p+10f, 0x1.c3c0000000000p+10f } }, /* 0x08 */
-    { { 0x1.dd00000000000p+9f, 0x1.2c00000000000p+7f }, { 0x1.f700000000000p+9f, 0x1.d100000000000p+9f }, { -0x1.be00000000000p+9f, 0x1.cf80000000000p+9f }, { -0x1.c800000000000p+9f, 0x1.2c00000000000p+7f } }, /* 0x09 */
-    { { -0x1.c200000000000p+8f, 0x1.2c00000000000p+7f }, { 0x1.c200000000000p+8f, 0x1.2c00000000000p+7f }, { 0x0.0p+0f, 0x1.a940000000000p+10f }, { 0x1.7c80000000000p+10f, 0x1.d100000000000p+9f } }, /* 0x0A */
-    { { 0x1.4a00000000000p+9f, 0x0.0p+0f }, { 0x1.6800000000000p+10f, 0x0.0p+0f }, { -0x1.4a00000000000p+9f, 0x0.0p+0f }, { -0x1.6800000000000p+10f, 0x0.0p+0f } }, /* 0x0B */
-    { { -0x1.1440000000000p+10f, -0x1.4400000000000p+7f }, { 0x1.ed00000000000p+9f, -0x1.3800000000000p+7f }, { -0x1.3a40000000000p+10f, 0x1.6b00000000000p+9f }, { 0x1.2980000000000p+10f, 0x1.de00000000000p+9f } }, /* 0x0C */
-    { { -0x1.19c0000000000p+10f, 0x1.f000000000000p+4f }, { 0x1.ba40000000000p+10f, 0x1.0700000000000p+8f }, { -0x1.af00000000000p+8f, 0x1.2000000000000p+5f }, { 0x1.8900000000000p+9f, 0x1.e000000000000p+4f } }, /* 0x0D */
-    { { -0x1.2c00000000000p+10f, 0x1.0040000000000p+10f }, { 0x1.2c00000000000p+10f, 0x1.0040000000000p+10f }, { -0x1.2c00000000000p+10f, 0x1.4000000000000p+2f }, { 0x1.2c00000000000p+10f, 0x1.4000000000000p+2f } }, /* 0x0E */
-    { { 0x0.0p+0f, 0x0.0p+0f }, { 0x0.0p+0f, 0x0.0p+0f }, { 0x0.0p+0f, 0x0.0p+0f }, { 0x0.0p+0f, 0x0.0p+0f } }, /* 0x0F */
-    { { -0x1.c200000000000p+10f, 0x1.4000000000000p+2f }, { 0x1.c200000000000p+10f, 0x1.4000000000000p+2f }, { -0x1.c200000000000p+9f, 0x1.4000000000000p+2f }, { 0x1.c200000000000p+9f, 0x1.4000000000000p+2f } }, /* 0x10 */
-};
+    u32 word = remix_ram_image_read_word(table + offset + (coord * GMREMIX_SPAWN_COORD_SIZE));
+    f32 value;
+
+    memcpy(&value, &word, sizeof(value));
+    return value;
+}
+
+/**
+ * Overwrites x and y of a spawn position with a slot of a Spawn table; z is untouched, as in Spawn.asm _set_spawn.
+ * @param table Image address of the table.
+ * @param stage_id Stage id (row of the table).
+ * @param slot Slot of the row, 0 to 3.
+ * @param pos Spawn position.
+ */
+static void gmRemixSpawnApplyTableSlot(u32 table, s32 stage_id, s32 slot, Vec3f *pos)
+{
+    s32 offset = gmRemixSpawnRulesTableOffset(stage_id, slot);
+
+    if (offset < 0)
+    {
+        return;
+    }
+    pos->x = gmRemixSpawnReadTableCoord(table, offset, 0);
+    pos->y = gmRemixSpawnReadTableCoord(table, offset, 1);
+}
 
 /* Spawn.asm valid_teams: the two teams of every combination, with the neutral slot of each player. */
 static const GMRemixSpawnSetup sGMRemixValidTeams[] =
@@ -199,15 +218,18 @@ static s32 gmRemixSpawnNeutralSlot(s32 player)
 }
 
 /**
- * Overwrites the vanilla VS spawn of a player with the Remix neutral spawn when the Neutral Spawns toggle is on and
- * the match has a valid setup. Only x and y change, as in Spawn.asm. Called after the vanilla map lookup.
+ * Overwrites the vanilla VS spawn of a player with a Remix spawn, as Spawn.asm load_spawn_ does: the neutral table when
+ * the Neutral Spawns toggle is on and the match has a valid setup, the original table otherwise. Only x and y change.
+ * Called after the vanilla map lookup.
  * @param player Player index.
  * @param pos Spawn position, already set to the vanilla spawn.
  */
 void gmRemixNeutralSpawnApply(s32 player, Vec3f *pos)
 {
-    s32 slot;
+    s32 neutral_slot;
+    s32 uses_neutral;
     s32 stage_id;
+    sb32 is_neutral_on = gmRemixToggle(neutral_spawns) ? TRUE : FALSE;
 
     if (gmRemixSmashketballIsActive() != FALSE)
     {
@@ -218,22 +240,34 @@ void gmRemixNeutralSpawnApply(s32 player, Vec3f *pos)
         pos->y = y;
         return;
     }
-    if (!gmRemixToggle(neutral_spawns))
-    {
-        return;
-    }
     stage_id = gSCManagerBattleState->gkind;
-    if (stage_id >= GMREMIX_SPAWN_STAGES_NUM)
+    if ((stage_id < 0) || (stage_id > GRREMIX_KIND_MAX))
     {
         return;
     }
-    slot = gmRemixSpawnNeutralSlot(player);
+    neutral_slot = is_neutral_on ? gmRemixSpawnNeutralSlot(player) : -1;
+    uses_neutral = gmRemixSpawnRulesVsUsesNeutral(is_neutral_on, neutral_slot);
+
+    gmRemixSpawnApplyTableSlot(uses_neutral ? REMIX_SYM_Spawn__neutral_table : REMIX_SYM_Spawn__original_table, stage_id,
+                               gmRemixSpawnRulesVsSlot(player, uses_neutral, neutral_slot), pos);
+}
+
+/**
+ * Overwrites the vanilla Training spawn of a port with the slot of the original table, as Spawn.asm load_spawn_ does for
+ * spawn ids 0 to 3 (Port 1 to 4). The custom spawn id (4) is applied by sc1PTrainingRemixSpawnApplyDesc.
+ * @param spawn_id Spawn id of the port (0 to 3 for a table slot).
+ * @param pos Spawn position, already set to the vanilla spawn.
+ */
+void gmRemixTrainingSpawnApply(s32 spawn_id, Vec3f *pos)
+{
+    s32 slot = gmRemixSpawnRulesTrainingSlot(spawn_id);
+    s32 stage_id = gSCManagerBattleState->gkind;
+
     if (slot < 0)
     {
         return;
     }
-    pos->x = sGMRemixNeutralSpawns[stage_id][slot][0];
-    pos->y = sGMRemixNeutralSpawns[stage_id][slot][1];
+    gmRemixSpawnApplyTableSlot(REMIX_SYM_Spawn__original_table, stage_id, slot, pos);
 }
 
 /**

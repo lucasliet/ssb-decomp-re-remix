@@ -7,6 +7,7 @@
 #include "grremixstage.h"
 #include "grremixhazards.h"
 #include "grremixrandommusic.h"
+#include "grremixstagerules.h"
 #include "gm/gmremixbgm.h"
 #include "gm/gmremixbgmrules.h"
 #include "gm/gmremixgameend.h"
@@ -83,6 +84,16 @@ u32 grRemixGetGroundFunction(s32 gkind)
 s32 grRemixGetStageClass(s32 gkind)
 {
     return grRemixReadByte(REMIX_SYM_Stages__class_table + gkind);
+}
+
+sb32 grRemixStageEndsWithGameSet(s32 gkind)
+{
+    return grRemixStageRulesEndsWithGameSet(gkind, grRemixGetGroundFunction(gkind));
+}
+
+sb32 grRemixStageHasSmallExplosion(s32 gkind)
+{
+    return grRemixStageRulesHasSmallExplosion(gkind, grRemixGetStageClass(gkind));
 }
 
 s32 grRemixGetDefaultMusicTrack(s32 gkind)

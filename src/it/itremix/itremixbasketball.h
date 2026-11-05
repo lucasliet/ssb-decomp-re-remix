@@ -37,6 +37,9 @@ sb32 itRemixBasketballIsGoldenBall(GObj *item_gobj);
 sb32 itRemixBasketballIsRespawning(GObj *item_gobj);
 sb32 itRemixBasketballIsDespawnBlocked(GObj *item_gobj);
 
+/* Basketball.asm prevent_fighter_enter_barrel_: TRUE while the ball of a Smashketball match is inside a barrel. */
+sb32 itRemixBasketballIsBarrelOccupied(void);
+
 extern const ITRemixItemDesc dITRemixBasketballItemDesc;
 
 #endif

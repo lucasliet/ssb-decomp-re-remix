@@ -5,6 +5,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixgating.h"
+#include "gr/grremix/grremixsaffron.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -54,7 +55,11 @@ void grYamabukiGateUpdateSleep(void)
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusWait)
     {
         gGRCommonStruct.yamabuki.gate_status = nGRYamabukiGateStatusWait;
+#ifdef REGION_REMIX
+        gGRCommonStruct.yamabuki.monster_wait = grRemixSaffronSleepMonsterWait(syUtilsRandIntRange(1000) + 1000);
+#else
         gGRCommonStruct.yamabuki.monster_wait = syUtilsRandIntRange(1000) + 1000;
+#endif
     }
 }
 
@@ -226,9 +231,14 @@ void grYamabukiGateClearMonsterGObj(void)
 void grYamabukiGateSetClosedWait(void)
 {
     gGRCommonStruct.yamabuki.gate_status = nGRYamabukiGateStatusWait;
+#ifdef REGION_REMIX
+    gGRCommonStruct.yamabuki.gate_wait = grRemixSaffronClosedGateWait(1000);
+    gGRCommonStruct.yamabuki.monster_wait = grRemixSaffronClosedMonsterWait(syUtilsRandIntRange(1000) + 1000);
+#else
     gGRCommonStruct.yamabuki.gate_wait = 1000;
 
     gGRCommonStruct.yamabuki.monster_wait = syUtilsRandIntRange(1000) + 1000;
+#endif
 
     grYamabukiGateSetPositionNear();
     grYamabukiGateAddAnimClose();

@@ -7,6 +7,10 @@
 #include "sc/sc1pmode/sc1premixhighscores.h"
 #include "sc/sc1pmode/sc1pbonusremix.h"
 #include "gm/gmremixtoggle.h"
+#include "gr/grremix/grremixbonusbumper.h"
+#include "gr/grremix/grremixjunglebarrels.h"
+#include "gr/grremix/grremixrollingbombs.h"
+#include "if/ifremixdragonkinghud.h"
 #endif
 #ifdef PORT
 extern void port_coroutine_yield(void);
@@ -584,6 +588,9 @@ void sc1PBonusStageMakeTargets(void)
 
 	vel.x = vel.y = vel.z = 0.0F;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	grRemixRollingBombsMakeGround(); /* marina_btt_setup */
+#endif
 #ifdef PORT
 	dobjdesc = (DObjDesc*)(file_base + target->dobjdesc);
 	anim_joints = (u32*)(file_base + target->anim_joint);
@@ -885,6 +892,9 @@ void sc1PBonusStageMakeBumpers(void)
 	intptr_t bumper_offsets[2];
 
 	sc1PBonusStageGetBumperOffsets(&bumper_offsets[0], &bumper_offsets[1]);
+
+	grRemixJungleBarrelsMakeBanjo(); /* btp_bomb_or_barrel_setup */
+	grRemixRollingBombsMakeGround();
 #endif
 
 	if (gMPCollisionGroundData->map_nodes != NULL)
@@ -918,6 +928,9 @@ void sc1PBonusStageMakeBumpers(void)
 		{
 			GObj *item_gobj = itManagerMakeItemSetupCommon(NULL, nITKindGBumper, &dobjdesc->translate, &vel, ITEM_FLAG_PARENT_GROUND);
 
+#if defined(PORT) && defined(REGION_REMIX)
+			grRemixBonusBumperSetup(item_gobj); /* sonic_btp_setup */
+#endif
 #ifdef PORT
 			{
 				AObjEvent32 *aj = (AObjEvent32*)PORT_RESOLVE(*anim_joints);
@@ -1019,7 +1032,11 @@ void sc1PBonusStageMakeTargetSprites(void)
 		sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
 
 		sobj->pos.x = -(sobj->sprite.width / 2) + (((sobj->sprite.width + 3) * i) + 30);
+#ifdef REGION_REMIX
+		sobj->pos.y = ifRemixDragonKingHudPickIntY(30, IFREMIX_DKHUD_Y_BONUS_TARGETS) - (sobj->sprite.height / 2);
+#else
 		sobj->pos.y = 30 - (sobj->sprite.height / 2);
+#endif
 	}
 }
 
@@ -1042,7 +1059,11 @@ void sc1PBonusStageMakePlatformSprites(void)
 		sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
 
 		sobj->pos.x = -(sobj->sprite.width / 2) + (((sobj->sprite.width + 3) * i) + 30);
+#ifdef REGION_REMIX
+		sobj->pos.y = ifRemixDragonKingHudPickIntY(30, IFREMIX_DKHUD_Y_BONUS_TARGETS) - (sobj->sprite.height / 2);
+#else
 		sobj->pos.y = 30 - (sobj->sprite.height / 2);
+#endif
 	}
 }
 
@@ -1244,7 +1265,11 @@ void sc1PBonusStageSetPlayerInterfacePositions(void)
 	}
 #endif
 	gIFCommonPlayerInterface.player_pos_x = dSC1PBonusStagePlayerInterfacePositions;
+#ifdef REGION_REMIX
+	gIFCommonPlayerInterface.player_pos_y = ifRemixDragonKingHudDamageY(210, FALSE);
+#else
 	gIFCommonPlayerInterface.player_pos_y = 210;
+#endif
 }
 
 // 0x8018E5F8
