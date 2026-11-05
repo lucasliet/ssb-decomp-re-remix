@@ -9,6 +9,9 @@
 #include "gm/gmremixtugofwar.h"
 #include "gm/gmremixtwelvecb.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
+#if defined(PORT)
+#include "ft/ftremix/ftremixailog.h"
+#endif
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -251,6 +254,7 @@ void ftCommonDeadInitStatusVars(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
 #if defined(PORT) && defined(REGION_REMIX)
+    ftRemixAiLogRecoverDead(fp);
     if (ftRemixStaminaIsOutOfStock(fp) != FALSE)
     {
         ftCommonSleepSetStatus(fighter_gobj);

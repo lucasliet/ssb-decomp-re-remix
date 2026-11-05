@@ -18,6 +18,7 @@ extern void port_dump_backtrace(void);
 #include "ft/ftremix/sonic/ftremixsonicclassic.h"
 #include "ft/ftremix/ftremixtraining.h"
 #include "ft/ftremix/ftremixswordtrail.h"
+#include "ft/ftremix/ftremixtestlog.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1ptrainingremixsbm.h"
@@ -4299,6 +4300,9 @@ void ftMainProcParams(GObj *fighter_gobj)
     status_id = fp->status_id;
     hitlag_tics = fp->hitlag_tics;
     is_knockback_paused = FALSE;
+#if defined(PORT) && defined(REGION_REMIX)
+    ftRemixTestLogAmmo(fp);
+#endif
 
     if (fp->unk_ft_0x7AC != 0)
     {
@@ -4351,6 +4355,9 @@ void ftMainProcParams(GObj *fighter_gobj)
             fp->damage_knockback = 0;
         }
         ftParamUpdateDamage(fp, fp->damage_queue);
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixTestLogHit(fp);
+#endif
 
         if (fp->proc_trap != NULL)
         {
@@ -4983,6 +4990,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     status_id = ftRemixKirbyCloneActionSwap(fighter_gobj, status_id);
     status_id = ftRemixStaminaKOStatus(fp, status_id);
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+    ftRemixTestLogStatus(fp, status_id);
+#endif
 #ifdef PORT
     /* SR change_action_ (0x800E6F2C) — the per-status-change reset of SR
      * translation multiplier / env color override is NOT an engine hook:
@@ -5301,6 +5311,16 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         }
         else if (motion_desc->anim_file_id != 0)
         {
+#ifdef PORT
+            /* A synth's figatree heap is sized from its own motion tables (ftManagerPortSetupSynthFileSizes); an anim
+             * larger than it overwrites the fighter's DObjs (docs/bugs/remix_chardata_dedede_crash_2026-11-05.md). */
+            if (lbRelocGetFileSize(motion_desc->anim_file_id) > fp->data->file_anim_size)
+            {
+                port_log("SSB64: ftMainSetStatus - figatree overflow fkind=%d status=0x%x anim_file=%u size=%u heap=%u\n",
+                    fp->fkind, status_id, (u32)motion_desc->anim_file_id,
+                    (u32)lbRelocGetFileSize(motion_desc->anim_file_id), (u32)fp->data->file_anim_size);
+            }
+#endif
             lbRelocGetForceExternHeapFile(motion_desc->anim_file_id, (void*) fp->figatree_heap);
             fp->figatree = fp->figatree_heap;
         }

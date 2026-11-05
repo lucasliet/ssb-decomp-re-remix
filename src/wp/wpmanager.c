@@ -4,6 +4,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixtestlog.h"
 #endif
 
 #ifdef PORT
@@ -120,6 +121,9 @@ GObj* wpManagerMakeWeapon(GObj *parent_gobj, WPDesc *wp_desc, Vec3f *spawn_pos, 
     }
 #ifdef PORT
     wp->spawn_serial = syNetSyncNextSpawnSerial();
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+    ftRemixTestLogWeaponSpawn(wp);
 #endif
     attr = lbRelocGetFileData(WPAttributes*, *wp_desc->p_weapon, wp_desc->o_attributes); // I hope this is correct?
 #ifdef PORT

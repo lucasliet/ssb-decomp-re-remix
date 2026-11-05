@@ -105,7 +105,7 @@ static const MNRemixCharDataEntry* mnRemixCharDataFindEntry(s32 fkind)
 }
 
 /** Splits a raw asm offset into a file index and an offset: the flag selects the extended file, else file 0. */
-static void mnRemixCharDataMakeRef(u32 value, u32 addend, s32 extended_file_index, MNRemixCharDataSpriteRef *ref)
+void mnRemixCharDataMakeRef(u32 value, u32 addend, s32 extended_file_index, MNRemixCharDataSpriteRef *ref)
 {
     u32 sum = value + addend;
 

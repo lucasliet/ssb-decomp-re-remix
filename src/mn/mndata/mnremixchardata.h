@@ -27,6 +27,7 @@ typedef struct MNRemixCharDataSpriteRef
 extern s32 mnRemixCharDataGetFighterKind(s32 page);
 extern s32 mnRemixCharDataGetPage(s32 fkind);
 extern sb32 mnRemixCharDataIsExtended(s32 fkind);
+extern void mnRemixCharDataMakeRef(u32 value, u32 addend, s32 extended_file_index, MNRemixCharDataSpriteRef *ref);
 extern sb32 mnRemixCharDataGetSpriteRef(s32 fkind, s32 sprite_kind, MNRemixCharDataSpriteRef *ref);
 extern f32 mnRemixCharDataGetNameX(s32 fkind);
 extern f32 mnRemixCharDataGetNameY(s32 fkind);

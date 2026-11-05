@@ -10,6 +10,7 @@
 #endif
 #ifdef REGION_REMIX
 #include "mn/mndata/mnremixchardata.h"
+#include "mn/mndata/mnremixcharacters.h"
 #endif
 
 
@@ -1474,6 +1475,28 @@ static void mnCharactersMakeRemixName(GObj *gobj, s32 fkind)
 	sobj->sprite.green = 0x45;
 	sobj->sprite.blue = 0x07;
 }
+
+/** Series emblem of an extended fighter (extend_series_logo_offsets); a fighter without emblem offsets keeps the empty gobj so ChangeFighter's eject path stays valid. */
+static void mnCharactersMakeRemixEmblem(GObj *gobj, s32 fkind)
+{
+	MNRemixCharactersEmblem emblem;
+
+	if (mnRemixCharactersGetEmblem(fkind, &emblem) == FALSE)
+	{
+		return;
+	}
+	gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMNCharactersFiles[3], emblem.dobjdesc), NULL);
+	gcAddGObjDisplay(gobj, gcDrawDObjTreeForGObj, 28, GOBJ_PRIORITY_DEFAULT, ~0);
+	gcAddMObjAll(gobj, lbRelocGetFileData(MObjSub***, sMNCharactersFiles[3], emblem.mobjsub));
+	gcAddMatAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32***, sMNCharactersFiles[3], emblem.matanim), 4.0F);
+	gcPlayAnimAll(gobj);
+
+	DObjGetStruct(gobj)->translate.vec.f.x = -350.0F;
+	DObjGetStruct(gobj)->translate.vec.f.y = 200.0F;
+	DObjGetStruct(gobj)->translate.vec.f.z = 0.0F;
+	DObjGetStruct(gobj)->scale.vec.f.x = 1.7F;
+	DObjGetStruct(gobj)->scale.vec.f.y = 1.7F;
+}
 #endif
 
 // 0x80131C00
@@ -1695,9 +1718,9 @@ void mnCharactersMakeEmblem(s32 fkind)
 
 	sMNCharactersEmblemGObj = gobj = gcMakeGObjSPAfter(0, NULL, 19, GOBJ_PRIORITY_DEFAULT);
 #ifdef REGION_REMIX
-	// REMIX-TODO(chardata-emblem): the asm adds no emblem models for the extended fighters; the empty gobj keeps ChangeFighter's eject path valid.
 	if (mnRemixCharDataIsExtended(fkind))
 	{
+		mnCharactersMakeRemixEmblem(gobj, fkind);
 		return;
 	}
 #endif
@@ -1762,7 +1785,11 @@ void mnCharactersMakeName(s32 fkind)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 29, GOBJ_PRIORITY_DEFAULT, ~0);
 
 #if defined(REGION_US)
-	if ((fkind == nFTKindPurin) || (fkind == nFTKindCaptain))
+	if ((fkind == nFTKindPurin) || (fkind == nFTKindCaptain)
+#ifdef REGION_REMIX
+		|| mnRemixCharactersHasTallNameTag(fkind)
+#endif
+		)
 #else
 	if ((fkind == nFTKindDonkey) || (fkind == nFTKindCaptain))
 #endif
@@ -1936,6 +1963,42 @@ void func_ovl33_801324F8(void)
 	return;
 }
 
+#ifdef REGION_REMIX
+/** Motion row of an extended fighter: the special moves and the jab combo come from the Remix tables of the Data screen, the rest from the common rows. */
+static MNCharactersMotion* mnCharactersGetRemixMotion(MNCharactersMotion *motion, MNCharactersSpecialMotion **special_motions, s32 fkind, s32 motion_kind, s32 track)
+{
+	s32 vanilla_fkind;
+
+	if (motion_kind <= nMNCharactersMotionKindSpecialLw)
+	{
+		if (mnRemixCharactersGetSpecialMotion(motion, fkind, motion_kind, track, &vanilla_fkind) == FALSE)
+		{
+			mnRemixCharactersMakeNullMotion(motion);
+		}
+		else if (vanilla_fkind >= 0)
+		{
+			*motion = special_motions[vanilla_fkind]->motions[motion_kind][track];
+		}
+		return motion;
+	}
+	if (motion_kind == nMNCharactersMotionKindAttack1)
+	{
+		if (mnRemixCharactersGetJabMotion(motion, fkind, track, &vanilla_fkind) == FALSE)
+		{
+			mnRemixCharactersMakeNullMotion(motion);
+		}
+		else if (vanilla_fkind >= 0)
+		{
+			*motion = dMNCharactersAttack1MotionDescs[vanilla_fkind][track];
+		}
+		return motion;
+	}
+	*motion = dMNCharactersCommonMotionDescs[motion_kind][track];
+
+	return motion;
+}
+#endif
+
 // 0x80132500
 MNCharactersMotion* mnCharactersGetMotion(MNCharactersMotion *motion, s32 fkind, s32 motion_kind, s32 unused, s32 track)
 {
@@ -1952,9 +2015,7 @@ MNCharactersMotion* mnCharactersGetMotion(MNCharactersMotion *motion, s32 fkind,
 #ifdef REGION_REMIX
 	if (mnRemixCharDataIsExtended(fkind))
 	{
-		*motion = dMNCharactersCommonMotionDescs[motion_kind][track];
-
-		return motion;
+		return mnCharactersGetRemixMotion(motion, special_motions, fkind, motion_kind, track);
 	}
 #endif
 	if ((motion_kind == nMNCharactersMotionKindSpecialHi) || (motion_kind == nMNCharactersMotionKindSpecialN) || (motion_kind == nMNCharactersMotionKindSpecialLw))
@@ -2014,7 +2075,12 @@ MNCharactersMotion* mnCharactersGetMotion(MNCharactersMotion *motion, s32 fkind,
 // 0x80132768
 sb32 mnCharactersCheckFighterAnimEnd(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+	/* CharacterDataScreen.asm:996: 0x3DCD0000 (0.100098), "frozen state" fix for the fsm custom moveset command. */
+	if (fighter_gobj->anim_frame <= 0.100098F)
+#else
 	if (fighter_gobj->anim_frame == 0.0F)
+#endif
 	{
 		return TRUE;
 	}
@@ -2048,16 +2114,55 @@ sb32 mnCharactersCheckRecentMotionKind(s32 motion_kind)
 	return FALSE;
 }
 
+#ifdef REGION_REMIX
+/** FALSE for the motion kinds an extended fighter cannot show: a row without status or a status its synth fighter lacks, which ftMainSetStatus would read out of bounds. */
+static sb32 mnCharactersCheckRemixMotionKindPlayable(s32 motion_kind)
+{
+	MNCharactersMotion motion;
+	s32 fkind = mnCharactersGetFighterKind(sMNCharactersPage);
+	s32 track;
+
+	if (mnRemixCharDataIsExtended(fkind) == FALSE)
+	{
+		return TRUE;
+	}
+	for (track = 0; track < ARRAY_COUNT(dMNCharactersCommonMotionDescs[0]); track++)
+	{
+		mnCharactersGetMotion(&motion, fkind, motion_kind, sMNCharactersUnknown, track);
+
+		if ((track != 0) && (motion.status_id == FTSTATUS_CHARACTERS_NULL))
+		{
+			return TRUE;
+		}
+		if (mnRemixCharactersIsMotionPlayable(fkind, &motion) == FALSE)
+		{
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+#endif
+
 // 0x801327FC
 s32 mnCharactersRandMotionKind(void)
 {
 	s32 motion_kind;
 
+#ifdef REGION_REMIX
+	if (mnRemixCharactersNextForcedMotionKind(&motion_kind) != FALSE)
+	{
+		return motion_kind;
+	}
+#endif
 	do
 	{
 		motion_kind = syUtilsRandTimeUCharRange(nMNCharactersMotionKindEnumCount);
 	}
+#ifdef REGION_REMIX
+	while ((mnCharactersCheckRecentMotionKind(motion_kind) != FALSE) || (mnCharactersCheckRemixMotionKindPlayable(motion_kind) == FALSE));
+#else
 	while (mnCharactersCheckRecentMotionKind(motion_kind) != FALSE);
+#endif
 
 	sMNCharactersRecentMotionKinds[sMNCharactersRecentMotionKindsID] = motion_kind;
 
@@ -2102,6 +2207,12 @@ MNCharactersMotion* mnCharactersSetMotion(MNCharactersMotion *motion, s32 motion
 			sMNCharactersUnknown,
 			sMNCharactersCurrentMotionTrack
 		);
+#ifdef REGION_REMIX
+		if (get_motion.status_id == FTSTATUS_CHARACTERS_NULL)
+		{
+			get_motion = dMNCharactersCommonMotionDescs[nMNCharactersMotionKindWait][0];
+		}
+#endif
 		*motion = get_motion;
 
 		return motion;
@@ -2295,6 +2406,31 @@ s32 mnCharactersGetMotionKind(void)
 	}
 }
 
+#ifdef REGION_REMIX
+/** Special-move name sprite of an extended fighter, read from the images file 0x10F6 through special_attack_offsets; no sprite when the fighter has no name for the move. */
+static void mnCharactersMakeRemixMotionName(GObj *gobj, s32 fkind, s32 motion_kind)
+{
+	MNRemixCharDataSpriteRef ref;
+	SObj *sobj;
+
+	if (mnRemixCharactersGetSpecialNameRef(fkind, motion_kind, &ref) == FALSE)
+	{
+		return;
+	}
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNCharactersFiles[ref.file_index], ref.offset));
+
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+
+	sobj->pos.x = 24.0F;
+	sobj->pos.y = 210.0F;
+
+	sobj->sprite.red = 0xE3;
+	sobj->sprite.green = 0x7D;
+	sobj->sprite.blue = 0x0C;
+}
+#endif
+
 // 0x80132E20
 void mnCharactersUpdateMotionName(GObj *gobj)
 {
@@ -2368,7 +2504,8 @@ void mnCharactersUpdateMotionName(GObj *gobj)
 #ifdef REGION_REMIX
 		if (mnRemixCharDataIsExtended(fkind))
 		{
-			return; // REMIX-TODO(chardata-motion-names): the asm adds no special-move name sprites for the extended fighters.
+			mnCharactersMakeRemixMotionName(gobj, fkind, motion_kind);
+			return;
 		}
 #endif
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNCharactersFiles[0], motion_names[fkind][motion_kind]));

@@ -1,5 +1,8 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixtestlog.h"
+#endif
 
 extern void func_80026738_27338(alSoundEffect*);
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -73,6 +76,9 @@ void wpMainDestroyWeapon(GObj *weapon_gobj) // Destroy weapon?
 {
     WPStruct *wp = wpGetStruct(weapon_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    ftRemixTestLogWeaponEnd(wp);
+#endif
     wpMainStopFGM(wp);                  // Stop weapon's SFX
     wpManagerSetPrevStructAlloc(wp);    // Eject weapon's user_data from memory?
     gcEjectGObj(weapon_gobj);           // Eject GObj from memory?

@@ -8,6 +8,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixmusic.h"
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixbgmlog.h"
 #endif
 
 #ifdef PORT
@@ -1686,6 +1687,9 @@ s32 syAudioPlayBGM(s32 sngplayer, u32 bgm)
     {
         sSYAudioCSPlayerStatuses[sngplayer] = AL_PLAYING;
         sSYAudioBGMPlayingIDs[sngplayer] = bgm;
+#if defined(PORT) && defined(REGION_REMIX)
+        gmRemixBgmLogPlay(sngplayer, bgm);
+#endif
 
         return bgm;
     }
@@ -1697,6 +1701,9 @@ void syAudioStopBGM(s32 sngplayer)
 {
     sSYAudioCSPlayerStatuses[sngplayer] = AL_PLAYING;
     sSYAudioBGMPlayingIDs[sngplayer] = -1;
+#if defined(PORT) && defined(REGION_REMIX)
+    gmRemixBgmLogStop(sngplayer);
+#endif
 }
 
 #if defined(PORT) && defined(REGION_REMIX)

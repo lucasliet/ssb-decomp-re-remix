@@ -28,6 +28,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 #include "ft/ftremix/ftremixaimovement.h"
 #include "ft/ftremix/ftremixaiprediction.h"
+#include "ft/ftremix/ftremixailog.h"
 #include "gm/gmremixtoggle.h"
 #endif
 #endif
@@ -6454,6 +6455,9 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
             com->is_attempt_specialhi_recovery = FALSE;
         }
         com->objective = nFTComputerObjectiveRecover;
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixAiLogRecoverBegin(this_fp);
+#endif
 
         return 1;
     }
@@ -6468,6 +6472,9 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
         )
         {
             com->objective = nFTComputerObjectiveRecover;
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixAiLogRecoverBegin(this_fp);
+#endif
 
             return 1;
         }
@@ -8192,6 +8199,9 @@ void ftComputerProcessAll(GObj *fighter_gobj)
 
     if (fp->fkind != nFTKindBoss)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixAiLogRecoverUpdate(fp);
+#endif
         if (com->behavior_change_wait != 0)
         {
             com->behavior_change_wait--;
