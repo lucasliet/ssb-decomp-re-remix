@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ft/fighter.h>
+#include <ft/ftpublic.h>
 #include <it/itremix/itremixbasketball.h>
 #include <port_log.h>
 #include <sc/scmanager.h>
@@ -17,6 +18,7 @@
 #define GMREMIX_SMASHKETBALL_FGM_BASKET 0x118
 #define GMREMIX_SMASHKETBALL_FGM_CHEER 0x272
 #define GMREMIX_SMASHKETBALL_FGM_GROAN 0x267
+#define GMREMIX_SMASHKETBALL_CHANT_KNOCKBACK 160.0F
 
 extern void *func_800269C0_275C0(u16 id);
 extern GObj* efManagerDeadExplodeMakeEffect(Vec3f *pos, s32 player, u32 type);
@@ -59,7 +61,7 @@ static void gmRemixSmashketballShareWinnerScore(s32 team, s32 points)
     }
 }
 
-/* Attributed basket: the owner scores for the player and for the team, and keeps a streak. Returns the crowd sound. */
+/* Attributed basket: the owner scores for the player and for the team, and keeps a streak that chants from 3 on. Returns the crowd sound. */
 static s32 gmRemixSmashketballScoreOwner(FTStruct *owner_fp, s32 points)
 {
     s32 port = owner_fp->player;
@@ -68,6 +70,10 @@ static s32 gmRemixSmashketballScoreOwner(FTStruct *owner_fp, s32 points)
     gGMRemixSmashketball.scores[port] += points;
     gGMRemixSmashketball.winner_scores[port] += gmRemixSmashketballRulesWinnerShare(GMREMIX_SMASHKETBALL_RULES_ATTRIBUTED_SHARE, points);
 
+    if (gmRemixSmashketballRulesIsChantStreak(gGMRemixSmashketball.consecutive_baskets[port]) != FALSE)
+    {
+        ftPublicRemixForceCall(owner_fp->fighter_gobj, GMREMIX_SMASHKETBALL_CHANT_KNOCKBACK, port);
+    }
     return GMREMIX_SMASHKETBALL_FGM_CHEER;
 }
 

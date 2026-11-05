@@ -26,11 +26,6 @@ int sc1PRemixBonus3CompleteFgm(int verdict, int complete_fgm, int record_fgm)
     return (verdict == SC1PREMIX_BONUS3_RECORD_BEATEN) ? record_fgm : complete_fgm;
 }
 
-int sc1PRemixBonus3CanSaveRecord(int enemy_port)
-{
-    return (enemy_port == 0) ? 1 : 0;
-}
-
 void sc1PRemixBonus3TimerY(int dragon_king_hud, float *digit_y, float *symbol_y)
 {
     int is_low = (dragon_king_hud == SC1PREMIX_BONUS3_DRAGON_KING_HUD_ALWAYS);

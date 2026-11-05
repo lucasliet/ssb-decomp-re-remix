@@ -1368,6 +1368,31 @@ sb32 itRemixBasketballIsGoldenBall(GObj *item_gobj)
 }
 
 /**
+ * Smashketball.asm camera_follow: TRUE while the ball is respawning (the item struct word at 0x1E8), when the camera stops
+ * including it.
+ * item_gobj: ball object.
+ */
+sb32 itRemixBasketballIsRespawning(GObj *item_gobj)
+{
+    return itRemixBasketballGetVars(item_gobj)->is_respawn;
+}
+
+/**
+ * Smashketball.asm prevent_despawn (RAM 0x8016F5C4): in Smashketball the basketball never counts its pickup wait down, so it
+ * does not despawn while nobody picks it up.
+ * item_gobj: item object.
+ * Returns: TRUE when item_gobj is the basketball of a Smashketball match.
+ */
+sb32 itRemixBasketballIsDespawnBlocked(GObj *item_gobj)
+{
+    if (gmRemixSmashketballIsActive() == FALSE)
+    {
+        return FALSE;
+    }
+    return (itGetStruct(item_gobj)->kind == ITREMIX_BASKETBALL_KIND) ? TRUE : FALSE;
+}
+
+/**
  * Basketball descriptor: the item dispatch reads this for id 0x40.
  * The asm has no pickup, drop, throw or touch routines.
  */

@@ -41,6 +41,14 @@ extern s32 mnRemixCssBonusGetFighterKind(s32 token);
 extern sb32 mnRemixCssBonusScroll(s32 token, s32 cursor_player, u16 held_buttons, sb32 is_over_bookend);
 
 /**
+ * Moves the scroll hint to another panel column: the hint is placed from the left edge of the panel card, which is not the VS one on
+ * the Bonus and 1P screens. Call it before the first hint; Reset restores the VS position.
+ *
+ * @param panel_x Left edge of the card of panel 0.
+ */
+extern void mnRemixCssBonusSetHintPanelX(f32 panel_x);
+
+/**
  * Shows or hides the scroll hint of a panel (draw_bonus_scroll_indicators_): blinking arrows at both sides and the Z and R
  * buttons, created on first use.
  *

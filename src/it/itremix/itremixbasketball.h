@@ -32,6 +32,11 @@ void itRemixBasketballGetPosition(GObj *item_gobj, Vec3f *pos);
 sb32 itRemixBasketballCheckHoop(GObj *item_gobj, f32 baskets_y, sb32 is_soccer, s32 *side);
 sb32 itRemixBasketballIsGoldenBall(GObj *item_gobj);
 
+/* Smashketball.asm camera_follow: TRUE while the ball respawns. Smashketball.asm prevent_despawn: TRUE when the item is the
+ * ball of a Smashketball match, whose pickup wait must not count down. */
+sb32 itRemixBasketballIsRespawning(GObj *item_gobj);
+sb32 itRemixBasketballIsDespawnBlocked(GObj *item_gobj);
+
 extern const ITRemixItemDesc dITRemixBasketballItemDesc;
 
 #endif

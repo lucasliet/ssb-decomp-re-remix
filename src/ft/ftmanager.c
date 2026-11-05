@@ -7,6 +7,7 @@
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixpartimage.h"
+#include "ft/ftremix/sonic/ftremixsonicclassic.h"
 #endif
 #ifdef PORT
 #include <string.h>
@@ -1025,7 +1026,11 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
 #else
     fp->data = dFTManagerDataFiles[fp->fkind];
 #endif
+#ifdef REGION_REMIX
+    attr = fp->attr = lbRelocGetFileData(FTAttributes*, ftRemixSonicClassicGetMainFile(fp->data, fp->fkind, desc->player), fp->data->o_attributes);
+#else
     attr = fp->attr = lbRelocGetFileData(FTAttributes*, *fp->data->p_file_main, fp->data->o_attributes);
+#endif
 #ifdef PORT
     portFixupFTAttributes(attr);
     {

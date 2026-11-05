@@ -10,7 +10,9 @@
 #include <sys/audio.h>
 #include <sys/controller.h>
 #include <sys/objtypes.h>
+#include "remix/remix_roster_data.h"
 #include "remix/remix_training.h"
+#include "ft/ftremix/sonic/ftremixsonicclassicrules.h"
 #include "sc/sc1pmode/sc1ptrainingmenuentries.h"
 #include "sc/sc1pmode/sc1ptrainingmenurules.h"
 #include "sc/sc1pmode/sc1ptrainingmode.h"
@@ -123,14 +125,17 @@ static s32 sc1PTrainingRemixMenuGetMax(s32 slot)
 {
     const SC1PTrainingMenuEntry *entry = sc1PTrainingMenuEntriesGet(slot);
     s32 native_max;
+    s32 fkind;
 
     if (slot != SC1PTRAININGMENU_SLOT_COSTUME)
     {
         return entry->max;
     }
-    native_max = mnRemixCostumeGetMaxID(sc1PTrainingRemixGetPortFighter(sc1PTrainingRemixMenuGetPort())) + 1;
+    fkind = sc1PTrainingRemixGetPortFighter(sc1PTrainingRemixMenuGetPort());
+    native_max = mnRemixCostumeGetMaxID(fkind) + 1;
 
-    return sc1PTrainingMenuRulesClampValue(native_max, entry->max);
+    return ftRemixSonicClassicRulesTrainingMenuMax(sc1PTrainingMenuRulesClampValue(native_max, SC1PTRAININGMENUENTRIES_COSTUME_BASE_MAX),
+                                                   (fkind == REMIX_ID_SONIC) ? 1 : 0);
 }
 
 static void sc1PTrainingRemixMenuSetSpawn(s32 port, s32 value)

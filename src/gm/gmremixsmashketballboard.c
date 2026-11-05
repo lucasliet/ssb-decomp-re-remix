@@ -13,6 +13,7 @@
 #include <sc/sctypes.h>
 #include <sys/objman.h>
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixsmashketballrules.h"
 
 #define GMREMIX_SMASHKETBALL_BASKETS_Y 1335.15F /* Hazards.asm: baskets y in Smashketball (0x44A6E4C4) */
 #define GMREMIX_SMASHKETBALL_MAP_LINK 2
@@ -35,6 +36,8 @@ enum
 };
 
 static MObj *sGMRemixBoardDigits[GMREMIX_SMASHKETBALL_DIGITS];
+
+static void gmRemixSmashketballBoardSetDigit(s32 digit, s32 value);
 static DObj *sGMRemixBoardBaskets;
 
 /* The N-th object of the stage map link: the stage geometry objects are created in file order. */
@@ -116,6 +119,40 @@ void gmRemixSmashketballBoardSetup(void)
     }
 }
 
+static void gmRemixSmashketballBoardSetDigitColor(s32 digit, unsigned int rgba)
+{
+    if (sGMRemixBoardDigits[digit] == NULL)
+    {
+        return;
+    }
+    sGMRemixBoardDigits[digit]->sub.primcolor.s.r = (rgba >> 24) & 0xFF;
+    sGMRemixBoardDigits[digit]->sub.primcolor.s.g = (rgba >> 16) & 0xFF;
+    sGMRemixBoardDigits[digit]->sub.primcolor.s.b = (rgba >> 8) & 0xFF;
+    sGMRemixBoardDigits[digit]->sub.primcolor.s.a = rgba & 0xFF;
+}
+
+void gmRemixSmashketballBoardSetTeamColors(s32 home_team, s32 away_team)
+{
+    if (home_team != GMREMIX_SMASHKETBALL_NO_TEAM)
+    {
+        gmRemixSmashketballBoardSetDigitColor(nGMRemixBoardDigitHome1, gmRemixSmashketballRulesTeamColor(home_team));
+        gmRemixSmashketballBoardSetDigitColor(nGMRemixBoardDigitHome2, gmRemixSmashketballRulesTeamColor(home_team));
+    }
+    if (away_team != GMREMIX_SMASHKETBALL_NO_TEAM)
+    {
+        gmRemixSmashketballBoardSetDigitColor(nGMRemixBoardDigitAway1, gmRemixSmashketballRulesTeamColor(away_team));
+        gmRemixSmashketballBoardSetDigitColor(nGMRemixBoardDigitAway2, gmRemixSmashketballRulesTeamColor(away_team));
+    }
+}
+
+void gmRemixSmashketballBoardShowDashScores(void)
+{
+    gmRemixSmashketballBoardSetDigit(nGMRemixBoardDigitHome1, GMREMIX_SMASHKETBALL_DASH);
+    gmRemixSmashketballBoardSetDigit(nGMRemixBoardDigitHome2, GMREMIX_SMASHKETBALL_DASH);
+    gmRemixSmashketballBoardSetDigit(nGMRemixBoardDigitAway1, GMREMIX_SMASHKETBALL_DASH);
+    gmRemixSmashketballBoardSetDigit(nGMRemixBoardDigitAway2, GMREMIX_SMASHKETBALL_DASH);
+}
+
 static void gmRemixSmashketballBoardSetDigit(s32 digit, s32 value)
 {
     if (sGMRemixBoardDigits[digit] != NULL)
@@ -150,6 +187,11 @@ static void gmRemixSmashketballBoardUpdateTime(void)
 
     gmRemixSmashketballBoardSetTwoDigits(nGMRemixBoardDigitMinutes1, nGMRemixBoardDigitMinutes2, seconds / 60);
     gmRemixSmashketballBoardSetTwoDigits(nGMRemixBoardDigitSeconds1, nGMRemixBoardDigitSeconds2, seconds % 60);
+}
+
+void gmRemixSmashketballBoardUpdateTimeOnly(void)
+{
+    gmRemixSmashketballBoardUpdateTime();
 }
 
 void gmRemixSmashketballBoardUpdate(s32 home_score, s32 away_score)

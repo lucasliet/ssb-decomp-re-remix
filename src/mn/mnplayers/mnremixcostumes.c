@@ -15,6 +15,7 @@
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixteams.h"
 
 #define MNREMIX_DEFAULT_COSTUME_ROW_SIZE 8
 #define MNREMIX_DEFAULT_COSTUME_TEAM_OFFSET 4
@@ -59,9 +60,13 @@ sb32 mnRemixCostumeGetDefaultRoyal(s32 fkind, s32 button, s32 *costume)
     return mnRemixCostumeReadDefault(fkind, button, costume);
 }
 
-/** Costume id of team `team` (0 red, 1 blue, 2 green) from the default costume table. */
+/** Costume id of team `team` (0 red, 1 blue, 2 green from the default costume table, 3 yellow from Teams.new_costume_table). */
 sb32 mnRemixCostumeGetDefaultTeam(s32 fkind, s32 team, s32 *costume)
 {
+    if (mnRemixTeamsGetCostume(fkind, team, costume) != FALSE)
+    {
+        return TRUE;
+    }
     if ((team < 0) || (team >= MNREMIX_COSTUME_TEAM_COUNT))
     {
         return FALSE;

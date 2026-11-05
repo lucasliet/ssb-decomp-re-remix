@@ -79,22 +79,31 @@ u16 sFTPublicDefeatedCurrentOrder;          // Current "<player> defeated" annou
 //                               //
 // // // // // // // // // // // //
 
+#ifdef REGION_REMIX
+// Smashketball.asm force_chant_ (RAM 0x80164AE0): TRUE while a forced chant skips the damage, wait and repeat checks below
+static sb32 sFTPublicRemixIsForcedCall;
+#endif
+
 // 0x80164AB0
 sb32 ftPublicTryStartCall(GObj *gobj, f32 knockback, s32 player_num)
 {
     FTStruct *fp;
     GObj *fighter_gobj = ftParamGetPlayerNumGObj(player_num);
     u16 sfx_id;
+    sb32 is_forced = FALSE;
 
+#ifdef REGION_REMIX
+    is_forced = sFTPublicRemixIsForcedCall;
+#endif
     if (fighter_gobj == NULL)
     {
         return FALSE;
     }
-    else if ((ftGetStruct(fighter_gobj)->percent_damage < 100) || (sFTPublicCallWait < 1200))
+    else if ((is_forced == FALSE) && ((ftGetStruct(fighter_gobj)->percent_damage < 100) || (sFTPublicCallWait < 1200)))
     {
         return FALSE;
     }
-    else if (player_num == sFTPublicCallPlayerNum)
+    else if ((is_forced == FALSE) && (player_num == sFTPublicCallPlayerNum))
     {
         return FALSE;
     }
@@ -129,6 +138,19 @@ sb32 ftPublicTryStartCall(GObj *gobj, f32 knockback, s32 player_num)
     }
     return FALSE;
 }
+
+#ifdef REGION_REMIX
+sb32 ftPublicRemixForceCall(GObj *gobj, f32 knockback, s32 player_num)
+{
+    sb32 is_started;
+
+    sFTPublicRemixIsForcedCall = TRUE;
+    is_started = ftPublicTryStartCall(gobj, knockback, player_num);
+    sFTPublicRemixIsForcedCall = FALSE;
+
+    return is_started;
+}
+#endif
 
 // 0x80164C18
 void ftPublicTryInterruptCall(void)

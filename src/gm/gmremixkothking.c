@@ -10,6 +10,7 @@
 #include <sys/objman.h>
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixkothdraw.h"
+#include "gm/gmremixkothglow.h"
 #include "gm/gmremixkothking.h"
 #include "gm/gmremixkothrules.h"
 #include "gm/gmremixkothstate.h"
@@ -102,13 +103,13 @@ static void gmRemixKothScoreKing(sb32 on_hill[GMCOMMON_PLAYERS_MAX], sb32 eligib
                 gGMRemixKoth.team_scores[key]++;
                 team_scored[key] = TRUE;
             }
-            continue;
         }
-        if (winner_updated[key] == FALSE)
+        else if (winner_updated[key] == FALSE)
         {
             gGMRemixKoth.winner_times[key] += (gSCManagerBattleState->is_team_battle != FALSE) ? 1 : 2;
             winner_updated[key] = TRUE;
         }
+        gmRemixKothGlowApply(fighter_gobj);
     }
 }
 

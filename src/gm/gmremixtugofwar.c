@@ -8,8 +8,10 @@
 #include <ft/fighter.h>
 #include <port_log.h>
 #include "gm/gmremixmode.h"
+#include "gm/gmremixstockmode.h"
 #include "gm/gmremixtugofwar.h"
 #include "gm/gmremixtugofwarrules.h"
+#include "if/ifremixbattleplace.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
@@ -17,8 +19,6 @@
 
 /* Port deviation: the asm guards the stock with `slti 0xFF` on a signed byte, which never limits, so 127 wraps to -128 there. */
 #define GMREMIX_TUGOFWAR_STOCK_MAX 127
-
-extern s32 sIFCommonBattlePlace;
 
 static s32 sGMRemixTugOfWarLastHit[GMCOMMON_PLAYERS_MAX];
 static s32 sGMRemixTugOfWarTeam[GMCOMMON_PLAYERS_MAX];
@@ -35,24 +35,33 @@ static void gmRemixTugOfWarResetPorts(void)
     }
 }
 
-/* Fills ports with the port of each fighter and returns the fighter count. The 1v1 test needs the count, not the order. */
-static s32 gmRemixTugOfWarSetupFighters(s32 ports[GMCOMMON_PLAYERS_MAX])
+/* TugOfWar.asm setup_: every fighter starts without a shield breaker (vanilla leaves shield_player uninitialized) and its team is recorded per port. */
+static void gmRemixTugOfWarInitFighters(void)
 {
-    GObj *fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
-    s32 fighters_num = 0;
+    GObj *fighter_gobj;
 
-    while (fighter_gobj != NULL)
+    for (fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter]; fighter_gobj != NULL; fighter_gobj = fighter_gobj->link_next)
     {
         FTStruct *fp = ftGetStruct(fighter_gobj);
 
         fp->shield_player = GMREMIX_TUGOFWAR_NO_PORT;
         sGMRemixTugOfWarTeam[fp->player] = fp->team;
+    }
+}
+
+/* Fills ports with the port of each fighter and returns the fighter count. The 1v1 test needs the count, not the order. */
+static s32 gmRemixTugOfWarCollectFighterPorts(s32 ports[GMCOMMON_PLAYERS_MAX])
+{
+    GObj *fighter_gobj;
+    s32 fighters_num = 0;
+
+    for (fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter]; fighter_gobj != NULL; fighter_gobj = fighter_gobj->link_next)
+    {
         if (fighters_num < GMCOMMON_PLAYERS_MAX)
         {
-            ports[fighters_num] = fp->player;
+            ports[fighters_num] = ftGetStruct(fighter_gobj)->player;
         }
         fighters_num++;
-        fighter_gobj = fighter_gobj->link_next;
     }
     return fighters_num;
 }
@@ -96,7 +105,8 @@ void gmRemixTugOfWarSetup(void)
         return;
     }
     gmRemixTugOfWarResetPorts();
-    fighters_num = gmRemixTugOfWarSetupFighters(ports);
+    gmRemixTugOfWarInitFighters();
+    fighters_num = gmRemixTugOfWarCollectFighterPorts(ports);
     sGMRemixTugOfWarIs1v1 = (fighters_num == 2) ? TRUE : FALSE;
     if (sGMRemixTugOfWarIs1v1 == FALSE)
     {
@@ -168,7 +178,7 @@ static void gmRemixTugOfWarFixPlace(FTStruct *revived)
             }
         }
     }
-    sIFCommonBattlePlace++;
+    ifRemixBattlePlaceRestoreRevived();
 }
 
 static void gmRemixTugOfWarGiveStock(s32 port)
@@ -189,6 +199,7 @@ static void gmRemixTugOfWarGiveStock(s32 port)
         fp->stock_count++;
     }
     player_data->stock_count = fp->stock_count;
+    gmRemixStockModeSetLastCount(port, player_data->stock_count);
     port_log("tugofwar: stock credit to port %d, stock_count %d -> %d\n", (int)port, (int)stock_before, (int)fp->stock_count);
 
     if (gmRemixTugOfWarShouldRevive(stock_before) == FALSE)

@@ -125,6 +125,9 @@ void itProcessProcItemMain(GObj *item_gobj)
     }
     if (ip->is_allow_pickup)
     {
+#ifdef REGION_REMIX
+        if (itRemixBasketballIsDespawnBlocked(item_gobj) == FALSE)
+#endif
         ip->pickup_wait--;
 
         if (ip->pickup_wait <= ITEM_DESPAWN_FLASH_BEGIN_DEFAULT)

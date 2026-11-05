@@ -1,10 +1,8 @@
 /**
- * mnremixgoalpicker.c - CSS goal values of King of the Hill and Smashketball (VsRemixMenu.asm get_next_value and
- * get_prev_value, KingOfTheHill.asm time_value_array, Smashketball.asm score_value_array). The CSS time picker of the VS
- * screen (mnplayersvs.c) asks this module for the next and previous value only when one of these modes is picked.
- *
- * REMIX-TODO(koth-goal-label): the "Goal" text label and the CharacterSelect.asm showing_time toggle are not ported. The
- * picker always steps through the goal values of the mode, as the asm does with showing_time off.
+ * mnremixgoalpicker.c - goal picker of King of the Hill and Smashketball on the VS character select, and the Time toggle of
+ * the picker (VsRemixMenu.asm get_next_value and get_prev_value, KingOfTheHill.asm time_value_array, Smashketball.asm
+ * score_value_array and use_goal_yellow_picker_, CharacterSelect.asm check_picker_press_). The CSS time picker of the VS
+ * screen (mnplayersvs.c) asks this module for the next and previous value, the image to draw and the toggle.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -12,107 +10,117 @@
 #include <ssb_types.h>
 #include "gm/gmremixmode.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
+#include "mn/mnplayers/mnremixgoalrules.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 
-#define MNREMIX_GOAL_VALUE_COUNT 13
-
-static const s32 sMNRemixGoalKothValues[MNREMIX_GOAL_VALUE_COUNT] = { 5, 10, 15, 20, 25, 30, 45, 60, 90, 120, 240, 480, 960 };
-static const s32 sMNRemixGoalSmashketballValues[MNREMIX_GOAL_VALUE_COUNT] = { 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 50, 99, 100 };
+static MNRemixGoalState sMNRemixGoalState;
+static sb32 sMNRemixGoalIsTimedStockTime;
+static s32 sMNRemixGoalRuleBeforeToggle;
 
 /**
- * Goal value table of the picked mode, or NULL when the mode has no goal picker.
+ * Value table of the picker.
  *
- * @return The table of the mode, or NULL for the other modes.
+ * @return Goal values of the picked mode while the goal shows, else the Time values.
  */
 static const s32 *mnRemixGoalPickerValues(void)
 {
+	if ((mnRemixGoalPickerIsActive() == FALSE) || (sMNRemixGoalState.is_showing_time != 0))
+	{
+		return mnRemixGoalRulesValues(MNREMIX_GOAL_TABLE_TIME);
+	}
 	if (gmRemixModeIs(MNREMIX_VSMODE_KOTH) != FALSE)
 	{
-		return sMNRemixGoalKothValues;
+		return mnRemixGoalRulesValues(MNREMIX_GOAL_TABLE_KOTH);
 	}
-	if (gmRemixModeIs(MNREMIX_VSMODE_SMASHKETBALL) != FALSE)
-	{
-		return sMNRemixGoalSmashketballValues;
-	}
-	return NULL;
+	return mnRemixGoalRulesValues(MNREMIX_GOAL_TABLE_SMASHKETBALL);
 }
 
-/**
- * TRUE when the CSS time picker shows the goal of King of the Hill or Smashketball.
- *
- * @return TRUE for KOTH and Smashketball, FALSE for the other modes.
- */
 sb32 mnRemixGoalPickerIsActive(void)
 {
-	return (mnRemixGoalPickerValues() != NULL) ? TRUE : FALSE;
+	return ((gmRemixModeIs(MNREMIX_VSMODE_KOTH) != FALSE) || (gmRemixModeIs(MNREMIX_VSMODE_SMASHKETBALL) != FALSE)) ? TRUE : FALSE;
 }
 
-/**
- * Next goal value after `current_value`. Like the asm, the first value above the current one is taken, and the first
- * value of the table is taken when the current value is the last one or above it.
- *
- * @param current_value Goal shown by the picker.
- * @return Next goal value of the mode, or `current_value` for the other modes.
- */
+void mnRemixGoalPickerReset(s32 vs_time)
+{
+	sMNRemixGoalState.is_showing_time = FALSE;
+	sMNRemixGoalState.saved_goal = 0;
+	sMNRemixGoalState.vs_time = gmRemixModeGetVsTime(vs_time);
+	sMNRemixGoalIsTimedStockTime = FALSE;
+	sMNRemixGoalRuleBeforeToggle = 0;
+}
+
+sb32 mnRemixGoalPickerIsShowingTime(void)
+{
+	return (sMNRemixGoalState.is_showing_time != 0) ? TRUE : FALSE;
+}
+
 s32 mnRemixGoalPickerNext(s32 current_value)
 {
-	const s32 *values = mnRemixGoalPickerValues();
-	s32 i;
-
-	if (values == NULL)
-	{
-		return current_value;
-	}
-	for (i = 0; i < MNREMIX_GOAL_VALUE_COUNT; i++)
-	{
-		if (current_value < values[i])
-		{
-			return values[i];
-		}
-	}
-	return values[0];
+	return mnRemixGoalRulesNext(mnRemixGoalPickerValues(), current_value);
 }
 
-/**
- * Previous goal value before `current_value`. Like the asm, the last value below the current one is taken, and the last
- * value of the table is taken when the current value is the first one or below it.
- *
- * @param current_value Goal shown by the picker.
- * @return Previous goal value of the mode, or `current_value` for the other modes.
- */
 s32 mnRemixGoalPickerPrev(s32 current_value)
 {
-	const s32 *values = mnRemixGoalPickerValues();
-	s32 i;
-
-	if (values == NULL)
-	{
-		return current_value;
-	}
-	for (i = MNREMIX_GOAL_VALUE_COUNT - 1; i >= 0; i--)
-	{
-		if (values[i] < current_value)
-		{
-			return values[i];
-		}
-	}
-	return values[MNREMIX_GOAL_VALUE_COUNT - 1];
+	return mnRemixGoalRulesPrev(mnRemixGoalPickerValues(), current_value);
 }
 
-/**
- * Right edge x of a goal number of three digits. The asm moves the picker number 6 pixels right when it has 3 digits
- * (allow_3_digits_for_picker_, KingOfTheHill.asm line 303).
- *
- * @param number Goal shown by the picker.
- * @return X position of the right edge of the number.
- */
 f32 mnRemixGoalPickerNumberX(s32 number)
 {
-	if (number < 100)
+	return mnRemixGoalRulesNumberX(number);
+}
+
+intptr_t mnRemixGoalPickerImageOffset(intptr_t time_offset)
+{
+	if ((mnRemixGoalPickerIsActive() == FALSE) || (sMNRemixGoalState.is_showing_time != 0))
 	{
-		return 212.0F;
+		return time_offset;
 	}
-	return 218.0F;
+	return MNREMIX_GOAL_PICKER_SPRITE_OFFSET;
+}
+
+sb32 mnRemixGoalPickerCanToggle(s32 game_rule)
+{
+	if ((mnRemixGoalPickerIsActive() != FALSE) || (sMNRemixGoalIsTimedStockTime != FALSE))
+	{
+		return TRUE;
+	}
+	return (game_rule == SCBATTLE_GAMERULE_TIMED_STOCK) ? TRUE : FALSE;
+}
+
+s32 mnRemixGoalPickerToggle(s32 picker_value, s32 *game_rule)
+{
+	if (mnRemixGoalPickerIsActive() != FALSE)
+	{
+		return mnRemixGoalRulesToggleGoal(&sMNRemixGoalState, picker_value);
+	}
+	if (sMNRemixGoalIsTimedStockTime != FALSE)
+	{
+		sMNRemixGoalIsTimedStockTime = FALSE;
+		*game_rule = sMNRemixGoalRuleBeforeToggle;
+		return picker_value;
+	}
+	sMNRemixGoalIsTimedStockTime = TRUE;
+	sMNRemixGoalRuleBeforeToggle = *game_rule;
+	*game_rule = SCBATTLE_GAMERULE_TIME;
+
+	return picker_value;
+}
+
+s32 mnRemixGoalPickerSettle(s32 picker_value, s32 *game_rule)
+{
+	if (sMNRemixGoalIsTimedStockTime != FALSE)
+	{
+		sMNRemixGoalIsTimedStockTime = FALSE;
+		*game_rule = sMNRemixGoalRuleBeforeToggle;
+	}
+	if ((mnRemixGoalPickerIsActive() == FALSE) || (sMNRemixGoalState.is_showing_time == 0))
+	{
+		return picker_value;
+	}
+	picker_value = mnRemixGoalRulesSettleGoal(&sMNRemixGoalState, picker_value);
+	gmRemixModeSetVsTime(sMNRemixGoalState.vs_time);
+
+	return picker_value;
 }
 
 #endif

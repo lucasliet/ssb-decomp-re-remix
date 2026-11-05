@@ -6,8 +6,8 @@
  * next row as the asm does. Every Remix character copies the row of its parent (Character.asm 342) unless its own file
  * calls Character.set_costume_shield_colors (Piano, Slippy, Dr. Luigi) or Character.polygon_setup (Remix polygons).
  *
- * Classic Sonic (Sonic.classic_table, +6 on the costume id in Shield.asm color_fix_) does not exist in the port, so the
- * costume id is never adjusted.
+ * Classic Sonic (Sonic.classic_table) adds 6 to the costume id in Shield.asm color_fix_ (ftRemixSonicClassicShieldCostumeOffset),
+ * so a classic Sonic reads past the end of the Fox row it shares, into the next rows, like the asm.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -15,6 +15,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "remix/remix_roster_data.h"
 #include "fighter_registry.h"
+#include "ft/ftremix/sonic/ftremixsonicclassic.h"
 
 #define FTREMIX_SHIELD_NO_ROW (-1)
 #define FTREMIX_SHIELD_OWN_ROW_SIZE 8
@@ -128,7 +129,7 @@ s32 ftRemixShieldGetCostumeColorIndex(const FTStruct *fp)
     {
         return -1;
     }
-    index = row_offset + fp->costume;
+    index = row_offset + fp->costume + ftRemixSonicClassicShieldCostumeOffset(fp);
 
     if (index >= (s32)sizeof(sFTRemixShieldVanillaRows))
     {

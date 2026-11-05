@@ -12,6 +12,7 @@
 #include "gm/gmremixgameend.h"
 #include <gr/ground.h>
 #include <sc/scene.h>
+#include <sc/sc1pmode/sc1pbonusstage.h>
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #include <port_log.h>
@@ -261,10 +262,25 @@ u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm)
     return stage_bgm;
 }
 
+#define GRREMIX_CLASS_BTP 0x02
+#define GRREMIX_CLASS_BTT 0x03
+
 void grRemixMakeGround(void)
 {
     s32 gkind = gSCManagerBattleState->gkind;
     u32 function = grRemixGetGroundFunction(gkind);
+
+    /* bonus_fix_1_ (Stages.asm): Break the Targets and Board the Platforms stages use the bonus ground whatever their function says */
+    switch (grRemixGetStageClass(gkind))
+    {
+    case GRREMIX_CLASS_BTT:
+        sc1PBonusStageMakeBonus1Ground();
+        return;
+
+    case GRREMIX_CLASS_BTP:
+        sc1PBonusStageInitBonus2();
+        return;
+    }
 
     switch (function)
     {

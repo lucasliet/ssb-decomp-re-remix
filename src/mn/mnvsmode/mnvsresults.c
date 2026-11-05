@@ -28,9 +28,20 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
+#include "mn/mnplayers/mnremixcssmode.h"
+#include "mn/mnplayers/mnremixteams.h"
+#include "mn/mnplayers/mnremixteamsrules.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "mn/mnvsmode/mnremixvsstatsscene.h"
 #include "mn/mnvsmode/mnremixvsstatsview.h"
+/* Teams.asm: the results screen knows the yellow team (announcer, colour index, name, palette, winner loop). */
+#define MNVSRESULTS_TEAM_ANNOUNCER(table, team) ((mnRemixTeamsRulesIsAdded(team) != 0) ? mnRemixTeamsGetAnnouncerFgm(team, 0) : (table)[team])
+#define MNVSRESULTS_TEAM_COLOR(table, team) ((mnRemixTeamsRulesIsAdded(team) != 0) ? mnRemixTeamsGetColor(team) : (table)[team])
+#define MNVSRESULTS_TEAM_LAST mnRemixTeamsRulesLastResultTeam()
+#else
+#define MNVSRESULTS_TEAM_ANNOUNCER(table, team) ((table)[team])
+#define MNVSRESULTS_TEAM_COLOR(table, team) ((table)[team])
+#define MNVSRESULTS_TEAM_LAST nSCBattleTeamIDBattleEnd
 #endif
 
 // // // // // // // // // // // //
@@ -389,7 +400,7 @@ void mnVSResultsAnnounceWinner(void)
 		switch (sMNVSResultsTotalTimeTics)
 		{
 		case 81:
-			func_800269C0_275C0(announcer_teams[mnVSResultsGetWinTeam()]);
+			func_800269C0_275C0(MNVSRESULTS_TEAM_ANNOUNCER(announcer_teams, mnVSResultsGetWinTeam()));
 			break;
 			
 		case 130:
@@ -704,7 +715,7 @@ void mnVSResultsMakeEmblem(void)
 	if (sMNVSResultsIsTeamBattle == TRUE)
 	{
 		win_fkind = mnVSResultsGetFighterKind(mnVSResultsGetWinPlayer());
-		color = colors[mnVSResultsGetWinTeam()];
+		color = MNVSRESULTS_TEAM_COLOR(colors, mnVSResultsGetWinTeam());
 	}
 #ifdef PORT
 	/* Synth fkinds OOB the 12-entry vanilla tables above. CharacterEngine
@@ -831,7 +842,7 @@ void mnVSResultsMakeWallpaper(void)
 		}
 		if (sMNVSResultsIsTeamBattle == TRUE)
 		{
-			win_player = team_colors[mnVSResultsGetWinTeam()];
+			win_player = MNVSRESULTS_TEAM_COLOR(team_colors, mnVSResultsGetWinTeam());
 		}
 	}
 	gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
@@ -1298,7 +1309,18 @@ void mnVSResultsMakeString(const char *str, f32 x, f32 y, s32 color_id, f32 scal
 		{ { 0x60, 0x03, 0xD4 }, { 0xFF, 0xFF, 0xFF } },
 		{ { 0x00, 0x00, 0x00 }, { 0xFF, 0xFF, 0xFF } }
 	};
+	SYColorRGBPair text_color;
 
+#ifdef REGION_REMIX
+	if (color_id >= ARRAY_COUNT(colors))
+	{
+		text_color = colors[0];
+		mnRemixTeamsGetBigTextColors(color_id, &text_color);
+	}
+	else text_color = colors[color_id];
+#else
+	text_color = colors[color_id];
+#endif
 	current_x = x;
 	gobj = gcMakeGObjSPAfter(0, NULL, 20, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 29, GOBJ_PRIORITY_DEFAULT, ~0);
@@ -1331,12 +1353,12 @@ void mnVSResultsMakeString(const char *str, f32 x, f32 y, s32 color_id, f32 scal
 
 				sobj->sprite.attr &= ~SP_FASTCOPY;
 				sobj->sprite.attr |= SP_TRANSPARENT;
-				sobj->envcolor.r = colors[color_id].prim.r;
-				sobj->envcolor.g = colors[color_id].prim.g;
-				sobj->envcolor.b = colors[color_id].prim.b;
-				sobj->sprite.red = colors[color_id].env.r;
-				sobj->sprite.green = colors[color_id].env.g;
-				sobj->sprite.blue = colors[color_id].env.b;
+				sobj->envcolor.r = text_color.prim.r;
+				sobj->envcolor.g = text_color.prim.g;
+				sobj->envcolor.b = text_color.prim.b;
+				sobj->sprite.red = text_color.env.r;
+				sobj->sprite.green = text_color.env.g;
+				sobj->sprite.blue = text_color.env.b;
 
 				current_x += widths[char_id] * scale;
 			}
@@ -1389,7 +1411,11 @@ void mnVSResultsMakeWinnerText(s32 winner)
 
 	if (sMNVSResultsIsTeamBattle == TRUE)
 	{
+#ifdef REGION_REMIX
+		mnVSResultsMakeString(wins, (mnRemixTeamsRulesIsAdded(winner) != 0) ? MNREMIX_TEAMS_YELLOW_WINS_X : x_teams[winner], 180.0F, 3, 1.0F);
+#else
 		mnVSResultsMakeString(wins, x_teams[winner], 180.0F, 3, 1.0F);
+#endif
 	}
 	if (sMNVSResultsIsTeamBattle == FALSE)
 	{
@@ -1537,7 +1563,11 @@ void mnVSResultMakeTeamName(void)
 
 	team = mnVSResultsGetWinTeam();
 
+#ifdef REGION_REMIX
+	mnVSResultsMakeString(mnRemixTeamsGetName(team, names[team]), mnRemixTeamsGetNameX(team, pos_x[team]), 180.0F, mnRemixTeamsGetNamePalette(team), mnRemixTeamsGetNameScale(team));
+#else
 	mnVSResultsMakeString(names[team], pos_x[team], 180.0F, team, 1.0F);
+#endif
 	mnVSResultsMakeWinnerText(team);
 }
 
@@ -1972,7 +2002,7 @@ s32 mnVSResultsGetNumberColorID(s32 player)
 	{
 		return 4;
 	}
-	return color_ids[gSCManagerTransferBattleState.players[player].team];
+	return MNVSRESULTS_TEAM_COLOR(color_ids, gSCManagerTransferBattleState.players[player].team);
 }
 
 // 0x80135468
@@ -2555,8 +2585,8 @@ void mnVSResultsMakeLabel(void)
 			Sprite*,
 			sMNVSResultsFiles[2],
 #if defined(PORT) && defined(REGION_REMIX)
-			/* TwelveCharBattle.asm (hook 0x80136788): the 12-Character Battle header sprite of the game modes file. */
-			(gmRemixTwelveCBIsActive() != FALSE) ? 0x2048 : offsets[mnVSResultsCheckTeamBattle()]
+			/* TwelveCharBattle.asm (hook 0x80136788, update_css_header_._results): the header sprite of the Remix mode in the game modes file. */
+			mnRemixCssModeTitleOffset(offsets[mnVSResultsCheckTeamBattle()])
 #else
 			offsets[mnVSResultsCheckTeamBattle()]
 #endif
@@ -2852,7 +2882,7 @@ void mnVSResultsSetTeamPlaceAll(void)
 	s32 players;
 	s32 i;
 
-	for (i = nSCBattleTeamIDBattleStart, players = 0; i <= nSCBattleTeamIDBattleEnd; i++)
+	for (i = nSCBattleTeamIDBattleStart, players = 0; i <= MNVSRESULTS_TEAM_LAST; i++)
 	{
 		s32 j = mnVSResultsGetTeamFirstPlayer(i);
 

@@ -44,6 +44,16 @@ extern void gmRemixModeStartMatch(void);
  */
 extern s32 gmRemixModeGetGoal(void);
 
+/**
+ * Time limit of the VS menu (VsRemixMenu.global_time) that comes back when the CSS closes. The Time toggle of the goal picker
+ * of King of the Hill and Smashketball reads and changes it.
+ *
+ * gmRemixModeGetVsTime: `fallback` when no mode keeps a time limit.
+ * gmRemixModeSetVsTime: does nothing when no mode keeps a time limit.
+ */
+extern s32 gmRemixModeGetVsTime(s32 fallback);
+extern void gmRemixModeSetVsTime(s32 time_limit);
+
 /** Hides the HUD labels of the modes (remix_hud_text). Called from scManagerRunLoop at each scene change. */
 extern void gmRemixModeSceneClear(void);
 

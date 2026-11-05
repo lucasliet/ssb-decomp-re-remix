@@ -12,6 +12,7 @@
 #include "if/ifremixannouncer.h"
 #include "gm/gmremixmusictitle.h"
 #include "gm/gmremixtagteam.h"
+#include "gm/gmremixsmashketball.h"
 #include "gm/gmremixmagnify.h"
 #include "if/ifremixstaminahud.h"
 #include "if/ifremixgentlemensreset.h"
@@ -3051,6 +3052,14 @@ void ifCommonBattleEndAddSoundQueueID(u16 sfx_id)
     {
         sIFCommonBattleEndSoundsQueue[sIFCommonBattleEndSoundsNum] = sfx_id;
         sIFCommonBattleEndSoundsNum++;
+#ifdef REGION_REMIX
+        /* Smashketball.asm play_end_buzzer_ (RAM 0x80113840) */
+        if ((gmRemixSmashketballIsActive() != FALSE) && (sIFCommonBattleEndSoundsNum < ARRAY_COUNT(sIFCommonBattleEndSoundsQueue)))
+        {
+            sIFCommonBattleEndSoundsQueue[sIFCommonBattleEndSoundsNum] = GMREMIX_SMASHKETBALL_FGM_END_BUZZER;
+            sIFCommonBattleEndSoundsNum++;
+        }
+#endif
     }
 }
 

@@ -15,6 +15,7 @@
 #include <sys/objman.h>
 #include "gm/gmremixtoggle.h"
 #include "if/ifremixsprite.h"
+#include "mn/mnplayers/mnremixcsshighscores.h"
 #include "mn/mnplayers/mnremixcsspanelmenustate.h"
 
 /* The links of the panel card of every CSS (the 12-Character Battle stock arrows use the same ones). The control object takes the
@@ -294,7 +295,7 @@ void mnRemixPanelMenuRefreshHighScores(s32 port)
     {
         values[item] = mnRemixPanelMenuGetValue(item, port);
     }
-    sState.are_high_scores_enabled = (mnRemixPanelMenuRulesHighScoresEnabled(sState.mode, values) != 0) ? TRUE : FALSE;
+    sState.are_high_scores_enabled = mnRemixCssHighScoresUpdate(sState.mode, values);
 }
 
 static void mnRemixPanelMenuProcUpdate(GObj *gobj)

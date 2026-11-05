@@ -297,7 +297,61 @@ int mnRemixPanelMenuRulesStockValue(int keeps_value, int value)
     return (keeps_value != 0) ? value : 0;
 }
 
-int mnRemixPanelMenuRulesHighScoresEnabled(int mode, const int *values)
+int mnRemixPanelMenuRulesToggleBitWidth(int maximum)
+{
+    int width = 1;
+
+    while ((width < 10) && (maximum > ((1 << width) - 1)))
+    {
+        width++;
+    }
+    return width;
+}
+
+void mnRemixPanelMenuRulesPackToggles(const int *values, const int *maxima, int count, unsigned int *words, int word_count)
+{
+    int block_size = 0;
+    int index;
+
+    for (index = 0; index < word_count; index++)
+    {
+        words[index] = 0;
+    }
+    for (index = 0; index < count; index++)
+    {
+        int width = mnRemixPanelMenuRulesToggleBitWidth(maxima[index]);
+        int end = block_size + width;
+        int start;
+        unsigned int mask = (1U << width) - 1U;
+
+        if ((block_size / 32) != (end / 32))
+        {
+            end = ((end / 32) * 32) + width;
+        }
+        start = end - width;
+        block_size = end;
+
+        if ((start / 32) < word_count)
+        {
+            words[start / 32] |= ((unsigned int)values[index] & mask) << (start % 32);
+        }
+    }
+}
+
+int mnRemixPanelMenuRulesTogglesKeepHighScores(const MNRemixPanelMenuHighScoreGlobals *globals)
+{
+    if ((globals->gameplay_words[0] & MNREMIX_PANELMENU_GAMEPLAY_WORD_1_MASK) != MNREMIX_PANELMENU_GAMEPLAY_WORD_1_DEFAULT)
+    {
+        return 0;
+    }
+    if (globals->gameplay_words[1] != MNREMIX_PANELMENU_GAMEPLAY_WORD_2_DEFAULT)
+    {
+        return 0;
+    }
+    return ((globals->pokemon_word & MNREMIX_PANELMENU_POKEMON_WORD_MASK) == MNREMIX_PANELMENU_POKEMON_WORD_DEFAULT) ? 1 : 0;
+}
+
+int mnRemixPanelMenuRulesHighScoresEnabled(int mode, const int *values, const MNRemixPanelMenuHighScoreGlobals *globals)
 {
     int items[MNREMIX_PANELMENU_ITEM_COUNT];
     int count = mnRemixPanelMenuRulesListItems(mode, 0, items, MNREMIX_PANELMENU_ITEM_COUNT);
@@ -312,7 +366,11 @@ int mnRemixPanelMenuRulesHighScoresEnabled(int mode, const int *values)
             return 0;
         }
     }
-    return 1;
+    if (mnRemixPanelMenuRulesTogglesKeepHighScores(globals) == 0)
+    {
+        return 0;
+    }
+    return (globals->enemy_port == 0) ? 1 : 0;
 }
 
 #endif

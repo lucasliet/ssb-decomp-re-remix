@@ -32,4 +32,23 @@ void sc1PRemixAllstarRestIconPosition(int index, int dragon_king_hud, float *x, 
     *y = first_row_y + (SC1PREMIX_ALLSTAR_REST_ICON_Y_STEP * (float)row);
 }
 
+int sc1PRemixAllstarRestPortraitCount(int opponents, int fighter_count, int progress)
+{
+    int remaining = sc1PRemixAllstarRestIconCount(fighter_count, progress);
+
+    return (opponents < remaining) ? opponents : remaining;
+}
+
+float sc1PRemixAllstarRestPortraitX(int count, int index)
+{
+    static const float slot_x[SC1PREMIX_ALLSTAR_REST_PORTRAIT_SLOT_COUNT] = { -200.0F, -600.0F, -1000.0F };
+    int slot = count - 1 - index;
+
+    if ((slot < 0) || (slot >= SC1PREMIX_ALLSTAR_REST_PORTRAIT_SLOT_COUNT))
+    {
+        return slot_x[0];
+    }
+    return slot_x[slot];
+}
+
 #endif

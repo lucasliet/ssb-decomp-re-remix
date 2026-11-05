@@ -25,11 +25,7 @@
 #define GMREMIX_SMASHKETBALL_BALL_WAIT_FRAMES 0x135
 #define GMREMIX_SMASHKETBALL_BALL_Y 2048.0F
 #define GMREMIX_SMASHKETBALL_GOLDEN_BALL_Y 5632.0F
-#define GMREMIX_SMASHKETBALL_FGM_END_BUZZER 0x431
-#define GMREMIX_SMASHKETBALL_CHANT_STREAK 3
 #define GMREMIX_SMASHKETBALL_SPAWN_Y 5.0F
-
-extern void *func_800269C0_275C0(u16 id);
 
 /* Smashketball.spawn_table: home team left to right 2, 0, 1; away team right to left 3, 1, 0. */
 static const s32 dGMRemixSmashketballSpawnTable[GMCOMMON_PLAYERS_MAX] = { 2, 0, 1, 3 };
@@ -160,7 +156,6 @@ static void gmRemixSmashketballCheckMatchEnd(void)
         return;
     }
     gGMRemixSmashketball.is_ended = TRUE;
-    func_800269C0_275C0(GMREMIX_SMASHKETBALL_FGM_END_BUZZER);
     ifCommonAnnounceEndMessage();
 }
 
@@ -236,6 +231,27 @@ s32 gmRemixSmashketballGetSuddenDeathDamage(s32 default_damage)
     return (gmRemixSmashketballIsActive() != FALSE) ? 0 : default_damage;
 }
 
+static void gmRemixSmashketballProcTimeOnly(GObj *gobj)
+{
+    gmRemixSmashketballBoardUpdateTimeOnly();
+}
+
+/* setup_ time only flag: the Smashketball stage in any other mode keeps a scoreboard with the time and dashes for the scores. */
+static void gmRemixSmashketballSetupTimeOnly(void)
+{
+    GObj *gobj;
+
+    if (gSCManagerBattleState->gkind != nGRRemixStage_SMASHKETBALL)
+    {
+        return;
+    }
+    gmRemixSmashketballBoardSetup();
+    gmRemixSmashketballBoardShowDashScores();
+
+    gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
+    gcAddGObjProcess(gobj, gmRemixSmashketballProcTimeOnly, nGCProcessKindFunc, GMREMIX_SMASHKETBALL_PROC_PRIORITY);
+}
+
 void gmRemixSmashketballSetup(void)
 {
     GObj *gobj;
@@ -243,6 +259,7 @@ void gmRemixSmashketballSetup(void)
 
     if (gmRemixSmashketballIsActive() == FALSE)
     {
+        gmRemixSmashketballSetupTimeOnly();
         return;
     }
     gGMRemixSmashketball.frames = 0;
@@ -267,6 +284,7 @@ void gmRemixSmashketballSetup(void)
         gmRemixSmashketballMoveBaskets();
     }
     gmRemixSmashketballBoardSetup();
+    gmRemixSmashketballBoardSetTeamColors(gGMRemixSmashketball.home_team, gGMRemixSmashketball.away_team);
 
     gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjProcess(gobj, gmRemixSmashketballProcUpdate, nGCProcessKindFunc, GMREMIX_SMASHKETBALL_PROC_PRIORITY);

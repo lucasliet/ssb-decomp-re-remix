@@ -189,14 +189,61 @@ extern int mnRemixPanelMenuRulesStaminaDamage(int value, int direction, int tota
  */
 extern int mnRemixPanelMenuRulesStockValue(int keeps_value, int value);
 
+/*
+ * Toggles that turn the 1P high scores off (check_high_scores_enabled, _check_toggles). The Gameplay and Pokemon toggles are
+ * packed into SRAM words (Toggles.asm update_block_size, 1016-1038), lowest bit first, and the asm compares the words with their defaults
+ * (CharacterSelectDebugMenu.asm 2381-2406). Gameplay word 1 mask 0xFFEFFF7F clears bit 20 (Improved AI, Toggles.asm 2428, after
+ * Hitstun 1 bit, Hitlag 3, DI 2, Japanese Sounds 2 on bits 6-7, J Stun 1, Momentum 1, Shield Stun 3, Z-Cancel 3, Punish 4) and bit 7
+ * (Japanese Sounds value 2). Pokemon: the Pokemon SFX toggle takes bits 0-1 (Toggles.asm 2623, mask 0xFFFC drops them) and the 13
+ * Pokemon booleans (2625-2637) bits 2-14, all on by default (0x7FFC).
+ */
+#define MNREMIX_PANELMENU_GAMEPLAY_WORDS 2
+#define MNREMIX_PANELMENU_GAMEPLAY_WORD_1_MASK 0xFFEFFF7FU
+#define MNREMIX_PANELMENU_GAMEPLAY_WORD_1_DEFAULT 0x00000000U
+#define MNREMIX_PANELMENU_GAMEPLAY_WORD_2_DEFAULT 0x00000000U
+#define MNREMIX_PANELMENU_POKEMON_WORD_MASK 0xFFFCU
+#define MNREMIX_PANELMENU_POKEMON_WORD_DEFAULT 0x7FFCU
+
+/** Values of the globals check_high_scores_enabled reads besides the panel items. */
+typedef struct MNRemixPanelMenuHighScoreGlobals
+{
+    unsigned int gameplay_words[MNREMIX_PANELMENU_GAMEPLAY_WORDS];
+    unsigned int pokemon_word;
+    int enemy_port;
+} MNRemixPanelMenuHighScoreGlobals;
+
+/**
+ * Packs the toggles of a group into SRAM words the way Toggles.asm lays them out: each toggle takes the bits its highest value needs
+ * (update_block_size_based_on_max), lowest bit first, and a toggle that would end past or on a word boundary starts the next word
+ * (update_block_size compares block_size / 32 before and after the add). Toggles that do not fit in the given words are dropped.
+ *
+ * @param values Current value of each toggle in menu order.
+ * @param maxima Highest value of each toggle.
+ * @param count Number of toggles.
+ * @param words Receives the packed words (cleared first).
+ * @param word_count Number of words.
+ */
+extern void mnRemixPanelMenuRulesPackToggles(const int *values, const int *maxima, int count, unsigned int *words, int word_count);
+
+/** Bits a toggle takes in its SRAM block (update_block_size_based_on_max). */
+extern int mnRemixPanelMenuRulesToggleBitWidth(int maximum);
+
+/**
+ * Non-zero when the Gameplay and Pokemon toggles leave the high scores on (_check_toggles): the first Gameplay word equals its default
+ * once the Improved AI and Japanese Sounds "never" bits are ignored, the second Gameplay word is zero, and the Pokemon word equals its
+ * default once the sound effect bits are ignored.
+ */
+extern int mnRemixPanelMenuRulesTogglesKeepHighScores(const MNRemixPanelMenuHighScoreGlobals *globals);
+
 /**
  * Non-zero when the 1P high scores stay on (check_high_scores_enabled): every item that disables them is at its default for the
- * human port.
+ * human port, the Gameplay and Pokemon toggles are at their defaults, and the Single Player Enemy option is off.
  *
  * @param mode MNRemixPanelMenuMode of the screen.
  * @param values Value of each item (MNREMIX_PANELMENU_ITEM_COUNT entries) for the human port.
+ * @param globals Toggle words and enemy port.
  */
-extern int mnRemixPanelMenuRulesHighScoresEnabled(int mode, const int *values);
+extern int mnRemixPanelMenuRulesHighScoresEnabled(int mode, const int *values, const MNRemixPanelMenuHighScoreGlobals *globals);
 
 #endif
 

@@ -22,8 +22,9 @@ extern void gmRemixTagTeamIconsReset(void);
  * @param slot Queue slot.
  * @param fkind Character of the slot.
  * @param costume Costume of the slot, picks the icon palette.
+ * @param is_classic TRUE for a Classic Sonic slot, whose icon is in the classic main file (TagTeam.asm icon cache).
  */
-extern void gmRemixTagTeamIconsSet(s32 port, s32 slot, s32 fkind, s32 costume);
+extern void gmRemixTagTeamIconsSet(s32 port, s32 slot, s32 fkind, s32 costume, sb32 is_classic);
 
 /**
  * Gives a HUD stock sprite the icon of a queue slot.

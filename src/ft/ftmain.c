@@ -15,6 +15,7 @@ extern void port_dump_backtrace(void);
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixcommand.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/sonic/ftremixsonicclassic.h"
 #include "ft/ftremix/ftremixtraining.h"
 #include "ft/ftremix/ftremixswordtrail.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
@@ -413,7 +414,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         if (!(fp->is_muted))
         {
 #ifdef REGION_REMIX
-            func_800269C0_275C0(ftRemixJapaneseMotionSoundFgm(fp, ftRemixSFXReplaceMotionSound(ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value)));
+            func_800269C0_275C0(ftRemixJapaneseMotionSoundFgm(fp, ftRemixSFXReplaceMotionSound(ftRemixSonicClassicPlayFgm(fp, ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value))));
 #else
             func_800269C0_275C0(ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value);
 #endif
@@ -424,7 +425,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
     case nFTMotionEventPlayLoopSFXStoreInfo:
         if (!(fp->is_muted))
         {
+#ifdef REGION_REMIX
+            ftParamPlayLoopSFX(fp, ftRemixSonicClassicPlayLoopFgm(fp, ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value));
+#else
             ftParamPlayLoopSFX(fp, ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value);
+#endif
         }
         else ftMotionEventAdvance(ms, FTMotionEventDefault);
         break;
@@ -434,7 +439,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventPlayVoiceStoreInfo:
+#ifdef REGION_REMIX
+        if (!(fp->is_muted) && (fp->attr->is_have_voice) && (ftRemixSonicClassicIsVoiceMuted(fp) == FALSE))
+#else
         if (!(fp->is_muted) && (fp->attr->is_have_voice))
+#endif
         {
             ftParamPlayVoice(fp, ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value);
         }
@@ -442,7 +451,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventPlayLoopVoiceStoreInfo:
+#ifdef REGION_REMIX
+        if (!(fp->is_muted) && (fp->attr->is_have_voice) && (ftRemixSonicClassicIsVoiceMuted(fp) == FALSE))
+#else
         if (!(fp->is_muted) && (fp->attr->is_have_voice))
+#endif
         {
             ftParamPlayLoopSFX(fp, ftMotionEventCastAdvance(ms, FTMotionEventDefault)->value);
         }
@@ -5282,6 +5295,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     if ((motion_id != -1) && (motion_id != -2))
     {
         motion_desc = &script_array->motion_desc[motion_id];
+#ifdef REGION_REMIX
+        motion_desc = ftRemixSonicClassicSwapMenuMotion(fp, motion_desc);
+#endif
 
         if (motion_desc->anim_desc.flags.is_use_shieldpose)
         {

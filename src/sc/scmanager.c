@@ -23,6 +23,8 @@ extern void port_coroutine_yield(void);
 #include "gm/gmremixmode.h"
 #include "gm/gmremixstamina.h"
 #include "sc/scremixtournament.h"
+#include "mn/mnplayers/mnremixteams.h"
+#include "mn/mnplayers/mnremixteamsrules.h"
 #endif
 #include <db/debug.h>
 #include <sys/debug.h>
@@ -1080,6 +1082,7 @@ void scManagerRunLoop(sb32 arg)
 			if (remix_debug_env_int("SSB64_VS_TEAMS", 0) != 0)
 			{
 				s32 team_player;
+				sb32 is_yellow_test = (remix_debug_env_int("SSB64_VS_TEAMS", 0) == 2) ? TRUE : FALSE;
 
 				gSCManagerTransferBattleState.is_team_battle = TRUE;
 
@@ -1088,6 +1091,17 @@ void scManagerRunLoop(sb32 arg)
 					gSCManagerTransferBattleState.players[team_player].team = (team_player < 2) ? 0 : 1;
 					gSCManagerTransferBattleState.players[team_player].player = gSCManagerTransferBattleState.players[team_player].team;
 					gSCManagerTransferBattleState.players[team_player].color = (team_player < 2) ? 0 : 1;
+
+					/* SSB64_VS_TEAMS=2: P1 on red, every other port on the Remix yellow team (Teams.asm), with its team costume */
+					if (is_yellow_test != FALSE)
+					{
+						s32 team = (team_player == 0) ? 0 : MNREMIX_TEAM_YELLOW;
+
+						gSCManagerTransferBattleState.players[team_player].team = team;
+						gSCManagerTransferBattleState.players[team_player].player = team;
+						gSCManagerTransferBattleState.players[team_player].color = mnRemixTeamsGetColor(team);
+						gSCManagerTransferBattleState.players[team_player].costume = ftParamGetCostumeTeamID(gSCManagerTransferBattleState.players[team_player].fkind, team);
+					}
 				}
 			}
 			{

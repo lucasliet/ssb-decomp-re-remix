@@ -11,7 +11,9 @@
  * Slot 0 is the character picked in the CSS, slots 1 to 5 come from the port menu (Remix > Tag Team, Random by default).
  * The queue is as long as the stock count plus one. When a fighter loses a stock the next character of its queue takes
  * its place (load_next_char_). The HUD lists the queue in reverse, one icon per character left (gmremixtagteamicons.c), and a
- * stock stolen in teams carries its character to the thief. Port deviation: the Stock Mode LAST offset of the slot is not applied.
+ * stock stolen in teams carries its character to the thief. Stock Mode Last skips the queue slots of the stocks below the stock
+ * setting, both for the first fighter and for the swaps. Port deviation: players[].fkind keeps the CSS pick after a swap, so a
+ * runback starts from the same queue.
  */
 
 #define GMREMIX_TAGTEAM_QUEUE_MAX 6
@@ -19,7 +21,13 @@
 /** TRUE during a Tag Team match. */
 extern sb32 gmRemixTagTeamIsActive(void);
 
-/** Match start: builds the queue of every port (random slots are resolved here). */
+/**
+ * Match start, before the fighters are made (use_character_queues_on_load_): builds the queue of every port (random slots are
+ * resolved here) and, for Stock Mode Last, puts the character of the start slot in the match data so the first fighter is that one.
+ */
+extern void gmRemixTagTeamBuildQueues(void);
+
+/** Match start, after the fighters are made: puts the CSS pick back in the match data, records the animation heaps and the icons. */
 extern void gmRemixTagTeamSetup(void);
 
 /**

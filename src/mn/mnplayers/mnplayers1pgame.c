@@ -23,11 +23,13 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixmenumusic.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixsonicclassic.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnplayers/mnremixenemylabel.h"
 #include "sc/sc1pmode/sc1premixenemy.h"
 #include "sc/sc1pmode/sc1premixmode.h"
+#include "sc/sc1pmode/sc1premixscore.h"
 #include <string.h>
 #endif
 extern void *func_800269C0_275C0(u16 id);
@@ -1608,6 +1610,12 @@ void mnPlayers1PGameMakeLabelsCamera(void)
 // 0x80134758
 u32 mnPlayers1PGameGetHiScore(s32 fkind)
 {
+#ifdef REGION_REMIX
+	if (sc1PRemixScoreUsesOwnTable() != FALSE)
+	{
+		return sc1PRemixScoreGetHiScore(fkind);
+	}
+#endif
 	return gSCManagerBackupData.spgame_records[fkind].spgame_hiscore;
 }
 
@@ -1645,7 +1653,11 @@ void mnPlayers1PGameMakeHiScore(void)
 		mnPlayers1PGameMakeString(gobj, "HIGH SCORE", 142.0F, 201.0F, text_colors);
 		mnPlayers1PGameMakeNumber(gobj, mnPlayers1PGameGetHiScore(fkind), 256.0F, 198.0F, number_colors, 8, TRUE);
 
+#ifdef REGION_REMIX
+		best_difficulty = (sc1PRemixScoreUsesOwnTable() != FALSE) ? sc1PRemixScoreGetBestDifficulty(fkind) : gSCManagerBackupData.spgame_records[fkind].spgame_best_difficulty;
+#else
 		best_difficulty = gSCManagerBackupData.spgame_records[fkind].spgame_best_difficulty;
+#endif
 
 		if (best_difficulty != 0)
 		{
@@ -1664,6 +1676,12 @@ void mnPlayers1PGameMakeHiScore(void)
 // 0x80134968
 u32 mnPlayers1PGameGetBonusCount(s32 fkind)
 {
+#ifdef REGION_REMIX
+	if (sc1PRemixScoreUsesOwnTable() != FALSE)
+	{
+		return sc1PRemixScoreGetBonusCount(fkind);
+	}
+#endif
 	return gSCManagerBackupData.spgame_records[fkind].spgame_total_bonuses;
 }
 
@@ -2421,6 +2439,9 @@ void mnPlayers1PGameSetCursorGrab(s32 player)
 	sMNPlayers1PGameSlot.cursor_status = nMNPlayersCursorStatusGrab;
 	sMNPlayers1PGameSlot.held_player = player;
 	sMNPlayers1PGameSlot.is_fighter_selected = FALSE;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicReset(player);
+#endif
 
 	mnPlayers1PGameUpdateFighter(player);
 	mnPlayers1PGameUpdateCursorGrabPriorities(player, player);
@@ -2870,10 +2891,21 @@ void mnPlayers1PGameUpdateCostume(s32 player, s32 select_button)
 {
 	s32 costume = sMNPlayers1PGameSlot.costume;
 	s32 shade = 0;
+#ifdef REGION_REMIX
+	f32 sonic_frame;
+#endif
 
 #ifdef REGION_REMIX
 	shade = sMNPlayers1PGameShade;
 	mnRemixCostumeApplyButton(sMNPlayers1PGameSlot.fkind, select_button, &costume, &shade);
+	sonic_frame = mnRemixSonicClassicToggle(player, sMNPlayers1PGameSlot.fkind, select_button, sMNPlayers1PGameSlot.costume, costume, FALSE, sMNPlayers1PGameSlot.player);
+
+	if (sonic_frame != MNREMIX_SONIC_CLASSIC_NO_TOGGLE)
+	{
+		mnPlayers1PGameMakeFighter(sMNPlayers1PGameSlot.player, player, sMNPlayers1PGameSlot.fkind, costume);
+		mnRemixSonicClassicRestoreFrame(player, sMNPlayers1PGameSlot.player, sonic_frame);
+		sMNPlayers1PGameSlot.is_status_selected = FALSE;
+	}
 	sMNPlayers1PGameShade = shade;
 #else
 	costume = ftParamGetCostumeCommonID(sMNPlayers1PGameSlot.fkind, select_button);
@@ -2902,6 +2934,9 @@ sb32 mnPlayers1PGameCheckManFighterSelected(s32 player)
 void mnPlayers1PGameRecallPuck(s32 player)
 {
 	sMNPlayers1PGameSlot.is_fighter_selected = FALSE;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicReset(player);
+#endif
 	sMNPlayers1PGameSlot.is_selected = FALSE;
 	sMNPlayers1PGameSlot.is_recalling = TRUE;
 	sMNPlayers1PGameSlot.recall_tics = 0;
@@ -3631,6 +3666,9 @@ sb32 mnPlayers1PGameCheckReady(void)
 // 0x80137F10
 void mnPlayers1PGameSetSceneData(void)
 {
+#ifdef REGION_REMIX
+	mnRemixSonicClassicSave1P(sMNPlayers1PGameManPlayer);
+#endif
 	gSCManagerSceneData.spgame_time_limit = sMNPlayers1PGameTimeSetting;
 	gSCManagerSceneData.player = sMNPlayers1PGameManPlayer;
 	gSCManagerBackupData.spgame_difficulty = sMNPlayers1PGameLevelValue;
@@ -3794,6 +3832,9 @@ s32 mnPlayers1PGameGetPrevTimeValue(s32 value)
 // 0x80138150
 void mnPlayers1PGameInitPlayer(s32 player)
 {
+#ifdef REGION_REMIX
+	mnRemixSonicClassicLoad1P(gSCManagerSceneData.player);
+#endif
 	sMNPlayers1PGameSlot.flash = NULL;
 	sMNPlayers1PGameSlot.p_sfx = NULL;
 	sMNPlayers1PGameSlot.sfx_id = 0;

@@ -25,6 +25,9 @@
 #include "sc/sc1pmode/sc1ptrainingportrules.h"
 #include <if/ifdef.h>
 #include "ft/ftremix/ftremixtraining.h"
+#include "remix/remix_roster_data.h"
+#include "ft/ftremix/sonic/ftremixsonicclassic.h"
+#include "ft/ftremix/sonic/ftremixsonicclassicrules.h"
 #include "remix/remix_training.h"
 
 #define SC1PTRAININGREMIX_DPAD_BUTTONS (U_JPAD | D_JPAD | L_JPAD | R_JPAD)
@@ -179,6 +182,24 @@ s32 sc1PTrainingRemixGetPortFighter(s32 port)
     return sc1PTrainingRemixGetPortFkind(port, gSCManagerSceneData.player);
 }
 
+/**
+ * Training.asm load_character_: a Sonic costume from 6 up is Classic Sonic, stored as the modern id plus 6. Only an edited costume
+ * item decides it; Auto keeps the Classic flag the character select left.
+ */
+static s32 sc1PTrainingRemixApplyClassicSonic(s32 port, s32 fkind, s32 costume)
+{
+    s32 is_classic;
+
+    if ((fkind != REMIX_ID_SONIC) || (remix_training_get(REMIX_TRAINING_COSTUME(port)) == 0))
+    {
+        return costume;
+    }
+    costume = ftRemixSonicClassicRulesSplitTrainingCostume(costume, &is_classic);
+    ftRemixSonicSetClassic(port, is_classic);
+
+    return costume;
+}
+
 static void sc1PTrainingRemixSetupPort(s32 port, s32 menu_port, s32 type)
 {
     SCBattleState *state = gSCManagerBattleState;
@@ -191,6 +212,7 @@ static void sc1PTrainingRemixSetupPort(s32 port, s32 menu_port, s32 type)
     }
     state->players[port].fkind = sc1PTrainingRemixGetPortFkind(port, menu_port);
     state->players[port].costume = sc1PTrainingPortRulesPick(remix_training_get(REMIX_TRAINING_COSTUME(port)), select_costume);
+    state->players[port].costume = sc1PTrainingRemixApplyClassicSonic(port, state->players[port].fkind, state->players[port].costume);
 
     if (type == SC1PTRAININGPORTRULES_TYPE_HUMAN)
     {

@@ -197,6 +197,19 @@ void gmRemixModeStartMatch(void)
     }
 }
 
+s32 gmRemixModeGetVsTime(s32 fallback)
+{
+    return (sGMRemixModeVanillaIsSaved != FALSE) ? sGMRemixModeVanilla.time_limit : fallback;
+}
+
+void gmRemixModeSetVsTime(s32 time_limit)
+{
+    if (sGMRemixModeVanillaIsSaved != FALSE)
+    {
+        sGMRemixModeVanilla.time_limit = time_limit;
+    }
+}
+
 s32 gmRemixModeGetGoal(void)
 {
     gmRemixModeInitSaved();

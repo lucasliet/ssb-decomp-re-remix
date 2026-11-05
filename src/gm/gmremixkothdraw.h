@@ -10,7 +10,10 @@
  * world) and the score meters (update_indicators_, drawn by the port overlay remix_hud_text).
  */
 
-/** Creates the object that draws the hill strip every frame. */
+/** Colour render_ground_gfx_ puts in the prim colour of the hill: white without a king, gray while contested, the colour of the king. */
+extern void gmRemixKothDrawGetPrimColor(u8 *r, u8 *g, u8 *b);
+
+/** Match start: makes the hill model (or, without the model file, the object that draws the flat strip every frame). */
 extern void gmRemixKothDrawMake(void);
 
 /** Match start: sets the colour of each meter and clears the full-bar flash. */

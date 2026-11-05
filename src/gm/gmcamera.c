@@ -6,6 +6,7 @@
 #include <sys/rdp.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "gm/gmremixsmashketballcamera.h"
 #endif
 #ifdef PORT
 #include <sys/debug.h>
@@ -469,6 +470,10 @@ void gmCameraUpdateInterests(Vec3f *vec, f32 *hz, f32 *vt)
             }
             weapon_gobj = weapon_gobj->link_next;
         }
+#ifdef REGION_REMIX
+        /* Smashketball.asm camera_follow (RAM 0x8010C114) */
+        gmRemixSmashketballCameraFollowBall(&gm_left, &gm_right, &gm_bottom, &gm_top);
+#endif
         *hz = (gm_right - gm_left) * 0.5F;
         *vt = (gm_top - gm_bottom) * 0.5F;
 

@@ -63,6 +63,35 @@ extern void gmRemixKothRulesMeterY(int dragon_king_hud, int is_dragon_king_stage
  */
 extern float gmRemixKothRulesMeterX(int port);
 
+/* Colour tags of KingOfTheHill.colors and team_colors (Color.tag), in the order of the team colours. */
+#define GMREMIX_KOTHRULES_TAG_RED 0
+#define GMREMIX_KOTHRULES_TAG_BLUE 1
+#define GMREMIX_KOTHRULES_TAG_GREEN 2
+#define GMREMIX_KOTHRULES_TAG_YELLOW 3
+#define GMREMIX_KOTHRULES_TAG_GRAY 4
+
+/**
+ * Colour tag of a score key (render_ground_gfx_ and the fighter glow of track_score_): free-for-all uses KingOfTheHill.colors
+ * (red, blue, yellow, green by port) and gray for a CPU (use_cpu_color); teams use team_colors (red, blue, green, yellow) and
+ * never gray.
+ *
+ * @param key Team (the port in free-for-all) 0..3.
+ * @param is_team_battle Non-zero in a team battle.
+ * @param is_cpu Non-zero when the free-for-all fighter is a CPU.
+ */
+extern int gmRemixKothRulesTag(int key, int is_team_battle, int is_cpu);
+
+/** Color.tag value (0xRRGGBBAA) of a GMREMIX_KOTHRULES_TAG_*. */
+extern unsigned int gmRemixKothRulesTagColor(int tag);
+
+/**
+ * Gray channel of the hill while the contest buffer runs (render_ground_gfx_ _set_gray_color): CONTESTED_GRAY (0xAA per
+ * channel) minus twice the buffer, so the hill starts dark when it is contested and lightens as the buffer runs out.
+ *
+ * @param buffer Frames left of the contest buffer, 1..30.
+ */
+extern int gmRemixKothRulesContestedGray(int buffer);
+
 #endif
 
 #endif

@@ -10,6 +10,15 @@
 /** Loads the Remix routines into dGMColScriptsDescs once; returns TRUE when ids >= 0x56 are available. */
 sb32 gmRemixColScriptsEnsureLoaded(void);
 
+/**
+ * Adds a Remix routine that the asm applies by address but that is not in the GFX routine table (KOTH_GRAY) as a new colour
+ * animation id, with the priority of the KOTH routines (100).
+ *
+ * @param ram_addr Remix RAM address of the routine, inside the block of the table routines.
+ * @return The new colour animation id, or 0 when the routines are not loaded or the address is outside them.
+ */
+s32 gmRemixColScriptsRegisterRoutine(u32 ram_addr);
+
 /** Remix routine that must replace the colour animation of a port when its animation ends (0 = none). */
 s32 gmRemixColScriptsGetOverride(s32 port);
 

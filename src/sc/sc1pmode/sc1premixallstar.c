@@ -14,6 +14,7 @@
 #include <sc/scene.h>
 #include "sc/sc1pmode/sc1premixallstar.h"
 #include "sc/sc1pmode/sc1premixallstarrest.h"
+#include "sc/sc1pmode/sc1premixallstarrestportraits.h"
 #include "sc/sc1pmode/sc1premix1pdata.h"
 #include "sc/sc1pmode/sc1premixbonusexit.h"
 #include "sc/sc1pmode/sc1premixmode.h"
@@ -302,6 +303,7 @@ void sc1PRemixAllstarSetupRestArea(void)
         itManagerMakeItemSetupCommon(NULL, nITKindHeart, &pos, &vel, ITEM_FLAG_PARENT_DEFAULT);
     }
     sc1PRemixAllstarRestMakeIcons();
+    sc1PRemixAllstarRestMakePortraits();
 }
 
 void sc1PRemixAllstarOnHeartUsed(void)

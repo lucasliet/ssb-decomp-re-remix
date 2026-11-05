@@ -34,13 +34,19 @@ sb32 gmRemixTimedStockUsesTimeScore(void)
 s32 gmRemixTimedStockScore(s32 player)
 {
     SCPlayerData *data = &gSCManagerTransferBattleState.players[player];
+    s32 initial_count;
     s32 stocks_left;
 
     if (gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR) != FALSE)
     {
         return gmRemixTimedStockRulesTugScore(data->stock_count, data->score, data->falls, data->stock_damage_all);
     }
-    stocks_left = gmRemixStockModeCount(player, gSCManagerTransferBattleState.stocks) - data->falls + 1;
+    initial_count = gmRemixStockModeGetInitialCount(player);
+    if (initial_count < 0)
+    {
+        initial_count = gSCManagerTransferBattleState.stocks;
+    }
+    stocks_left = initial_count - data->falls + 1;
 
     return gmRemixTimedStockRulesStockScore(stocks_left, data->stock_damage_all);
 }

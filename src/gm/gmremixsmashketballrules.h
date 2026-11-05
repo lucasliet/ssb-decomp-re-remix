@@ -40,6 +40,22 @@ extern void gmRemixSmashketballRulesRecordTeam(int *home_team, int *away_team, i
 /** Attributed basket: the streak of `port` goes up and every other streak goes back to 0. */
 extern void gmRemixSmashketballRulesRecordBasket(int *streaks, int port);
 
+#define GMREMIX_SMASHKETBALL_RULES_CHANT_STREAK 3
+#define GMREMIX_SMASHKETBALL_RULES_CAMERA_PADDING 1000.0F
+#define GMREMIX_SMASHKETBALL_RULES_CAMERA_FLOOR (-1000.0F)
+
+/** Smashketball.team_colors (Color.tag RED, BLUE, GREEN, YELLOW as 0xRRGGBBAA): scoreboard digit colour of a team 0..3. */
+extern unsigned int gmRemixSmashketballRulesTeamColor(int team);
+
+/** TRUE when the streak of attributed baskets of a player makes the crowd chant (force_chant_, 3 or more in a row). */
+extern int gmRemixSmashketballRulesIsChantStreak(int streak);
+
+/**
+ * camera_follow: grows the camera bounds to include the ball. The sides and the top get 1000 of padding around the ball and
+ * the bottom is always -1000, so the camera keeps the floor in view instead of tracking a ball that falls under the stage.
+ */
+extern void gmRemixSmashketballRulesFollowBall(float ball_x, float ball_y, float *left, float *right, float *bottom, float *top);
+
 #endif
 
 #endif

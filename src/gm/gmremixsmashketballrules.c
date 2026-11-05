@@ -61,4 +61,44 @@ void gmRemixSmashketballRulesRecordBasket(int *streaks, int port)
     streaks[port]++;
 }
 
+/* Smashketball.team_colors: Color.tag.RED, BLUE, GREEN, YELLOW (Color.asm). */
+static const unsigned int dGMRemixSmashketballRulesTeamColors[GMREMIX_SMASHKETBALL_RULES_PLAYERS] =
+{
+    0xED3636FF, 0x4E4EE9FF, 0x4EB94EFF, 0xFFDF1AFF
+};
+
+unsigned int gmRemixSmashketballRulesTeamColor(int team)
+{
+    return dGMRemixSmashketballRulesTeamColors[team];
+}
+
+int gmRemixSmashketballRulesIsChantStreak(int streak)
+{
+    return (streak >= GMREMIX_SMASHKETBALL_RULES_CHANT_STREAK) ? 1 : 0;
+}
+
+void gmRemixSmashketballRulesFollowBall(float ball_x, float ball_y, float *left, float *right, float *bottom, float *top)
+{
+    float padded_left = ball_x - GMREMIX_SMASHKETBALL_RULES_CAMERA_PADDING;
+    float padded_right = ball_x + GMREMIX_SMASHKETBALL_RULES_CAMERA_PADDING;
+    float padded_top = ball_y + GMREMIX_SMASHKETBALL_RULES_CAMERA_PADDING;
+
+    if (padded_left < *left)
+    {
+        *left = padded_left;
+    }
+    if (*right < padded_right)
+    {
+        *right = padded_right;
+    }
+    if (GMREMIX_SMASHKETBALL_RULES_CAMERA_FLOOR < *bottom)
+    {
+        *bottom = GMREMIX_SMASHKETBALL_RULES_CAMERA_FLOOR;
+    }
+    if (*top < padded_top)
+    {
+        *top = padded_top;
+    }
+}
+
 #endif

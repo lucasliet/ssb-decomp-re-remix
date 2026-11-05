@@ -24,6 +24,7 @@ extern void *calloc(unsigned long count, unsigned long size);
 #define GMREMIX_COLSCRIPTS_ENTRY_SIZE 8
 #define GMREMIX_COLSCRIPTS_PORTS 4
 #define GMREMIX_COLSCRIPTS_OPCODE_SHIFT 26
+#define GMREMIX_COLSCRIPTS_EXTRA_PRIORITY 100
 
 static sb32 sGMRemixColScriptsIsLoaded;
 static sb32 sGMRemixColScriptsIsAttempted;
@@ -119,6 +120,8 @@ static void gmRemixColScriptsLinkFrom(GMRemixColScriptsBlock *block, u32 ram_add
     }
 }
 
+static GMRemixColScriptsBlock sGMRemixColScriptsBlock;
+
 static sb32 gmRemixColScriptsLoad(void)
 {
     u32 table = REMIX_SYM_GFXRoutine__gfx_routine_table_extended;
@@ -167,6 +170,7 @@ static sb32 gmRemixColScriptsLoad(void)
         desc->is_unlocked = (u8)(flags >> 16);
     }
     dGMColScriptsDescsNum = GMCOLSCRIPTS_REMIX_VANILLA_NUM + count;
+    sGMRemixColScriptsBlock = block;
     port_log("[remix-gfx] %d GFX routines loaded (ids 0x%X..0x%X)\n", count, GMCOLSCRIPTS_REMIX_VANILLA_NUM, dGMColScriptsDescsNum - 1);
 
     return TRUE;
@@ -180,6 +184,30 @@ sb32 gmRemixColScriptsEnsureLoaded(void)
         sGMRemixColScriptsIsLoaded = gmRemixColScriptsLoad();
     }
     return sGMRemixColScriptsIsLoaded;
+}
+
+s32 gmRemixColScriptsRegisterRoutine(u32 ram_addr)
+{
+    GMRemixColScriptsBlock *block = &sGMRemixColScriptsBlock;
+    GMColDesc *desc;
+
+    if ((gmRemixColScriptsEnsureLoaded() == FALSE) || (dGMColScriptsDescsNum >= GMCOLSCRIPTS_REMIX_DESCS_MAX))
+    {
+        return 0;
+    }
+    if ((ram_addr < block->base) || (((ram_addr - block->base) / 4) >= block->words_num))
+    {
+        port_log("[remix-gfx] routine 0x%X is outside the loaded GFX routine block\n", (unsigned int)ram_addr);
+        return 0;
+    }
+    gmRemixColScriptsLinkFrom(block, ram_addr, 0);
+
+    desc = &dGMColScriptsDescs[dGMColScriptsDescsNum];
+    desc->p_script = &block->words[(ram_addr - block->base) / 4];
+    desc->priority = GMREMIX_COLSCRIPTS_EXTRA_PRIORITY;
+    desc->is_unlocked = FALSE;
+
+    return dGMColScriptsDescsNum++;
 }
 
 s32 gmRemixColScriptsGetOverride(s32 port)

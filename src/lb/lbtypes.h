@@ -237,6 +237,20 @@ struct LBBackupVSRecord
 	u16 played_against[GMCOMMON_FIGHTERS_SAVE_NUM];
 };
 
+#if defined(PORT) && defined(REGION_REMIX)
+/* 1P game score of the Remix 1P and All-Star modes, which keep their own tables per fighter (Character.REMIX_1P_HIGH_SCORE_TABLE and ALLSTAR_HIGH_SCORE_TABLE) */
+struct LBBackup1PScore
+{
+	u32 hiscore;
+	u32 continues;
+	u32 total_bonuses;
+	u8 best_difficulty;
+	ub8 is_complete;
+};
+
+typedef struct LBBackup1PScore LBBackup1PScore;
+#endif
+
 struct LBBackup1PRecord
 {
 	u32 spgame_hiscore;
@@ -254,10 +268,26 @@ struct LBBackup1PRecord
 	u16 cruel_kos;              // Cruel Multi-Man record (Character.CRUEL_HIGH_SCORE_TABLE)
 	u32 bonus3_time;            // Bonus 3 best finish time in ticks, Normal course (Character.BONUS3_HIGH_SCORE_TABLE)
 	u32 bonus3_remix_time;      // Bonus 3 best finish time in ticks, Remix course (Bonus.REMIX_BONUS3_HIGH_SCORE_TABLE)
+	LBBackup1PScore remix_1p;   // Remix 1P score (Character.REMIX_1P_HIGH_SCORE_TABLE)
+	LBBackup1PScore allstar;    // All-Star score (Character.ALLSTAR_HIGH_SCORE_TABLE)
 #endif
 };
 
 // Save Data structure
+#if defined(PORT) && defined(REGION_REMIX)
+#define LBBACKUP_REMIX_BONUS_STAGES 33
+
+/* Record of a fighter on a Remix Break the Targets or Board the Platforms stage that is not his own (Bonus.REMIX_BONUS_HIGH_SCORE_TABLE):
+ * count is the targets or platforms done (10 once finished), time the finish time in ticks and only valid once finished */
+struct LBBackupBonusRecord
+{
+	u32 time;
+	u8 count;
+};
+
+typedef struct LBBackupBonusRecord LBBackupBonusRecord;
+#endif
+
 struct LBBackupData
 {
 	LBBackupVSRecord vs_records[GMCOMMON_FIGHTERS_SAVE_NUM];
@@ -272,6 +302,9 @@ struct LBBackupData
 	u8 spgame_difficulty;       // Last 1P Game difficulty selected
 	u8 spgame_stock_count;      // Last 1P Game stock count selected
 	LBBackup1PRecord spgame_records[GMCOMMON_FIGHTERS_SAVE_NUM];
+#if defined(PORT) && defined(REGION_REMIX)
+	LBBackupBonusRecord remix_bonus[LBBACKUP_REMIX_BONUS_STAGES][GMCOMMON_FIGHTERS_SAVE_NUM][2]; // [stage index][fighter][0 targets, 1 platforms]
+#endif
 	u16 ground_mask;   	        // Records mask of unique stages played in VS mode
 	u8 vs_itemswitch_battles; 	// Records number of VS games played for Item Switch unlock
 	u16 vs_total_battles;		// Total amount of VS games played?

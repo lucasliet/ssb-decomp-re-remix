@@ -4,6 +4,8 @@
 #include "sc/sc1pmode/sc1premixenemyafk.h"
 #include "sc/sc1pmode/sc1premixbonus3.h"
 #include "sc/sc1pmode/sc1premixbonus3rules.h"
+#include "sc/sc1pmode/sc1premixhighscores.h"
+#include "sc/sc1pmode/sc1pbonusremix.h"
 #include "gm/gmremixtoggle.h"
 #endif
 #ifdef PORT
@@ -375,6 +377,60 @@ void sc1PBonusStageFuncUpdate(void)
 	ifCommonBattleUpdateInterfaceAll();
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/** Stage of a bonus run: the Remix table choice, the Remix 1P table or the added fighters' own stage, else the vanilla stage of the fighter (set_btt_stage_id_, set_btp_stage_id_). */
+static s32 sc1PBonusStageGetGkind(sb32 is_platforms, s32 fkind)
+{
+	s32 gkind = sc1PBonusRemixGetBattleGkind(is_platforms, fkind);
+
+	return (gkind >= 0) ? gkind : (fkind + ((is_platforms != FALSE) ? nGRKindBonus2Start : nGRKindBonus1Start));
+}
+
+/** Whether the stage being played is a Board the Platforms one, by class for the Remix stages (bonus_fix_3_). */
+static sb32 sc1PBonusStageIsPlatforms(void)
+{
+	return sc1PBonusRemixIsPlatformStage(gSCManagerBattleState->gkind);
+}
+
+/** Targets of the stage: the Remix table for the added stages (bonus_fix_2_), the vanilla one otherwise. */
+static GRBonusTarget* sc1PBonusStageGetTarget(GRBonusTarget *remix_target)
+{
+	u32 start;
+	u32 dobjdesc;
+	u32 anim_joint;
+
+	if ((gSCManagerBattleState->gkind > nGRKindBonus2End) && (sc1PBonusRemixGetStageWords(gSCManagerBattleState->gkind, &start, &dobjdesc, &anim_joint) != FALSE))
+	{
+		remix_target->start = start;
+		remix_target->dobjdesc = dobjdesc;
+		remix_target->anim_joint = anim_joint;
+
+		return remix_target;
+	}
+	return &dSC1PBonusStageTargetDescs[gSCManagerBattleState->gkind - nGRKindBonus1Start];
+}
+
+/** Offsets of the bumpers of the stage: the Remix table for the added stages (bonus_fix_4_), the vanilla one otherwise. */
+static void sc1PBonusStageGetBumperOffsets(intptr_t *dobjdesc, intptr_t *anim_joint)
+{
+	u32 start;
+	u32 remix_dobjdesc;
+	u32 remix_anim_joint;
+
+	if ((gSCManagerBattleState->gkind > nGRKindBonus2End) && (sc1PBonusRemixGetStageWords(gSCManagerBattleState->gkind, &start, &remix_dobjdesc, &remix_anim_joint) != FALSE))
+	{
+		*dobjdesc = start;
+		*anim_joint = remix_dobjdesc;
+		return;
+	}
+	*dobjdesc = dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][0];
+	*anim_joint = dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][1];
+}
+#else
+#define sc1PBonusStageGetGkind(is_platforms, fkind) ((fkind) + (((is_platforms) != FALSE) ? nGRKindBonus2Start : nGRKindBonus1Start))
+#define sc1PBonusStageIsPlatforms() (gSCManagerBattleState->gkind >= nGRKindBonus2Start)
+#endif
+
 // 0x8018D0F0
 void sc1PBonusStageInitVars(void)
 {
@@ -421,7 +477,7 @@ void sc1PBonusStageInitVars(void)
 			{
 				gSCManagerBattleState->time_limit = 2;
 			}
-			gSCManagerBattleState->gkind = fkind + nGRKindBonus1Start;
+			gSCManagerBattleState->gkind = sc1PBonusStageGetGkind(FALSE, fkind);
 		}
 		else
 		{
@@ -429,7 +485,7 @@ void sc1PBonusStageInitVars(void)
 			{
 				gSCManagerBattleState->time_limit = 2;
 			}
-			gSCManagerBattleState->gkind = fkind + nGRKindBonus2Start;
+			gSCManagerBattleState->gkind = sc1PBonusStageGetGkind(TRUE, fkind);
 		}
 	}
 	else
@@ -440,9 +496,9 @@ void sc1PBonusStageInitVars(void)
 
 		if (gSCManagerSceneData.scene_prev == nSCKind1PBonus1Players)
 		{
-			gSCManagerBattleState->gkind = fkind + nGRKindBonus1Start;
+			gSCManagerBattleState->gkind = sc1PBonusStageGetGkind(FALSE, fkind);
 		}
-		else gSCManagerBattleState->gkind = fkind + nGRKindBonus2Start;
+		else gSCManagerBattleState->gkind = sc1PBonusStageGetGkind(TRUE, fkind);
 	}
 	for (player = 0; player < ARRAY_COUNT(gSCManagerBattleState->players); player++)
 	{
@@ -511,7 +567,12 @@ void sc1PBonusStageBonus1LoadFile(void)
 // 0x8018D374
 void sc1PBonusStageMakeTargets(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	GRBonusTarget remix_target;
+	GRBonusTarget *target = sc1PBonusStageGetTarget(&remix_target);
+#else
 	GRBonusTarget *target = &dSC1PBonusStageTargetDescs[gSCManagerBattleState->gkind - nGRKindBonus1Start];
+#endif
 #ifdef PORT
 	u32 *anim_joints;
 	uintptr_t file_base = (uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->gr_desc[1].dobjdesc) - target->start;
@@ -820,16 +881,33 @@ void sc1PBonusStageMakeBumpers(void)
 	AObjEvent32 **anim_joints;
 #endif
 	Vec3f vel;
+#if defined(PORT) && defined(REGION_REMIX)
+	intptr_t bumper_offsets[2];
+
+	sc1PBonusStageGetBumperOffsets(&bumper_offsets[0], &bumper_offsets[1]);
+#endif
 
 	if (gMPCollisionGroundData->map_nodes != NULL)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		file = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - bumper_offsets[0]);
+#else
 		file = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][0]);
+#endif
 
 		vel.x = vel.y = vel.z = 0.0F;
 
+#if defined(PORT) && defined(REGION_REMIX)
+		dobjdesc = lbRelocGetFileData(DObjDesc*, file, bumper_offsets[0]);
+#else
 		dobjdesc = lbRelocGetFileData(DObjDesc*, file, dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][0]);
+#endif
 #ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+		anim_joints = (u32*)((uintptr_t)file + bumper_offsets[1]);
+#else
 		anim_joints = (u32*)((uintptr_t)file + (intptr_t)dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][1]);
+#endif
 #else
 		anim_joints = lbRelocGetFileData(AObjEvent32**, file, dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][1]);
 #endif
@@ -912,7 +990,7 @@ void sc1PBonusStageInitCamera(void)
 		{
 			continue;
 		}
-		if (gSCManagerBattleState->gkind >= nGRKindBonus2Start)
+		if (sc1PBonusStageIsPlatforms() != FALSE)
 		{
 			gmCameraSetStatusPlayerFollow(gSCManagerBattleState->players[player].fighter_gobj, 0.0F, F_CLC_DTOR32(-15.0F), 9000.0F, 0.3F, 31.5F);
 		}
@@ -971,7 +1049,7 @@ void sc1PBonusStageMakePlatformSprites(void)
 // 0x8018E098
 void sc1PBonusStageMakeTaskSprites(void)
 {
-	if (gSCManagerBattleState->gkind >= nGRKindBonus2Start)
+	if (sc1PBonusStageIsPlatforms() != FALSE)
 	{
 		sc1PBonusStageMakePlatformSprites();
 	}
@@ -1306,9 +1384,20 @@ void sc1PBonusStageWriteBackup(sb32 is_tasks_fail, s32 fkind)
 		return;
 	}
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+	/* extend_high_score_btt/btp_count_write_ and _time_write_ (SinglePlayer.asm): no record while the options or an enemy port turn them off. */
+	if (sc1PRemixHighScoresCanSaveRecord() == FALSE)
+	{
+		return;
+	}
+	if ((gSCManagerSceneData.is_reset == FALSE) && (sc1PBonusRemixTrySave(is_tasks_fail, fkind, gSCManagerSceneData.bonus_tasks_complete, gSCManagerBattleState->time_passed) != FALSE))
+	{
+		return;
+	}
+#endif
 	if (gSCManagerSceneData.is_reset == FALSE)
 	{
-		if (gSCManagerBattleState->gkind <= nGRKindBonus1End)
+		if (sc1PBonusStageIsPlatforms() == FALSE)
 		{
 			if (is_tasks_fail != FALSE)
 			{
@@ -1393,7 +1482,7 @@ void sc1PBonusStageStartScene(void)
 
 	if (gSCManagerBattleState->game_status != nSCBattleGameStatusPause)
 	{
-		tasks_remain = (gSCManagerBattleState->gkind <= nGRKindBonus1End) ? 
+		tasks_remain = (sc1PBonusStageIsPlatforms() == FALSE) ? 
 		gGRCommonStruct.bonus1.target_count :
 		gGRCommonStruct.bonus2.platform_count;
 

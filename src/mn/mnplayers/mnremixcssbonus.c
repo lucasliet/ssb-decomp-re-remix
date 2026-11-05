@@ -13,6 +13,7 @@
 #include "if/ifremixsprite.h"
 #include "mn/mnplayers/mnremixcssbonus.h"
 #include "mn/mnplayers/mnremixcssrules.h"
+#include "mn/mnplayers/mnremixcssslide.h"
 
 #define MNREMIX_CSS_BONUS_PLAYERS 4
 #define MNREMIX_CSS_HINT_PANEL_X 22
@@ -38,6 +39,7 @@ typedef enum MNRemixCssHintSprite
 static const f32 sMNRemixCssHintX[MNREMIX_CSS_HINT_SPRITE_COUNT] = { 4.0F, 56.0F, 4.0F, 49.0F };
 static const f32 sMNRemixCssHintY[MNREMIX_CSS_HINT_SPRITE_COUNT] = { 172.0F, 172.0F, 154.0F, 156.0F };
 
+static f32 sMNRemixCssBonusHintPanelX = MNREMIX_CSS_HINT_PANEL_X;
 static s32 sMNRemixCssBonusIndex[MNREMIX_CSS_BONUS_PLAYERS];
 static s32 sMNRemixCssBonusTimer[MNREMIX_CSS_BONUS_PLAYERS] = { -1, -1, -1, -1 };
 static GObj *sMNRemixCssBonusHintGObjs[MNREMIX_CSS_BONUS_PLAYERS][MNREMIX_CSS_HINT_SPRITE_COUNT];
@@ -47,6 +49,8 @@ void mnRemixCssBonusReset(void)
 {
     s32 player;
     s32 sprite;
+
+    sMNRemixCssBonusHintPanelX = MNREMIX_CSS_HINT_PANEL_X;
 
     for (player = 0; player < MNREMIX_CSS_BONUS_PLAYERS; player++)
     {
@@ -75,6 +79,7 @@ void mnRemixCssBonusMakeBookend(void *css_images_file, s32 gobj_link, s32 dl_lin
     sobj->sprite.scaley = MNREMIX_CSS_BONUS_BOOKEND_SCALE_Y;
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
+    mnRemixCssSlideAttach(gobj, MNREMIX_CSS_BONUS_BOOKEND_SLOT);
 }
 
 s32 mnRemixCssBonusGetFighterKind(s32 token)
@@ -107,7 +112,7 @@ sb32 mnRemixCssBonusScroll(s32 token, s32 cursor_player, u16 held_buttons, sb32 
 
 static void mnRemixCssBonusMakeHint(s32 panel, void *arrows_file)
 {
-    f32 panel_x = MNREMIX_CSS_HINT_PANEL_X + (MNREMIX_CSS_HINT_PANEL_STRIDE * panel);
+    f32 panel_x = sMNRemixCssBonusHintPanelX + (MNREMIX_CSS_HINT_PANEL_STRIDE * panel);
     GObj **gobjs = sMNRemixCssBonusHintGObjs[panel];
 
     gobjs[MNREMIX_CSS_HINT_ARROW_LEFT] = ifRemixSpriteMakeFromFile(arrows_file, llMNPlayersCommonArrowLSprite, MNREMIX_CSS_HINT_GOBJ_LINK,
@@ -136,6 +141,11 @@ static void mnRemixCssBonusSetHintFlags(s32 panel, u32 arrow_flags, u32 button_f
     gobjs[MNREMIX_CSS_HINT_ARROW_RIGHT]->flags = arrow_flags;
     gobjs[MNREMIX_CSS_HINT_BUTTON_Z]->flags = button_flags;
     gobjs[MNREMIX_CSS_HINT_BUTTON_R]->flags = button_flags;
+}
+
+void mnRemixCssBonusSetHintPanelX(f32 panel_x)
+{
+    sMNRemixCssBonusHintPanelX = panel_x;
 }
 
 void mnRemixCssBonusUpdateHint(s32 panel, sb32 is_visible, void *arrows_file)

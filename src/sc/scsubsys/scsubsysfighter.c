@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/sonic/ftremixsonicclassic.h"
+#endif
 
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
@@ -80,7 +83,11 @@ void scSubsysFighterSetStatus(GObj *fighter_gobj, s32 status_id)
 #ifdef PORT
     port_log("SSB64: scSubsysFighterSetStatus - begin status=0x%x gobj=%p\n", status_id, fighter_gobj);
 #endif
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, status_id, ftRemixSonicClassicGetStatusFrame(ftGetStruct(fighter_gobj), status_id), 1.0F, 0.0F);
+#else
     ftMainSetStatus(fighter_gobj, status_id, FTSTATUS_PRESERVE_NONE, 1.0F, 0.0F);
+#endif
 #ifdef PORT
     port_log("SSB64: scSubsysFighterSetStatus - end status=0x%x gobj=%p\n", status_id, fighter_gobj);
 #endif

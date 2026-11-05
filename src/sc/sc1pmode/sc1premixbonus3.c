@@ -16,7 +16,7 @@
 #include "sc/sc1pmode/sc1premixbonus3.h"
 #include "sc/sc1pmode/sc1premixbonus3rules.h"
 #include "sc/sc1pmode/sc1premixbonusexit.h"
-#include "sc/sc1pmode/sc1premixenemy.h"
+#include "sc/sc1pmode/sc1premixhighscores.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 
 extern int strcmp(const char *left, const char *right);
@@ -122,13 +122,25 @@ static u32* sc1PRemixBonus3RecordSlot(s32 fkind)
     return (sc1PRemixBonus3GetCourse() == SC1PREMIX_BONUS3_COURSE_REMIX) ? &record->bonus3_remix_time : &record->bonus3_time;
 }
 
+u32 sc1PRemixBonus3RecordGet(s32 fkind)
+{
+    u32 *slot = sc1PRemixBonus3RecordSlot(fkind);
+
+    return (slot != NULL) ? *slot : 0;
+}
+
+s32 sc1PRemixBonus3CourseGet(void)
+{
+    return sc1PRemixBonus3GetCourse();
+}
+
 /** _time_save: keeps the time when the fighter has no record or it is faster; returns the verdict for the announcer. */
 static s32 sc1PRemixBonus3SaveRecord(s32 fkind, u32 finish_time)
 {
     u32 *slot = sc1PRemixBonus3RecordSlot(fkind);
     s32 verdict;
 
-    if ((slot == NULL) || (sc1PRemixBonus3CanSaveRecord(sc1PRemixEnemyPortGet()) == 0))
+    if ((slot == NULL) || (sc1PRemixHighScoresCanSaveRecord() == FALSE))
     {
         return SC1PREMIX_BONUS3_RECORD_KEEP;
     }

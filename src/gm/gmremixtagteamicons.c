@@ -20,6 +20,7 @@ typedef struct GMRemixTagTeamIcon
     s32 fkind;
     FTSprites *sprites;
     s32 costume;
+    sb32 is_classic;
 } GMRemixTagTeamIcon;
 
 static GMRemixTagTeamIcon sGMRemixTagTeamIcons[GMCOMMON_PLAYERS_MAX][GMREMIX_TAGTEAM_QUEUE_MAX];
@@ -36,12 +37,13 @@ void gmRemixTagTeamIconsReset(void)
             sGMRemixTagTeamIcons[port][slot].fkind = -1;
             sGMRemixTagTeamIcons[port][slot].sprites = NULL;
             sGMRemixTagTeamIcons[port][slot].costume = 0;
+            sGMRemixTagTeamIcons[port][slot].is_classic = FALSE;
         }
     }
 }
 
 /* The sprites of a character already resolved for another slot, so its main file is read once per match. */
-static FTSprites* gmRemixTagTeamIconsFindResolved(s32 fkind)
+static FTSprites* gmRemixTagTeamIconsFindResolved(s32 fkind, sb32 is_classic)
 {
     s32 port;
     s32 slot;
@@ -50,7 +52,8 @@ static FTSprites* gmRemixTagTeamIconsFindResolved(s32 fkind)
     {
         for (slot = 0; slot < GMREMIX_TAGTEAM_QUEUE_MAX; slot++)
         {
-            if ((sGMRemixTagTeamIcons[port][slot].fkind == fkind) && (sGMRemixTagTeamIcons[port][slot].sprites != NULL))
+            if ((sGMRemixTagTeamIcons[port][slot].fkind == fkind) && (sGMRemixTagTeamIcons[port][slot].is_classic == is_classic)
+                && (sGMRemixTagTeamIcons[port][slot].sprites != NULL))
             {
                 return sGMRemixTagTeamIcons[port][slot].sprites;
             }
@@ -59,19 +62,23 @@ static FTSprites* gmRemixTagTeamIconsFindResolved(s32 fkind)
     return NULL;
 }
 
-/* Main file of the character: the loaded one when the character is in the match, else a private copy that the swap never uses. */
-static void* gmRemixTagTeamIconsGetMainFile(FTData *data)
+/* Main file of the character: the loaded one when the character is in the match, else a private copy that the swap never uses.
+ * A Classic Sonic slot reads the classic main file (the special 2 file, Sonic.asm load_classic_model_). */
+static void* gmRemixTagTeamIconsGetMainFile(FTData *data, sb32 is_classic)
 {
-    if (*data->p_file_main != NULL)
+    void **p_file = (is_classic != FALSE) ? data->p_file_special2 : data->p_file_main;
+    u32 file_id = (is_classic != FALSE) ? data->file_special2_id : data->file_main_id;
+
+    if (*p_file != NULL)
     {
-        return *data->p_file_main;
+        return *p_file;
     }
-    return lbRelocGetExternHeapFile(data->file_main_id, syTaskmanMalloc(lbRelocGetFileSize(data->file_main_id), 0x10));
+    return lbRelocGetExternHeapFile(file_id, syTaskmanMalloc(lbRelocGetFileSize(file_id), 0x10));
 }
 
-static FTSprites* gmRemixTagTeamIconsResolveSprites(s32 fkind)
+static FTSprites* gmRemixTagTeamIconsResolveSprites(s32 fkind, sb32 is_classic)
 {
-    FTSprites *sprites = gmRemixTagTeamIconsFindResolved(fkind);
+    FTSprites *sprites = gmRemixTagTeamIconsFindResolved(fkind, is_classic);
     FTData *data;
     FTAttributes *attr;
 
@@ -85,7 +92,7 @@ static FTSprites* gmRemixTagTeamIconsResolveSprites(s32 fkind)
     {
         return NULL;
     }
-    attr = lbRelocGetFileData(FTAttributes*, gmRemixTagTeamIconsGetMainFile(data), data->o_attributes);
+    attr = lbRelocGetFileData(FTAttributes*, gmRemixTagTeamIconsGetMainFile(data, is_classic), data->o_attributes);
     portFixupFTAttributes(attr);
     sprites = (FTSprites*)PORT_RESOLVE(attr->sprites);
 
@@ -98,13 +105,14 @@ static FTSprites* gmRemixTagTeamIconsResolveSprites(s32 fkind)
     return sprites;
 }
 
-void gmRemixTagTeamIconsSet(s32 port, s32 slot, s32 fkind, s32 costume)
+void gmRemixTagTeamIconsSet(s32 port, s32 slot, s32 fkind, s32 costume, sb32 is_classic)
 {
     GMRemixTagTeamIcon *icon = &sGMRemixTagTeamIcons[port][slot];
 
     icon->fkind = fkind;
     icon->costume = costume;
-    icon->sprites = gmRemixTagTeamIconsResolveSprites(fkind);
+    icon->is_classic = is_classic;
+    icon->sprites = gmRemixTagTeamIconsResolveSprites(fkind, is_classic);
 }
 
 sb32 gmRemixTagTeamIconsApply(SObj *sobj, s32 port, s32 slot)

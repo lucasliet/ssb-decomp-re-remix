@@ -1,6 +1,12 @@
 #include <ft/fighter.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "mn/mnplayers/mnremixteams.h"
+#define FTSHADOW_TEAM_COLOR(team) mnRemixTeamsGetShadowColor(team)
+#else
+#define FTSHADOW_TEAM_COLOR(team) dFTCommonDataShadowColorTeams[team]
+#endif
 
 extern s32 gSYTaskmanTaskID;
 
@@ -312,10 +318,10 @@ void ftShadowProcDisplay(GObj *shadow_gobj)
                             gSYTaskmanDLHeads[0]++,
                             0,
                             0,
-                            dFTCommonDataShadowColorTeams[fp->team].r,
-                            dFTCommonDataShadowColorTeams[fp->team].g,
-                            dFTCommonDataShadowColorTeams[fp->team].b,
-                            dFTCommonDataShadowColorTeams[fp->team].a
+                            FTSHADOW_TEAM_COLOR(fp->team).r,
+                            FTSHADOW_TEAM_COLOR(fp->team).g,
+                            FTSHADOW_TEAM_COLOR(fp->team).b,
+                            FTSHADOW_TEAM_COLOR(fp->team).a
                         );
                     }
                     else gDPSetPrimColor

@@ -19,6 +19,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "remix/remix_css_data.h"
 #include "gm/gmremixmenumusic.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixsonicclassic.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
 #include "mn/mnplayers/mnremixvariants.h"
@@ -1996,6 +1997,9 @@ void mnPlayers1PTrainingSetCursorGrab(s32 player, s32 held_player)
 	sMNPlayers1PTrainingSlots[player].held_player = held_player;
 
 	sMNPlayers1PTrainingSlots[held_player].is_fighter_selected = FALSE;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicReset(held_player);
+#endif
 
 	mnPlayers1PTrainingUpdateFighter(held_player);
 	mnPlayers1PTrainingUpdateCursorGrabPriorities(player, held_player);
@@ -2255,8 +2259,17 @@ void mnPlayers1PTrainingUpdateCostume(s32 player, s32 select_button)
 #ifdef REGION_REMIX
 	s32 costume = sMNPlayers1PTrainingSlots[player].costume;
 	s32 shade = sMNPlayers1PTrainingShade[player];
+	f32 sonic_frame;
 
 	mnRemixCostumeApplyButton(sMNPlayers1PTrainingSlots[player].fkind, select_button, &costume, &shade);
+	sonic_frame = mnRemixSonicClassicToggle(player, sMNPlayers1PTrainingSlots[player].fkind, select_button, sMNPlayers1PTrainingSlots[player].costume, costume, FALSE, sMNPlayers1PTrainingSlots[player].player);
+
+	if (sonic_frame != MNREMIX_SONIC_CLASSIC_NO_TOGGLE)
+	{
+		mnPlayers1PTrainingMakeFighter(sMNPlayers1PTrainingSlots[player].player, player, sMNPlayers1PTrainingSlots[player].fkind, costume);
+		mnRemixSonicClassicRestoreFrame(player, sMNPlayers1PTrainingSlots[player].player, sonic_frame);
+		sMNPlayers1PTrainingSlots[player].is_status_selected = FALSE;
+	}
 	sMNPlayers1PTrainingSlots[player].costume = costume;
 	sMNPlayers1PTrainingShade[player] = shade;
 
@@ -2298,6 +2311,9 @@ sb32 mnPlayers1PTrainingCheckManFighterSelected(s32 player)
 void mnPlayers1PTrainingRecallPuck(s32 player)
 {
 	sMNPlayers1PTrainingSlots[player].is_fighter_selected = FALSE;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicReset(player);
+#endif
 	sMNPlayers1PTrainingSlots[player].is_selected = FALSE;
 	sMNPlayers1PTrainingSlots[player].is_recalling = TRUE;
 	sMNPlayers1PTrainingSlots[player].recall_tics = 0;
@@ -3252,6 +3268,9 @@ void func_ovl28_801375D0(void)
 // 0x801375D8
 void mnPlayers1PTrainingSetSceneData(void)
 {
+#ifdef REGION_REMIX
+	mnRemixSonicClassicSaveTraining(sMNPlayers1PTrainingManPlayer, sMNPlayers1PTrainingComPlayer);
+#endif
 	gSCManagerSceneData.training_man_fkind = sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingManPlayer].fkind;
 	gSCManagerSceneData.training_man_costume = sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingManPlayer].costume;
 
@@ -3493,6 +3512,9 @@ void mnPlayers1PTrainingInitVars(void)
 	sMNPlayers1PTrainingManPlayer = gSCManagerSceneData.player;
 	sMNPlayers1PTrainingComPlayer = (sMNPlayers1PTrainingManPlayer == 0) ? 1 : 0;
 	sMNPlayers1PTrainingFighterMask = gSCManagerBackupData.fighter_mask;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicLoadTraining(sMNPlayers1PTrainingManPlayer, sMNPlayers1PTrainingComPlayer);
+#endif
 
 	if (gSCManagerSceneData.training_man_fkind == nFTKindNull)
 	{

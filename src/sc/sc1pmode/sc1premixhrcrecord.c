@@ -8,6 +8,7 @@
 #include <lb/lbbackup.h>
 #include <port_log.h>
 #include <sc/scmanager.h>
+#include "sc/sc1pmode/sc1premixhighscores.h"
 #include "sc/sc1pmode/sc1premixhrcrecord.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 
@@ -30,6 +31,10 @@ sb32 sc1PRemixHrcRecordSave(s32 fkind, s32 distance)
     s32 verdict;
 
     if ((sc1PRemixHrcRecordIsValidFighter(fkind) == FALSE) || (distance < 0))
+    {
+        return FALSE;
+    }
+    if (sc1PRemixHighScoresCanSaveRecord() == FALSE)
     {
         return FALSE;
     }

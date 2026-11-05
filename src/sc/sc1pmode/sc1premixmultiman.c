@@ -12,6 +12,7 @@
 #include <lb/library.h>
 #include <lb/lbbackup.h>
 #include "sc/sc1pmode/sc1premixbonusexit.h"
+#include "sc/sc1pmode/sc1premixhighscores.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmoderules.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
@@ -133,12 +134,23 @@ static u16* sc1PRemixMultimanRecordSlot(s32 fkind)
     return &gSCManagerBackupData.spgame_records[fkind].multiman_kos;
 }
 
+u32 sc1PRemixMultimanRecordGet(s32 fkind)
+{
+    u16 *record = sc1PRemixMultimanRecordSlot(fkind);
+
+    return (record != NULL) ? (u32)*record : 0;
+}
+
 /* _ko_save: the run is kept when its KOs pass the record of the fighter, once the fighter loses its stock. */
 static void sc1PRemixMultimanSaveRecord(void)
 {
     u16 *record = sc1PRemixMultimanRecordSlot(gSCManagerSceneData.fkind);
 
     if ((record == NULL) || (sSC1PRemixMultimanKos.kos <= (s32)*record))
+    {
+        return;
+    }
+    if (sc1PRemixHighScoresCanSaveKoRecord() == FALSE)
     {
         return;
     }

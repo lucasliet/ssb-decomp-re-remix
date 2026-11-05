@@ -43,6 +43,13 @@ typedef enum SC1PTrainingMenuSlot
 /** Ports of the per-port entries (Character through Reset Sets Percent). */
 #define SC1PTRAININGMENU_PORT_COUNT 4
 
+/**
+ * Costume entry: highest value of an ordinary character (Auto, then six costumes) and of Sonic, whose Classic costumes follow
+ * the six modern ones (Training.asm _update_max_costume adds 6 for Sonic).
+ */
+#define SC1PTRAININGMENUENTRIES_COSTUME_BASE_MAX 6
+#define SC1PTRAININGMENUENTRIES_COSTUME_MAX 12
+
 /** Registry option id of an entry that only the menu keeps (Port, Preserve Menu Selections). */
 #define SC1PTRAININGMENU_OPTION_LOCAL (-1)
 

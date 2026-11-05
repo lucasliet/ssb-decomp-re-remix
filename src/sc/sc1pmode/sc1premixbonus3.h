@@ -23,6 +23,21 @@ extern sb32 sc1PRemixBonus3IsActive(void);
  */
 extern void sc1PRemixBonus3SetCourse(s32 course);
 
+/**
+ * Course the next race uses: the choice of the Bonus screen, or the one SSB64_REMIX_BONUS3_COURSE forces.
+ *
+ * @return SC1PREMIX_BONUS3_COURSE_NORMAL or SC1PREMIX_BONUS3_COURSE_REMIX.
+ */
+extern s32 sc1PRemixBonus3CourseGet(void);
+
+/**
+ * Best finish time of a fighter on the course in use (load_bonus3_time), in ticks.
+ *
+ * @param fkind Fighter kind.
+ * @return The record, 0 when the fighter has none or has no record row.
+ */
+extern u32 sc1PRemixBonus3RecordGet(s32 fkind);
+
 /** Applies the Bonus 3 rules to the battle being set up: the course, team attack, no items and no time limit; no-op outside the mode. */
 extern void sc1PRemixBonus3SetupBattle(void);
 

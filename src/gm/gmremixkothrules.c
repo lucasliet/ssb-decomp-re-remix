@@ -68,4 +68,31 @@ float gmRemixKothRulesMeterX(int port)
     return 40.0F + (70.0F * (float)port);
 }
 
+static const int dGMRemixKothRulesFfaTags[4] = { GMREMIX_KOTHRULES_TAG_RED, GMREMIX_KOTHRULES_TAG_BLUE, GMREMIX_KOTHRULES_TAG_YELLOW, GMREMIX_KOTHRULES_TAG_GREEN };
+static const int dGMRemixKothRulesTeamTags[4] = { GMREMIX_KOTHRULES_TAG_RED, GMREMIX_KOTHRULES_TAG_BLUE, GMREMIX_KOTHRULES_TAG_GREEN, GMREMIX_KOTHRULES_TAG_YELLOW };
+
+/* Color.asm tag.RED, BLUE, GREEN, YELLOW, GRAY. */
+static const unsigned int dGMRemixKothRulesTagColors[5] = { 0xED3636FF, 0x4E4EE9FF, 0x4EB94EFF, 0xFFDF1AFF, 0xACACACFF };
+
+#define GMREMIX_KOTHRULES_CONTESTED_GRAY 0xAA
+
+int gmRemixKothRulesTag(int key, int is_team_battle, int is_cpu)
+{
+    if (is_team_battle != 0)
+    {
+        return dGMRemixKothRulesTeamTags[key];
+    }
+    return (is_cpu != 0) ? GMREMIX_KOTHRULES_TAG_GRAY : dGMRemixKothRulesFfaTags[key];
+}
+
+unsigned int gmRemixKothRulesTagColor(int tag)
+{
+    return dGMRemixKothRulesTagColors[tag];
+}
+
+int gmRemixKothRulesContestedGray(int buffer)
+{
+    return GMREMIX_KOTHRULES_CONTESTED_GRAY - (2 * buffer);
+}
+
 #endif

@@ -4,6 +4,7 @@
 #ifdef REGION_REMIX
 #include "it/itremix/itremixspawn.h"
 #endif
+#include <string.h>
 #include <sys/video.h>
 #ifdef PORT
 #include <sys/audio.h>
@@ -201,6 +202,10 @@ void lbBackupClear1PHighScore(void)
         gSCManagerBackupData.spgame_records[i].spgame_total_bonuses         = dSCManagerDefaultBackupData.spgame_records[i].spgame_total_bonuses;
         gSCManagerBackupData.spgame_records[i].spgame_best_difficulty = dSCManagerDefaultBackupData.spgame_records[i].spgame_best_difficulty;
         gSCManagerBackupData.spgame_records[i].is_spgame_complete     = dSCManagerDefaultBackupData.spgame_records[i].is_spgame_complete;
+#ifdef REGION_REMIX
+        gSCManagerBackupData.spgame_records[i].remix_1p               = dSCManagerDefaultBackupData.spgame_records[i].remix_1p;
+        gSCManagerBackupData.spgame_records[i].allstar                = dSCManagerDefaultBackupData.spgame_records[i].allstar;
+#endif
     }
 }
 
@@ -228,6 +233,9 @@ void lbBackupClearBonusStageTime(void)
         gSCManagerBackupData.spgame_records[i].bonus2_time       = dSCManagerDefaultBackupData.spgame_records[i].bonus2_time;
         gSCManagerBackupData.spgame_records[i].bonus2_task_count = dSCManagerDefaultBackupData.spgame_records[i].bonus2_task_count;
     }
+#ifdef REGION_REMIX
+    memset(gSCManagerBackupData.remix_bonus, 0, sizeof(gSCManagerBackupData.remix_bonus));
+#endif
 }
 
 // 0x800D4C0C

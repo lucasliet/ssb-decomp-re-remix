@@ -39,6 +39,15 @@ extern GObj *ifRemixSpriteMake(s32 id, s32 gobj_link, s32 dl_link, f32 x, f32 y,
 extern GObj *ifRemixSpriteMakeFromFile(void *file, u32 sprite_offset, s32 gobj_link, s32 dl_link, f32 x, f32 y, u32 tint_rgba,
                                        u32 palette_rgba, f32 scale);
 
+/**
+ * File data of a reloc file, loaded into the scene heap on first use and shared with the sprites of the same file (the KOTH hill
+ * model and its meter frame are both in 0x14F3).
+ *
+ * @param file_id Reloc file id.
+ * @return The file data, or NULL when the table of loaded files is full.
+ */
+extern void *ifRemixSpriteGetFile(u32 file_id);
+
 /** Forgets the loaded sprite files; the scene heap that held them is gone. Called at each scene change. */
 extern void ifRemixSpriteSceneReset(void);
 

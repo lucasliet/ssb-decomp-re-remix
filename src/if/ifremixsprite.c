@@ -32,7 +32,7 @@ void ifRemixSpriteSceneReset(void)
 }
 
 /** File data of a reloc file, loaded into the scene heap on first use. NULL when the file table is full. */
-static void *ifRemixSpriteGetFile(u32 file_id)
+void *ifRemixSpriteGetFile(u32 file_id)
 {
     s32 i;
     void *file;

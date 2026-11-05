@@ -8,6 +8,7 @@
 #include "gm/gmremixpanel.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixstockmode.h"
+#include "gm/gmremixstockmoderules.h"
 #include "gm/gmremixtwelvecb.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 
@@ -22,6 +23,12 @@ static s32 sStockModeLastCount[GMREMIX_STOCK_MODE_PORTS] =
     GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET
 };
 static s32 sStockModeInitialLastCount[GMREMIX_STOCK_MODE_PORTS] =
+{
+    GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET
+};
+
+/* initial_stock_count_table of StockMode.asm: the stock count each port started the match with, for every Stock Mode. */
+static s32 sStockModeInitialCount[GMREMIX_STOCK_MODE_PORTS] =
 {
     GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET
 };
@@ -48,13 +55,8 @@ static s32 gmRemixStockModeLastCount(s32 player, s32 match_stocks)
     if (last_count < 0)
     {
         sStockModeLastCount[player] = match_stocks;
-        return match_stocks;
     }
-    if (gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR) != FALSE)
-    {
-        return last_count;
-    }
-    return (last_count < match_stocks) ? last_count : match_stocks;
+    return gmRemixStockModeRulesLastCount(last_count, match_stocks, gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR));
 }
 
 /**
@@ -91,26 +93,20 @@ sb32 gmRemixStockModeIsManual(s32 player)
 }
 
 /**
- * Stock count a VS fighter starts with. Stamina gives one stock (Stamina.asm stamina_stock). The Manual count only lowers the match count, as set_initial_stock_count_ keeps the
- * smaller of the two.
- *
- * The 12-Character Battle takes the count of its stock pool instead.
+ * Initial stock count of a port (StockMode.asm set_initial_stock_count_): the 12-Character Battle pool, the Last or Manual
+ * count, or the match count.
  *
  * @param player Port index of the fighter (0..3).
  * @param match_stocks Stock count of the match rules (gSCManagerBattleState->stocks).
- * @return The stock count of the fighter.
+ * @return The initial stock count of the port.
  */
-s32 gmRemixStockModeCount(s32 player, s32 match_stocks)
+static s32 gmRemixStockModeComputeInitial(s32 player, s32 match_stocks)
 {
     s32 manual_count;
 
     if (gmRemixTwelveCBIsActive() != FALSE)
     {
         return gmRemixTwelveCBGetStocks(player, match_stocks);
-    }
-    if (gmRemixStaminaIsActive() != FALSE)
-    {
-        return 0;
     }
     if (gmRemixPanel(STOCK_MODE, player) == GMREMIX_STOCK_MODE_LAST)
     {
@@ -121,7 +117,48 @@ s32 gmRemixStockModeCount(s32 player, s32 match_stocks)
         return match_stocks;
     }
     manual_count = gmRemixPanel(STOCK_COUNT, player);
-    return (manual_count < match_stocks) ? manual_count : match_stocks;
+    return gmRemixStockModeRulesManualCount(manual_count, match_stocks);
+}
+
+/**
+ * Match start: stores the initial stock count of a port (initial_stock_count_table) and returns the stock count its fighter
+ * starts with. Stamina gives one stock (Stamina.asm stamina_stock, which runs after set_initial_stock_count_, so the stored
+ * initial count is still the Stock Mode one). Calls once per port and match: Last mode stores its count here.
+ *
+ * @param player Port index of the fighter (0..3).
+ * @param match_stocks Stock count of the match rules (gSCManagerBattleState->stocks).
+ * @return The stock count of the fighter.
+ */
+s32 gmRemixStockModeBeginMatch(s32 player, s32 match_stocks)
+{
+    s32 initial_count = gmRemixStockModeComputeInitial(player, match_stocks);
+
+    sStockModeInitialCount[player] = initial_count;
+    if (gmRemixStaminaIsActive() != FALSE)
+    {
+        return 0;
+    }
+    return initial_count;
+}
+
+s32 gmRemixStockModeGetInitialCount(s32 player)
+{
+    return sStockModeInitialCount[player];
+}
+
+s32 gmRemixStockModeGetLastCount(s32 player)
+{
+    return sStockModeLastCount[player];
+}
+
+sb32 gmRemixStockModeIsLast(s32 player)
+{
+    return (gmRemixPanel(STOCK_MODE, player) == GMREMIX_STOCK_MODE_LAST) ? TRUE : FALSE;
+}
+
+void gmRemixStockModeSetLastCount(s32 player, s32 count)
+{
+    sStockModeLastCount[player] = count;
 }
 
 #endif

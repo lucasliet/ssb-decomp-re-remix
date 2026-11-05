@@ -21,6 +21,9 @@ extern float port_widescreen_clip_x_scale(void);
 #include "remix/remix_css_data.h"
 #include "remix/remix_roster_data.h"
 #include "gm/gmremixmenumusic.h"
+#include "mn/mnplayers/mnremixsonicclassic.h"
+#include "mn/mnplayers/mnremixteams.h"
+#include "mn/mnplayers/mnremixteamsrules.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixstamina.h"
@@ -28,14 +31,20 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixtwelvecbhud.h"
 #include "gm/gmremixtoggle.h"
 #include "gm/gmremixstockmode.h"
+#include "gm/gmremixstockmoderules.h"
+#include "gm/gmremixpanel.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixcssbonus.h"
 #include "mn/mnplayers/mnremixcssindicators.h"
+#include "mn/mnplayers/mnremixcssmode.h"
+#include "mn/mnplayers/mnremixtagteamcss.h"
 #include "mn/mnplayers/mnremixcssrandom.h"
+#include "mn/mnplayers/mnremixcssslide.h"
 #include "mn/mnplayers/mnremixcssrules.h"
 #include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixcpulevelrules.h"
 #include "mn/mnplayers/mnremixgoalpicker.h"
+#include "mn/mnplayers/mnremixgoalrules.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnplayers/mnremixtwelvecbcustom.h"
 #include "mn/mnplayers/mnremixtwelvecbcustomlegend.h"
@@ -48,6 +57,17 @@ extern float port_widescreen_clip_x_scale(void);
 #include "remix/remix_hud_text.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
+#define MNPLAYERSVS_GET_TEAM_COSTUME(player, fkind, team) mnRemixSonicClassicGetTeamCostume(player, fkind, team)
+#define MNPLAYERSVS_TEAM_COLOR(team) mnRemixTeamsGetColor(team)
+#define MNPLAYERSVS_TEAM_NEXT(team) mnRemixTeamsRulesNextTeam(team)
+#define MNPLAYERSVS_TEAM_PORT_COLOR(team) mnRemixTeamsGetColor(team)
+#define MNPLAYERSVS_TEAM_BUTTON_OFFSET(offsets, team) mnRemixTeamsGetButtonOffset(team, offsets)
+#else
+#define MNPLAYERSVS_GET_TEAM_COSTUME(player, fkind, team) ftParamGetCostumeTeamID(fkind, team)
+#define MNPLAYERSVS_TEAM_COLOR(team) (((team) == nSCBattleTeamIDGreen) ? 3 : (team))
+#define MNPLAYERSVS_TEAM_NEXT(team) (((team) == nSCBattleTeamIDGreen) ? 0 : (team) + 1)
+#define MNPLAYERSVS_TEAM_PORT_COLOR(team) dIFCommonPlayerTeamColorIDs[team]
+#define MNPLAYERSVS_TEAM_BUTTON_OFFSET(offsets, team) ((offsets)[team])
 #endif
 
 
@@ -96,13 +116,10 @@ Lights1 dMNPlayersVSLights12 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF
 // // // // // // // // // // // //
 
 #if defined(PORT) && defined(REGION_REMIX)
-/* TwelveCharBattle.asm (hook 0x80134430): the header sprite of the mode in the game modes file (0x12). */
-#define MNPLAYERSVS_TWELVECB_HEADER_OFFSET 0x2048
-
-/** Offset of the header sprite: the Free-for-all or Team Battle one, or the 12-Character Battle one. */
+/** Offset of the header sprite in the game modes file (0x12): the Free-for-all or Team Battle one, or the one of the Remix mode (hook 0x80134430). */
 static intptr_t mnPlayersVSGetModeHeaderOffset(intptr_t vanilla_offset)
 {
-	return (gmRemixTwelveCBIsActive() != FALSE) ? MNPLAYERSVS_TWELVECB_HEADER_OFFSET : vanilla_offset;
+	return mnRemixCssModeTitleOffset(vanilla_offset);
 }
 
 /**
@@ -119,6 +136,10 @@ static s32 mnPlayersVSGetPanelIndex(s32 player)
 }
 #else
 #define mnPlayersVSGetPanelIndex(player) (player)
+#endif
+
+#if defined(PORT) && defined(REGION_REMIX)
+static void mnPlayersVSTagTeamWriteSlot(s32 player);
 #endif
 
 // 0x8013BA80
@@ -311,6 +332,9 @@ void mnPlayersVSSelectFighterPuck(s32 player, s32 select_button)
 		mnPlayersVSUpdateHandicapLevel(held_player);
 	}
 	mnPlayersVSMakePortraitFlash(held_player);
+#if defined(PORT) && defined(REGION_REMIX)
+	mnPlayersVSTagTeamWriteSlot(held_player);
+#endif
 }
 
 // 0x80131DC4
@@ -569,6 +593,7 @@ void mnPlayersVSMakeRemixPortrait(s32 slot)
 	sobj->sprite.scaley = REMIX_CSS_PORTRAIT_SCALE;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
+	mnRemixCssSlideAttach(gobj, slot);
 }
 
 /* 12-Character Battle CSS (TwelveCharBattle.asm): the character set (0 Default .. 3 Remix) each player shows in his half, and the
@@ -1457,7 +1482,7 @@ void mnPlayersVSMakeTeamSelect(s32 team, s32 player)
 	gobj = sMNPlayersVSSlots[player].team_color_button = gcMakeGObjSPAfter(0, NULL, 27, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 34, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], offsets[team]));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], MNPLAYERSVS_TEAM_BUTTON_OFFSET(offsets, team)));
 	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 34;
 	sobj->pos.y = 131.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -2062,7 +2087,7 @@ void mnPlayersVSMakeGate(s32 player)
 	else mnPlayersVSSetGateLUT
 	(
 		gobj,
-		((sMNPlayersVSSlots[player].team == nSCBattleTeamIDGreen) ? 3 : sMNPlayersVSSlots[player].team),
+		MNPLAYERSVS_TEAM_COLOR(sMNPlayersVSSlots[player].team),
 		sMNPlayersVSSlots[player].pkind
 	);
 
@@ -2282,7 +2307,11 @@ void mnPlayersVSMakeTimeSelect(s32 number)
 		(
 			Sprite*,
 			sMNPlayersVSFiles[0],
+#if defined(PORT) && defined(REGION_REMIX)
+			mnRemixGoalPickerImageOffset(llMNPlayersCommonTimeSelectorSprite)
+#else
 			llMNPlayersCommonTimeSelectorSprite
+#endif
 		),
 		nGCProcessKindFunc,
 		NULL,
@@ -2323,6 +2352,19 @@ void mnPlayersVSMakeStockSetting(s32 number)
 void mnPlayersVSMakeStockSelect(s32 number)
 {
 	GObj *gobj;
+#if defined(PORT) && defined(REGION_REMIX)
+	u32 went_down = mnRemixTagTeamCssStocksChanged(number);
+	s32 port;
+
+	/* TagTeam.asm css.adjust_current_slot_on_stock_count_change_: a panel whose slot went down shows its fighter again. */
+	for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
+	{
+		if (((went_down & (1U << port)) != 0) && (sMNPlayersVSSlots[port].player != NULL))
+		{
+			mnPlayersVSUpdateFighter(port);
+		}
+	}
+#endif
 
 	if (sMNPlayersVSGameRuleGObj != NULL)
 	{
@@ -2743,7 +2785,11 @@ s32 mnPlayersVSGetFreeCostumeRoyal(s32 fkind, s32 player)
 			{
 				for (j = 0; j < ARRAY_COUNT(is_costume_used); j++)
 				{
+#ifdef REGION_REMIX
+					if (mnRemixSonicClassicFudgeCostume(player, fkind, mnPlayersVSGetCostumeCommonID(fkind, j)) == mnRemixSonicClassicFudgeCostume(i, fkind, sMNPlayersVSSlots[i].costume))
+#else
 					if (mnPlayersVSGetCostumeCommonID(fkind, j) ==sMNPlayersVSSlots[i].costume)
+#endif
 					{
 						is_costume_used[j] = TRUE;
 					}
@@ -2770,7 +2816,7 @@ s32 mnPlayersVSGetFreeCostume(s32 fkind, s32 player)
 	}
 	else if (sMNPlayersVSIsTeamBattle == TRUE)
 	{
-		return ftParamGetCostumeTeamID(fkind, sMNPlayersVSSlots[player].team);
+		return MNPLAYERSVS_GET_TEAM_COSTUME(player, fkind, sMNPlayersVSSlots[player].team);
 	}
 	return 0;
 }
@@ -3110,12 +3156,12 @@ void mnPlayersVSUpdateGateAll(void)
 			mnPlayersVSSetGateLUT
 			(
 				sMNPlayersVSSlots[i].panel,
-				(sMNPlayersVSSlots[i].team == nSCBattleTeamIDGreen) ? 3 : sMNPlayersVSSlots[i].team,
+				MNPLAYERSVS_TEAM_COLOR(sMNPlayersVSSlots[i].team),
 				sMNPlayersVSSlots[i].pkind
 			);
 			if (sMNPlayersVSSlots[i].fkind != nFTKindNull)
 			{
-				sMNPlayersVSSlots[i].costume = ftParamGetCostumeTeamID(sMNPlayersVSSlots[i].fkind, sMNPlayersVSSlots[i].team);
+				sMNPlayersVSSlots[i].costume = MNPLAYERSVS_GET_TEAM_COSTUME(i, sMNPlayersVSSlots[i].fkind, sMNPlayersVSSlots[i].team);
 				sMNPlayersVSSlots[i].shade = mnPlayersVSGetShade(i);
 				ftParamInitAllParts(sMNPlayersVSSlots[i].player, sMNPlayersVSSlots[i].costume, sMNPlayersVSSlots[i].shade);
 			}
@@ -3176,6 +3222,14 @@ void mnPlayersVSUpdateGameMode(void)
 
 	gobj = sMNPlayersVSGameModeGObj;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Smashketball.asm enable_toggling_mode_ (hook 0x8013537C): the button flips the Smashketball type, not the teams. */
+	if (mnRemixCssModeIsSmashketball() != FALSE)
+	{
+		mnRemixCssModeToggleSmashketballType();
+	}
+	else
+#endif
 	if (sMNPlayersVSIsTeamBattle == TRUE)
 	{
 		sMNPlayersVSIsTeamBattle = FALSE;
@@ -3185,21 +3239,40 @@ void mnPlayersVSUpdateGameMode(void)
 	func_800266A0_272A0();
 	func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 
-	if (sMNPlayersVSIsTeamBattle == FALSE)
+#if defined(PORT) && defined(REGION_REMIX)
+	/* VsRemixMenu.asm update_announcer_on_toggle_: the Remix modes skip the Free-for-all and Team Battle voice. */
+	if (mnRemixCssModeKeepsToggleVoice() != FALSE)
 	{
-		func_800269C0_275C0(nSYAudioVoiceAnnounceFreeForAll);
+#endif
+		if (sMNPlayersVSIsTeamBattle == FALSE)
+		{
+			func_800269C0_275C0(nSYAudioVoiceAnnounceFreeForAll);
+		}
+		else func_800269C0_275C0(nSYAudioVoiceAnnounceTeamBattle);
+#if defined(PORT) && defined(REGION_REMIX)
 	}
-	else func_800269C0_275C0(nSYAudioVoiceAnnounceTeamBattle);
+#endif
 
 	gcRemoveSObjAll(gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[4], mnPlayersVSGetModeHeaderOffset(offsets[sMNPlayersVSIsTeamBattle])));
+#else
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[4], offsets[sMNPlayersVSIsTeamBattle]));
+#endif
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->pos.x = 27.0F;
 	sobj->pos.y = 24.0F;
 	sobj->sprite.red = colors[sMNPlayersVSIsTeamBattle].r;
 	sobj->sprite.green = colors[sMNPlayersVSIsTeamBattle].g;
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Smashketball.asm enable_toggling_mode_ (hook 0x801354A4): the rest of the routine is skipped before the blue is set. */
+	if (mnRemixCssModeIsSmashketball() != FALSE)
+	{
+		return;
+	}
+#endif
 	sobj->sprite.blue = colors[sMNPlayersVSIsTeamBattle].b;
 
 	if (sMNPlayersVSIsTeamBattle == TRUE)
@@ -3277,14 +3350,14 @@ sb32 mnPlayersVSCheckTeamSelectInRangeAll(GObj *gobj, s32 cursor_player)
 	{
 		if ((sMNPlayersVSSlots[player].pkind != nFTPlayerKindNot) && (mnPlayersVSCheckTeamSelectInRange(gobj, player) != FALSE))
 		{
-			sMNPlayersVSSlots[player].team = (sMNPlayersVSSlots[player].team == nSCBattleTeamIDGreen) ? 0 : sMNPlayersVSSlots[player].team + 1;
+			sMNPlayersVSSlots[player].team = MNPLAYERSVS_TEAM_NEXT(sMNPlayersVSSlots[player].team);
 
-			mnPlayersVSSetGateLUT(sMNPlayersVSSlots[player].panel, color_ids[sMNPlayersVSSlots[player].team], sMNPlayersVSSlots[player].pkind);
+			mnPlayersVSSetGateLUT(sMNPlayersVSSlots[player].panel, MNPLAYERSVS_TEAM_COLOR(sMNPlayersVSSlots[player].team), sMNPlayersVSSlots[player].pkind);
 			mnPlayersVSUpdateTeamSelect(sMNPlayersVSSlots[player].team, player);
 
 			if (sMNPlayersVSSlots[player].fkind != nFTKindNull)
 			{
-				sMNPlayersVSSlots[player].costume = ftParamGetCostumeTeamID(sMNPlayersVSSlots[player].fkind, sMNPlayersVSSlots[player].team);
+				sMNPlayersVSSlots[player].costume = MNPLAYERSVS_GET_TEAM_COSTUME(player, sMNPlayersVSSlots[player].fkind, sMNPlayersVSSlots[player].team);
 				sMNPlayersVSSlots[player].shade = shade = mnPlayersVSGetShade(player);
 				ftParamInitAllParts(sMNPlayersVSSlots[player].player, sMNPlayersVSSlots[player].costume, shade);
 			}
@@ -3529,7 +3602,7 @@ void mnPlayersVSUpdatePlayerKind(s32 player)
 		else mnPlayersVSSetGateLUT
 		(
 			sMNPlayersVSSlots[player].panel,
-			(sMNPlayersVSSlots[player].team == nSCBattleTeamIDGreen) ? 3 : sMNPlayersVSSlots[player].team,
+			MNPLAYERSVS_TEAM_COLOR(sMNPlayersVSSlots[player].team),
 			sMNPlayersVSSlots[player].pkind
 		);
 		break;
@@ -3571,7 +3644,7 @@ void mnPlayersVSUpdatePlayerKind(s32 player)
 		else mnPlayersVSSetGateLUT
 		(
 			sMNPlayersVSSlots[player].panel,
-			(sMNPlayersVSSlots[player].team == nSCBattleTeamIDGreen) ? 3 : sMNPlayersVSSlots[player].team,
+			MNPLAYERSVS_TEAM_COLOR(sMNPlayersVSSlots[player].team),
 			sMNPlayersVSSlots[player].pkind
 		);
 		break;
@@ -3608,6 +3681,9 @@ void mnPlayersVSUpdatePlayerKind(s32 player)
 		sMNPlayersVSSlots[player].fkind = nFTKindNull;
 		sMNPlayersVSSlots[player].is_fighter_selected = FALSE;
 		sMNPlayersVSSlots[player].is_cursor_adjusting = FALSE;
+#ifdef REGION_REMIX
+		mnRemixSonicClassicReset(player);
+#endif
 
 		if (sMNPlayersVSControllerOrders[player] != -1)
 		{
@@ -3646,6 +3722,51 @@ void mnPlayersVSUpdatePuckDisplay(GObj *gobj, s32 player)
 	}
 	return;
 }
+
+#if defined(PORT) && defined(REGION_REMIX)
+/* TagTeam.asm css.get_stock_count_: the stock picker, lowered to the Manual stock count of the panel (StockMode option). */
+static s32 mnPlayersVSGetTagTeamStockCount(s32 player)
+{
+	if (gmRemixStockModeIsManual(player) != FALSE)
+	{
+		return gmRemixStockModeRulesManualCount(gmRemixPanel(STOCK_COUNT, player), sMNPlayersVSStockValue);
+	}
+	return sMNPlayersVSStockValue;
+}
+
+/** TagTeam.asm css.update_slot_: the fighter, costume and shade of the panel go to the current slot of its queue. */
+static void mnPlayersVSTagTeamWriteSlot(s32 player)
+{
+	mnRemixTagTeamCssWrite(player, sMNPlayersVSSlots[player].fkind, sMNPlayersVSSlots[player].costume, sMNPlayersVSSlots[player].shade,
+	                       (sMNPlayersVSIsTeamBattle != FALSE) ? TRUE : FALSE);
+}
+
+/** What the Tag Team icon row shows of a panel (TagTeam.asm css.slot_icon_update_routine_). */
+static void mnPlayersVSGetTagTeamPortInfo(s32 player, MNRemixTagTeamCssPortInfo *info)
+{
+	info->is_in_play = (sMNPlayersVSSlots[player].pkind != nFTPlayerKindNot) ? TRUE : FALSE;
+	info->stock_count = mnPlayersVSGetTagTeamStockCount(player);
+	info->panel_x = (f32)(22 + (69 * player));
+	info->team = sMNPlayersVSSlots[player].team;
+	info->is_team_battle = (sMNPlayersVSIsTeamBattle != FALSE) ? TRUE : FALSE;
+	info->fighter_gobj = sMNPlayersVSSlots[player].player;
+}
+
+/** TagTeam.asm css.prevent_start_with_empty_slots_: every panel in play has its queue filled. */
+static sb32 mnPlayersVSCheckTagTeamQueues(void)
+{
+	sb32 is_in_play[GMCOMMON_PLAYERS_MAX];
+	s32 stock_counts[GMCOMMON_PLAYERS_MAX];
+	s32 player;
+
+	for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)
+	{
+		is_in_play[player] = (sMNPlayersVSSlots[player].pkind != nFTPlayerKindNot) ? TRUE : FALSE;
+		stock_counts[player] = mnPlayersVSGetTagTeamStockCount(player);
+	}
+	return mnRemixTagTeamCssAllowsStart(is_in_play, stock_counts);
+}
+#endif
 
 // 0x80136128
 void mnPlayersVSUpdateFighter(s32 player)
@@ -3734,6 +3855,9 @@ void mnPlayersVSUpdateFighter(s32 player)
 #endif
 		sMNPlayersVSSlots[player].is_status_selected = FALSE;
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	mnPlayersVSTagTeamWriteSlot(player);
+#endif
 }
 
 // 0x801361F8
@@ -4275,6 +4399,13 @@ sb32 mnPlayersVSSelectFighter(GObj *gobj, s32 player, s32 unused, s32 select_but
 	{
 		mnPlayersVSSelectFighterPuck(player, select_button);
 		sMNPlayersVSSlots[player].recall_end_tic = sMNPlayersVSTotalTimeTics + 30;
+#if defined(PORT) && defined(REGION_REMIX)
+		/* TagTeam.asm css.speed_up_token_pickup_: 2 frames instead of 30 before the token can be taken again. */
+		if (mnRemixTagTeamCssIsActive() != FALSE)
+		{
+			sMNPlayersVSSlots[player].recall_end_tic = sMNPlayersVSTotalTimeTics + 2;
+		}
+#endif
 
 		return TRUE;
 	}
@@ -4382,6 +4513,13 @@ void mnPlayersVSSetCursorPuckOffset(s32 player)
 // 0x8013760C
 void mnPlayersVSSetCursorGrab(s32 player, s32 held_player)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	/* TagTeam.asm css.move_to_next_slot_on_pickup: taking the token again, not the recall, goes to the next slot. */
+	if (sMNPlayersVSSlots[held_player].is_recalling == FALSE)
+	{
+		mnRemixTagTeamCssNextSlot(held_player, mnPlayersVSGetTagTeamStockCount(held_player));
+	}
+#endif
 	sMNPlayersVSSlots[held_player].holder_player = player;
 	sMNPlayersVSSlots[held_player].is_selected = FALSE;
 
@@ -4389,6 +4527,9 @@ void mnPlayersVSSetCursorGrab(s32 player, s32 held_player)
 	sMNPlayersVSSlots[player].held_player = held_player;
 
 	sMNPlayersVSSlots[held_player].is_fighter_selected = FALSE;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicReset(held_player);
+#endif
 
 	mnPlayersVSUpdateFighter(held_player);
 	mnPlayersVSUpdateCursorGrabPriorities(player, held_player);
@@ -4735,14 +4876,25 @@ void mnPlayersVSUpdateCostume(s32 player, s32 select_button)
 	s32 costume;
 #ifdef REGION_REMIX
 	s32 shade = sMNPlayersVSSlots[player].shade;
+	f32 sonic_frame;
 
 	costume = sMNPlayersVSSlots[player].costume;
 	mnRemixCostumeApplyButton(sMNPlayersVSSlots[player].fkind, select_button, &costume, &shade);
+	sonic_frame = mnRemixSonicClassicToggle(player, sMNPlayersVSSlots[player].fkind, select_button, sMNPlayersVSSlots[player].costume, costume, sMNPlayersVSIsTeamBattle, sMNPlayersVSSlots[player].player);
+
+	if (sonic_frame != MNREMIX_SONIC_CLASSIC_NO_TOGGLE)
+	{
+		mnPlayersVSMakeFighter(sMNPlayersVSSlots[player].player, player, sMNPlayersVSSlots[player].fkind, costume);
+		mnRemixSonicClassicRestoreFrame(player, sMNPlayersVSSlots[player].player, sonic_frame);
+		sMNPlayersVSSlots[player].is_status_selected = FALSE;
+	}
+	costume = mnRemixSonicClassicCycleTeamCostume(player, sMNPlayersVSSlots[player].fkind, sMNPlayersVSIsTeamBattle, sMNPlayersVSSlots[player].team, costume);
 	sMNPlayersVSSlots[player].costume = costume;
 	sMNPlayersVSSlots[player].shade = shade;
 
 	ftParamInitAllParts(sMNPlayersVSSlots[player].player, costume, shade);
 	func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+	mnPlayersVSTagTeamWriteSlot(player);
 #else
 	costume = mnPlayersVSGetCostumeCommonID(sMNPlayersVSSlots[player].fkind, select_button);
 
@@ -4775,6 +4927,9 @@ sb32 mnPlayersVSCheckManFighterSelected(s32 player)
 void mnPlayersVSRecallPuck(s32 player)
 {
 	sMNPlayersVSSlots[player].is_fighter_selected = FALSE;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicReset(player);
+#endif
 	sMNPlayersVSSlots[player].is_selected = FALSE;
 	sMNPlayersVSSlots[player].is_recalling = TRUE;
 	sMNPlayersVSSlots[player].recall_tics = 0;
@@ -4969,6 +5124,111 @@ static s32 mnPlayersVSGetCostumeButtonPanel(GObj *gobj, s32 player)
 	}
 	return mnRemixCssCpuCostumePanel(player, is_cpu_panel, is_cursor_over, GMCOMMON_PLAYERS_MAX);
 }
+
+/* FGM.asm menu.TOGGLE (CharacterSelect.asm check_picker_press_) */
+#define MNPLAYERSVS_PICKER_FGM_TOGGLE 163
+
+/**
+ * Whether the cursor presses the yellow stock or time picker while it can switch its reading (CharacterSelect.asm
+ * check_picker_press_).
+ *
+ * @param gobj Cursor GObj of the player.
+ * @return TRUE when the picker toggles.
+ */
+static sb32 mnPlayersVSCheckPickerPress(GObj *gobj)
+{
+	SObj *cursor_sobj = SObjGetStruct(gobj);
+	SObj *picker_sobj;
+
+	if ((sMNPlayersVSGameRuleGObj == NULL) || (mnRemixGoalPickerCanToggle(sMNPlayersVSGameRule) == FALSE))
+	{
+		return FALSE;
+	}
+	picker_sobj = SObjGetStruct(sMNPlayersVSGameRuleGObj);
+
+	return (mnRemixGoalRulesPickerPressed(cursor_sobj->pos.x, cursor_sobj->pos.y, picker_sobj->pos.x, picker_sobj->pos.y,
+	                                      picker_sobj->sprite.width, picker_sobj->sprite.height) != 0) ? TRUE : FALSE;
+}
+
+/** Switches the picker between its two readings and draws the one it now shows. */
+static void mnPlayersVSTogglePicker(void)
+{
+	sMNPlayersVSTimeValue = mnRemixGoalPickerToggle(sMNPlayersVSTimeValue, &sMNPlayersVSGameRule);
+
+	func_800269C0_275C0(MNPLAYERSVS_PICKER_FGM_TOGGLE);
+
+	if (sMNPlayersVSGameRule == SCBATTLE_GAMERULE_TIME)
+	{
+		mnPlayersVSMakeTimeSelect(sMNPlayersVSTimeValue);
+	}
+	else mnPlayersVSMakeStockSelect(sMNPlayersVSStockValue);
+}
+
+/**
+ * Smashketball needs exactly two teams (Smashketball.asm prevent_start_unless_two_teams_).
+ *
+ * @return TRUE when the match may start.
+ */
+static sb32 mnPlayersVSCheckModeTeams(void)
+{
+	s32 pkinds[GMCOMMON_PLAYERS_MAX];
+	s32 fkinds[GMCOMMON_PLAYERS_MAX];
+	s32 teams[GMCOMMON_PLAYERS_MAX];
+	s32 player;
+
+	for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)
+	{
+		pkinds[player] = sMNPlayersVSSlots[player].pkind;
+		fkinds[player] = sMNPlayersVSSlots[player].fkind;
+		teams[player] = sMNPlayersVSSlots[player].team;
+	}
+	return mnRemixCssModeTeamsAllowStart(pkinds, fkinds, teams);
+}
+
+/* FGM.asm menu.CONFIRM (TagTeam.asm css.clear_slot_and_go_to_previous_slot_) */
+#define MNPLAYERSVS_TAGTEAM_FGM_CONFIRM 158
+
+/**
+ * TagTeam.asm css.clear_slot_and_go_to_previous_slot_ and check_recall_with_a_. A on the portraits with a placed token takes the
+ * token back and goes to the next slot; B with the token in hand empties the slot being picked and goes back one.
+ *
+ * @param player Player whose buttons are read.
+ */
+static void mnPlayersVSTagTeamCursorButtons(s32 player)
+{
+	s32 held_player;
+
+	if (mnRemixTagTeamCssIsActive() == FALSE)
+	{
+		return;
+	}
+	if (gSYControllerDevices[player].button_tap & A_BUTTON)
+	{
+		if
+		(
+			(mnPlayersVSCheckManFighterSelected(player) != FALSE) &&
+			(sMNPlayersVSSlots[player].cursor_status == nMNPlayersCursorStatusHover) &&
+			(sMNPlayersVSTotalTimeTics >= sMNPlayersVSSlots[player].recall_end_tic)
+		)
+		{
+			mnRemixTagTeamCssNextSlot(player, mnPlayersVSGetTagTeamStockCount(player));
+			mnPlayersVSRecallPuck(player);
+		}
+		return;
+	}
+	held_player = sMNPlayersVSSlots[player].held_player;
+
+	if (((gSYControllerDevices[player].button_tap & B_BUTTON) == 0) || (held_player < 0) || (held_player >= GMCOMMON_PLAYERS_MAX) ||
+	    (sMNPlayersVSSlots[held_player].pkind == nFTPlayerKindNot))
+	{
+		return;
+	}
+	if (mnRemixTagTeamCssStepBack(held_player) != FALSE)
+	{
+		mnPlayersVSTagTeamWriteSlot(held_player);
+		func_800269C0_275C0(MNPLAYERSVS_TAGTEAM_FGM_CONFIRM);
+	}
+}
 #endif
 
 // 0x801382E0
@@ -5085,6 +5345,12 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 			}
 			func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 		}
+#if defined(PORT) && defined(REGION_REMIX)
+		else if (mnPlayersVSCheckPickerPress(gobj) != FALSE)
+		{
+			mnPlayersVSTogglePicker();
+		}
+#endif
 		else if (mnPlayersVSCheckGameModeInRange(gobj))
 		{
 #ifdef PORT
@@ -5186,6 +5452,9 @@ classic_arrows_consumed:;
 	{
 		mnPlayersVSRecallPuck(player);
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	mnPlayersVSTagTeamCursorButtons(player);
+#endif
 	if (sMNPlayersVSSlots[player].is_recalling == FALSE)
 	{
 		mnPlayersVSDetectBack(player);
@@ -6273,6 +6542,10 @@ sb32 mnPlayersVSCheckReady(void)
 			}
 		}
 	}
+	if ((is_ready != FALSE) && ((mnPlayersVSCheckModeTeams() == FALSE) || (mnPlayersVSCheckTagTeamQueues() == FALSE)))
+	{
+		is_ready = FALSE;
+	}
 #endif
 	if (is_ready != FALSE)
 	{
@@ -6357,6 +6630,12 @@ static void mnPlayersVSRestoreRandomPlayer(s32 player)
 void mnPlayersVSSetSceneData(void)
 {
 	s32 i;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicSaveVS();
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+	sMNPlayersVSTimeValue = mnRemixGoalPickerSettle(sMNPlayersVSTimeValue, &sMNPlayersVSGameRule);
+#endif
 
 	gSCManagerTransferBattleState.time_limit = sMNPlayersVSTimeValue;
 	gSCManagerTransferBattleState.stocks = sMNPlayersVSStockValue;
@@ -6385,13 +6664,13 @@ void mnPlayersVSSetSceneData(void)
 		if (gSCManagerTransferBattleState.players[i].pkind == nFTPlayerKindMan)
 		{
 			gSCManagerTransferBattleState.players[i].color =
-			(gSCManagerTransferBattleState.is_team_battle == FALSE) ? i : dIFCommonPlayerTeamColorIDs[gSCManagerTransferBattleState.players[i].team];
+			(gSCManagerTransferBattleState.is_team_battle == FALSE) ? i : MNPLAYERSVS_TEAM_PORT_COLOR(gSCManagerTransferBattleState.players[i].team);
 		}
 		else if (gSCManagerTransferBattleState.is_team_battle == FALSE)
 		{
 			gSCManagerTransferBattleState.players[i].color = GMCOMMON_PLAYERS_MAX;
 		}
-		else gSCManagerTransferBattleState.players[i].color = dIFCommonPlayerTeamColorIDs[gSCManagerTransferBattleState.players[i].team];
+		else gSCManagerTransferBattleState.players[i].color = MNPLAYERSVS_TEAM_PORT_COLOR(gSCManagerTransferBattleState.players[i].team);
 
 		gSCManagerTransferBattleState.players[i].tag = (gSCManagerTransferBattleState.players[i].pkind == nFTPlayerKindMan) ? i : GMCOMMON_PLAYERS_MAX;
 
@@ -6831,11 +7110,9 @@ s32 mnPlayersVSGetNextTimeValue(s32 current_value)
 	s32 timer_values[/* */] = { 2, 3, 5, 10, 15, 30, 60, SCBATTLE_TIMELIMIT_INFINITE };
 
 #if defined(PORT) && defined(REGION_REMIX)
-	if (mnRemixGoalPickerIsActive() != FALSE)
-	{
-		return mnRemixGoalPickerNext(current_value);
-	}
-#endif
+	/* VsRemixMenu.asm change_time_options: 1/2/3/5/8/10/12/15/20/30/60/99/infinite, or the goal values of the mode. */
+	return mnRemixGoalPickerNext(current_value);
+#else
 
 	if (current_value == timer_values[ARRAY_COUNT(timer_values) - 1])
 	{
@@ -6849,6 +7126,7 @@ s32 mnPlayersVSGetNextTimeValue(s32 current_value)
 		}
 	}
 	return timer_values[ARRAY_COUNT(timer_values) - 1];
+#endif
 }
 
 // 0x8013ABDC
@@ -6858,11 +7136,9 @@ s32 mnPlayersVSGetPrevTimeValue(s32 current_value)
 	s32 timer_values[/* */] = { 2, 3, 5, 10, 15, 30, 60, SCBATTLE_TIMELIMIT_INFINITE };
 
 #if defined(PORT) && defined(REGION_REMIX)
-	if (mnRemixGoalPickerIsActive() != FALSE)
-	{
-		return mnRemixGoalPickerPrev(current_value);
-	}
-#endif
+	/* VsRemixMenu.asm change_time_options: 1/2/3/5/8/10/12/15/20/30/60/99/infinite, or the goal values of the mode. */
+	return mnRemixGoalPickerPrev(current_value);
+#else
 
 	if (current_value == timer_values[0])
 	{
@@ -6876,6 +7152,7 @@ s32 mnPlayersVSGetPrevTimeValue(s32 current_value)
 		}
 	}
 	return timer_values[ARRAY_COUNT(timer_values) - 1];
+#endif
 }
 
 // 0x8013AC7C
@@ -7012,6 +7289,9 @@ void mnPlayersVSInitVars(void)
 	sMNPlayersVSIsStart = FALSE;
 	sMNPlayersVSIsTeamBattle = gSCManagerTransferBattleState.is_team_battle;
 	sMNPlayersVSGameRule = gSCManagerTransferBattleState.game_rules;
+#if defined(PORT) && defined(REGION_REMIX)
+	mnRemixGoalPickerReset(sMNPlayersVSTimeValue);
+#endif
 
 	// initial boot sync for competitive ruleset
 	{
@@ -7092,6 +7372,9 @@ void mnPlayersVSInitVars(void)
 	}
 #endif
 	sMNPlayersVSFighterMask = gSCManagerBackupData.fighter_mask;
+#ifdef REGION_REMIX
+	mnRemixSonicClassicLoadVS();
+#endif
 }
 
 // 0x8013AFC0
@@ -7196,6 +7479,7 @@ void mnPlayersVSFuncStart(void)
 	mnPlayersVSMakeReady();
 #if defined(PORT) && defined(REGION_REMIX)
 	mnRemixPanelMenuStart(MNREMIX_PANELMENU_MODE_VS, sMNPlayersVSFiles[11], sMNPlayersVSFiles[0]);
+	mnRemixTagTeamCssSetup(mnPlayersVSGetTagTeamPortInfo);
 #endif
 	scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
 
@@ -7217,6 +7501,12 @@ void mnPlayersVSFuncStart(void)
 		{
 			func_800269C0_275C0(nSYAudioVoiceAnnounceSelectPlayer);
 		}
+#if defined(PORT) && defined(REGION_REMIX)
+		else if (mnRemixCssModeAnnounce() != FALSE)
+		{
+			return;
+		}
+#endif
 		else if (gSCManagerTransferBattleState.is_team_battle == FALSE)
 		{
 			func_800269C0_275C0(nSYAudioVoiceAnnounceFreeForAll);

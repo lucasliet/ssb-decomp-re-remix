@@ -1,8 +1,9 @@
 /**
  * ftremixshield.c - Smash Remix Shield option (src/Shield.asm color_fix_, css/Shield.asm): the env colour of a fighter shield.
  *
- * The colours 1 to 15 are the rows of Shield.asm table_custom (Red to White). Default (0), Vanilla (16) and the shield damage
- * flash keep the vanilla colour of efManagerShieldProcDisplay.
+ * The colours 1 to 15 are the rows of Shield.asm table_custom (Red to White). Vanilla (16) and the shield damage flash keep the
+ * vanilla colour of efManagerShieldProcDisplay. Default (0) is the port colour (red, blue, yellow, green), black for a CPU and the
+ * team colour in a VS team battle, red, blue, green and yellow (Shield.asm table_ffa, table_team).
  *
  * The Costume option (17) takes the colour index of the fighter costume from Character.costume_shield_color
  * (ftremixshieldcostume.c).
@@ -19,6 +20,11 @@
 
 #include "ft/ftremix/ftremixhooks.h"
 #include <gm/gmremixpanel.h>
+#include <sc/scmanager.h>
+#include <sc/sctypes.h>
+#include <sc/scdef.h>
+#include "mn/mnplayers/mnremixteams.h"
+#include "mn/mnplayers/mnremixteamsrules.h"
 
 #define FTREMIX_SHIELD_FIRST_CUSTOM 1
 #define FTREMIX_SHIELD_LAST_CUSTOM 15
@@ -68,8 +74,30 @@ static SYColorRGB ftRemixShieldGetCostumeEnvColor(const FTStruct *fp, SYColorRGB
 }
 
 /**
+ * Default option (Shield.asm color_fix_ _teams_check): the colour of the fighter team in a VS team battle (Shield.asm table_team,
+ * red, blue, green, yellow), black for a CPU, else the colour of its port (table_ffa: red, blue, yellow, green).
+ */
+static SYColorRGB ftRemixShieldGetDefaultEnvColor(const FTStruct *fp)
+{
+    SYColorRGB black = { 0x00, 0x00, 0x00 };
+    sb32 is_vs_team_battle = ((gSCManagerSceneData.scene_curr == nSCKindVSBattle) && (gSCManagerBattleState->is_team_battle != FALSE)) ? TRUE : FALSE;
+
+    switch (mnRemixTeamsRulesShieldSource(is_vs_team_battle, (fp->pkind == nFTPlayerKindCom) ? 1 : 0))
+    {
+    case MNREMIX_TEAMS_SHIELD_TEAM:
+        return mnRemixTeamsGetShieldTeamColor(fp->team);
+
+    case MNREMIX_TEAMS_SHIELD_CPU:
+        return black;
+
+    default:
+        return mnRemixTeamsGetShieldPortColor(fp->player);
+    }
+}
+
+/**
  * Env colour of the shield of a fighter (asm Shield.color_fix_): the Shield option colour of its port when it is 1 to 15,
- * the colour of its costume when it is Costume, else the vanilla colour passed in. The shield damage flash (is_damage_shield)
+ * the colour of its costume when it is Costume, the team or port colour for Default, else the vanilla colour passed in. The shield damage flash (is_damage_shield)
  * and a shield with no fighter always keep the vanilla colour.
  */
 SYColorRGB ftRemixShieldGetEnvColor(GObj *fighter_gobj, sb32 is_damage_shield, SYColorRGB vanilla)
@@ -84,6 +112,10 @@ SYColorRGB ftRemixShieldGetEnvColor(GObj *fighter_gobj, sb32 is_damage_shield, S
     fp = ftGetStruct(fighter_gobj);
     option = gmRemixPanel(SHIELD, fp->player);
 
+    if (option == 0)
+    {
+        return ((fp->team <= MNREMIX_TEAMS_LAST) && (fp->player < GMCOMMON_PLAYERS_MAX)) ? ftRemixShieldGetDefaultEnvColor(fp) : vanilla;
+    }
     if (option == FTREMIX_SHIELD_COSTUME)
     {
         return ftRemixShieldGetCostumeEnvColor(fp, vanilla);

@@ -17,6 +17,8 @@
 #define GMREMIX_SMASHKETBALL_TYPE_SOCCER 1
 #define GMREMIX_SMASHKETBALL_GOAL_NONE 100
 #define GMREMIX_SMASHKETBALL_NO_TEAM (-1)
+/* Smashketball.asm play_end_buzzer_: FGM queued after the announcer sound when the match ends. */
+#define GMREMIX_SMASHKETBALL_FGM_END_BUZZER 0x431
 
 /** TRUE during a Smashketball match. */
 extern sb32 gmRemixSmashketballIsActive(void);
@@ -58,6 +60,15 @@ extern void gmRemixSmashketballBoardUpdate(s32 home_score, s32 away_score);
 
 /** Finds the digits of the scoreboard model in the stage (setup_ _init_scoreboard). */
 extern void gmRemixSmashketballBoardSetup(void);
+
+/** setup_ _teams: paints the score digits with the colour of the Home and the Away team (Color.tag of the team index). */
+extern void gmRemixSmashketballBoardSetTeamColors(s32 home_team, s32 away_team);
+
+/** setup_ time only mode: the four score digits show the dash, only the time runs (Smashketball stage in a normal match). */
+extern void gmRemixSmashketballBoardShowDashScores(void);
+
+/** scoreboard_main_ time only mode: updates the time digits and leaves the scores alone. */
+extern void gmRemixSmashketballBoardUpdateTimeOnly(void);
 
 /** Moves the baskets joint down to its Smashketball height and returns its y (Hazards.asm _nba_jam), or 0 when missing. */
 extern f32 gmRemixSmashketballMoveBaskets(void);

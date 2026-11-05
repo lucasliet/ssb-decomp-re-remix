@@ -3,7 +3,8 @@
  * stamina_fix_6 and stamina_fix_7).
  *
  * A fighter with stock -1 is out for the rest of a Stamina battle. A second death sends it to sleep without scoring
- * again, and a star KO on the last stock is stored as -1 (the asm stores -2 and fixes it at rebirth).
+ * again, and a star KO on the last stock is stored as -1 in the fighter struct (the asm stores -2 and fixes only the fighter
+ * struct at rebirth, stamina_fix_7; the match data keeps -2, as in the asm).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -19,7 +20,8 @@
 #define FTREMIX_STAMINA_OUT_OF_STOCK -1
 
 /**
- * TRUE when the Stamina rule is active and the fighter has no stock left, so a new death must not score.
+ * TRUE when the Stamina rule is active and the port has no stock left in the match data, so a new death must not score
+ * (stamina_ko_prevent and stamina_ko_prevent_front read the match data stock, not the fighter struct).
  */
 sb32 ftRemixStaminaIsOutOfStock(FTStruct *fp)
 {
@@ -27,7 +29,7 @@ sb32 ftRemixStaminaIsOutOfStock(FTStruct *fp)
     {
         return FALSE;
     }
-    return (fp->stock_count == FTREMIX_STAMINA_OUT_OF_STOCK) ? TRUE : FALSE;
+    return (gSCManagerBattleState->players[fp->player].stock_count == FTREMIX_STAMINA_OUT_OF_STOCK) ? TRUE : FALSE;
 }
 
 /**
@@ -44,8 +46,8 @@ sb32 ftRemixStaminaIsBlastRedeath(FTStruct *fp)
 }
 
 /**
- * Rebirth check in Stamina. Stores a star KO on the last stock as -1 (stamina_fix_7) and returns TRUE when the fighter
- * is out of stock, so the caller sends it to sleep and does not respawn it.
+ * Rebirth check in Stamina. Stores a star KO on the last stock as -1 in the fighter struct (stamina_fix_7, which does not
+ * touch the match data) and returns TRUE when the fighter is out of stock, so the caller sends it to sleep and does not respawn it.
  */
 sb32 ftRemixStaminaRebirthSleeps(FTStruct *fp)
 {
@@ -56,9 +58,8 @@ sb32 ftRemixStaminaRebirthSleeps(FTStruct *fp)
     if (fp->stock_count == FTREMIX_STAMINA_STAR_KO_STOCK)
     {
         fp->stock_count = FTREMIX_STAMINA_OUT_OF_STOCK;
-        gSCManagerBattleState->players[fp->player].stock_count = FTREMIX_STAMINA_OUT_OF_STOCK;
     }
-    return ftRemixStaminaIsOutOfStock(fp);
+    return (fp->stock_count == FTREMIX_STAMINA_OUT_OF_STOCK) ? TRUE : FALSE;
 }
 
 #endif

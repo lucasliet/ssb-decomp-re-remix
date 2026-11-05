@@ -12,7 +12,7 @@ static const char *const sBoolTexts[] = { "OFF", "ON" };
 static const char *const sShieldBreakTexts[] = { "OFF", "ON", "Infinite" };
 static const char *const sDpadTexts[] = { "ON", "Reset Only", "OFF" };
 static const char *const sTypeTexts[] = { "Auto", "Human", "CPU", "Disabled" };
-static const char *const sCostumeTexts[] = { "Auto", "1", "2", "3", "4", "5", "6" };
+static const char *const sCostumeTexts[] = { "Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
 static const char *const sSpawnTexts[] = { "Auto", "Port 1", "Port 2", "Port 3", "Port 4", "Custom" };
 
 /* Training.asm string_table_oos_options (2951-2962). */
@@ -65,7 +65,7 @@ static const SC1PTrainingMenuEntry sEntries[SC1PTRAININGMENU_SLOT_COUNT] =
       SC1PTRAININGMENU_ACTION_NONE },
     { "Character:", SC1PTRAININGMENU_KIND_CHARACTER, REMIX_TRAINING_CHARACTER_P1, 1, 0, SC1PTRAININGMENUENTRIES_CHARACTER_COUNT, NULL,
       SC1PTRAININGMENU_ACTION_NONE },
-    { "Costume:", SC1PTRAININGMENU_KIND_STRINGS, REMIX_TRAINING_COSTUME_P1, 1, 0, 6, sCostumeTexts, SC1PTRAININGMENU_ACTION_NONE },
+    { "Costume:", SC1PTRAININGMENU_KIND_STRINGS, REMIX_TRAINING_COSTUME_P1, 1, 0, SC1PTRAININGMENUENTRIES_COSTUME_MAX, sCostumeTexts, SC1PTRAININGMENU_ACTION_NONE },
     { "Type:", SC1PTRAININGMENU_KIND_STRINGS, REMIX_TRAINING_TYPE_P1, 1, 0, 3, sTypeTexts, SC1PTRAININGMENU_ACTION_NONE },
     { "Spawn:", SC1PTRAININGMENU_KIND_STRINGS, REMIX_TRAINING_SPAWN_P1, 1, 0, 5, sSpawnTexts, SC1PTRAININGMENU_ACTION_NONE },
     { "Set Custom Spawn", SC1PTRAININGMENU_KIND_TITLE, SC1PTRAININGMENU_OPTION_LOCAL, 1, 0, 0, NULL,

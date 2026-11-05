@@ -8,6 +8,8 @@
 #include "sc/sc1pmode/sc1premixbonus3.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
+#include "sc/sc1pmode/sc1premixhighscores.h"
+#include "sc/sc1pmode/sc1premixscore.h"
 #include "gm/gmremixpractice.h"
 #endif
 #ifdef PORT
@@ -273,6 +275,18 @@ void sc1PManagerTrySaveBackup(sb32 is_complete_spgame)
     /* synth fkind (>= GMCOMMON_FIGHTERS_PLAYABLE_NUM) has no row in the 12-entry spgame_records */
     if (gSCManagerSceneData.fkind >= GMCOMMON_FIGHTERS_SAVE_NUM)
     {
+        return;
+    }
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+    /* extend_high_score_1p_write_ (SinglePlayer.asm, 0x800D6744): no record while the panel options or an enemy port turn them off. */
+    if (sc1PRemixHighScoresCanSaveRecord() == FALSE)
+    {
+        return;
+    }
+    if (sc1PRemixScoreUsesOwnTable() != FALSE)
+    {
+        sc1PRemixScoreTrySave(is_complete_spgame);
         return;
     }
 #endif

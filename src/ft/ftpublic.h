@@ -4,6 +4,11 @@
 #include "fttypes.h"
 
 extern sb32 ftPublicTryStartCall(GObj *gobj, f32 knockback, s32 player_num);
+#ifdef REGION_REMIX
+/* Smashketball.asm force_chant_: ftPublicTryStartCall without the damage, wait and repeat checks (a knockback of 160 or more
+ * makes the cheer). */
+extern sb32 ftPublicRemixForceCall(GObj *gobj, f32 knockback, s32 player_num);
+#endif
 extern void ftPublicTryInterruptCall(void);
 extern void ftPublicPlayCommon(u16 new_sfx);
 extern void ftPublicCommonStop(void);

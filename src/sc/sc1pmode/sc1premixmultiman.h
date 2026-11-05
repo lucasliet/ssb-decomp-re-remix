@@ -44,6 +44,14 @@ extern s32 sc1PRemixMultimanGetKos(void);
 /** Ends the horde run: back to the Bonus 2 CSS when the player was KO'd, a new run when the reset button was used. */
 extern void sc1PRemixMultimanLeaveRun(void);
 
+/**
+ * Best KO count of a fighter in the mode in use, Multi-Man or Cruel Multi-Man (_ko_amount_or_feet).
+ *
+ * @param fkind Fighter kind.
+ * @return The record, 0 when the fighter has none or has no record row.
+ */
+extern u32 sc1PRemixMultimanRecordGet(s32 fkind);
+
 /** Draws the KO counter of the horde modes as an overlay label (1P slot); no-op outside them. Call once per frame. */
 extern void sc1PRemixMultimanDrawHud(void);
 

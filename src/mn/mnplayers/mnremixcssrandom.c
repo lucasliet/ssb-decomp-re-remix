@@ -13,6 +13,7 @@
 #include "remix/remix_css_data.h"
 #include "mn/mnplayers/mnremixcssrandom.h"
 #include "mn/mnplayers/mnremixcssrules.h"
+#include "mn/mnplayers/mnremixcssslide.h"
 
 /* The recent randoms live as long as the session, like the asm table in Remix RAM. */
 static MNRemixCssRecentRandoms sMNRemixCssRecentRandoms[MNREMIX_CSS_RANDOM_PLAYERS];
@@ -37,6 +38,7 @@ void mnRemixCssRandomMakeBookend(void *css_images_file, s32 gobj_link, s32 dl_li
 
     sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, css_images_file, REMIX_CSS_RANDOM_BOOKEND_OFFSET));
     mnRemixCssRandomPrepareBookendSprite(sobj);
+    mnRemixCssSlideAttach(gobj, MNREMIX_CSS_RANDOM_BOOKEND_SLOT);
 }
 
 void mnRemixCssRandomMakeFlash(GObj *gobj, void *css_images_file)

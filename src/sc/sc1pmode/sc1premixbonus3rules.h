@@ -48,14 +48,6 @@ extern int sc1PRemixBonus3RecordVerdict(unsigned int previous, unsigned int fini
 extern int sc1PRemixBonus3CompleteFgm(int verdict, int complete_fgm, int record_fgm);
 
 /**
- * Whether a finish may be saved: the Single Player Enemy option must leave the enemy to the CPU (_time_save) and the high score
- * switch of SinglePlayer.asm (always on in the port) must be on.
- *
- * @param enemy_port 0 when the CPU plays the enemy, otherwise the port index plus one.
- */
-extern int sc1PRemixBonus3CanSaveRecord(int enemy_port);
-
-/**
  * Vertical position of the count-up timer (bonus3_timer): digits at 30 and the "sec" and "csec" marks at 20, or 210 and 200 with the
  * Dragon King HUD setting "always" (1).
  *

@@ -17,6 +17,7 @@
 #include "gm/gmremixkothdraw.h"
 #include "gm/gmremixkothhill.h"
 #include "gm/gmremixkothking.h"
+#include "gm/gmremixkothmodel.h"
 #include "gm/gmremixkothstate.h"
 #include "gm/gmremixmode.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
@@ -247,6 +248,7 @@ static void gmRemixKothProcUpdate(GObj *gobj)
         return;
     }
     gmRemixKothUpdateHill();
+    gmRemixKothModelSync();
     gmRemixKothTrackScore();
     gmRemixKothCheckMatchEnd();
     gmRemixKothHudUpdate();

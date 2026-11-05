@@ -332,6 +332,7 @@ void scVSBattleStartBattle(void)
 	ftPublicMakeActor();
 #if defined(PORT) && defined(REGION_REMIX)
 	gmRemixTwelveCBBeginMatch();
+	gmRemixTagTeamBuildQueues();
 #endif
 
 	for (player = 0; player < ARRAY_COUNT(gSCManagerBattleState->players); player++)
@@ -361,7 +362,7 @@ void scVSBattleStartBattle(void)
 		desc.handicap = gSCManagerBattleState->players[player].handicap;
 		desc.level = gSCManagerBattleState->players[player].level;
 #ifdef REGION_REMIX
-		desc.stock_count = gmRemixStockModeCount(player, gSCManagerBattleState->stocks);
+		desc.stock_count = gmRemixStockModeBeginMatch(player, gSCManagerBattleState->stocks);
 #else
 		desc.stock_count = gSCManagerBattleState->stocks;
 #endif
