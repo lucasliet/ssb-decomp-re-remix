@@ -3,6 +3,9 @@
 #ifdef PORT
 #include <ft/ftcommon/ftcommonfunctions.h>
 #endif
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixkirbyhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -63,6 +66,12 @@ void ftKirbyCopySamusSpecialNStartProcUpdate(GObj *fighter_gobj)
     {
         if (fp->ga == nMPKineticsAir)
         {
+#ifdef REGION_REMIX
+            if (ftRemixKirbyDSamusNSPCheckAerialCharge(fighter_gobj) != FALSE)
+            {
+                return;
+            }
+#endif
             ftKirbyCopySamusSpecialAirNEndSetStatus(fighter_gobj);
         }
         else if (fp->status_vars.kirby.copysamus_specialn.is_release != FALSE)
@@ -118,6 +127,12 @@ void ftKirbyCopySamusSpecialNStartSwitchStatusAir(GObj *fighter_gobj)
 
     fp->proc_damage = ftKirbyCopySamusSpecialNProcDamage;
 
+#ifdef REGION_REMIX
+    if (ftRemixKirbyDSamusNSPKeepsReleaseOnAirSwitch(fp) != FALSE)
+    {
+        return;
+    }
+#endif
     fp->status_vars.kirby.copysamus_specialn.is_release = TRUE;
 }
 
@@ -251,9 +266,22 @@ void ftKirbyCopySamusSpecialNEndProcUpdate(GObj *fighter_gobj)
         {
             charge_recoil_x = fp->passive_vars.kirby.copysamus_charge_level + 1;
 
+#ifdef REGION_REMIX
+            {
+                f32 recoil_base = FTKIRBY_COPYSAMUS_CHARGE_RECOIL_BASE;
+                f32 recoil_y_step = -FTKIRBY_COPYSAMUS_CHARGE_RECOIL_BASE;
+
+                ftRemixKirbyMewtwoNGetShootRecoil(fp, &recoil_base, &recoil_y_step);
+
+                fp->physics.vel_air.x = ((FTKIRBY_COPYSAMUS_CHARGE_RECOIL_MUL * charge_recoil_x) + recoil_base) * -fp->lr;
+
+                charge_recoil_y = charge_recoil_x + FTKIRBY_COPYSAMUS_CHARGE_RECOIL_ADD + (fp->passive_vars.kirby.copysamus_charge_recoil * recoil_y_step);
+            }
+#else
             fp->physics.vel_air.x = ((FTKIRBY_COPYSAMUS_CHARGE_RECOIL_MUL * charge_recoil_x) + FTKIRBY_COPYSAMUS_CHARGE_RECOIL_BASE) * -fp->lr;
 
             charge_recoil_y = charge_recoil_x + FTKIRBY_COPYSAMUS_CHARGE_RECOIL_ADD + (fp->passive_vars.kirby.copysamus_charge_recoil * -FTKIRBY_COPYSAMUS_CHARGE_RECOIL_BASE);
+#endif
 
             if (fp->physics.vel_air.y < charge_recoil_y)
             {
@@ -372,5 +400,9 @@ void ftKirbyCopySamusSpecialAirNStartSetStatus(GObj *fighter_gobj)
     ftMainPlayAnimEventsAll(fighter_gobj);
     ftKirbyCopySamusSpecialNInitStatusVars(fp);
 
+#ifdef REGION_REMIX
+    fp->status_vars.kirby.copysamus_specialn.is_release = ftRemixKirbyDSamusNSPAirStartIsRelease(fp, TRUE);
+#else
     fp->status_vars.kirby.copysamus_specialn.is_release = TRUE;
+#endif
 }

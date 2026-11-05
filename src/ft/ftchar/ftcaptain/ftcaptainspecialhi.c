@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixvarianttunerules.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -60,14 +63,21 @@ void ftCaptainSpecialHiProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
+#ifdef REGION_REMIX
+    f32 air_accel_mul = ftRemixVariantTuneRulesFalconDiveAirAccelMul(fp->fkind, FTCAPTAIN_FALCONDIVE_AIR_ACCEL_MUL);
+    f32 air_speed_max_mul = ftRemixVariantTuneRulesFalconDiveAirSpeedMaxMul(fp->fkind, FTCAPTAIN_FALCONDIVE_AIR_SPEED_MAX_MUL);
+#else
+    f32 air_accel_mul = FTCAPTAIN_FALCONDIVE_AIR_ACCEL_MUL;
+    f32 air_speed_max_mul = FTCAPTAIN_FALCONDIVE_AIR_SPEED_MAX_MUL;
+#endif
 
     fp->physics.vel_air.x = fp->status_vars.captain.specialhi.vel.x;
     fp->physics.vel_air.y = fp->status_vars.captain.specialhi.vel.y;
     fp->physics.vel_air.z = 0.0F;
 
-    if (ftPhysicsCheckClampAirVelXDec(fp, attr->air_speed_max_x * FTCAPTAIN_FALCONDIVE_AIR_SPEED_MAX_MUL) == FALSE)
+    if (ftPhysicsCheckClampAirVelXDec(fp, attr->air_speed_max_x * air_speed_max_mul) == FALSE)
     {
-        ftPhysicsClampAirVelXStickRange(fp, FTPHYSICS_AIRDRIFT_CLAMP_RANGE_MIN, attr->air_accel * FTCAPTAIN_FALCONDIVE_AIR_ACCEL_MUL, attr->air_speed_max_x * FTCAPTAIN_FALCONDIVE_AIR_SPEED_MAX_MUL);
+        ftPhysicsClampAirVelXStickRange(fp, FTPHYSICS_AIRDRIFT_CLAMP_RANGE_MIN, attr->air_accel * air_accel_mul, attr->air_speed_max_x * air_speed_max_mul);
         ftPhysicsApplyAirVelXFriction(fp, attr);
     }
     fp->status_vars.captain.specialhi.vel.x = fp->physics.vel_air.x;

@@ -12,6 +12,7 @@
 
 #include "ftremix.h"
 #include "ftremixhooks.h"
+#include "ft/ftremix/ftremixgroundedrules.h"
 
 /* 0x800DE428: the vanilla Mario/Luigi/Captain/Purin case, `sw r0, 0x0ADC(v0)` */
 static void ftRemixGroundedClearPassiveWord(FTStruct *fp)
@@ -19,39 +20,45 @@ static void ftRemixGroundedClearPassiveWord(FTStruct *fp)
     fp->passive_vars.mario.is_expend_tornado = FALSE;
 }
 
-/* Effective grounded_script entry of each ported Remix fighter. Fighters not
- * listed resolve to DISABLED (0x800DE44C) or to a parent case that is a no-op. */
-static sb32 ftRemixGroundedClearsPassiveWord(s32 fkind)
+/* Samus case of the vanilla table (mpcommon.c): charge_recoil (N64 0x0AE0) = 0 */
+static void ftRemixGroundedClearChargeRecoil(FTStruct *fp)
 {
-    switch (fkind)
-    {
-    case REMIX_ID_MARTH:  /* Marth.asm:490 */
-    case REMIX_ID_SONIC:  /* Sonic.asm:399 */
-    case REMIX_ID_SHEIK:  /* inherited from CAPTAIN */
-    case REMIX_ID_GOEMON: /* inherited from MARIO */
-    case REMIX_ID_CRASH:  /* inherited from MARIO */
-        return TRUE;
+    fp->passive_vars.samus.charge_recoil = 0;
+}
 
-    default:
-        return FALSE;
-    }
+/* Ebi.asm:466 grounded_script_: both passive words are cleared before the disabled return */
+static void ftRemixGroundedEbiClearWords(FTStruct *fp)
+{
+    fp->passive_vars.mario.is_expend_tornado = FALSE;
+    fp->passive_vars.samus.charge_recoil = 0;
 }
 
 void ftRemixRunGroundedScript(FTStruct *fp)
 {
-    if (fp->fkind == REMIX_ID_PEACH)
+    switch (ftRemixGroundedScriptKind(fp->fkind))
     {
-        ftRemixPeachGroundedScriptRestoreFloat(fp);
-        return;
-    }
-    if (fp->fkind == REMIX_ID_JKIRBY)
-    {
-        ftRemixJKirbyGroundedScript(fp);
-        return;
-    }
-    if (ftRemixGroundedClearsPassiveWord(fp->fkind))
-    {
+    case nFTRemixGroundedScriptClearWord:
         ftRemixGroundedClearPassiveWord(fp);
+        break;
+
+    case nFTRemixGroundedScriptClearRecoil:
+        ftRemixGroundedClearChargeRecoil(fp);
+        break;
+
+    case nFTRemixGroundedScriptEbi:
+        ftRemixGroundedEbiClearWords(fp);
+        break;
+
+    case nFTRemixGroundedScriptKirbyHat:
+        ftRemixJKirbyGroundedScript(fp);
+        break;
+
+    case nFTRemixGroundedScriptPeachFloat:
+        ftRemixPeachGroundedScriptRestoreFloat(fp);
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -86,7 +93,8 @@ void ftRemixRunOnHit(FTStruct *fp)
 {
     switch (fp->fkind)
     {
-    case REMIX_ID_SONIC: /* SonicUSPRefresh (SonicSpecial.asm:1184): up special is usable again */
+    case REMIX_ID_SONIC:  /* SonicUSPRefresh (SonicSpecial.asm:1184): up special is usable again */
+    case REMIX_ID_SSONIC: /* SonicSpecial.asm:1194 registers the same routine */
         fp->passive_vars.mario.is_expend_tornado = FALSE;
         break;
 

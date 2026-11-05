@@ -88,7 +88,11 @@ void ftCommonCatchWaitSetStatus(GObj *fighter_gobj)
         ftParamSetModelPartID(fighter_gobj, 21, 0);
         ftParamSetModelPartID(fighter_gobj, 19, -1);
     }
+#ifdef REGION_REMIX
+    else if (ftRemixYoshiIsGrabSwallower(fp->fkind))
+#else
     else if ((fp->fkind == nFTKindYoshi) || (fp->fkind == nFTKindNYoshi))
+#endif
     {
         ftParamSetModelPartID(fighter_gobj, 7, 1);
     }

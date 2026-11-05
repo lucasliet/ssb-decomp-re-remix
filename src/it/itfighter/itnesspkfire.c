@@ -2,6 +2,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixnessshared.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -158,12 +161,21 @@ sb32 itNessPKFireWaitProcUpdate(GObj *item_gobj)
 sb32 itNessPKFireFallProcUpdate(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
+#ifdef REGION_REMIX
+    f32 gravity = ITPKFIRE_GRAVITY;
+    f32 tvel = ITPKFIRE_TVEL;
+#endif
 
     if (itNessPKFireCommonUpdateAllCheckDestroy(item_gobj) == TRUE)
     {
         return TRUE;
     }
+#ifdef REGION_REMIX
+    ftRemixNessSharedPKFirePillarPhysics(ip, &gravity, &tvel);
+    itMainApplyGravityClampTVel(ip, gravity, tvel);
+#else
     else itMainApplyGravityClampTVel(ip, ITPKFIRE_GRAVITY, ITPKFIRE_TVEL);
+#endif
 
     return FALSE;
 }
@@ -250,13 +262,24 @@ GObj* itNessPKFireMakeItem(GObj *weapon_gobj, Vec3f *pos, Vec3f *vel)
     LBParticle *pc;
     LBTransform *xf;
 
+#ifdef REGION_REMIX
+    ITDesc remix_desc = dITNessPKFireItemDesc;
+
+    ftRemixNessSharedPKFireItemDesc(wp, &remix_desc);
+    item_gobj = itManagerMakeItem(weapon_gobj, &remix_desc, pos, vel, (ITEM_FLAG_COLLPROJECT | ITEM_FLAG_PARENT_WEAPON));
+#else
     item_gobj = itManagerMakeItem(weapon_gobj, &dITNessPKFireItemDesc, pos, vel, (ITEM_FLAG_COLLPROJECT | ITEM_FLAG_PARENT_WEAPON));
+#endif
 
     if (item_gobj == NULL)
     {
         return NULL;
     }
     ip = itGetStruct(item_gobj);
+
+#ifdef REGION_REMIX
+    ftRemixNessSharedPKFireItemSetKind(ip, wp);
+#endif
 
     ip->owner_gobj = wp->owner_gobj;
 

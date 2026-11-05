@@ -10,7 +10,11 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixkirbyhooks.h"
+#include "ft/ftremix/ftremixkirbyspawnrules.h"
+#include "ft/ftremix/ftremixmagichat.h"
 #include <ft/fighter.h>
+#include <gm/gmremixpanel.h>
 #include "remix/remix_roster_data.h"
 
 #define FTREMIX_KIRBYPOWER_PORTS 4
@@ -44,6 +48,31 @@ void ftRemixKirbyPowerReset(void)
     {
         sFTRemixKirbyMagicHatOn[player] = FALSE;
     }
+}
+
+/* Size.asm initialize_base_multiplier_table_ (0x800D7CB4, lines 358-381): every fighter spawn rewrites both flags of its port. */
+void ftRemixKirbyPowerInitFighter(FTStruct *fp, s32 spawn_copy_kind)
+{
+    s32 panel_value;
+
+    if (ftRemixKirbyPowerHasPort(fp) == FALSE)
+    {
+        return;
+    }
+    panel_value = gmRemixPanel(KIRBY_HAT, fp->player);
+    sFTRemixKirbyMagicHatOn[fp->player] = ftRemixKirbySpawnMagicHatStartsOn(spawn_copy_kind, panel_value);
+    sFTRemixKirbyTauntLosesPower[fp->player] = ftRemixKirbySpawnTauntLosesPower(panel_value);
+
+    if (panel_value == FTREMIX_KIRBYSPAWN_PANEL_MAGIC)
+    {
+        ftRemixKirbyMagicHatClearCharge(fp->player);
+    }
+}
+
+/** Whether the port of fp holds the magic hat (KirbyHats.asm magic_hat_on). */
+sb32 ftRemixKirbyMagicHatIsOn(FTStruct *fp)
+{
+    return ftRemixKirbyPowerHasPort(fp) && (sFTRemixKirbyMagicHatOn[fp->player] != FALSE);
 }
 
 /* set_absorbed_ (0x8014C034): a Kirby whose power is taken loses its magic hat and goes back to losing its power. */

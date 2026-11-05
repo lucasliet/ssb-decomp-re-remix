@@ -3,6 +3,7 @@
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixvarianttunerules.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -216,7 +217,14 @@ void ftCommonAppearSetStatus(GObj *fighter_gobj)
 
     fp->status_vars.common.entry.lr = fp->lr;
 
+#ifdef REGION_REMIX
+    if (ftRemixVariantTuneRulesEntryKeepsFacing(fp->fkind) == FALSE)
+    {
+        fp->lr = 0;
+    }
+#else
     fp->lr = 0;
+#endif
 
     fp->status_vars.common.entry.floor_line_id = fp->coll_data.floor_line_id;
 

@@ -6,7 +6,10 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixenvcolor.h"
+#include "ft/ftremix/ftremixcommandrules.h"
+#include "ft/ftremix/ftremixhooks.h"
 #include "ftremixcommand.h"
+#include "sc/sc1pmode/sc1ptrainingremixaction.h"
 
 #include <sys/utils.h>
 #include <lb/lbcommon.h>
@@ -346,6 +349,7 @@ void ftRemixCommandResetStatus(FTStruct *fp)
     sFTRemixCommandTranslationMultipliers[fp->player] = 1.0F;
     sFTRemixCommandEnvColors[fp->player] = 0;
     ftRemixEnvColorSetMoveset(fp->player, 0);
+    sc1PTrainingRemixActionResetFrameCount(fp->player);
 }
 
 void ftRemixCommandResetAttack(s32 player, s32 attack_id)
@@ -430,7 +434,7 @@ f32 ftRemixCommandGetTranslationMultiplier(FTStruct *fp)
     {
         return 1.0F;
     }
-    return sFTRemixCommandTranslationMultipliers[fp->player];
+    return sFTRemixCommandTranslationMultipliers[fp->player] * ftRemixCommandGetSizeFactor(ftRemixSizeGetMultiplier(fp->player));
 }
 
 u32 ftRemixCommandGetEnvColor(s32 player)

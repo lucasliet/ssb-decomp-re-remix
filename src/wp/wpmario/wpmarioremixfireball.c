@@ -24,7 +24,8 @@ extern u8 dEFManagerDamageNormalLightIDs[];
 #define WP_REMIX_EGG_MIN_VEL_TOUCHING -1280.0F /* -HIGH value, fireball.asm bounce_destroy_check */
 #define WP_REMIX_EGG_MIN_VEL_FREE     20.0F
 
-/* Maps a fighter kind (or the Kirby copy id) to its fireball index; -1 for kinds that have no fireball. */
+/* Maps a fighter kind (or the Kirby copy id) to its fireball index; -1 for kinds that have no fireball.
+ * NDRM and MLUIGI copy the fireball table entry of their parent (Character.asm:298 add_to_table(fireball, ...)). */
 s32 wpRemixMarioFireballIndexForFkind(s32 fkind)
 {
     switch (fkind)
@@ -32,9 +33,11 @@ s32 wpRemixMarioFireballIndexForFkind(s32 fkind)
     case nFTKindMario:
     case nFTKindMMario:
     case nFTKindNMario:
+    case REMIX_ID_NDRM:
         return WP_MARIO_FIREBALL_INDEX_MARIO;
     case nFTKindLuigi:
     case nFTKindNLuigi:
+    case REMIX_ID_MLUIGI:
         return WP_MARIO_FIREBALL_INDEX_LUIGI;
     case REMIX_ID_DRM:
         return WP_MARIO_FIREBALL_INDEX_CAPSULE;

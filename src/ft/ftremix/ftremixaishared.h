@@ -10,6 +10,9 @@
 /** kirby_cpu_inhale / _2 selector: the copied power of a Kirby or J Kirby, the own fkind for everyone else (Dedede included). */
 s32 ftRemixAiCopiedPowerKind(FTStruct *fp);
 
+/** metal_luigi_ai (MLuigi.asm): TRUE for Metal Mario and Metal Luigi, whose CPU only targets grounded opponents. */
+sb32 ftRemixAiIsMetalKind(s32 fkind);
+
 /** cpu_fix_2: TRUE when a Marina or N Marina CPU carries a victim in her Cargo, so it must not evade. */
 sb32 ftRemixAiEvadeIsMarinaCargo(FTStruct *fp);
 

@@ -40,6 +40,11 @@ sb32 gmRemixSmashketballIsActive(void)
     return gmRemixModeIs(MNREMIX_VSMODE_SMASHKETBALL);
 }
 
+s32 gmRemixSmashketballGetHomeTeam(void)
+{
+    return gGMRemixSmashketball.home_team;
+}
+
 /* SSB64_SMASH_TYPE=basketball|soccer overrides the port menu choice. */
 sb32 gmRemixSmashketballIsSoccer(void)
 {

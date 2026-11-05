@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/crash/ftremixcrashshared.h"
 #endif
 #include <it/item.h>
 #ifdef PORT
@@ -19,6 +20,10 @@ void ftCommonAttackAirLwProcHit(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
 #ifdef REGION_REMIX
+    if (ftRemixCrashAttackAirLwProcHit(fighter_gobj) != FALSE)
+    {
+        return;
+    }
     if (ftRemixLinkSharedIsLinkFamily(fp))
 #else
     if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))

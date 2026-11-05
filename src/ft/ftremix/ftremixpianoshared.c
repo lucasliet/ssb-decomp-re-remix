@@ -9,6 +9,7 @@
 #include "ftremix.h"
 #include "ftremixfields.h"
 #include "ftremixhooks.h"
+#include "ftremixnessrules.h"
 #include "fighter_registry.h"
 
 #define PIANO_ABSORB_BONUS_AMMO_MAX 5.0F            /* 0x40A00000, absorb_behaviour_ bonus_ammo maximum */
@@ -53,14 +54,15 @@ s32 ftRemixCommandGrabCaptureAction(GObj *grabber_gobj)
     return nFTRemixCommandGrabActionEggLayPulled;
 }
 
-/* absorb_behaviour_ (0x800E33AC): the healing for absorbed damage. Mad Piano heals 0.75x the damage, others 2x. */
+/* absorb_behaviour_ (0x800E33AC) and Lucas psi_magnet_multiplier_ (0x800E33B4): the healing for absorbed damage. Mad Piano
+ * heals 0.75x the damage, Lucas 2.5x, others 2x. */
 s32 ftRemixAbsorbHealAmount(FTStruct *fp, s32 damage)
 {
     if (fp->fkind == REMIX_ID_PIANO)
     {
         return (s32)(damage * PIANO_ABSORB_HEAL_PER_DAMAGE);
     }
-    return (s32)(damage * 2.0F);
+    return (s32)(damage * ftRemixNessRulesPsiMagnetHealMultiplier(fp->fkind));
 }
 
 /* absorb_behaviour_ (0x800E33AC): Mad Piano gains one bonus projectile per 3% absorbed, up to 5.0. */

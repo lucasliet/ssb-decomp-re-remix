@@ -88,6 +88,9 @@ loop: // This makes no sense
     this_fp->coll_data.floor_angle.z = 0.0F;
 
     ftMainSetStatus(this_gobj, nFTCommonStatusRebirthDown, 100.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+#ifdef REGION_REMIX
+    ftRemixStartItemRespawn(this_gobj); /* Item.asm respawn_with_item_ checks Action.Revive1 (7), which is RebirthDown */
+#endif
     ftMainPlayAnimEventsAll(this_gobj);
     ftPhysicsStopVelAll(this_gobj);
 
@@ -170,9 +173,6 @@ void ftCommonRebirthStandSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusRebirthStand, 0.0F, 1.0F, (FTSTATUS_PRESERVE_PLAYERTAG | FTSTATUS_PRESERVE_EFFECT | FTSTATUS_PRESERVE_COLANIM));
-#ifdef REGION_REMIX
-    ftRemixStartItemRespawn(fighter_gobj);
-#endif
     ftMainPlayAnimEventsAll(fighter_gobj);
 
     fp->is_menu_ignore = TRUE;

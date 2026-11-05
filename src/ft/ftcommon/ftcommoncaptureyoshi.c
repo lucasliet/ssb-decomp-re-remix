@@ -145,6 +145,9 @@ void ftCommonYoshiEggMakeEffect(GObj *fighter_gobj)
         if (fp->status_vars.common.captureyoshi.effect_gobj != NULL)
         {
             fp->is_effect_attach = TRUE;
+#ifdef REGION_REMIX
+            ftRemixYoshiEggColorLayEgg(fp->status_vars.common.captureyoshi.effect_gobj, fighter_gobj);
+#endif
         }
     }
 }
@@ -322,7 +325,9 @@ void ftCommonYoshiEggSetDamageCollCollisions(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTDamageColl *damage_coll = &fp->damage_colls[0];
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+    ftCommonYoshiEggDesc *egg = ftRemixYoshiEggGetDesc(fp->fkind);
+#elif defined(PORT)
     ftCommonYoshiEggDesc *egg = (ftCommonYoshiEggDesc *)port_fighter_yoshi_egg_damage_coll(fp->fkind);
 #else
     ftCommonYoshiEggDesc *egg = &dFTCommonYoshiEggDamageCollDescs[fp->fkind];
@@ -354,7 +359,11 @@ void ftCommonYoshiEggProcStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    fp->status_vars.common.captureyoshi.breakout_wait = ftRemixYoshiEggEscapeWaitMax(fp, FTCOMMON_YOSHIEGG_ESCAPE_WAIT_MAX);
+#else
     fp->status_vars.common.captureyoshi.breakout_wait = FTCOMMON_YOSHIEGG_ESCAPE_WAIT_MAX;
+#endif
 
     fp->motion_vars.flags.flag0 = 0;
 }
@@ -378,7 +387,11 @@ void ftCommonYoshiEggSetStatus(GObj *fighter_gobj)
     this_fp->is_invisible = TRUE;
 
     ftCommonYoshiEggSetDamageCollCollisions(fighter_gobj);
+#ifdef REGION_REMIX
+    ftCommonCaptureTrappedInitBreakoutVars(this_fp, ftRemixYoshiEggBreakoutInputsMin(this_fp, FTCOMMON_YOSHIEGG_BREAKOUT_INPUTS_MIN));
+#else
     ftCommonCaptureTrappedInitBreakoutVars(this_fp, FTCOMMON_YOSHIEGG_BREAKOUT_INPUTS_MIN);
+#endif
     ftKirbySpecialNApplyCaptureDamage(this_fp->capture_gobj, fighter_gobj, 5); // Br0h why
     ftParamSetPlayerTagWait(fighter_gobj, 1);
 
@@ -395,6 +408,9 @@ void ftCommonYoshiEggSetStatus(GObj *fighter_gobj)
     this_fp->physics.vel_air.y = FTCOMMON_YOSHIEGG_LAY_VEL_Y;
     this_fp->damage_mul = FTCOMMON_YOSHIEGG_DAMAGE_MUL;
 
+#ifdef REGION_REMIX
+    ftRemixYoshiEggRememberCapturer(this_fp, this_fp->capture_gobj);
+#endif
     this_fp->capture_gobj = NULL;
 
     this_fp->proc_trap = ftCommonYoshiEggProcTrap;

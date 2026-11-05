@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
+#include "ft/ftremix/ftremixvarianttunerules.h"
 #endif
 
 // // // // // // // // // // // //
@@ -179,7 +180,11 @@ void ftFoxSpecialHiUpdateModelPitch(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    fp->joints[4]->rotate.vec.f.x = (syUtilsArcTan2(fp->physics.vel_air.x, fp->physics.vel_air.y) * fp->lr) - ftRemixVariantTuneRulesFireFoxPitchOffset(fp->fkind, F_CST_DTOR32(90.0F));
+#else
     fp->joints[4]->rotate.vec.f.x = (syUtilsArcTan2(fp->physics.vel_air.x, fp->physics.vel_air.y) * fp->lr) - F_CST_DTOR32(90.0F);
+#endif
     ftParamsUpdateFighterPartsTransformAll(fp->joints[4]);
 }
 

@@ -45,6 +45,11 @@ extern f32 gcGetAObjRate(AObj *aobj);
 // Apply AnimJoint values on current frame of animation to specific DObj
 extern void gcPlayDObjAnimJoint(DObj *dobj);
 
+#ifdef REGION_REMIX
+// gcPlayDObjAnimJoint with the Y translation track multiplied by translate_y_scale (Slippy hips)
+extern void gcRemixPlayDObjAnimJointScaledY(DObj *dobj, f32 translate_y_scale);
+#endif
+
 // Apply MatAnimJoint values on current frame of animation to specific MObj
 extern void gcPlayMObjMatAnim(MObj *mobj);
 #ifdef PORT

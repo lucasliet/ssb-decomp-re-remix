@@ -223,12 +223,12 @@ sb32 ftRemixDamageGotoStunAction(GObj *fighter_gobj)
 
 /**
  * TRUE when the damage type takes the electric status path of ftCommonDamageInitDamageVars (Damage.asm stun_electric_action_,
- * 0x801412E8). In the asm, STUN, DEKU_STUN and BURY take the vanilla branch, and only ELECTRIC and FLASHBANG take the
- * electric branch.
+ * 0x801412E8). The asm chain sends every type except ELECTRIC to the vanilla branch: STUN, DEKU_STUN, BURY and FLASHBANG
+ * never take the electric path.
  */
 sb32 ftRemixDamageUsesElectricStatus(s32 element)
 {
-    return (element == nGMHitElementElectric) || (element == FTREMIX_DAMAGE_FLASHBANG);
+    return element == nGMHitElementElectric;
 }
 
 #endif

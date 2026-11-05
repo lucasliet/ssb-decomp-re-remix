@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -50,7 +53,11 @@ void ftCommonCaptureWaitSetStatus(GObj *fighter_gobj)
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusCaptureWait, 0.0F, 1.0F, (FTSTATUS_PRESERVE_TEXTUREPART | FTSTATUS_PRESERVE_MODELPART));
 
+#ifdef REGION_REMIX
+    if (ftRemixYoshiIsGrabSwallower(capture_fp->fkind))
+#else
     if ((capture_fp->fkind == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
+#endif
     {
         this_fp->is_invisible = TRUE;
 

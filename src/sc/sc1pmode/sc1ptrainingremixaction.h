@@ -18,6 +18,9 @@ extern void sc1PTrainingRemixActionStartScene(void);
 /** Scene start: makes the L glyph of the "Show Action" legend (group 0x15, the custom pause group). */
 extern void sc1PTrainingRemixActionMakeLegend(void);
 
+/** change_action_ (Command.asm _reset_training_action_frame_count): forgets the previous action of `player` so the frame count restarts at 1 even when the same action is entered again. Training only. */
+extern void sc1PTrainingRemixActionResetFrameCount(s32 player);
+
 /** After a game frame ran (the object routine of group 0xD, update_frame_counts_): counts the frames of every fighter's action. */
 extern void sc1PTrainingRemixActionCountFrame(void);
 

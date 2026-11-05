@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixvarianttunerules.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -116,7 +119,11 @@ void ftDonkeySpecialAirHiSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    fp->physics.vel_air.y = ftRemixVariantTuneRulesSpinningKongAirVelY(fp->fkind, FTDONKEY_SPINNINGKONG_AIR_VEL_Y);
+#else
     fp->physics.vel_air.y = FTDONKEY_SPINNINGKONG_AIR_VEL_Y;
+#endif
 
     ftDonkeySpecialHiSetStatusFlagGA(fighter_gobj, nMPKineticsAir);
 }

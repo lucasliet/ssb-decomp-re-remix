@@ -12,6 +12,7 @@
 #include "ftremix.h"
 #include "ftremixhooks.h"
 #include "ftremixfields.h"
+#include "ftremixpipeturnrules.h"
 #include <wp/weapon.h>
 #include <ft/ftchar/ftkirby/ftkirby.h>
 
@@ -44,10 +45,10 @@ f32 ftRemixDededeJumpAerialMultiplier(s32 jumps_used)
     return dFTRemixDededeJumpAerialMultipliers[jumps_used];
 }
 
-/** TRUE for the fighters whose Character.pipe_turn table entry is set (Dr. Luigi). They turn like Mario in pipes. */
+/** TRUE for the fighters whose Character.pipe_turn table entry is set (12 ids, see ftremixpipeturnrules.h). They turn like Mario in pipes. */
 sb32 ftRemixIsPipeTurnFkind(s32 fkind)
 {
-    return fkind == REMIX_ID_DRL;
+    return ftRemixPipeTurnRulesHasEntry(fkind);
 }
 
 /** Kirby copying Bowser fills the flame ammo (kirby_ammo_ patch). Keeps the upper half of the copy word. */

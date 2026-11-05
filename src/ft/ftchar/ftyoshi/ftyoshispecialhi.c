@@ -78,6 +78,9 @@ void ftYoshiSpecialHiUpdateEggVars(GObj *fighter_gobj)
         ftYoshiSpecialHiGetEggPosition(fp, &pos);
 
         fp->status_vars.yoshi.specialhi.egg_gobj = wpYoshiEggThrowMakeWeapon(fighter_gobj, &pos);
+#ifdef REGION_REMIX
+        ftRemixYoshiEggColorThrownEgg(fp->status_vars.yoshi.specialhi.egg_gobj, fp);
+#endif
     }
 }
 

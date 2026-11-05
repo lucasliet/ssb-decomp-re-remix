@@ -16,6 +16,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixbury.h"
+#include "ft/ftremix/ftremixparamhooks.h"
 #include "it/itremix/itremixcloakingdevice.h"
 #include "if/ifremixannouncer.h"
 #endif
@@ -337,6 +338,9 @@ void ftParamSetThrowParams(FTStruct *this_fp, GObj *throw_gobj)
 // 0x800E80F0
 void ftParamPlayVoice(FTStruct *fp, u16 voice_id)
 {
+#ifdef REGION_REMIX
+    voice_id = ftRemixAlternateVoiceId(fp, voice_id);
+#endif
     fp->p_voice = func_800269C0_275C0(voice_id);
 
     fp->voice_id = (fp->p_voice != NULL) ? fp->p_voice->sfx_id : 0;
@@ -507,7 +511,11 @@ void ftParamUpdateAnimKeys(GObj *fighter_gobj)
                 }
                 else ftAnimParseDObjFigatree(joint);
                 
+#ifdef REGION_REMIX
+                ftRemixPlayFighterJointAnim(fp, joint);
+#else
                 gcPlayDObjAnimJoint(joint);
+#endif
 
                 mobj = joint->mobj;
 
@@ -874,6 +882,7 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
     FTCommonPartContainer *commonparts_container;
     FTModelPart *modelpart;
     FTModelPartContainer *modelparts_container;
+    FTModelPartDesc *modelpart_desc;
     FTModelPartStatus *modelpart_status;
     FTParts *parts;
     DObj *joint;
@@ -910,12 +919,16 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
 
             if (modelpart_id != -1)
             {
-                if (FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart) != NULL)
+                modelpart_desc = FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart);
+#ifdef REGION_REMIX
+                modelpart_desc = ftRemixKirbyGunPartDesc(fp, joint_id, modelpart_desc);
+#endif
+                if (modelpart_desc != NULL)
                 {
                     #ifdef REGION_REMIX
-                    modelpart = ftRemixKirbyHatModelPart(fp, joint_id, modelpart_id, FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart), fp->detail_curr - nFTPartsDetailStart);
+                    modelpart = ftRemixKirbyHatModelPart(fp, joint_id, modelpart_id, modelpart_desc, fp->detail_curr - nFTPartsDetailStart);
 #else
-                    modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart)->modelparts[modelpart_id][fp->detail_curr - nFTPartsDetailStart];
+                    modelpart = &modelpart_desc->modelparts[modelpart_id][fp->detail_curr - nFTPartsDetailStart];
 #endif
 
                     joint->dl = FTMODELPART_GET_DL(modelpart);
@@ -1519,6 +1532,9 @@ void ftParamResetStatUpdateColAnim(GObj *fighter_gobj)
         break;
 
     case nFTKindKirby:
+#ifdef REGION_REMIX
+    case REMIX_ID_JKIRBY:
+#endif
         if ((fp->passive_vars.kirby.copy_id == nFTKindSamus) || (fp->passive_vars.kirby.copy_id == nFTKindNSamus))
         {
             if (fp->passive_vars.kirby.copysamus_charge_level == FTKIRBY_COPYSAMUS_CHARGE_MAX)
@@ -1549,6 +1565,11 @@ void ftParamResetStatUpdateColAnim(GObj *fighter_gobj)
             ftParamCheckSetFighterColAnimID(fighter_gobj, nGMColAnimFighterNessSpecialLwHold, 0);
         }
         break;
+#ifdef REGION_REMIX
+    default:
+        ftRemixRestartChargeFlash(fighter_gobj);
+        break;
+#endif
     }
     if (fp->damage_heal != 0)
     {
@@ -2502,7 +2523,11 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
         break;
 
     case nEFKindYoshiEggEscape:
+#ifdef REGION_REMIX
+        if (ftRemixYoshiHasEggShield(fp->fkind)) /* YoshiShared.yoshi_shield_fix_5 (0x800EB360) */
+#else
         if (fp->fkind == nFTKindYoshi)
+#endif
         {
             efManagerYoshiEggEscapeMakeEffect(fighter_gobj);
         }

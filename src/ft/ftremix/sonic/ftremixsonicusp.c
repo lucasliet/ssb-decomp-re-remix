@@ -101,6 +101,8 @@ _Static_assert(sizeof(FTRemixSonicUSPSpring) <= sizeof(((WPStruct*)0)->weapon_va
 #define SONIC_USP_SPRING_TRANSFORM_TK2 0x47
 /* Remix Projectile.id.SONIC_SPRING. Beyond the vanilla nWPKind enum (ends 0x1F).
  * wp->kind is only stored; nothing in decomp/src/wp indexes a table by it. */
+/* SonicSpecial.asm change_spring_room_ (0x80165C2C): the spring is displayed in room 0x0B instead of the weapon room 0x0E, so it is z-buffered correctly */
+#define SONIC_USP_SPRING_DL_LINK 0x0B
 #define SONIC_USP_SPRING_WPKIND 0x20
 
 /* Remix keeps these at 0x0B18 (movement flag) and 0x0B1C (grounded flag). They
@@ -663,6 +665,8 @@ static void ftRemixSonicUSPSpringStageSetting(GObj *fighter_gobj, Vec3f *spawn_p
     {
         return;
     }
+
+    gcMoveGObjDL(spring_gobj, SONIC_USP_SPRING_DL_LINK, GOBJ_PRIORITY_DEFAULT);
 
     wp = wpGetStruct(spring_gobj);
     wp->lifetime = SONIC_USP_SPRING_DURATION;

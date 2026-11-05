@@ -76,6 +76,19 @@ void sc1PTrainingRemixActionMakeLegend(void)
     gmRemixGroupDisplaySet(SC1PTRAININGREMIXACTION_GROUP_LEGEND, 1);
 }
 
+void sc1PTrainingRemixActionResetFrameCount(s32 player)
+{
+    if (gSCManagerSceneData.scene_curr != nSCKind1PTrainingMode)
+    {
+        return;
+    }
+    if ((player < 0) || (player >= SC1PTRAININGREMIXACTION_PORT_COUNT))
+    {
+        return;
+    }
+    sSC1PTrainingRemixActionPorts[player].prev_action = -1;
+}
+
 /** update_frame_counts_ for one fighter. */
 static void sc1PTrainingRemixActionCountFighter(FTStruct *fp)
 {

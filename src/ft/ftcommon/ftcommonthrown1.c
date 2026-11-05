@@ -30,6 +30,12 @@ void ftCommonThrownProcUpdate(GObj *fighter_gobj)
             (capture_fp->status_id != nFTCommonStatusThrowF)
         )
         {
+#ifdef REGION_REMIX
+            if (ftRemixThrownKeepsStatusAtAnimEnd(this_fp->fkind))
+            {
+                return;
+            }
+#endif
             ftCommonThrownSetStatusImmediate(fighter_gobj, this_fp->status_vars.common.thrown.status_id);
         }
     }
@@ -99,7 +105,11 @@ void ftCommonThrownSetStatusImmediate(GObj *fighter_gobj, s32 status_id)
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixYoshiIsThrowSwallower(capture_fp->fkind))
+#else
     if ((capture_fp->fkind == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
+#endif
     {
         this_fp->is_invisible = TRUE;
 

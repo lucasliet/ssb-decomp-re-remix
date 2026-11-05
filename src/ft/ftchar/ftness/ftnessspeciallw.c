@@ -3,6 +3,7 @@
 #include <reloc_data.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixnessshared.h"
 #endif
 
 // // // // // // // // // // // //
@@ -46,7 +47,15 @@ void ftNessSpecialLwProcAbsorb(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     DObj *joint = fp->joints[nFTPartsJointTopN];
 
+#ifdef REGION_REMIX
+    /* Lucas.asm dsp_absorption_turnaround_prevent (0x80155240): Lucas keeps his facing */
+    if (ftRemixLucasDSPKeepsFacing(fp) == FALSE)
+    {
+        fp->lr = fp->absorb_lr;
+    }
+#else
     fp->lr = fp->absorb_lr;
+#endif
 
     joint->rotate.vec.f.y += F_CST_DTOR32(-180.0F);
 
@@ -250,7 +259,9 @@ void ftNessSpecialLwInitVars(GObj *fighter_gobj)
     }
     fp->is_absorb = TRUE;
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+    fp->special_coll = ftRemixNessSharedPsiMagnetColl(fp);
+#elif defined(PORT)
     fp->special_coll = (FTSpecialColl*) ((uintptr_t)gFTNessFileMainMotion + (intptr_t)llNessMainMotionLwAbsorbFTSpecialColl);
 #else
     fp->special_coll = (FTSpecialColl*) ((uintptr_t)gFTNessFileMainMotion + (intptr_t)&llNessMainMotionLwAbsorbFTSpecialColl);

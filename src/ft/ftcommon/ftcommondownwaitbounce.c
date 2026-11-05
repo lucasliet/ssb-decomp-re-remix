@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixsandbag.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -26,6 +27,9 @@ void ftCommonDownWaitProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixSandbagPrepareGetUp(fp);
+#endif
     fp->status_vars.common.downwait.stand_wait--;
 
     if (fp->status_vars.common.downwait.stand_wait == 0)
@@ -152,6 +156,9 @@ void ftCommonDownBounceSetStatus(GObj *fighter_gobj)
     }
     else status_id = nFTCommonStatusDownBounceU;
 
+#ifdef REGION_REMIX
+    status_id = ftRemixSandbagGetBounceStatus(fp, status_id);
+#endif
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_PLAYERTAG);
     ftCommonDownBounceUpdateEffects(fighter_gobj);
 
@@ -160,6 +167,9 @@ void ftCommonDownBounceSetStatus(GObj *fighter_gobj)
     ftRemixJabLockClear(fp);
 #endif
     fp->damage_mul = 0.5F;
+#ifdef REGION_REMIX
+    ftRemixSandbagResetDownBounceDamageMul(fp);
+#endif
 
     ftParamVelDamageTransferGround(fp);
 }

@@ -122,6 +122,7 @@ f32 ftRemixLinkSharedUpSpecialFallDrift(FTStruct *fp, f32 vanilla_drift);
 void ftRemixLinkSharedUpSpecialWeapon(FTStruct *fp, WPDesc *desc);
 void ftRemixLinkSharedBoomerangWeapon(FTStruct *fp, WPDesc *desc);
 void **ftRemixLinkSharedBombFile(s32 fkind, void **vanilla_file);
+u8 ftRemixLinkSharedBombXObjKind(s32 fkind);
 
 /* DK and Captain clones, ftremixdkcaptainshared.c (dkshared.asm, captainshared.asm): the cargo, item and
  * damage checks treat JDK, Marina and NMarina as Donkey Kong; the Falcon-family clones use their own
@@ -156,6 +157,37 @@ void ftRemixEntryGetArwingAnim(void **wing_file, intptr_t *o_wing_anim, void **b
 /* Yoshi clones, ftremixyoshishared.c (yoshishared.asm): the egg and star descriptors point at the clone's own file */
 WPDesc *ftRemixYoshiEggWeaponDesc(FTStruct *fp, WPDesc *vanilla_desc);
 WPDesc *ftRemixYoshiStarWeaponDesc(FTStruct *fp, WPDesc *vanilla_desc);
+
+/* yoshishared.asm yoshi_shield_fix_1..8 (guard, roll, parry; ftparam.c egg escape effect): Yoshi and J Yoshi shield as an egg */
+sb32 ftRemixYoshiHasEggShield(s32 fkind);
+/* yoshi_grab_fix_1/2: Yoshi, Polygon Yoshi and J Yoshi grab with the tongue part and swallow the victim */
+sb32 ftRemixYoshiIsGrabSwallower(s32 fkind);
+/* yoshi_throw_fix_1: the same plus Mad Piano keep the thrown victim invisible */
+sb32 ftRemixYoshiIsThrowSwallower(s32 fkind);
+/* JYoshi.asm joshi_egg_timer and joshi_mash: egg escape frames and base breakout inputs, from the fighter that laid the egg
+ * (victim_fp->capture_gobj, still set). The arguments hold the vanilla values */
+s32 ftRemixYoshiEggEscapeWaitMax(FTStruct *victim_fp, s32 vanilla_wait);
+s32 ftRemixYoshiEggBreakoutInputsMin(FTStruct *victim_fp, s32 vanilla_inputs);
+/* Character.yoshi_egg row of a fighter (get_yoshi_egg_parameters_, get_yoshi_egg_size_): the Remix row of Bowser, Giga Bowser,
+ * Polygon Bowser, Dedede, Polygon Dedede and Mad Piano, the registry row of every other fighter. Callers:
+ * ftCommonYoshiEggSetDamageCollCollisions, ftRemixSizeScaleYoshiEggLay, efManagerYoshiEggLayMakeEffect (efmanager.c, scale) */
+ftCommonYoshiEggDesc* ftRemixYoshiEggGetDesc(s32 fkind);
+
+/* yoshishared.asm yoshi_dj_fix_1 and JYoshi.asm joshi_armor, nessshared.asm ness_jump1_/2_, ftremixjumpaerial.c */
+sb32 ftRemixJumpAerialUsesYoshiPhysics(s32 fkind);
+f32 ftRemixJumpAerialYoshiKnockbackResist(s32 fkind, f32 vanilla_resist);
+sb32 ftRemixJumpAerialUsesNessPhysics(s32 fkind);
+
+/* bowser.asm thrown_mario_bros_fix_, ftremixthrown.c: ftCommonThrownProcUpdate skips ftCommonThrownSetStatusImmediate */
+sb32 ftRemixThrownKeepsStatusAtAnimEnd(s32 fkind);
+
+/* Shield.asm alter_yoshi_egg_color_ (thrown egg, egg lay, entry egg), ftremixyoshiegg.c. Thrown egg: owner_fp is the Yoshi
+ * (call after the egg weapon is made, ftyoshispecialhi.c). Egg lay: victim_gobj is the fighter in the egg (call after the
+ * egg lay effect is made and ftRemixYoshiEggRememberCapturer ran). Entry egg: call after the entry egg effect is made. */
+void ftRemixYoshiEggColorThrownEgg(GObj *egg_gobj, FTStruct *owner_fp);
+void ftRemixYoshiEggRememberCapturer(FTStruct *victim_fp, GObj *capturer_gobj);
+void ftRemixYoshiEggColorLayEgg(GObj *egg_gobj, GObj *victim_gobj);
+void ftRemixYoshiEggColorEntryEgg(GObj *egg_gobj, FTStruct *owner_fp);
 
 /* Jigglypuff and Kirby clones, ftremixpuffkirbyshared.c (jigglypuffkirbyshared.asm, pipe_turn of marioshared.asm):
  * Dedede jump multiplier, pipe turn table, Kirby copy ammo and J Kirby cutter descriptor */
@@ -601,10 +633,6 @@ void ftRemixVisibilityPlayerTagSetAlpha(SObj *sobj, s32 player);
  * sample of a human fighter (ftMainProcUpdateInterrupt) and the buffer clear at fighter creation (ftManagerInitFighter) */
 SYController *ftRemixInputDelayController(FTStruct *fp, SYController *controller);
 void ftRemixInputDelayReset(FTStruct *fp);
-
-/* Remix CSS Kirby Hat, ftremix/ftremixkirbyhats.c (KirbyHats.asm kirby_hat_select_): the hat modelpart a Kirby or J Kirby
- * spawns with from its panel value, or -1 to keep the vanilla spawn hat */
-s32 ftRemixKirbyHatPanelModelPart(FTStruct *fp);
 
 /* Remix CSS panel Shield, ftremix/ftremixshield.c (Shield.asm color_fix_): the env colour of a shield, vanilla unless the
  * port picked a colour 1 to 15 or Costume. ftremixshieldcostume.c gives the Character.costume_shield_color index of the

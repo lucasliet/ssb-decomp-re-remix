@@ -17,6 +17,7 @@
 #include "if/ifcommon.h"
 #include "ft/fighter.h"
 #include "ft/ftparam.h"
+#include "ft/ftremix/crash/ftremixcrashshared.h"
 #include "sys/obj.h"
 
 #define ITREMIX_DANGO_KIND 0x36
@@ -73,6 +74,7 @@ GObj* itRemixDangoMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 /** Dango.pickup_main_ (PICKUP_ITEM_MAIN): restores damage, then jumps to the tomato consume tail. */
 static void itRemixDangoConsume(FTStruct *fp, GObj *item_gobj)
 {
+    ftRemixCrashEatSfx(fp);
     ftParamSetHealDamage(fp, ITREMIX_DANGO_DAMAGE_RESTORE);
     itRemixConsumeTomatoTail(fp, item_gobj);
 }

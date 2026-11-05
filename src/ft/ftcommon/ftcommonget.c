@@ -4,6 +4,8 @@
 #include "it/itremix/itremix.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
+#include "ft/ftremix/crash/ftremixcrashshared.h"
+#include "ft/ftremix/goemon/ftremixgoemonheavyitem.h"
 #endif
 #include <sc/scene.h>
 
@@ -97,6 +99,9 @@ void ftCommonLightGetProcDamage(GObj *fighter_gobj)
             switch (ip->kind)
             {
             case nITKindTomato:
+#ifdef REGION_REMIX
+                ftRemixCrashEatSfx(fp);
+#endif
                 ftParamSetHealDamage(fp, ITTOMATO_DAMAGE_HEAL);
                 itMainDestroyItem(item_gobj);
 
@@ -107,6 +112,9 @@ void ftCommonLightGetProcDamage(GObj *fighter_gobj)
                 break;
 
             case nITKindHeart:
+#ifdef REGION_REMIX
+                ftRemixCrashEatSfx(fp);
+#endif
                 ftParamSetHealDamage(fp, ITHEART_DAMAGE_HEAL);
                 itMainDestroyItem(item_gobj);
 
@@ -270,6 +278,9 @@ void ftCommonGetSetStatus(GObj *fighter_gobj, GObj *item_gobj)
     if (fp->status_id == nFTCommonStatusHeavyGet)
     {
         fp->proc_damage = ftCommonHeavyGetProcDamage;
+#ifdef REGION_REMIX
+        ftRemixGoemonHeavyItemPickupScript(fp);
+#endif
     }
     else fp->proc_damage = ftCommonLightGetProcDamage;
 }
@@ -307,7 +318,12 @@ void ftCommonLiftWaitSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, nFTCommonStatusLiftWait, 0.0F, 1.0F, ftRemixGoemonHeavyItemStatusFlags(fp, FTSTATUS_PRESERVE_SLOPECONTOUR));
+    ftRemixGoemonHeavyItemHoldScript(fp);
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusLiftWait, 0.0F, 1.0F, FTSTATUS_PRESERVE_SLOPECONTOUR);
+#endif
 
     fp->proc_damage = ftCommonHeavyGetProcDamage;
 }
@@ -352,7 +368,12 @@ void ftCommonLiftTurnSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftMainSetStatus(fighter_gobj, nFTCommonStatusLiftTurn, 0.0F, 1.0F, ftRemixGoemonHeavyItemStatusFlags(fp, FTSTATUS_PRESERVE_SLOPECONTOUR));
+    ftRemixGoemonHeavyItemTurnScript(fp);
+#else
     ftMainSetStatus(fighter_gobj, nFTCommonStatusLiftTurn, 0.0F, 1.0F, FTSTATUS_PRESERVE_SLOPECONTOUR);
+#endif
 
     fp->proc_damage = ftCommonHeavyGetProcDamage;
 

@@ -12,18 +12,22 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 
+#define FTREMIX_VISIBILITY_VALUE_CLOAKED 1
 #define FTREMIX_VISIBILITY_VALUE_NONE 2
 #define FTREMIX_VISIBILITY_VALUE_DARK 3
 #define FTREMIX_VISIBILITY_OPAQUE 0xFF
 
 /**
- * Maps a Visibility panel value to an env colour state. Cloaked (1) is not implemented in Remix,
- * so it keeps the Default state.
+ * Maps a Visibility panel value to an env colour state: 1 Cloaked (override 0xFFFFFF10), 2 None, 3 Dark,
+ * anything else Default (CharEnvColor.asm initialize_override_table_).
  */
 static FTRemixEnvColorState ftRemixVisibilityStateOfValue(s32 value)
 {
     switch (value)
     {
+    case FTREMIX_VISIBILITY_VALUE_CLOAKED:
+        return nFTRemixEnvColorStateCloaked;
+
     case FTREMIX_VISIBILITY_VALUE_NONE:
         return nFTRemixEnvColorStateNone;
 

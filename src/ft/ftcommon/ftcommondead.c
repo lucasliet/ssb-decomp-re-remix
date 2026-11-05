@@ -4,6 +4,7 @@
 #include <it/itmain.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/bowser/ftremixbowserhooks.h"
 #include "if/ifremixannouncer.h"
 #include "gr/grremix/grremixstage.h"
 #include "gm/gmremixkoth.h"
@@ -707,7 +708,12 @@ sb32 ftCommonDeadCheckInterruptCommon(GObj *fighter_gobj)
     {
         if ((gSCManagerBattleState->game_type == nSCBattleGameType1PGame) && (gSCManagerBattleState->players[fp->player].is_spgame_enemy != FALSE))
         {
+#ifdef REGION_REMIX
+            /* gbowser.asm _remix_1p_prevent_bottom_blast_zone_KO (0x8013CD64) */
+            if ((pos->y < gMPCollisionGroundData->map_bound_team_bottom) && (ftRemixGBowserSavedFromBottomBlastZone(fighter_gobj, pos) == FALSE))
+#else
             if (pos->y < gMPCollisionGroundData->map_bound_team_bottom)
+#endif
             {
                 ftCommonDeadDownSetStatus(fighter_gobj);
 

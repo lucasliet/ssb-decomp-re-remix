@@ -151,12 +151,21 @@ void ftCommonJumpAerialSetStatus(GObj *fighter_gobj, s32 input_source)
 
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_PLAYERTAG);
 
+#ifdef REGION_REMIX
+    if (ftRemixJumpAerialUsesYoshiPhysics(fp->fkind))
+    {
+        fp->proc_physics = ftYoshiJumpAerialProcPhysics;
+        fp->knockback_resist_status = ftRemixJumpAerialYoshiKnockbackResist(fp->fkind, FTYOSHI_JUMPAERIAL_KNOCKBACK_RESIST);
+    }
+    else if (ftRemixJumpAerialUsesNessPhysics(fp->fkind))
+#else
     if ((fp->fkind == nFTKindYoshi) || (fp->fkind == nFTKindNYoshi))
     {
         fp->proc_physics = ftYoshiJumpAerialProcPhysics;
         fp->knockback_resist_status = FTYOSHI_JUMPAERIAL_KNOCKBACK_RESIST;
     }
     else if ((fp->fkind == nFTKindNess) || (fp->fkind == nFTKindNNess))
+#endif
     {
         fp->proc_physics = ftNessJumpAerialProcPhysics;
         fp->status_vars.common.jumpaerial.drift = 0.0F;
@@ -180,7 +189,11 @@ void ftCommonJumpAerialSetStatus(GObj *fighter_gobj, s32 input_source)
     fp->physics.vel_air.y = (((stick_range_y * attr->jump_height_mul) + attr->jump_height_base) * attr->jumpaerial_height);
 #endif
 
+#ifdef REGION_REMIX
+    if (ftRemixJumpAerialUsesNessPhysics(fp->fkind))
+#else
     if ((fp->fkind == nFTKindNess) || (fp->fkind == nFTKindNNess))
+#endif
     {
         fp->status_vars.common.jumpaerial.vel_x = stick_range_x * attr->jumpaerial_vel_x;
     }

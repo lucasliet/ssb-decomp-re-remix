@@ -23,7 +23,11 @@ void ftCommonGuardSetStatusFromEscape(GObj *fighter_gobj)
 
     if (fp->shield_health != 0)
     {
+#ifdef REGION_REMIX
+        if (ftRemixYoshiHasEggShield(fp->fkind))
+#else
         if (fp->fkind == nFTKindYoshi)
+#endif
         {
             fp->status_vars.common.guard.effect_gobj = efManagerYoshiShieldMakeEffect(fighter_gobj);
 

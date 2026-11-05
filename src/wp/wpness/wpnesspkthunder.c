@@ -2,6 +2,9 @@
 #include <ft/fighter.h>
 #include <ef/effect.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixnessshared.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -229,6 +232,9 @@ sb32 wpNessPKThunderHeadProcUpdate(GObj *weapon_gobj)
     {
         wpNessPKThunderHeadMakeTrail(weapon_gobj, 0);
     }
+#ifdef REGION_REMIX
+    ftRemixLucasUSPRefreshHits(weapon_gobj);
+#endif
     if (wpMainDecLifeCheckExpire(wp) != FALSE)
     {
         efManagerDustExpandSmallMakeEffect(&DObjGetStruct(weapon_gobj)->translate.vec.f, 1.0F);
@@ -332,15 +338,28 @@ sb32 wpNessPKThunderHeadProcDead(GObj *weapon_gobj)
 // 0x8016B2C4
 GObj* wpNessPKThunderHeadMakeWeapon(GObj *fighter_gobj, Vec3f *pos, Vec3f *vel)
 {
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPNessPKThunderHeadWeaponDesc;
+    GObj *weapon_gobj;
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPNessPKThunderHeadWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     WPStruct *wp;
     s32 i;
 
+#ifdef REGION_REMIX
+    ftRemixNessSharedPKThunderHeadDesc(ftGetStruct(fighter_gobj), &remix_desc);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &remix_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     if (weapon_gobj == NULL)
     {
         return NULL;
     }
     wp = wpGetStruct(weapon_gobj);
+
+#ifdef REGION_REMIX
+    ftRemixLucasUSPInitHead(wp);
+#endif
 
     wp->proc_dead = wpNessPKThunderHeadProcDead;
 
@@ -411,6 +430,9 @@ sb32 wpNessPKThunderTrailProcUpdate(GObj *weapon_gobj)
     {
         efManagerNessPKThunderTrailMakeEffect(wp->owner_gobj);
     }
+#ifdef REGION_REMIX
+    ftRemixLucasUSPRefreshHits(weapon_gobj);
+#endif
     wpMainDecLifeCheckExpire(wp);
 
     DObjGetStruct(weapon_gobj)->mobj->texture_id_curr = syUtilsRandIntRange(WPPKTHUNDER_TEXTURES_NUM - 1);
@@ -435,8 +457,14 @@ GObj* wpNessPKThunderTrailMakeWeapon(GObj *head_gobj, Vec3f *pos, s32 trail_id)
     WPStruct *trail_wp;
     WPStruct *head_wp = wpGetStruct(head_gobj);
     s32 i;
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPNessPKThunderTrailWeaponDesc;
 
+    ftRemixNessSharedPKThunderTrailDesc(ftGetStruct(head_wp->owner_gobj), &remix_desc);
+    trail_gobj = wpManagerMakeWeapon(head_gobj, &remix_desc, pos, WEAPON_FLAG_PARENT_WEAPON);
+#else
     trail_gobj = wpManagerMakeWeapon(head_gobj, &dWPNessPKThunderTrailWeaponDesc, pos, WEAPON_FLAG_PARENT_WEAPON);
+#endif
 
     if (trail_gobj == NULL)
     {
@@ -450,7 +478,11 @@ GObj* wpNessPKThunderTrailMakeWeapon(GObj *head_gobj, Vec3f *pos, s32 trail_id)
 
     if (trail_id == 0)
     {
+#ifdef REGION_REMIX
+        trail_wp->group_id = ftRemixLucasUSPTrailGroupID(head_wp);
+#else
         trail_wp->group_id = wpManagerGetGroupID(head_gobj, trail_gobj); // Bruh this doesn't any take arguments but it doesn't match otherwise
+#endif
     }
     else trail_wp->group_id = head_wp->group_id;
 
@@ -559,6 +591,12 @@ sb32 wpNessPKReflectHeadProcReflector(GObj *weapon_gobj)
     WPStruct *wp = wpGetStruct(weapon_gobj);
     FTStruct *fp = ftGetStruct(wp->owner_gobj);
 
+#ifdef REGION_REMIX
+    if (ftRemixNessSharedPKReflectFixEnabled() != FALSE)
+    {
+        wpNessPKReflectHeadSetDestroyTrails(weapon_gobj, nWPNessPKThunderStatusDestroy);
+    }
+#endif
     wp->lifetime = WPPKTHUNDER_LIFETIME; // This line is indirectly responsible for the PK Thunder double reflect crash; omitting it fixes the oversight
                                          // Solution: wpNessPKReflectHeadSetDestroyTrails(weapon_gobj, nWPNessPKThunderStatusDestroy);
 
@@ -583,14 +621,24 @@ GObj* wpNessPKReflectHeadMakeWeapon(GObj *old_gobj, Vec3f *pos, f32 angle)
     WPStruct *wp;
     Vec3f dist;
     f32 unused;
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPNessPKReflectHeadWeaponDesc;
 
+    ftRemixNessSharedPKReflectHeadDesc(old_gobj, &remix_desc);
+    new_gobj = wpManagerMakeWeapon(old_gobj, &remix_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_WEAPON));
+#else
     new_gobj = wpManagerMakeWeapon(old_gobj, &dWPNessPKReflectHeadWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_WEAPON));
+#endif
 
     if (new_gobj == NULL)
     {
         return NULL;
     }
     wp = wpGetStruct(new_gobj);
+
+#ifdef REGION_REMIX
+    ftRemixNessSharedPKReflectHeadSetParent(new_gobj, old_gobj);
+#endif
 
     wp->proc_dead = wpNessPKReflectHeadProcDead;
 
@@ -666,10 +714,18 @@ GObj* wpNessPKReflectTrailMakeWeapon(GObj *old_gobj, Vec3f *pos, s32 trail_id)
     GObj *new_gobj;
     s32 unused;
     WPStruct *old_wp, *new_wp;
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPNessPKReflectTrailWeaponDesc;
+#endif
 
     old_wp = wpGetStruct(old_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixNessSharedPKReflectTrailDesc(old_gobj, trail_id, &remix_desc);
+    new_gobj = wpManagerMakeWeapon(old_gobj, &remix_desc, pos, WEAPON_FLAG_PARENT_WEAPON);
+#else
     new_gobj = wpManagerMakeWeapon(old_gobj, &dWPNessPKReflectTrailWeaponDesc, pos, WEAPON_FLAG_PARENT_WEAPON);
+#endif
 
     if (new_gobj == NULL)
     {
@@ -705,6 +761,14 @@ GObj* wpNessPKReflectTrailMakeWeapon(GObj *old_gobj, Vec3f *pos, s32 trail_id)
     // With the crash fix, this makes the trail look janky when reflected more than twice.
     // Solution: DObjGetStruct(new_gobj)->rotate.vec.f.z = syUtilsArcTan2(new_wp->physics.vel_air.y, new_wp->physics.vel_air.x) - F_CST_DTOR32(90.0F);
 
+#ifdef REGION_REMIX
+    /* nessshared.asm pk_thunder_reflect_crash_fix_2_ (0x8016BC00) */
+    if (ftRemixNessSharedPKReflectFixEnabled() != FALSE)
+    {
+        DObjGetStruct(new_gobj)->rotate.vec.f.z = syUtilsArcTan2(new_wp->physics.vel_air.y, new_wp->physics.vel_air.x) - F_CST_DTOR32(90.0F);
+    }
+    else
+#endif
     DObjGetStruct(new_gobj)->rotate.vec.f.z = DObjGetStruct(old_gobj)->rotate.vec.f.z - F_CST_DTOR32(90.0F);
 
     wpProcessUpdateHitPositions(new_gobj);

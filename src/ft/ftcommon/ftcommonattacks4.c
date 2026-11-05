@@ -1,6 +1,9 @@
 #include <ft/fighter.h>
 #include <it/item.h>
 #include <reloc_data.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "remix/remix_roster_data.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -18,6 +21,10 @@ void ftCommonAttackS4ProcUpdate(GObj *fighter_gobj)
     {
     case nFTKindPikachu:
     case nFTKindNPikachu:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_EPIKA: /* forward_smash_fix_1 (pikashared.asm:243) */
+    case REMIX_ID_JPIKA:
+#endif
         if ((fp->motion_vars.flags.flag1 != 0) || (fp->motion_vars.flags.flag2 != 0))
         {
             fp->status_vars.common.attack4.gfx_id += syUtilsRandIntRange((FTCOMMON_ATTACKS4_THUNDERSHOCK_GFX_ID_MAX - 1)) + 1;
@@ -54,6 +61,11 @@ void ftCommonAttackS4ProcUpdate(GObj *fighter_gobj)
         // Fallthrough, should break here for efficiency
     case nFTKindNess:
     case nFTKindNNess:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_JNESS: /* reflect_fix_3 (nessshared.asm:1104) */
+    case REMIX_ID_LUCAS:
+    case REMIX_ID_NLUCAS:
+#endif
         if ((fp->motion_vars.flags.flag1 != 0) && !(fp->is_reflect))
         {
             fp->is_reflect = TRUE;
@@ -98,12 +110,21 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
     {
     case nFTKindPikachu:
     case nFTKindNPikachu:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_EPIKA: /* forward_smash_fix_3 (pikashared.asm:287) */
+    case REMIX_ID_JPIKA:
+#endif
         fp->motion_vars.flags.flag2 = 0;
         fp->motion_vars.flags.flag1 = 0;
         break;
 
     case nFTKindNess:
     case nFTKindNNess:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_JNESS: /* reflect_fix_1 (nessshared.asm:1042) */
+    case REMIX_ID_LUCAS:
+    case REMIX_ID_NLUCAS:
+#endif
         fp->motion_vars.flags.flag1 = 0;
         break;
     }
@@ -114,6 +135,10 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
     {
     case nFTKindPikachu:
     case nFTKindNPikachu:
+#if defined(PORT) && defined(REGION_REMIX)
+    case REMIX_ID_EPIKA: /* forward_smash_fix_2 (pikashared.asm:265) */
+    case REMIX_ID_JPIKA:
+#endif
         fp->status_vars.common.attack4.gfx_id = 0;
 
         fp->proc_lagstart = ftParamProcPauseEffect;
@@ -128,6 +153,16 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
         fp->special_coll = (FTSpecialColl*) ((uintptr_t)gFTNessFileMainMotion + (intptr_t)&llNessMainMotionAttackS4ReflectorFTSpecialColl);
 #endif
         break;
+
+#if defined(PORT) && defined(REGION_REMIX)
+    /* reflect_fix_2 (nessshared.asm:1073): the reflector comes from the fighter's own copy of the Ness main motion file
+     * (file 0x0EE for J Ness, Lucas and N Lucas), not from gFTNessFileMainMotion */
+    case REMIX_ID_JNESS:
+    case REMIX_ID_LUCAS:
+    case REMIX_ID_NLUCAS:
+        fp->special_coll = (FTSpecialColl*) ((uintptr_t)*fp->data->p_file_mainmotion + (intptr_t)llNessMainMotionAttackS4ReflectorFTSpecialColl);
+        break;
+#endif
     }
 }
 

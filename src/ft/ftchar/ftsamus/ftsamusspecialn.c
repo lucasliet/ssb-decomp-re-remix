@@ -5,6 +5,7 @@
 #endif
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixkirbyhooks.h"
 #endif
 
 // // // // // // // // // // // //
@@ -38,7 +39,7 @@ void ftSamusSpecialNProcDamage(GObj *fighter_gobj)
 void ftSamusSpecialNGetChargeShotPosition(FTStruct *fp, Vec3f *pos)
 {
 #ifdef REGION_REMIX
-    if (ftRemixMewtwoSpecialNGetBallPosition(fp, pos))
+    if (ftRemixMewtwoSpecialNGetBallPosition(fp, pos) || ftRemixKirbyMewtwoNGetBallPosition(fp, pos))
     {
         return;
     }

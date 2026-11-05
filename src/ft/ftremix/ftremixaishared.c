@@ -33,6 +33,11 @@ s32 ftRemixAiCopiedPowerKind(FTStruct *fp)
     return ftRemixAiIsKirbyKind(fp->fkind) ? fp->passive_vars.kirby.copy_id : fp->fkind;
 }
 
+sb32 ftRemixAiIsMetalKind(s32 fkind)
+{
+    return (fkind == nFTKindMMario) || (fkind == REMIX_ID_MLUIGI);
+}
+
 sb32 ftRemixAiEvadeIsMarinaCargo(FTStruct *fp)
 {
     if ((fp->fkind != REMIX_ID_MARINA) && (fp->fkind != REMIX_ID_NMARINA))

@@ -15,6 +15,12 @@ extern void port_dump_backtrace(void);
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixcommand.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixhitrecoil.h"
+#include "ft/ftremix/ftremixmagichat.h"
+#include "ft/ftremix/ftremixmain.h"
+#include "ft/ftremix/bowser/ftremixbowserhooks.h"
+#include "ft/ftremix/ftremixmainrules.h"
+#include "ft/ftremix/ftremixsandbag.h"
 #include "ft/ftremix/sonic/ftremixsonicclassic.h"
 #include "ft/ftremix/ftremixtraining.h"
 #include "ft/ftremix/ftremixswordtrail.h"
@@ -2063,7 +2069,15 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
                 vel_damage_new.y = vel_damage_air->x;
                 vel_damage_new.x = vel_damage_air->y;
 
+#ifdef REGION_REMIX
+                /* Sandbag.asm preserve_sandbag_momentum_ (0x800E213C): Sandbag keeps its knockback X velocity. */
+                if (ftRemixSandbagKeepsKnockbackX(fp) == FALSE)
+                {
+                    vel_damage_air->x -= (1.7F * __cosf(damage_angle));
+                }
+#else
                 vel_damage_air->x -= (1.7F * __cosf(damage_angle));
+#endif
                 vel_damage_air->y -= (1.7F * __sinf(damage_angle));
 
                 if (((vel_damage_air->x * vel_damage_new.y) < 0.0F) || ((vel_damage_air->y * vel_damage_new.x) < 0.0F))
@@ -2155,7 +2169,14 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
 
         fp->proc_map(fighter_gobj);
 
+#ifdef REGION_REMIX
+        /* Bowser.asm bowser_nsp_recharge (0x800E23E0) and JigglypuffKirbyShared.asm kirby_cpu_inhale_4 (0x800E23E8). */
+        ftRemixBowserAmmoRecharge(fp);
+
+        if (ftRemixMainIsMapStarFighter(fp->fkind))
+#else
         if (fp->fkind == nFTKindKirby)
+#endif
         {
             ftParamKirbyTryMakeMapStarEffect(fighter_gobj);
         }
@@ -2287,6 +2308,8 @@ void ftMainSetHitInteractStats(FTStruct *fp, u32 attack_group_id, GObj *victim_g
     {
         ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallClang);
     }
+    /* Wario.asm body_slam_recoil_ (0x800E26D0): recoil triggers and Ebisumaru food. */
+    ftRemixHitRecoilOnHit(fp, attack_type);
 #endif
 
     for (i = 0; i < ARRAY_COUNT(fp->attack_colls); i++)
@@ -2382,7 +2405,12 @@ void ftMainUpdateAttackStatFighter(FTStruct *other_fp, FTAttackColl *other_hit, 
 
     gmCollisionGetFighterAttacksPosition(&impact_pos, this_hit, other_hit);
 
+#ifdef REGION_REMIX
+    /* Wario.asm body_slam_clang_1_ (0x800E294C): the invincible body slam of other_fp is not stopped by this_hit. */
+    if (((this_hit->damage - 10) < other_hit->damage) && (ftRemixHitRecoilIsBodySlamInvincible(other_fp) == FALSE))
+#else
     if ((this_hit->damage - 10) < other_hit->damage)
+#endif
     {
         ftMainSetHitInteractStats(this_fp, this_hit->group_id, other_gobj, nGMHitTypeAttack, other_hit->group_id, 1);
         ftMainSetHitRebound(this_gobj, this_fp, this_hit, other_gobj);
@@ -2393,7 +2421,12 @@ void ftMainUpdateAttackStatFighter(FTStruct *other_fp, FTAttackColl *other_hit, 
             gSC1PGameBonusGiantImpact = TRUE;
         }
     }
+#ifdef REGION_REMIX
+    /* Wario.asm body_slam_clang_2_ (0x800E29EC): the invincible body slam of this_fp is not stopped by other_hit. */
+    if (((other_hit->damage - 10) < this_hit->damage) && (ftRemixHitRecoilIsBodySlamInvincible(this_fp) == FALSE))
+#else
     if ((other_hit->damage - 10) < this_hit->damage)
+#endif
     {
         ftMainSetHitInteractStats(other_fp, other_hit->group_id, this_gobj, nGMHitTypeAttack, this_hit->group_id, 0);
         ftMainSetHitRebound(other_gobj, other_fp, other_hit, this_gobj);
@@ -2569,7 +2602,12 @@ void ftMainUpdateAttackStatWeapon(WPStruct *ip, WPAttackColl *wp_attack_coll, s3
 
     gmCollisionGetWeaponAttackFighterAttackPosition(&impact_pos, wp_attack_coll, index, ft_attack_coll);
 
+#ifdef REGION_REMIX
+    /* Wario.asm body_slam_clang_3_ (0x800E2F50): the invincible body slam is not stopped by a weapon. */
+    if (((ft_attack_coll->damage - 10) < damage) && (ftRemixHitRecoilIsBodySlamInvincible(fp) == FALSE))
+#else
     if ((ft_attack_coll->damage - 10) < damage)
+#endif
     {
         ftMainSetHitInteractStats(fp, ft_attack_coll->group_id, weapon_gobj, nGMHitTypeAttack, 0, TRUE);
         ftMainSetHitRebound(fighter_gobj, fp, ft_attack_coll, weapon_gobj);
@@ -2767,7 +2805,12 @@ void ftMainUpdateAttackStatItem(ITStruct *ip, ITAttackColl *it_attack_coll, s32 
 
     gmCollisionGetItemAttackFighterAttackPosition(&impact_pos, it_attack_coll, it_attack_id, ft_attack_coll);
 
+#ifdef REGION_REMIX
+    /* Wario.asm body_slam_clang_4_ (0x800E3608): the invincible body slam is not stopped by an item. */
+    if (((ft_attack_coll->damage - 10) < damage) && (ftRemixHitRecoilIsBodySlamInvincible(fp) == FALSE))
+#else
     if ((ft_attack_coll->damage - 10) < damage)
+#endif
     {
         ftMainSetHitInteractStats(fp, ft_attack_coll->group_id, item_gobj, nGMHitTypeAttack, 0, 1);
         ftMainSetHitRebound(fighter_gobj, fp, ft_attack_coll, item_gobj);
@@ -5006,11 +5049,13 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     DObj *transn_parent;                // Parent of TrasnN_Joint
     DObj *transn_child;                 // Child of TransN_Joint
     s32 i;
+    u32 anim_file_id;
 
 #ifdef REGION_REMIX
     status_id = ftRemixDededeMapKirbyInhaleStatus(fp, status_id);
     status_id = ftRemixKirbyCloneActionSwap(fighter_gobj, status_id);
     status_id = ftRemixStaminaKOStatus(fp, status_id);
+    ftRemixKirbyMagicHatRestore(fighter_gobj, fp, status_id);
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
     ftRemixTestLogStatus(fp, status_id);
@@ -5044,7 +5089,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 
     /* change_action_ extras (CrashSpecial.asm): Item.respawn_with_item_ is ftremixstartitem.c (it fires on
      * RebirthStand where the asm uses RebirthDown, docs/remix/patch_audit.md GP-9); the Training action frame
-     * reset is not ported (GP-10). */
+     * reset is in ftRemixCommandResetStatus. */
 #endif
 
     status_struct = NULL;
@@ -5327,23 +5372,29 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         motion_desc = ftRemixSonicClassicSwapMenuMotion(fp, motion_desc);
 #endif
 
+#ifdef REGION_REMIX
+        /* Marina.asm thrown_marina_patch_ (0x800E7568): ThrownDK animation of the fighter Marina grabs. */
+        anim_file_id = ftRemixMainGetAnimFileID(fp, motion_desc->anim_file_id);
+#else
+        anim_file_id = motion_desc->anim_file_id;
+#endif
         if (motion_desc->anim_desc.flags.is_use_shieldpose)
         {
             fp->figatree = (void*) ((intptr_t)motion_desc->anim_file_id + (uintptr_t)fp->data->p_file_shieldpose);
         }
-        else if (motion_desc->anim_file_id != 0)
+        else if (anim_file_id != 0)
         {
 #ifdef PORT
             /* A synth's figatree heap is sized from its own motion tables (ftManagerPortSetupSynthFileSizes); an anim
              * larger than it overwrites the fighter's DObjs (docs/bugs/remix_chardata_dedede_crash_2026-11-05.md). */
-            if (lbRelocGetFileSize(motion_desc->anim_file_id) > fp->data->file_anim_size)
+            if (lbRelocGetFileSize(anim_file_id) > fp->data->file_anim_size)
             {
                 port_log("SSB64: ftMainSetStatus - figatree overflow fkind=%d status=0x%x anim_file=%u size=%u heap=%u\n",
-                    fp->fkind, status_id, (u32)motion_desc->anim_file_id,
-                    (u32)lbRelocGetFileSize(motion_desc->anim_file_id), (u32)fp->data->file_anim_size);
+                    fp->fkind, status_id, anim_file_id,
+                    (u32)lbRelocGetFileSize(anim_file_id), (u32)fp->data->file_anim_size);
             }
 #endif
-            lbRelocGetForceExternHeapFile(motion_desc->anim_file_id, (void*) fp->figatree_heap);
+            lbRelocGetForceExternHeapFile(anim_file_id, (void*) fp->figatree_heap);
             fp->figatree = fp->figatree_heap;
         }
         else fp->figatree = NULL;

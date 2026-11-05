@@ -15,6 +15,8 @@
 #define LINKSHARED_USP_JLINK_AIR_VEL_Y 71.0F        /* 0x428E0000, linkshared.asm up_special_velocity_ */
 #define LINKSHARED_USP_ELINK_AIR_VEL_Y 72.0F        /* 0x42900000, linkshared.asm up_special_velocity_ */
 #define LINKSHARED_USP_JLINK_FALL_DRIFT 0.75F       /* 0x3F400000, linkshared.asm up_special_aerial_drift_ */
+#define LINKSHARED_BOMB_XOBJ_KIND_DEFAULT 0x2E      /* original line 1 of create_bomb_ at 0x801865DC */
+#define LINKSHARED_BOMB_XOBJ_KIND_YLINK 0x48        /* linkshared.asm render_routine_: Young Link's bombchu */
 
 /* dair_fix_, grab_shield_fix_, item_shield_fix_ and the Link checks in ftCommonAttackAirLw, ftCommonCatchWait
  * and ftParamLinkResetShieldModelParts: the Link family that uses the Link shield and dair code paths. */
@@ -130,6 +132,17 @@ void **ftRemixLinkSharedBombFile(s32 fkind, void **vanilla_file)
         return vanilla_file;
     }
     return data->p_file_main;
+}
+
+/**
+ * itLinkBombMakeItem, linkshared.asm render_routine_ (0x801865DC): the xobj kind of the first xobj of the bomb. Young Link's
+ * bombchu uses kind 0x48; every other owner keeps the vanilla 0x2E. The second xobj (the child DObj) keeps 0x2E.
+ * @param fkind Fighter kind of the bomb creator (not the Kirby copy id).
+ * @return Kind for gcAddXObjForDObjFixed.
+ */
+u8 ftRemixLinkSharedBombXObjKind(s32 fkind)
+{
+    return (fkind == REMIX_ID_YLINK) ? LINKSHARED_BOMB_XOBJ_KIND_YLINK : LINKSHARED_BOMB_XOBJ_KIND_DEFAULT;
 }
 
 #endif

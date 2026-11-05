@@ -6,6 +6,9 @@ extern void portFixupMObjSub(void *mobjsub);
 #endif
 #ifdef REGION_REMIX
 extern f32 itRemixCloudScaleAnimValue(DObj *dobj, f32 value);
+
+/* Slippy.asm animate_part_patch_ (0x8000CCBC): Y translation multiplier of the animation being played, 1.0 by default */
+static f32 sGCAnimTranslateYScale = 1.0F;
 #endif
 
 extern void syInterpCubic(Vec3f*, void*, f32);
@@ -1051,6 +1054,9 @@ void gcPlayDObjAnimJoint(DObj *dobj)
                         break;
 
                     case nGCAnimTrackTraY: 
+#ifdef REGION_REMIX
+                        value *= sGCAnimTranslateYScale; /* Slippy.asm apply_y_multiplier_ (0x8000CEE8) */
+#endif
                         dobj->translate.vec.f.y = value; 
                         break;
 
@@ -1089,6 +1095,18 @@ void gcPlayDObjAnimJoint(DObj *dobj)
         }
     }
 }
+
+#ifdef REGION_REMIX
+/* Slippy.asm animate_part_y_multiplier_: gcPlayDObjAnimJoint with the Y translation track multiplied by translate_y_scale */
+void gcRemixPlayDObjAnimJointScaledY(DObj *dobj, f32 translate_y_scale)
+{
+    sGCAnimTranslateYScale = translate_y_scale;
+
+    gcPlayDObjAnimJoint(dobj);
+
+    sGCAnimTranslateYScale = 1.0F;
+}
+#endif
 
 void gcParseMObjMatAnimJoint(MObj *mobj)
 {

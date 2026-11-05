@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixmagichat.h"
 #include "if/ifremixannouncer.h"
 #include "mn/mnvsmode/mnremixvsstats.h"
 #endif
@@ -153,6 +154,9 @@ void ftKirbySpecialAirNSetStatusSelect(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixKirbyMagicHatRoll(fighter_gobj);
+#endif
 #ifdef PORT
     /* Synth copy power: copy_id is the inhaled synth's own fkind, OOB for the
      * vanilla table. SR patches kirby_air_nsp[victim] to the synth's air

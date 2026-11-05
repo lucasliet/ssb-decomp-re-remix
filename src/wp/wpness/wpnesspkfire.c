@@ -2,6 +2,9 @@
 #include <it/item.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixnessshared.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -86,6 +89,12 @@ sb32 wpNessPKFireProcHit(GObj *weapon_gobj)
     pos.y = (pos.y * WPPKFIRE_POS_MUL) + DObjGetStruct(weapon_gobj)->translate.vec.f.y;
     pos.z = (pos.z * WPPKFIRE_POS_MUL) + DObjGetStruct(weapon_gobj)->translate.vec.f.z;
 
+#ifdef REGION_REMIX
+    if (ftRemixNessSharedPKFireExplode(wp, &pos) != FALSE)
+    {
+        return TRUE;
+    }
+#endif
     itNessPKFireMakeItem(weapon_gobj, &pos, &vel);
 
     return TRUE;
@@ -132,14 +141,28 @@ sb32 wpNessPKFireProcAbsorb(GObj *weapon_gobj)
 GObj* wpNessPKFireMakeWeapon(GObj *fighter_gobj, Vec3f *pos, Vec3f *vel, f32 angle)
 {
     s32 unused;
+#ifdef REGION_REMIX
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    WPDesc remix_desc = dWPNessPKFireWeaponDesc;
+    GObj *weapon_gobj;
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPNessPKFireWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     WPStruct *wp;
 
+#ifdef REGION_REMIX
+    ftRemixNessSharedPKFireWeaponDesc(fp, &remix_desc);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &remix_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     if (weapon_gobj == NULL)
     {
         return NULL;
     }
     wp = wpGetStruct(weapon_gobj);
+
+#ifdef REGION_REMIX
+    ftRemixNessSharedPKFireSetKind(wp, fp);
+#endif
 
     wp->lifetime = WPPKFIRE_LIFETIME;
 

@@ -334,10 +334,13 @@ static s32 ftRemixBowserAmmo(FTStruct *fp)
     return (u16) *ammo;
 }
 
-/* Subtracts `amount` from the halfword ammo. G-Bowser's ammo is never subtracted (the ROM skips it). */
+/* Subtracts `amount` from the halfword ammo (`sh`): the upper halfword, the recharge timer of ftremixbowserammo.c, is kept.
+ * G-Bowser's ammo is never subtracted (the ROM skips it). */
 static void ftRemixBowserAmmoSub(FTStruct *fp, s32 amount)
 {
-    *ftRemixBowserAmmoWord(fp) = (u16) (ftRemixBowserAmmo(fp) - amount);
+    s32 *ammo_word = ftRemixBowserAmmoWord(fp);
+
+    *ammo_word = (s32)(((u32)*ammo_word & ~0xFFFFu) | (u16) (ftRemixBowserAmmo(fp) - amount));
 }
 
 /* BowserNSP.idletransition_: returns to the wait or fall status when the animation ends. */

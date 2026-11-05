@@ -1,6 +1,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixpikashared.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -98,11 +101,19 @@ void wpPikachuThunderHeadMakeTrailEffect(GObj *weapon_gobj, s32 arg1)
 
     if (arg1 == 3)
     {
+#ifdef REGION_REMIX
+        efManagerPikachuThunderTrailMakeEffectForWeapon(weapon_gobj, &pos, 10, 3);
+#else
         efManagerPikachuThunderTrailMakeEffect(&pos, 10, 3);
+#endif
     }
     else if (arg1 == -1)
     {
+#ifdef REGION_REMIX
+        efManagerPikachuThunderTrailMakeEffectForWeapon(weapon_gobj, &pos, 6, 0);
+#else
         efManagerPikachuThunderTrailMakeEffect(&pos, 6, 0);
+#endif
     }
     else wpPikachuThunderTrailMakeWeapon(weapon_gobj, &pos);
 }
@@ -157,9 +168,18 @@ sb32 wpPikachuThunderHeadProcDead(GObj *weapon_gobj)
 GObj* wpPikachuThunderHeadMakeWeapon(GObj *fighter_gobj, Vec3f *pos, Vec3f *vel)
 {
     s32 unused;
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPPikachuThunderHeadWeaponDesc;
+    GObj *weapon_gobj;
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPPikachuThunderHeadWeaponDesc, pos, WEAPON_FLAG_PARENT_FIGHTER);
+#endif
     WPStruct *wp;
 
+#ifdef REGION_REMIX
+    ftRemixPikaSharedThunderDesc(ftGetStruct(fighter_gobj), &remix_desc);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &remix_desc, pos, WEAPON_FLAG_PARENT_FIGHTER);
+#endif
     if (weapon_gobj == NULL)
     {
         return NULL;
@@ -221,10 +241,19 @@ GObj* wpPikachuThunderTrailMakeWeapon(GObj *weapon_gobj, Vec3f *pos)
 {
     s32 unused[2];
     WPStruct *spawn_wp = wpGetStruct(weapon_gobj);
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPPikachuThunderTrailWeaponDesc;
+    GObj *trail_gobj;
+#else
     GObj *trail_gobj = wpManagerMakeWeapon(weapon_gobj, &dWPPikachuThunderTrailWeaponDesc, pos, WEAPON_FLAG_PARENT_WEAPON);
+#endif
     WPStruct *trail_wp;
     s32 i;
 
+#ifdef REGION_REMIX
+    ftRemixPikaSharedThunderDesc(ftGetStruct(spawn_wp->owner_gobj), &remix_desc);
+    trail_gobj = wpManagerMakeWeapon(weapon_gobj, &remix_desc, pos, WEAPON_FLAG_PARENT_WEAPON);
+#endif
     if (trail_gobj == NULL)
     {
         return NULL;

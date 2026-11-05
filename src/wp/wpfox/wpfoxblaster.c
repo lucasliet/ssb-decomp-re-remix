@@ -1,6 +1,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "wp/wpfox/wpfoxremixblaster.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -110,7 +113,15 @@ sb32 wpFoxBlasterProcReflector(GObj *weapon_gobj)
 GObj* wpFoxBlasterMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
 {
     WPStruct *wp;
+#ifdef REGION_REMIX
+    WPDesc weapon_desc = dWPFoxBlasterWeaponDesc;
+    GObj *weapon_gobj;
+
+    wpRemixFoxBlasterSetFile(ftGetStruct(fighter_gobj), &weapon_desc);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &weapon_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPFoxBlasterWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
 
     if (weapon_gobj == NULL)
     {

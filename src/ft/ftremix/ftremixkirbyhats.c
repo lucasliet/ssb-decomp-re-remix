@@ -11,9 +11,16 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixkirbyhooks.h"
+#include "ft/ftremix/ftremixkirbyspawnrules.h"
+#include "ft/ftremix/ftremixfields.h"
 #include <ft/fighter.h>
 #include <gm/gmremixpanel.h>
 #include <lb/lbreloc.h>
+#include <lb/library.h>
+#include <sc/scdef.h>
+#include <sc/sctypes.h>
+#include <sc/scmanager.h>
 #include <sys/taskman.h>
 #include <sys/objtypes.h>
 #include <sys/utils.h>
@@ -28,11 +35,9 @@
 #define FTREMIX_KIRBYHATS_FILES 2
 #define FTREMIX_KIRBYHATS_PLAYERS 4
 #define FTREMIX_KIRBYHATS_HAT_JOINT 6
+#define FTREMIX_KIRBYHATS_GUN_JOINT 0x11
 #define FTREMIX_KIRBYHATS_NO_OFFSET 0xFFFFFFFFu
-#define FTREMIX_KIRBYHATS_PANEL_NONE 0
-#define FTREMIX_KIRBYHATS_PANEL_MAGIC 41
-#define FTREMIX_KIRBYHATS_PANEL_RANDOM 42
-#define FTREMIX_KIRBYHATS_PANEL_FIGHTERS 40
+#define FTREMIX_KIRBYHATS_COPY_ROWS 97
 
 static const u32 sFTRemixKirbyHatsFileIds[FTREMIX_KIRBYHATS_FILES] = { 0x0A8D, 0x1533 }; /* File.KIRBY_CUSTOM_HATS, _2 */
 
@@ -83,6 +88,30 @@ static u32 ftRemixKirbyHatsOverride(void *file, u32 offset, u32 keep_token)
     return PORT_REGISTER((u8*)file + offset);
 }
 
+/**
+ * Held-weapon part of a Kirby or J Kirby wearing a hat with a weapon (KirbyHats.asm use_extended_special_parts_pause_, gun
+ * branch): the part table is the one of the hat in Kirby's model file, indexed by the same model part id as Kirby's own.
+ *
+ * @param fp Kirby or J Kirby.
+ * @param modelpart_id Model part id of the weapon joint.
+ * @param desc Part table of Kirby's weapon joint.
+ * @param detail_index High or low poly index.
+ * @return The part of the hat's table, or Kirby's own part when the hat has no weapon or the model file is not loaded.
+ */
+static FTModelPart* ftRemixKirbyHatsGunPart(FTStruct *fp, s32 modelpart_id, FTModelPartDesc *desc, s32 detail_index)
+{
+    u32 offset = ftRemixKirbyGunHatOffset(*ftRemixFighterKirbyHat(fp));
+    FTModelPartDesc *gun_desc;
+
+    if ((offset == 0) || (fp->data->p_file_model == NULL) || (*fp->data->p_file_model == NULL))
+    {
+        return &desc->modelparts[modelpart_id][detail_index];
+    }
+    gun_desc = lbRelocGetFileData(FTModelPartDesc*, *fp->data->p_file_model, offset);
+
+    return &gun_desc->modelparts[modelpart_id][detail_index];
+}
+
 FTModelPart* ftRemixKirbyHatModelPart(FTStruct *fp, s32 joint_id, s32 modelpart_id, FTModelPartDesc *desc, s32 detail_index)
 {
     u32 row_addr;
@@ -92,6 +121,10 @@ FTModelPart* ftRemixKirbyHatModelPart(FTStruct *fp, s32 joint_id, s32 modelpart_
     u32 first_word;
     void *file;
 
+    if ((joint_id == FTREMIX_KIRBYHATS_GUN_JOINT) && ftRemixKirbyHatsIsKirby(fp))
+    {
+        return ftRemixKirbyHatsGunPart(fp, modelpart_id, desc, detail_index);
+    }
     if ((joint_id != FTREMIX_KIRBYHATS_HAT_JOINT) || (modelpart_id < FTREMIX_KIRBYHATS_VANILLA_COUNT) || !ftRemixKirbyHatsIsKirby(fp))
     {
         return &desc->modelparts[modelpart_id][detail_index];
@@ -114,48 +147,65 @@ FTModelPart* ftRemixKirbyHatModelPart(FTStruct *fp, s32 joint_id, s32 modelpart_
     return part;
 }
 
-/* KirbyHats.asm spawn_with_table_: Remix fighter id of each CSS Kirby Hat value 0..41 (Random, 42, is rolled below). */
-static const u8 sFTRemixKirbyHatsPanelFighter[FTREMIX_KIRBYHATS_PANEL_MAGIC + 1] = {
-    REMIX_ID_KIRBY, REMIX_ID_MARIO, REMIX_ID_FOX, REMIX_ID_DONKEY, REMIX_ID_SAMUS, REMIX_ID_LUIGI, REMIX_ID_LINK,
-    REMIX_ID_YOSHI, REMIX_ID_CAPTAIN, REMIX_ID_PIKACHU, REMIX_ID_JIGGLY, REMIX_ID_NESS, REMIX_ID_FALCO, REMIX_ID_GND,
-    REMIX_ID_YLINK, REMIX_ID_DRM, REMIX_ID_WARIO, 0x34, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3E, REMIX_ID_MARINA,
-    REMIX_ID_DEDEDE, REMIX_ID_GOEMON, REMIX_ID_BANJO, REMIX_ID_CRASH, REMIX_ID_PEACH, 0x22, 0x26, REMIX_ID_PEPPY,
-    REMIX_ID_SLIPPY, REMIX_ID_ROY, REMIX_ID_DRL, REMIX_ID_LANKY, REMIX_ID_DRAGONKING, REMIX_ID_EBI, 0x36, REMIX_ID_SSONIC,
-    REMIX_ID_NONE,
-};
-
 /**
- * Remix fighter id behind a CSS Kirby Hat value 1..42. Random rolls one of the 40 fighters (1..40), never None or magic,
- * as asm pick_random_hat_ does.
+ * Whether a Random panel value is rolled on the current screen (asm kirby_hat_select_ _handle_random_hat): the menus, the
+ * character select and the results show a plain Kirby, and so does the 1P game over screen.
  */
-static s32 ftRemixKirbyHatsPanelFighterID(s32 panel_value)
+static sb32 ftRemixKirbyHatsRandomIsRolled(FTStruct *fp)
 {
-    if (panel_value == FTREMIX_KIRBYHATS_PANEL_RANDOM)
+    u8 scene = gSCManagerSceneData.scene_curr;
+
+    if (scene == nSCKindTitle)
     {
-        return sFTRemixKirbyHatsPanelFighter[1 + syUtilsRandIntRange(FTREMIX_KIRBYHATS_PANEL_FIGHTERS)];
+        return (gSCManagerBattleState->players[fp->player].stock_count >= 0) ? TRUE : FALSE;
     }
-    return sFTRemixKirbyHatsPanelFighter[panel_value];
+    if (scene < nSCKindMaps)
+    {
+        return FALSE;
+    }
+    return (scene != nSCKindVSResults) ? TRUE : FALSE;
 }
 
 /**
- * Hat modelpart a Kirby or J Kirby spawns with when its port has a CSS Kirby Hat value (asm kirby_hat_select_): the copy
- * hat of the chosen fighter, magic is the None row. Returns -1 when the spawn keeps the vanilla hat, that is no panel value
- * or a fighter that already holds a copy power.
+ * Remix fighter id behind the CSS Kirby Hat value of a Kirby or J Kirby port, 'Random' rolling one of the 40 fighters once
+ * (never None or magic, as asm pick_random_hat_ does).
+ *
+ * @param fp Kirby or J Kirby.
+ * @return The fighter, REMIX_ID_KIRBY for the value None or for a Random that the screen does not roll.
  */
-s32 ftRemixKirbyHatPanelModelPart(FTStruct *fp)
+static s32 ftRemixKirbyHatsPanelFighterID(FTStruct *fp)
 {
-    s32 panel_value;
+    s32 panel_value = gmRemixPanel(KIRBY_HAT, fp->player);
+    s32 random_roll = 0;
 
-    if (!ftRemixKirbyHatsIsKirby(fp) || (fp->passive_vars.kirby.copy_id != nFTKindKirby))
+    if (panel_value == FTREMIX_KIRBYSPAWN_PANEL_RANDOM)
     {
-        return -1;
+        if (ftRemixKirbyHatsRandomIsRolled(fp) == FALSE)
+        {
+            return REMIX_ID_KIRBY;
+        }
+        random_roll = syUtilsRandIntRange(FTREMIX_KIRBYSPAWN_PANEL_FIGHTER_COUNT);
     }
-    panel_value = gmRemixPanel(KIRBY_HAT, fp->player);
-    if (panel_value == FTREMIX_KIRBYHATS_PANEL_NONE)
+    return ftRemixKirbySpawnPanelFighter(panel_value, random_roll);
+}
+
+void ftRemixKirbyHatSpawnInit(GObj *fighter_gobj, s32 spawn_copy_id)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    FTKirbyCopy *copy_table;
+    s32 copy_id;
+    s32 panel_fighter;
+
+    if (ftRemixKirbyHatsIsKirby(fp) == FALSE)
     {
-        return -1;
+        return;
     }
-    return ftRemixKirbyGetCopyTable()[ftRemixKirbyHatsPanelFighterID(panel_value)].copy_modelpart_id;
+    panel_fighter = ftRemixKirbyHatsPanelFighterID(fp);
+    copy_id = (panel_fighter != REMIX_ID_KIRBY) ? panel_fighter : spawn_copy_id;
+    fp->passive_vars.kirby.copy_id = copy_id;
+
+    copy_table = ftRemixKirbyGetCopyTable();
+    ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, copy_table[((copy_id >= 0) && (copy_id < FTREMIX_KIRBYHATS_COPY_ROWS)) ? copy_id : nFTKindKirby].copy_modelpart_id);
 }
 
 #endif

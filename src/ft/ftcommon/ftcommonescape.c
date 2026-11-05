@@ -1,4 +1,7 @@
 #include <ft/fighter.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -21,7 +24,11 @@ void ftCommonEscapeProcUpdate(GObj *fighter_gobj)
         fp->physics.vel_air.x = fp->physics.vel_air.y = fp->physics.vel_air.z = 0.0F;
         fp->physics.vel_ground.x = fp->physics.vel_ground.y = fp->physics.vel_ground.z = 0.0F;
 
+#ifdef REGION_REMIX
+        if ((fp->fkind != nFTKindYoshi) && (fp->fkind != nFTKindNYoshi) && !ftRemixYoshiHasEggShield(fp->fkind) || (ftCommonGuardCheckInterruptEscape(fighter_gobj) == FALSE))
+#else
         if ((fp->fkind != nFTKindYoshi) && (fp->fkind != nFTKindNYoshi) || (ftCommonGuardCheckInterruptEscape(fighter_gobj) == FALSE))
+#endif
         {
             ftCommonWaitSetStatus(fighter_gobj);
         }

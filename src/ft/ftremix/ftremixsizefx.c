@@ -40,7 +40,8 @@ void ftRemixSizeScaleYoshiShield(GObj *effect_gobj, FTStruct *fp)
 
 /**
  * Size.asm adjust_size_egg_entry_ (RAM 0x80102F64): multiplies the uniform scale of a new entry egg by the owner multiplier.
- * Accepts a NULL egg, which efManagerYoshiEntryEggMakeEffect returns when no effect slot is free.
+ * Accepts a NULL egg, which efManagerYoshiEntryEggMakeEffect returns when no effect slot is free. Every entry egg goes through
+ * here, so it also gets its Shield.asm alter_yoshi_egg_color_ palette (ftremixyoshiegg.c).
  */
 void ftRemixSizeScaleEntryEgg(GObj *egg_gobj, FTStruct *fp)
 {
@@ -55,6 +56,7 @@ void ftRemixSizeScaleEntryEgg(GObj *egg_gobj, FTStruct *fp)
     scale = dobj->scale.vec.f.x * ftRemixSizeGetMultiplier(fp->player);
 
     ftRemixSizeScaleDObjUniform(dobj, scale);
+    ftRemixYoshiEggColorEntryEgg(egg_gobj, fp);
 }
 
 /**
@@ -74,7 +76,7 @@ void ftRemixSizeScaleYoshiEggLay(GObj *effect_gobj)
         return;
     }
     fp = ftGetStruct(ep->fighter_gobj);
-    egg_desc = (ftCommonYoshiEggDesc*)port_fighter_yoshi_egg_damage_coll(fp->fkind);
+    egg_desc = ftRemixYoshiEggGetDesc(fp->fkind);
 
     ftRemixSizeScaleDObjUniform(DObjGetStruct(effect_gobj), egg_desc->effect_size * ftRemixSizeGetMultiplier(fp->player));
 }

@@ -646,7 +646,11 @@ GObj *itLinkBombMakeItem(GObj *fighter_gobj, Vec3f *pos, Vec3f *vel)
 		ip = itGetStruct(item_gobj);
 		dobj = DObjGetStruct(item_gobj);
 
+#ifdef REGION_REMIX
+		gcAddXObjForDObjFixed(dobj, ftRemixLinkSharedBombXObjKind(ftGetStruct(fighter_gobj)->fkind), 0);
+#else
 		gcAddXObjForDObjFixed(dobj, 0x2E, 0);
+#endif
 		gcAddXObjForDObjFixed(dobj->child, 0x2E, 0);
 
 		ip->multi = 0;

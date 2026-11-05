@@ -3,6 +3,9 @@
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixjab.h"
+#endif
 
 #ifdef PORT
 /* The rapid-jab (Attack100) entry + per-character status/input switches key on
@@ -42,6 +45,17 @@ static s32 ftCommonAttack100ResolveParentKind(s32 fkind)
     (FT_A100_KIND(fp) == nFTKindNCaptain)    \
 )
 
+#if defined(PORT) && defined(REGION_REMIX)
+/* check_rapid_jab_ (Character.asm:1374) reads the rapid_jab table of the Remix fighters */
+#define ftCommonAttack100CheckGateKind(fp)                                          \
+(                                                                                   \
+    ftRemixJabIsRemixKind((fp)->fkind) ?                                            \
+    ftRemixJabRapidGateIsOpen((fp)->fkind) : ftCommonAttack100CheckFighterKind(fp)  \
+)
+#else
+#define ftCommonAttack100CheckGateKind(fp) ftCommonAttack100CheckFighterKind(fp)
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //           FUNCTIONS           //
@@ -60,9 +74,26 @@ void ftCommonAttack100StartSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 status_id;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    /* Slippy.asm unique_jab_loop_ (0x8014F0F4): the rapid jab goes back to jab 1 */
+    if (ftRemixJabRapidJabRestartsJab1(fp->fkind))
+    {
+        ftCommonAttack11SetStatus(fighter_gobj);
+
+        return;
+    }
+#endif
     if (ftCommonGetCheckInterruptCommon(fighter_gobj) == FALSE)
     {
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+        status_id = ftRemixJabRapidStatus(fp->fkind, nFTRemixJabRapidPhaseBegin);
+
+        if (status_id == FTREMIX_JAB_RAPID_UNRESOLVED)
+        {
+            return;
+        }
+        if (status_id < 0)
+#elif defined(PORT)
         /* SR rapid_jab_begin_action table: a synth's begin status may differ
          * from its parent's (Sheik = Fox-aligned 0xDC, not Captain's 0xDD).
          * status_id stays -1 (vanilla switch below) with no listener. */
@@ -191,7 +222,15 @@ void ftCommonAttack100LoopSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 status_id;
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+    status_id = ftRemixJabRapidStatus(fp->fkind, nFTRemixJabRapidPhaseLoop);
+
+    if (status_id == FTREMIX_JAB_RAPID_UNRESOLVED)
+    {
+        return;
+    }
+    if (status_id < 0)
+#elif defined(PORT)
     /* SR rapid_jab_loop_action table (Sheik = Fox-aligned 0xDD). */
     {
         CALL_EVENT(FighterRapidJabStatusQueryEvent, fp->fkind, /* phase */ 1, -1);
@@ -236,7 +275,15 @@ void ftCommonAttack100EndSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 status_id;
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+    status_id = ftRemixJabRapidStatus(fp->fkind, nFTRemixJabRapidPhaseEnd);
+
+    if (status_id == FTREMIX_JAB_RAPID_UNRESOLVED)
+    {
+        return;
+    }
+    if (status_id < 0)
+#elif defined(PORT)
     /* SR rapid_jab_ending_action table (Sheik = Fox-aligned 0xDE). */
     {
         CALL_EVENT(FighterRapidJabStatusQueryEvent, fp->fkind, /* phase */ 2, -1);
@@ -281,7 +328,7 @@ sb32 ftCommonAttack100StartCheckInterruptCommon(GObj *fighter_gobj)
     s32 status_id;
     s32 inputs_min;
 
-    if (!(ftCommonAttack100CheckFighterKind(fp)))
+    if (!(ftCommonAttack100CheckGateKind(fp)))
     {
         return FALSE;
     }
@@ -294,6 +341,16 @@ sb32 ftCommonAttack100StartCheckInterruptCommon(GObj *fighter_gobj)
 
         fp->attack1_input_count++;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        if (ftRemixJabIsRemixKind(fp->fkind))
+        {
+            if (ftRemixJabRapidInputQuery(fp->fkind, &inputs_min, &status_id) == FALSE)
+            {
+                return FALSE;
+            }
+        }
+        else
+#endif
         switch (FT_A100_KIND(fp))
         {
         case nFTKindFox:

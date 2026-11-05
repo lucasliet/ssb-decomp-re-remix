@@ -2,6 +2,7 @@
 #include <wp/weapon.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixnessshared.h"
 #endif
 // // // // // // // // // // // //
 //                               //
@@ -25,6 +26,9 @@ void ftNessSpecialNProcAccessory(GObj *fighter_gobj) // PK Fire setup
     Vec3f pos;
     Vec3f vel;
     f32 angle;
+    sb32 is_air = (fp->ga == nMPKineticsAir);
+    f32 speed_air = FTNESS_PKFIRE_SPARK_VEL_AIR;
+    f32 speed_ground = FTNESS_PKFIRE_SPARK_VEL_GROUND;
 
     if (fp->motion_vars.flags.flag0 != FALSE) // Check if flag to summon PK Fire is true
     {
@@ -45,19 +49,28 @@ void ftNessSpecialNProcAccessory(GObj *fighter_gobj) // PK Fire setup
 #endif
         pos.z = 0.0F;
 
-        if (fp->ga == nMPKineticsAir)
+#ifdef REGION_REMIX
+        FTRemixNessPKFireLaunch launch = { is_air, speed_air, speed_ground };
+
+        ftRemixNessSharedPKFireLaunch(fp, &launch);
+
+        is_air = launch.is_air;
+        speed_air = launch.speed_air;
+        speed_ground = launch.speed_ground;
+#endif
+        if (is_air)
         {
             vel.z = 0.0F;
             angle = FTNESS_PKFIRE_SPARK_ANGLE_AIR;
-            vel.x = __cosf(FTNESS_PKFIRE_SPARK_ANGLE_AIR) * FTNESS_PKFIRE_SPARK_VEL_AIR * fp->lr;
-            vel.y = __sinf(FTNESS_PKFIRE_SPARK_ANGLE_AIR) * FTNESS_PKFIRE_SPARK_VEL_AIR;
+            vel.x = __cosf(FTNESS_PKFIRE_SPARK_ANGLE_AIR) * speed_air * fp->lr;
+            vel.y = __sinf(FTNESS_PKFIRE_SPARK_ANGLE_AIR) * speed_air;
         }
         else
         {
             vel.z = 0.0F;
             angle = FTNESS_PKFIRE_SPARK_ANGLE_GROUND;
-            vel.x = __cosf(FTNESS_PKFIRE_SPARK_ANGLE_GROUND) * FTNESS_PKFIRE_SPARK_VEL_GROUND * fp->lr;
-            vel.y = __sinf(FTNESS_PKFIRE_SPARK_ANGLE_GROUND) * FTNESS_PKFIRE_SPARK_VEL_GROUND;
+            vel.x = __cosf(FTNESS_PKFIRE_SPARK_ANGLE_GROUND) * speed_ground * fp->lr;
+            vel.y = __sinf(FTNESS_PKFIRE_SPARK_ANGLE_GROUND) * speed_ground;
         }
         wpNessPKFireMakeWeapon(fighter_gobj, &pos, &vel, angle); // Spawn PK Fire
     }

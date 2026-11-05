@@ -16,6 +16,19 @@ sb32 ftRemixAiSpecialsCancelChargeWithZ(FTStruct *fp);
  */
 void ftRemixAiSpecialsBowserUspStickReset(FTStruct *fp);
 
+/**
+ * improve_remix_specials (Sheik and Peppy): charge decision of ftComputerCheckTryChargeSpecialN. Presses B (command 0xB) while
+ * the ammo is below 6 and no charge action is running. Returns the value of the vanilla function: TRUE when it keeps or starts a
+ * charge, FALSE when it stops.
+ */
+sb32 ftRemixAiSpecialsNeedleCharge(FTStruct *fp);
+
+/** improve_remix_charged_NSP_3: TRUE when fp (fkind is its copied power) is already in a charge shot, so the far-range NSP returns FALSE. */
+sb32 ftRemixAiSpecialsFarRangeIsCharging(FTStruct *fp, s32 fkind);
+
+/** improve_remix_charged_NSP_3: TRUE when the far-range check runs the vanilla Samus action list for fkind (Samus clones and Mewtwo). */
+sb32 ftRemixAiSpecialsFarRangeUsesSamusActions(s32 fkind);
+
 /** improve_remix_charged_NSP_2: TRUE when the opponent blocks the Samus NSP (Fox-like always, Ness-like unless Sheik). */
 sb32 ftRemixAiSamusNspIsBlocked(FTStruct *fp, FTStruct *opponent);
 

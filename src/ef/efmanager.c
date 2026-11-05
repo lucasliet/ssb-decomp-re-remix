@@ -9,6 +9,7 @@
 #include "sc/sc1pmode/sc1premixenemy.h"
 #include "ft/ftremix/ftremixsizeness.h"
 #include "ft/ftremix/ftremixpartimage.h"
+#include "ft/ftremix/ftremixeffects.h"
 #include "if/ifremixannouncer.h"
 #endif
 #ifdef PORT
@@ -4170,7 +4171,11 @@ void efManagerFoxReflectorSetAnimID(GObj *effect_gobj, s32 anim_id)
 
     ep->effect_vars.reflector.index = anim_id;
 
+#ifdef REGION_REMIX
+    gcAddAnimJointAll(effect_gobj, ftRemixReflectorAnimJoint(effect_gobj, anim_id, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, dEFManagerFoxReflectorAnimJointOffsets[anim_id])), 0.0F);
+#else
     gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, dEFManagerFoxReflectorAnimJointOffsets[anim_id]), 0.0F);
+#endif
     gcPlayAnimAll(effect_gobj);
 }
 
@@ -4210,7 +4215,11 @@ void efManagerFoxReflectorProcUpdate(GObj *effect_gobj)
 // 0x80100FA4
 GObj* efManagerFoxReflectorMakeEffect(GObj *fighter_gobj)
 {
+#ifdef REGION_REMIX
+    GObj *effect_gobj = efManagerMakeEffectForce(ftRemixReflectorDesc(ftGetStruct(fighter_gobj), &dEFManagerFoxReflectorEffectDesc));
+#else
     GObj *effect_gobj = efManagerMakeEffectForce(&dEFManagerFoxReflectorEffectDesc);
+#endif
     EFStruct *ep;
 
     if (effect_gobj == NULL)
@@ -4658,14 +4667,40 @@ void efManagerPikachuThunderTrailProcDisplay(GObj *effect_gobj)
     gDPSetAlphaCompare(gSYTaskmanDLHeads[1]++, G_AC_THRESHOLD);
 }
 
+#ifdef REGION_REMIX
+static GObj* efManagerPikachuThunderTrailMakeEffectFromDesc(EFDesc *effect_desc, Vec3f *pos, s32 lifetime, s32 texture_index);
+#endif
+
 // 0x80101B88
 GObj* efManagerPikachuThunderTrailMakeEffect(Vec3f *pos, s32 lifetime, s32 texture_index)
 {
+#ifdef REGION_REMIX
+    return efManagerPikachuThunderTrailMakeEffectFromDesc(&dEFManagerPikachuThunderTrailEffectDesc, pos, lifetime, texture_index);
+}
+
+/**
+ * Thunder trail effect of the Thunder fired by the owner of `weapon_gobj` (pikashared.asm get_thunder_anim_struct_:
+ * E and J Pikachu read the model file they loaded).
+ */
+GObj* efManagerPikachuThunderTrailMakeEffectForWeapon(GObj *weapon_gobj, Vec3f *pos, s32 lifetime, s32 texture_index)
+{
+    EFDesc *effect_desc = ftRemixPikaThunderTrailDesc(ftRemixWeaponOwnerKind(weapon_gobj), &dEFManagerPikachuThunderTrailEffectDesc);
+
+    return efManagerPikachuThunderTrailMakeEffectFromDesc(effect_desc, pos, lifetime, texture_index);
+}
+
+static GObj* efManagerPikachuThunderTrailMakeEffectFromDesc(EFDesc *effect_desc, Vec3f *pos, s32 lifetime, s32 texture_index)
+{
+#endif
     GObj *effect_gobj;
     EFStruct *ep;
     DObj *dobj;
 
+#ifdef REGION_REMIX
+    effect_gobj = efManagerMakeEffectNoForce(effect_desc);
+#else
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerPikachuThunderTrailEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -4688,10 +4723,34 @@ GObj* efManagerPikachuThunderTrailMakeEffect(Vec3f *pos, s32 lifetime, s32 textu
     return effect_gobj;
 }
 
+#ifdef REGION_REMIX
+static GObj* efManagerPikachuThunderJoltMakeEffectFromDesc(EFDesc *effect_desc, Vec3f *pos, f32 rotate);
+#endif
+
 // 0x80101C34
 GObj* efManagerPikachuThunderJoltMakeEffect(Vec3f *pos, f32 rotate)
 {
+#ifdef REGION_REMIX
+    return efManagerPikachuThunderJoltMakeEffectFromDesc(&dEFManagerThunderJoltEffectDesc, pos, rotate);
+}
+
+/**
+ * Thunder Jolt effect at the position and rotation of the ground Thunder Jolt `jolt_gobj` (pikashared.asm
+ * get_thunder_jolt_anim_struct_: J Pikachu, or the Kirby that copied him, reads his file 8).
+ */
+GObj* efManagerPikachuThunderJoltMakeEffectForWeapon(GObj *jolt_gobj)
+{
+    EFDesc *effect_desc = ftRemixPikaThunderJoltDesc(jolt_gobj, &dEFManagerThunderJoltEffectDesc);
+
+    return efManagerPikachuThunderJoltMakeEffectFromDesc(effect_desc, &DObjGetStruct(jolt_gobj)->translate.vec.f, DObjGetStruct(jolt_gobj)->rotate.vec.f.z);
+}
+
+static GObj* efManagerPikachuThunderJoltMakeEffectFromDesc(EFDesc *effect_desc, Vec3f *pos, f32 rotate)
+{
+    GObj *effect_gobj = efManagerMakeEffectNoForce(effect_desc);
+#else
     GObj *effect_gobj = efManagerMakeEffectNoForce(&dEFManagerThunderJoltEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -4845,6 +4904,7 @@ GObj* efManagerCaptainFalconPunchMakeEffect(GObj *fighter_gobj)
     GObj *effect_gobj;
 
 #ifdef REGION_REMIX
+    ftRemixCaptainSharedPunchAnnounce(ftGetStruct(fighter_gobj));
     effect_gobj = efManagerMakeEffectForce(ftRemixCaptainSharedPunchDesc(ftGetStruct(fighter_gobj), &dEFManagerCaptainFalconPunchEffectDesc));
 #else
     effect_gobj = efManagerMakeEffectForce(&dEFManagerCaptainFalconPunchEffectDesc);
@@ -5146,7 +5206,11 @@ GObj* efManagerNessPsychicMagnetMakeEffect(GObj *fighter_gobj)
     EFStruct *ep;
     DObj *dobj;
 
+#ifdef REGION_REMIX
+    effect_gobj = efManagerMakeEffectForce(ftRemixNessPsiMagnetDesc(ftGetStruct(fighter_gobj), &dEFManagerNessPsychicMagnetEffectDesc));
+#else
     effect_gobj = efManagerMakeEffectForce(&dEFManagerNessPsychicMagnetEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -5161,6 +5225,7 @@ GObj* efManagerNessPsychicMagnetMakeEffect(GObj *fighter_gobj)
     dobj->user_data.p = ftGetStruct(fighter_gobj)->joints[nFTPartsJointTopN];
 
 #ifdef REGION_REMIX
+    ftRemixLucasPsiMagnetPlaceGfx(effect_gobj, ftGetStruct(fighter_gobj));
     ftRemixSizeNessDSPInitialize(effect_gobj);
 #endif
     return effect_gobj;
@@ -5226,7 +5291,11 @@ GObj* efManagerNessPKThunderTrailMakeEffect(GObj *fighter_gobj)
 
     fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    effect_gobj = efManagerMakeEffectNoForce(ftRemixNessPKThunderTrailDesc(fp, &dEFManagerNessPKThunderTrailEffectDesc));
+#else
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerNessPKThunderTrailEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -5276,7 +5345,11 @@ GObj* efManagerNessPKReflectTrailMakeEffect(GObj *weapon_gobj)
 
     wp = wpGetStruct(weapon_gobj);
 
+#ifdef REGION_REMIX
+    effect_gobj = efManagerMakeEffectNoForce(ftRemixNessPKReflectTrailDesc(weapon_gobj, &dEFManagerNessPKReflectTrailEffectDesc));
+#else
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerNessPKReflectTrailEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -5302,7 +5375,11 @@ GObj* efManagerNessPKReflectTrailMakeEffect(GObj *weapon_gobj)
 GObj* efManagerNessPKThunderWaveMakeEffect(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+#ifdef REGION_REMIX
+    GObj *effect_gobj = efManagerMakeEffectNoForce(ftRemixNessPKThunderWaveDesc(fp, &dEFManagerNessPKThunderWaveEffectDesc));
+#else
     GObj *effect_gobj = efManagerMakeEffectNoForce(&dEFManagerNessPKThunderWaveEffectDesc);
+#endif
 
     if (effect_gobj == NULL)
     {
@@ -5316,7 +5393,14 @@ GObj* efManagerNessPKThunderWaveMakeEffect(GObj *fighter_gobj)
 
         DObjGetStruct(effect_gobj)->user_data.p = fp->joints[5];
 
+#ifdef REGION_REMIX
+        if (!ftRemixLucasPKThunderGfxKeepsRotation(fp))
+        {
+            DObjGetStruct(effect_gobj)->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
+        }
+#else
         DObjGetStruct(effect_gobj)->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
+#endif
         DObjGetStruct(effect_gobj)->translate.vec.f.z = 0.0F;
 
 #ifdef REGION_REMIX
@@ -5623,7 +5707,9 @@ GObj* efManagerYoshiEggLayMakeEffect(GObj *fighter_gobj)
     dobj = DObjGetStruct(effect_gobj);
     dobj->user_data.p = ftGetStruct(fighter_gobj)->joints[nFTPartsJointTopN];
 
-#ifdef PORT
+#ifdef REGION_REMIX
+    dobj->scale.vec.f.x = dobj->scale.vec.f.y = ftRemixYoshiEggGetDesc(fp->fkind)->effect_size;
+#elif defined(PORT)
     {
         ftCommonYoshiEggDesc *egg_desc = (ftCommonYoshiEggDesc *)port_fighter_yoshi_egg_damage_coll(fp->fkind);
         dobj->scale.vec.f.x = dobj->scale.vec.f.y = egg_desc->effect_size;
@@ -6407,6 +6493,7 @@ void efManagerKirbyInhaleWindProcUpdate(GObj *effect_gobj)
 
 #ifdef REGION_REMIX
     ftRemixSizeKirbySuckTransform(xf, ep->fighter_gobj);
+    ftRemixDededeInhaleWindOffset(xf, ep->fighter_gobj);
 #else
     xf->translate.x += ftGetStruct(ep->fighter_gobj)->lr * 800.0F;
     xf->translate.y += 230.0F;

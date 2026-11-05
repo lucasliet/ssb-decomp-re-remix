@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixnessshared.h"
+#endif
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -21,6 +24,9 @@ void ftKirbyCopyNessSpecialNProcAccessory(GObj *fighter_gobj)
     Vec3f pos;
     Vec3f vel;
     f32 angle;
+    sb32 is_air = (fp->ga == nMPKineticsAir);
+    f32 speed_air = FTKIRBY_COPYNESS_PKFIRE_SPARK_VEL_AIR;
+    f32 speed_ground = FTKIRBY_COPYNESS_PKFIRE_SPARK_VEL_GROUND;
 
     if (fp->motion_vars.flags.flag0 != FALSE) // Check if flag to summon PK Fire is true
     {
@@ -35,19 +41,28 @@ void ftKirbyCopyNessSpecialNProcAccessory(GObj *fighter_gobj)
         pos.x += FTKIRBY_COPYNESS_PKFIRE_SPAWN_OFF_X * fp->lr;
         pos.y += FTKIRBY_COPYNESS_PKFIRE_SPAWN_OFF_Y;
 
-        if (fp->ga == nMPKineticsAir)
+#ifdef REGION_REMIX
+        FTRemixNessPKFireLaunch launch = { is_air, speed_air, speed_ground };
+
+        ftRemixNessSharedPKFireLaunch(fp, &launch);
+
+        is_air = launch.is_air;
+        speed_air = launch.speed_air;
+        speed_ground = launch.speed_ground;
+#endif
+        if (is_air)
         {
             vel.z = 0.0F;
             angle = FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_AIR;
-            vel.x = __cosf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_AIR) * FTKIRBY_COPYNESS_PKFIRE_SPARK_VEL_AIR * fp->lr;
-            vel.y = __sinf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_AIR) * FTKIRBY_COPYNESS_PKFIRE_SPARK_VEL_AIR;
+            vel.x = __cosf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_AIR) * speed_air * fp->lr;
+            vel.y = __sinf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_AIR) * speed_air;
         }
         else
         {
             vel.z = 0.0F;
             angle = FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_GROUND;
-            vel.x = __cosf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_GROUND) * FTKIRBY_COPYNESS_PKFIRE_SPARK_VEL_GROUND * fp->lr;
-            vel.y = __sinf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_GROUND) * FTKIRBY_COPYNESS_PKFIRE_SPARK_VEL_GROUND;
+            vel.x = __cosf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_GROUND) * speed_ground * fp->lr;
+            vel.y = __sinf(FTKIRBY_COPYNESS_PKFIRE_SPARK_ANGLE_GROUND) * speed_ground;
         }
 
         wpNessPKFireMakeWeapon(fighter_gobj, &pos, &vel, angle); // Spawn PK Fire

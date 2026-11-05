@@ -6,6 +6,12 @@
 #endif
 extern void *func_800269C0_275C0(u16 id);
 
+#ifdef REGION_REMIX
+#define ftCommonGuardCheckYoshiShield(fp) (ftRemixYoshiHasEggShield((fp)->fkind) != FALSE)
+#else
+#define ftCommonGuardCheckYoshiShield(fp) ((fp)->fkind == nFTKindYoshi)
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -106,7 +112,7 @@ void ftCommonGuardUpdateShieldVars(GObj *fighter_gobj)
         if ((fp->status_vars.common.guard.release_lag == 0) && (fp->status_vars.common.guard.is_release != FALSE))
         {
         lag_end:
-            if (fp->fkind == nFTKindYoshi)
+            if (ftCommonGuardCheckYoshiShield(fp))
             {
                 ftParamResetModelPartAll(fighter_gobj);
                 ftCommonGuardOffSetHitStatusYoshi(fighter_gobj);
@@ -134,7 +140,7 @@ void ftCommonGuardUpdateShieldCollision(FTStruct *fp)
     f32 scale_final;
     f32 scale_mul;
 
-    if (fp->fkind == nFTKindYoshi)
+    if (ftCommonGuardCheckYoshiShield(fp))
     {
         scale_mul = 1.0F;
     }
@@ -415,7 +421,7 @@ void ftCommonGuardOnProcUpdate(GObj *fighter_gobj)
         {
             if (fp->status_vars.common.guard.is_release != FALSE)
             {
-                if (fp->fkind == nFTKindYoshi)
+                if (ftCommonGuardCheckYoshiShield(fp))
                 {
                     ftCommonGuardOffSetHitStatusYoshi(fighter_gobj);
                 }
@@ -423,7 +429,7 @@ void ftCommonGuardOnProcUpdate(GObj *fighter_gobj)
             }
             else
             {
-                if (fp->fkind == nFTKindYoshi)
+                if (ftCommonGuardCheckYoshiShield(fp))
                 {
                     fp->status_vars.common.guard.effect_gobj = efManagerYoshiShieldMakeEffect(fighter_gobj);
 
@@ -460,7 +466,7 @@ void ftCommonGuardOnSetStatus(GObj *fighter_gobj, s32 slide_tics)
 
     if (fp->shield_health != 0)
     {
-        if (fp->fkind == nFTKindYoshi)
+        if (ftCommonGuardCheckYoshiShield(fp))
         {
             ftCommonGuardOnSetHitStatusYoshi(fighter_gobj);
         }

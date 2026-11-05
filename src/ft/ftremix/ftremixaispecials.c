@@ -11,8 +11,11 @@
 #include "ft/ftremix/ftremixaishared.h"
 #include "ft/ftremix/ftremixaispecials.h"
 #include "ft/ftremix/ftremixaispecialsrules.h"
+#include "ft/ftremix/ftremixfields.h"
 
 #define FTREMIX_AI_SPECIALS_PRESS_Z_COMMAND 0xC
+#define FTREMIX_AI_SPECIALS_PRESS_B_COMMAND 0xB
+#define FTREMIX_N64_OFFSET_NEEDLE_AMMO 0x0AE0
 
 /** The vanilla cancel switch uses the copied fighter for Kirby and J Kirby, so the Remix cases do too. */
 static s32 ftRemixAiSpecialsSwitchKind(FTStruct *fp)
@@ -66,6 +69,36 @@ void ftRemixAiSpecialsBowserUspStickReset(FTStruct *fp)
     fp->input.cp.stick_range.x = 0;
 }
 
+/**
+ * improve_remix_specials (AI.asm _check_needle and _check_revolver): the needle (Sheik) or revolver (Peppy) ammo is the N64
+ * word 0x0AE0. REMIX-TODO(AI): none.
+ */
+sb32 ftRemixAiSpecialsNeedleCharge(FTStruct *fp)
+{
+    s32 ammo = *ftRemixFighterWord(fp, FTREMIX_N64_OFFSET_NEEDLE_AMMO);
+
+    switch (ftRemixAiSpecialsNeedleChargeOutcome((fp->fkind == REMIX_ID_SHEIK) ? 1 : 0, fp->status_id, ammo))
+    {
+    case FTREMIX_AI_SPECIALS_NEEDLE_KEEP:
+        return TRUE;
+
+    case FTREMIX_AI_SPECIALS_NEEDLE_PRESS:
+        ftComputerSetCommandWaitShort(fp, FTREMIX_AI_SPECIALS_PRESS_B_COMMAND);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+sb32 ftRemixAiSpecialsFarRangeIsCharging(FTStruct *fp, s32 fkind)
+{
+    return ftRemixAiSpecialsChargeShotActive(fkind, fp->status_id) ? TRUE : FALSE;
+}
+
+sb32 ftRemixAiSpecialsFarRangeUsesSamusActions(s32 fkind)
+{
+    return ftRemixAiSpecialsUsesSamusActionList(fkind) ? TRUE : FALSE;
+}
+
 /** Opponent is in the always group (Fox-like) or the Ness group (Ness, Lucas, JNess). */
 static sb32 ftRemixAiSpecialsIsAlwaysBlocking(s32 fkind)
 {
@@ -91,8 +124,8 @@ static sb32 ftRemixAiSpecialsIsSheikExempt(s32 fkind)
 
 /**
  * improve_remix_charged_NSP_2 (AI.asm): the Samus NSP is not fired at a reflector/absorber opponent. Called only inside
- * the vanilla random gate, in place of the vanilla Ness and Fox test. REMIX-TODO(AI): the Kirby hat logic of
- * improve_remix_charged_NSP_3 is not ported, so a Kirby with a Samus hat keeps the vanilla check.
+ * the vanilla random gate, in place of the vanilla Ness and Fox test. The Sheik exemption tests the own fighter id, not
+ * the copied power, so a Kirby wearing the Sheik hat gets no exemption (the asm comment "misses Kirby's logic").
  */
 sb32 ftRemixAiSamusNspIsBlocked(FTStruct *fp, FTStruct *opponent)
 {

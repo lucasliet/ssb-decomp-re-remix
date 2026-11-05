@@ -16,6 +16,7 @@ typedef struct FTRemixAiLogEpisode
 {
     sb32 is_open;
     sb32 was_airborne;
+    s32 percent_at_begin;
 
 } FTRemixAiLogEpisode;
 
@@ -58,6 +59,15 @@ static void ftRemixAiLogEnd(FTStruct *fp, FTRemixAiLogEpisode *episode, const ch
     port_log("[remix-ai] recover_end t=%u port=%d result=%s\n", (u32)gSCManagerBattleState->time_passed, (int)fp->player, result);
 }
 
+static void ftRemixAiLogEndKo(FTStruct *fp, FTRemixAiLogEpisode *episode)
+{
+    s32 was_hit = (fp->percent_damage > episode->percent_at_begin) ? 1 : 0;
+
+    episode->is_open = FALSE;
+    port_log("[remix-ai] recover_end t=%u port=%d result=ko hit=%d\n",
+             (u32)gSCManagerBattleState->time_passed, (int)fp->player, (int)was_hit);
+}
+
 void ftRemixAiLogRecoverBegin(FTStruct *fp)
 {
     FTRemixAiLogEpisode *episode;
@@ -77,6 +87,7 @@ void ftRemixAiLogRecoverBegin(FTStruct *fp)
 
     episode->is_open = TRUE;
     episode->was_airborne = (fp->ga != nMPKineticsGround) ? TRUE : FALSE;
+    episode->percent_at_begin = fp->percent_damage;
 
     port_log("[remix-ai] recover_begin t=%u port=%d fkind=%d lvl=%d x=%.0f y=%.0f\n",
              (u32)gSCManagerBattleState->time_passed, (int)fp->player, (int)fp->fkind, (int)fp->level, pos->x, pos->y);
@@ -121,7 +132,7 @@ void ftRemixAiLogRecoverDead(FTStruct *fp)
     {
         return;
     }
-    ftRemixAiLogEnd(fp, episode, "ko");
+    ftRemixAiLogEndKo(fp, episode);
 }
 
 #endif

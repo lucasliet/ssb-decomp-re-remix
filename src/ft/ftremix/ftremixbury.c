@@ -3,7 +3,7 @@
  * The buried state is the fighter update process ftRemixBuryMain (the asm compares the main routine, 0x09D4).
  * The plunge and the bury use the fighter processes of FTStruct: proc_update (0x09D4), proc_accessory (0x09D8),
  * proc_interrupt (0x09DC), proc_physics (0x09E0) and proc_map (0x09E4), in the order of the C struct.
- * The stun timer of the asm (0x026C) is kept in sFTRemixBuryTimer, one entry per player.
+ * The stun timer of the asm (0x026C) is fp->breakout_wait, which the mash inputs of ftCommonCaptureTrappedUpdateBreakoutVars shorten.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -37,8 +37,6 @@ extern void *func_800269C0_275C0(u16 id);
 #define FTREMIX_BURY_NO_LINE_ID -1
 #define FTREMIX_BURY_NO_LINE_ID_ALT -2
 
-static s32 sFTRemixBuryTimer[GMCOMMON_PLAYERS_MAX];
-
 static void ftRemixBuryMain(GObj *fighter_gobj);
 static void ftRemixBuryCollision(GObj *fighter_gobj);
 static void ftRemixBuryPlayer(GObj *fighter_gobj);
@@ -58,7 +56,7 @@ static void ftRemixBurySetTimer(FTStruct *fp)
 {
     f32 percent = (f32) fp->percent_damage;
 
-    sFTRemixBuryTimer[fp->player] = (s32) (percent * FTREMIX_BURY_PERCENT_MUL) + FTREMIX_BURY_BASE_TICS;
+    fp->breakout_wait = (s32) (percent * FTREMIX_BURY_PERCENT_MUL) + FTREMIX_BURY_BASE_TICS;
 }
 
 /* Damage.asm bury_player_: TRUE when the hazard mode bit 0x1 disables the hazards (modes 1 and 3) */
@@ -67,10 +65,10 @@ static sb32 ftRemixBuryHazardsDisabled(void)
     return (gmRemixToggle(hazard_mode) & 0x0001) != 0;
 }
 
-/* Damage.asm buried_main_: the top joint is drawn 48 units lower on every buried tic */
+/* Damage.asm buried_main_ _set_y_offset: the joint at FTStruct 0x08F8 (joints[4], not the top joint) is drawn 48 units lower on every buried tic */
 static void ftRemixBurySetJointOffset(FTStruct *fp)
 {
-    DObj *joint = fp->joints[nFTPartsJointTopN];
+    DObj *joint = fp->joints[nFTPartsJointCommonStart];
 
     joint->translate.vec.f.y += FTREMIX_BURY_JOINT_Y_OFFSET;
 }
@@ -170,13 +168,13 @@ static void ftRemixBuryMain(GObj *fighter_gobj)
     s32 previous_tics;
     s32 tics;
 
-    sFTRemixBuryTimer[fp->player]--;
-    previous_tics = sFTRemixBuryTimer[fp->player];
+    fp->breakout_wait--;
+    previous_tics = fp->breakout_wait;
 
     ftCommonCaptureTrappedUpdateBreakoutVars(fp);
 
-    tics = sFTRemixBuryTimer[fp->player];
-    sFTRemixBuryTimer[fp->player] = tics + 3 * (tics - previous_tics);
+    tics = fp->breakout_wait;
+    fp->breakout_wait = tics + 3 * (tics - previous_tics);
 
     if (tics > 0)
     {

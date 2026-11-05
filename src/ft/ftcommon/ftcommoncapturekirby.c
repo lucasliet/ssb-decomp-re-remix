@@ -4,6 +4,7 @@
 #include "fighter_registry.h"
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixeffects.h"
 #endif
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
@@ -249,7 +250,11 @@ void ftCommonCaptureWaitKirbySetStatus(GObj *fighter_gobj)
     fp->is_invisible = TRUE;
 
     ftParamSetHitStatusAll(fighter_gobj, nGMHitStatusIntangible);
+#ifdef REGION_REMIX
+    ftCommonCaptureTrappedInitBreakoutVars(fp, ftRemixDededeCaptureWaitBreakout(fp, 500));
+#else
     ftCommonCaptureTrappedInitBreakoutVars(fp, 500);
+#endif
 }
 
 // 0x8014BE24

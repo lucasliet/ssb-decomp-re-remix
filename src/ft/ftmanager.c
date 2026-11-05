@@ -6,7 +6,10 @@
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixinitialarmor.h"
+#include "ft/ftremix/ftremixkirbyhooks.h"
 #include "ft/ftremix/ftremixpartimage.h"
+#include "ft/ftremix/bowser/ftremixbowserhooks.h"
 #include "ft/ftremix/sonic/ftremixsonicclassic.h"
 #endif
 #ifdef PORT
@@ -606,6 +609,12 @@ void ftManagerDestroyFighterWeapons(GObj *fighter_gobj)
 #endif
         ftLinkSpecialNDestroyBoomerang(fighter_gobj);
         break;
+
+#ifdef REGION_REMIX
+    case REMIX_ID_BOWSER: /* kirby_blast_fix_1 */
+        ftRemixBowserAmmoRefillOnKO(fp);
+        break;
+#endif
     }
 }
 
@@ -733,9 +742,11 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
     fp->afterimage.desc_id = 0;
 
 #ifdef REGION_REMIX
-    /* Size.asm initialize_base_multiplier_table_ (RAM 0x800D7CB4); the magic hat part is not ported. */
+    /* Size.asm initialize_base_multiplier_table_ (RAM 0x800D7CB4), with its KirbyHats part (lines 358-381) */
     ftRemixSizeInitFighter(fp);
+    ftRemixKirbyPowerInitFighter(fp, desc->copy_kind);
     ftRemixVisibilityInitFighter(fp);
+    ftRemixBowserAmmoInitFighter(fp); /* SinglePlayerModes.asm limbo_clear (0x800D7A4C) */
 #endif
 
     DObjGetStruct(fighter_gobj)->translate.vec.f = desc->pos;
@@ -780,6 +791,7 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
 #ifdef REGION_REMIX
     /* AirDodge.asm reset_air_dash_initial_ (0x800D7DB4), at the initial script dispatch that the switch below replaces */
     ftRemixAirDodgeResetAirDash(fp);
+    ftRemixInitialScriptArmor(fp); /* MLuigi.asm and gbowser.asm initial_script_ */
 #endif
     switch (fp->fkind)
     {
@@ -904,22 +916,7 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
             }
 #endif
 #ifdef REGION_REMIX
-            {
-                s32 panel_hat_id = ftRemixKirbyHatPanelModelPart(fp);
-
-                if (panel_hat_id >= 0)
-                {
-                    ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, panel_hat_id);
-                    break;
-                }
-            }
-            if (fp->fkind == nFTKindKirby)
-            {
-                FTKirbyCopy *remix_copy = ftRemixKirbyGetCopyTable();
-                s32 remix_copy_id = fp->passive_vars.kirby.copy_id;
-
-                ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, remix_copy[((remix_copy_id >= 0) && (remix_copy_id < 97)) ? remix_copy_id : nFTKindKirby].copy_modelpart_id);
-            }
+            ftRemixKirbyHatSpawnInit(fighter_gobj, desc->copy_kind); /* kirby_hat_select_ and kirby_load_with_hat_fix_ */
             break;
 #endif
             if (fp->fkind == nFTKindKirby)

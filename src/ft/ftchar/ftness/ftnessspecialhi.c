@@ -3,6 +3,7 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixaishared.h"
+#include "ft/ftremix/ftremixnessshared.h"
 #endif
 
 // // // // // // // // // // // //
@@ -189,7 +190,11 @@ void ftNessSpecialHiInitStatusVars(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
     fp->status_vars.ness.specialhi.pkjibaku_delay = FTNESS_PKJIBAKU_DELAY;
+#ifdef REGION_REMIX
+    fp->status_vars.ness.specialhi.pkthunder_end_delay = ftRemixNessSharedPKThunderEndDelay(fp, FTNESS_PKTHUNDER_END_DELAY);
+#else
     fp->status_vars.ness.specialhi.pkthunder_end_delay = FTNESS_PKTHUNDER_END_DELAY;
+#endif
     fp->status_vars.ness.specialhi.pkthunder_gravity_delay = FTNESS_PKTHUNDER_GRAVITY_DELAY;
     fp->passive_vars.ness.is_thunder_destroy = FALSE;
     fp->passive_vars.ness.pkthunder_trail_id = 0;
@@ -350,7 +355,15 @@ void ftNessSpecialAirHiEndProcUpdate(GObj *fighter_gobj)
 {
     if (fighter_gobj->anim_frame <= 0.0F)
     {
+#ifdef REGION_REMIX
+        f32 drift = FTNESS_PKTHUNDER_FALLSPECIAL_DRIFT;
+        f32 landing_lag = FTNESS_PKTHUNDER_LANDING_LAG;
+
+        ftRemixNessSharedPKThunderLanding(ftGetStruct(fighter_gobj), &drift, &landing_lag);
+        ftCommonFallSpecialSetStatus(fighter_gobj, drift, FALSE, TRUE, TRUE, landing_lag, FALSE);
+#else
         ftCommonFallSpecialSetStatus(fighter_gobj, FTNESS_PKTHUNDER_FALLSPECIAL_DRIFT, FALSE, TRUE, TRUE, FTNESS_PKTHUNDER_LANDING_LAG, FALSE);
+#endif
     }
 }
 

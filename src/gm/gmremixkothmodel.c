@@ -271,4 +271,25 @@ void gmRemixKothModelSync(void)
     }
 }
 
+sb32 gmRemixKothModelGetMarkerPosition(f32 *x, f32 *y)
+{
+    DObj *top;
+    DObj *texture_joint;
+
+    if ((sGMRemixKothModelMarker == NULL) || (sGMRemixKothModelMarker->flags & GOBJ_FLAG_HIDDEN))
+    {
+        return FALSE;
+    }
+    top = DObjGetStruct(sGMRemixKothModelMarker);
+    texture_joint = top->child;
+
+    if (texture_joint == NULL)
+    {
+        return FALSE;
+    }
+    *x = top->translate.vec.f.x + texture_joint->translate.vec.f.x;
+    *y = top->translate.vec.f.y + texture_joint->translate.vec.f.y;
+    return TRUE;
+}
+
 #endif

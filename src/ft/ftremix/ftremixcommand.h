@@ -21,7 +21,7 @@
  */
 sb32 ftRemixCommandCheckRun(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms, sb32 is_forward);
 
-/** change_action_: resets the translation multiplier and env color override. */
+/** change_action_: resets the translation multiplier, env color override and the Training action frame count. */
 void ftRemixCommandResetStatus(FTStruct *fp);
 
 /** end_hitbox_: clears every hitbox's direction and FGM override. */
@@ -36,7 +36,7 @@ void ftRemixCommandApplyDamageDirection(FTStruct *this_fp, FTStruct *attacker_fp
 /** apply_fgm_: plays the hit sound of `attack_coll`, honoring its FGM override. */
 void ftRemixCommandPlayHitFGM(FTStruct *fp, FTAttackColl *attack_coll, u16 fgm_id, f32 pos_x);
 
-/** Topjoint translation multiplier set by command 0xD3 (1.0 by default). */
+/** Topjoint translation multiplier set by command 0xD3 (1.0 by default), times the Size factor of the apply_* patches (0.5977 giant, 1.59375 tiny). */
 f32 ftRemixCommandGetTranslationMultiplier(FTStruct *fp);
 
 /** Env color forced by command 0xD9 for `player`, or 0 for none. */

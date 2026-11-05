@@ -371,8 +371,8 @@ void ftRemixPeachLandingSetLedgeFlag(FTStruct *fp)
 /* Peach grounded_script_: restores Float unless the landing was a ledge grab, then clears the flag. */
 void ftRemixPeachGroundedScriptRestoreFloat(FTStruct *fp)
 {
-    /* Peach.asm:507 installs grounded_script_ for PEACH only; NPEACH keeps Fox's. */
-    if (!ftRemixPeachIsPeach(fp))
+    /* Peach.asm:507 and NPeach.asm:271 install the same grounded_script_ */
+    if (!ftRemixPeachIsPeachOrPoly(fp))
     {
         return;
     }

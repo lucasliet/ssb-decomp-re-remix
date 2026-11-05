@@ -18,6 +18,11 @@ static s32 ftCommonAttack1ResolveParentKind(s32 fkind)
 #define FT_A1_KIND(fp) ((fp)->fkind)
 #endif
 
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixjab.h"
+#include "remix/remix_roster_data.h"
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -39,6 +44,28 @@ static s32 ftCommonAttack1ResolveParentKind(s32 fkind)
     (FT_A1_KIND(fp) == nFTKindNNess)           \
 )
 
+#if defined(PORT) && defined(REGION_REMIX)
+/* check_jab_3_ (Character.asm:1270) reads the jab_3 table of the Remix fighters */
+#define ftCommonAttack13CheckGotoKind(fp)                                       \
+(                                                                               \
+    ftRemixJabIsRemixKind((fp)->fkind) ?                                        \
+    ftRemixJab3IsEnabled((fp)->fkind) : ftCommonAttack13CheckFighterKind(fp)    \
+)
+
+/* rapid_jab_fix_1 and rapid_jab_fix_2 (pikashared.asm:199, :221): E Pikachu and J Pikachu repeat jab 1 too */
+#define ftCommonAttack11CheckRepeatKind(fp)     \
+(                                               \
+    ((fp)->fkind == nFTKindPikachu)  ||         \
+    ((fp)->fkind == nFTKindNPikachu) ||         \
+    ((fp)->fkind == REMIX_ID_EPIKA)  ||         \
+    ((fp)->fkind == REMIX_ID_JPIKA)             \
+)
+#else
+#define ftCommonAttack13CheckGotoKind(fp) ftCommonAttack13CheckFighterKind(fp)
+
+#define ftCommonAttack11CheckRepeatKind(fp) (((fp)->fkind == nFTKindPikachu) || ((fp)->fkind == nFTKindNPikachu))
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //           FUNCTIONS           //
@@ -52,7 +79,7 @@ void ftCommonAttack11ProcUpdate(GObj *fighter_gobj)
 
     if ((fp->motion_vars.flags.flag1 != 0) && (fp->status_vars.common.attack1.is_goto_followup != FALSE))
     {
-        if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu))
+        if (ftCommonAttack11CheckRepeatKind(fp))
         {
             ftCommonAttack11SetStatus(fighter_gobj);
         }
@@ -105,7 +132,7 @@ void ftCommonAttack11ProcInterrupt(GObj *fighter_gobj)
     }
     if (ftCommonAttack100StartCheckInterruptCommon(fighter_gobj) == FALSE)
     {
-        if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu))
+        if (ftCommonAttack11CheckRepeatKind(fp))
         {
             if (ftCommonAttack11CheckGoto(fighter_gobj) != FALSE)
             {
@@ -171,6 +198,15 @@ void ftCommonAttack12SetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    /* Mewtwo.asm rapid_jab_patch_ (0x8014EAD8) */
+    if (ftRemixJabStartsRapidJabAtJab2(fp->fkind))
+    {
+        ftCommonAttack100StartSetStatus(fighter_gobj);
+
+        return;
+    }
+#endif
     if (ftCommonGetCheckInterruptCommon(fighter_gobj) == FALSE)
     {
         ftMainSetStatus(fighter_gobj, nFTCommonStatusAttack12, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
@@ -210,6 +246,9 @@ void ftCommonAttack12SetStatus(GObj *fighter_gobj)
             fp->attack1_followup_frames = FTCOMMON_ATTACK1_FOLLOWUP_FRAMES_DEFAULT;
             break;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixJabSetFollowupFrames(fp);
+#endif
     }
 }
 
@@ -221,6 +260,11 @@ void ftCommonAttack13SetStatus(GObj *fighter_gobj)
 
     if (ftCommonGetCheckInterruptCommon(fighter_gobj) == FALSE)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        status_id = ftRemixJab3GetStatus(fp->fkind);
+
+        if (status_id < 0)
+#endif
         switch (fp->fkind)
         {
         case nFTKindMario:
@@ -395,7 +439,7 @@ sb32 ftCommonAttack13CheckGoto(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (!(ftCommonAttack13CheckFighterKind(fp)))
+    if (!(ftCommonAttack13CheckGotoKind(fp)))
     {
         return FALSE;
     }

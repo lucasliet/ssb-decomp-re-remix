@@ -1,6 +1,9 @@
 #include <wp/weapon.h>
 #include <ft/fighter.h>
 #include <reloc_data.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixpikashared.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -168,16 +171,30 @@ sb32 wpPikachuThunderJoltAirProcReflector(GObj *weapon_gobj)
 // 0x801695E4
 GObj* wpPikachuThunderJoltAirMakeWeapon(GObj *fighter_gobj, Vec3f *pos, Vec3f *vel)
 {
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPPikachuThunderJoltAirWeaponDesc;
+    GObj *weapon_gobj;
+#else
     GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPPikachuThunderJoltAirWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     WPStruct *wp;
 
+#ifdef REGION_REMIX
+    ftRemixPikaSharedThunderJoltDesc(ftGetStruct(fighter_gobj), &remix_desc);
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &remix_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+#endif
     if (weapon_gobj == NULL)
     {
         return NULL;
     }
     wp = wpGetStruct(weapon_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixPikaSharedThunderJoltSetKind(wp, ftGetStruct(fighter_gobj));
+    wp->lifetime = ftRemixPikaSharedThunderJoltLifetime(ftGetStruct(fighter_gobj), WPPIKACHUJOLT_LIFETIME);
+#else
     wp->lifetime = WPPIKACHUJOLT_LIFETIME;
+#endif
 
     wp->physics.vel_air = *vel;
 
@@ -187,11 +204,17 @@ GObj* wpPikachuThunderJoltAirMakeWeapon(GObj *fighter_gobj, Vec3f *pos, Vec3f *v
 // 0x80169654
 void wpPikachuThunderJoltGroundAddAnim(GObj *weapon_gobj)
 {
+#ifdef REGION_REMIX
+    void *anim_file = ftRemixPikaSharedThunderJoltAnimFile(wpGetStruct(weapon_gobj), gFTDataPikachuSpecial3);
+#else
+    void *anim_file = gFTDataPikachuSpecial3;
+#endif
+
     gcAddAnimAll
     (
         weapon_gobj, 
-        lbRelocGetFileData(AObjEvent32**, gFTDataPikachuSpecial3, llPikachuSpecial3ThunderJoltBAnimJoint), 
-        lbRelocGetFileData(AObjEvent32***, gFTDataPikachuSpecial3, llPikachuSpecial3ThunderJoltBMatAnimJoint), 
+        lbRelocGetFileData(AObjEvent32**, anim_file, llPikachuSpecial3ThunderJoltBAnimJoint), 
+        lbRelocGetFileData(AObjEvent32***, anim_file, llPikachuSpecial3ThunderJoltBMatAnimJoint), 
         0.0F
     );
     gcPlayAnimAll(weapon_gobj);
@@ -204,7 +227,11 @@ sb32 wpPikachuThunderJoltGroundProcUpdate(GObj *weapon_gobj)
 
     if (weapon_gobj->anim_frame == WPPIKACHUJOLT_ANIM_PUSH_FRAME)
     {
+#ifdef REGION_REMIX
+        efManagerPikachuThunderJoltMakeEffectForWeapon(weapon_gobj);
+#else
         efManagerPikachuThunderJoltMakeEffect(&DObjGetStruct(weapon_gobj)->translate.vec.f, DObjGetStruct(weapon_gobj)->rotate.vec.f.z);
+#endif
         wpPikachuThunderJoltGroundAddAnim(weapon_gobj);
     }
     if (wpMainDecLifeCheckExpire(wp) != FALSE)
@@ -703,7 +730,15 @@ GObj* wpPikachuThunderJoltGroundMakeWeapon(GObj *prev_gobj, Vec3f *pos, s32 coll
     s32 unused[2];
     WPStruct *prev_wp = wpGetStruct(prev_gobj);
     WPStruct *new_wp;
+#ifdef REGION_REMIX
+    WPDesc remix_desc = dWPPikachuThunderJoltGroundWeaponDesc;
+    GObj *new_gobj;
+
+    ftRemixPikaSharedThunderJoltGroundDesc(prev_wp, &remix_desc);
+    new_gobj = wpManagerMakeWeapon(prev_gobj, &remix_desc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_WEAPON));
+#else
     GObj *new_gobj = wpManagerMakeWeapon(prev_gobj, &dWPPikachuThunderJoltGroundWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_WEAPON));
+#endif
 
     if (new_gobj == NULL)
     {
@@ -711,6 +746,9 @@ GObj* wpPikachuThunderJoltGroundMakeWeapon(GObj *prev_gobj, Vec3f *pos, s32 coll
     }
     new_wp = wpGetStruct(new_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixPikaSharedThunderJoltInheritKind(new_wp, prev_wp);
+#endif
     new_wp->weapon_vars.thunder_jolt.line_type = coll_type;
 
     new_wp->lifetime = prev_wp->lifetime;
@@ -756,7 +794,11 @@ GObj* wpPikachuThunderJoltGroundMakeWeapon(GObj *prev_gobj, Vec3f *pos, s32 coll
         }
         break;
     }
+#ifdef REGION_REMIX
+    efManagerPikachuThunderJoltMakeEffectForWeapon(new_gobj);
+#else
     efManagerPikachuThunderJoltMakeEffect(&DObjGetStruct(new_gobj)->translate.vec.f, DObjGetStruct(new_gobj)->rotate.vec.f.z);
+#endif
     wpMainPlayFGM(new_wp, nSYAudioFGMPikachuElectricLoop); // Bruh
 
     return new_gobj;

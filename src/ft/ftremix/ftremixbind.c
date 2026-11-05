@@ -6,6 +6,7 @@
 #ifdef PORT
 
 #include "ftremix.h"
+#include "ftremixkirbyhooks.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -184,6 +185,21 @@ static void ftRemixBindAction(FTStatusDesc *desc, u32 entry, const FTStatusDesc 
     }
 }
 
+/* Resolves the entry Kirby runs for a copied power: the begin routines of ftremixkirbycopybegin.c first, then the ported tables. */
+static sb32 ftRemixResolveKirbyCopyProc(u32 addr, FTRemixProcFn *out, FTRemixBindStats *stats)
+{
+    FTRemixProcFn begin_proc = ftRemixFindKirbyCopyBeginProc(addr);
+
+    if (begin_proc == NULL)
+    {
+        return ftRemixResolveProc(addr, out, stats);
+    }
+    stats->ported++;
+    *out = begin_proc;
+
+    return TRUE;
+}
+
 static void ftRemixBindKirbyCopyHandlers(struct FighterDescriptor *descriptor, s32 remix_id, FTRemixBindStats *stats)
 {
     static const u32 tables[2] = { REMIX_SPECIAL_TABLE_KIRBY_GROUND_NSP, REMIX_SPECIAL_TABLE_KIRBY_AIR_NSP };
@@ -194,7 +210,7 @@ static void ftRemixBindKirbyCopyHandlers(struct FighterDescriptor *descriptor, s
         u32 addr = ftRemixReadWord(tables[i] + (remix_id * 4));
         FTRemixProcFn proc;
 
-        if ((addr != 0) && (ftRemixResolveProc(addr, &proc, stats) != FALSE))
+        if ((addr != 0) && (ftRemixResolveKirbyCopyProc(addr, &proc, stats) != FALSE))
         {
             descriptor->kirby_copy_handler[i] = proc;
             continue;

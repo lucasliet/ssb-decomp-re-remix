@@ -29,6 +29,9 @@ extern sb32 gmRemixSmashketballIsSoccer(void);
 /** Smashketball.spawn_golden: TRUE when the next ball is the golden soccer ball (worth 3 points). */
 extern sb32 gmRemixSmashketballIsGolden(void);
 
+/** Team of the home side (the left spawn side), read by the CPU ball hooks (Smashketball.asm ai_ball_behavior_). */
+extern s32 gmRemixSmashketballGetHomeTeam(void);
+
 /** Stage id the match plays on for the current type (Smashketball 0x5A, Soccer 0xD1). */
 extern s32 gmRemixSmashketballGetStage(void);
 

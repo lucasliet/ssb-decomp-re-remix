@@ -2,6 +2,7 @@
 #include <sc/scene.h>
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixcapturecargorules.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -154,7 +155,9 @@ void ftCommonCaptureShoulderedSetStatus(GObj *fighter_gobj)
     s32 damage;
 
     ftCommonThrownSetStatusImmediate(fighter_gobj, nFTCommonStatusShouldered);
-#if defined(REGION_US)
+#if defined(REGION_REMIX)
+    ftCommonCaptureTrappedInitBreakoutVars(this_fp, (this_fp->percent_damage * 0.08F) + ftRemixCaptureCargoEscapeBase(capture_fp->fkind)); /* JDK.asm jdk_cargo_ (0x8014E594) */
+#elif defined(REGION_US)
     ftCommonCaptureTrappedInitBreakoutVars(this_fp, (this_fp->percent_damage * 0.08F) + 14.0F);
 #else
     ftCommonCaptureTrappedInitBreakoutVars(this_fp, (this_fp->percent_damage * 0.08F) + 20.0F);

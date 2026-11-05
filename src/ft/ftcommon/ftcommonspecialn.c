@@ -1,5 +1,6 @@
 #include <ft/fighter.h>
 #ifdef REGION_REMIX
+#include "ft/ftremix/ftremixmagichat.h"
 #include "if/ifremixannouncer.h"
 #include "mn/mnvsmode/mnremixvsstats.h"
 #endif
@@ -89,6 +90,9 @@ void ftKirbySpecialNSetStatusSelect(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixKirbyMagicHatRoll(fighter_gobj);
+#endif
 #ifdef PORT
     /* Synth copy power: copy_id is the inhaled synth's own fkind, which OOBs
      * the 27-entry vanilla dispatch table. SR patches kirby_ground_nsp[victim]

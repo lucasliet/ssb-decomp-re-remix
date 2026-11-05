@@ -16,7 +16,7 @@ void ftRemixAiLogRecoverBegin(FTStruct *fp);
 /** Closes the open episode with result=ok when the fighter, after being airborne, lands on ground or holds a ledge. */
 void ftRemixAiLogRecoverUpdate(FTStruct *fp);
 
-/** Closes the open episode with result=ko when the fighter is KO'd. */
+/** Closes the open episode with result=ko when the fighter is KO'd; hit=1 when its percent rose since recover_begin, hit=0 is a self-destruct. */
 void ftRemixAiLogRecoverDead(FTStruct *fp);
 
 #endif

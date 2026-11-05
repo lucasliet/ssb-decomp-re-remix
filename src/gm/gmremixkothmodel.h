@@ -22,6 +22,14 @@ extern sb32 gmRemixKothModelMake(void);
 /** Every frame: moves the pieces to the vertices of the hill line and the marker above its middle, or hides them. */
 extern void gmRemixKothModelSync(void);
 
+/**
+ * KingOfTheHill.asm ai_hill_behavior_: world position of the hill marker (the top joint plus its texture joint), raised above
+ * the hill line.
+ *
+ * @return FALSE when the marker does not exist or is hidden, then x and y are not written.
+ */
+extern sb32 gmRemixKothModelGetMarkerPosition(f32 *x, f32 *y);
+
 #endif
 
 #endif

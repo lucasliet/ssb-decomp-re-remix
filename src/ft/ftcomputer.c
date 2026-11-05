@@ -33,6 +33,8 @@
 #include "ft/ftremix/ftremixaiprediction.h"
 #include "ft/ftremix/ftremixailog.h"
 #include "ft/ftremix/ftremixaishared.h"
+#include "ft/ftremix/ftremixaimodes.h"
+#include "ft/ftremix/ftremixaireflect.h"
 #include "ft/ftremix/ftremixaistage.h"
 #include "gm/gmremixtoggle.h"
 #endif
@@ -3864,7 +3866,11 @@ sb32 ftComputerCheckFindTarget(FTStruct *this_fp)
                     ) 
                     &&
                     (
+#if defined(PORT) && defined(REGION_REMIX)
+                        (ftRemixAiIsMetalKind(this_fp->fkind) == FALSE) ||
+#else
                         (this_fp->fkind != nFTKindMMario) ||
+#endif
                         (other_fp->ga == nMPKineticsGround)
                     )
                 )
@@ -3897,6 +3903,9 @@ sb32 ftComputerCheckFindTarget(FTStruct *this_fp)
         return FALSE;
     }
     com->ftcom_flags_0x4A_b1 = TRUE;
+#if defined(PORT) && defined(REGION_REMIX)
+    ftRemixAiModesSeekBall(this_fp, this_pos_x, this_pos_y, &distance);
+#endif
     com->target_dist = sqrtf(distance);
 
     if (ftGetComTargetFighter(com)->ga == nMPKineticsGround)
@@ -4050,6 +4059,7 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
     f32 detect_far_y;
 #if defined(PORT) && defined(REGION_REMIX)
     f32 size_detect_scale;
+    FTRemixAiBallTarget ball_target;
 #endif
     FTComputerAttack *comattack;
     Vec3f this_detect_pos;
@@ -4112,6 +4122,17 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
     this_gravity = this_fp->attr->gravity;
 
 #if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiModesGetBallTarget(&ball_target))
+    {
+        hurtbox_detect_width = ball_target.hurtbox_width;
+        hurtbox_detect_height = ball_target.hurtbox_height;
+        target_pos_x = ball_target.pos_x;
+        target_pos_y = ball_target.pos_y;
+        target_vel_x = ball_target.vel_x;
+        target_vel_y = ball_target.vel_y;
+        target_tvel_base = ball_target.tvel_base;
+        target_gravity = ball_target.gravity;
+    }
     comattack = ftRemixAiGetAttackList(this_fp->fkind, this_fp->level);
     if (comattack == NULL)
     {
@@ -4419,6 +4440,12 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                         {
                             if (user_data != NULL)
                             {
+#if defined(PORT) && defined(REGION_REMIX)
+                                if (ftRemixAiReflectSkipsNspCandidate(this_fp, (FTStruct*)user_data))
+                                {
+                                    goto l_continue;
+                                }
+#else
                                 if ((((FTStruct*)user_data)->fkind == nFTKindNess) || (((FTStruct*)user_data)->fkind == nFTKindFox))
                                 {
                                     fkind = (this_fp->fkind == nFTKindKirby) ? this_fp->passive_vars.kirby.copy_id : this_fp->fkind;
@@ -4435,6 +4462,7 @@ sb32 ftComputerCheckDetectTarget(FTStruct *this_fp, f32 detect_range_base)
                                         goto l_continue;
                                     }
                                 }
+#endif
                             }
                         }
                         switch (this_fp->fkind)
@@ -5073,6 +5101,12 @@ sb32 ftComputerCheckTargetItemOrTwister(FTStruct *fp)
     predict_x = fp->joints[nFTPartsJointTopN]->translate.vec.f.x + (fp->physics.vel_air.x * 5.0F);
     predict_y = fp->joints[nFTPartsJointTopN]->translate.vec.f.y + (fp->physics.vel_air.y * 5.0F);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiModesSeekHill(fp))
+    {
+        return TRUE;
+    }
+#endif
     while (item_gobj != NULL)
     {
         ITStruct *ip = itGetStruct(item_gobj);
@@ -5645,7 +5679,11 @@ sb32 func_ovl3_80135B78(FTStruct *this_fp)
                             {
                                 predict_div_x = predict_pos_x / predict_vel_x;
 
+#if defined(PORT) && defined(REGION_REMIX)
+                                if (predict_div_x < ftRemixAiReflectDetectionFrames(this_fp))
+#else
                                 if (predict_div_x < 15.0F)
+#endif
                                 {
                                     predict_pos_y = (this_fp->ga != nMPKineticsGround) ? (this_fp->physics.vel_air.y * predict_div_x) + this_pos_y : this_pos_y;
 
@@ -5660,10 +5698,14 @@ sb32 func_ovl3_80135B78(FTStruct *this_fp)
                                             {
                                                 if
                                                 (
+#if defined(PORT) && defined(REGION_REMIX)
+                                                    ftRemixAiReflectProjectileRaisesFlag(this_fp, wp)
+#else
                                                     (this_fp->fkind == (0,nFTKindFox)) || // WTF????????????????????????
                                                     (this_fp->fkind == nFTKindNess)    ||
                                                     (this_fp->fkind == nFTKindNFox)    ||
                                                     (this_fp->fkind == nFTKindNNess)
+#endif
                                                 )
                                                 {
                                                     com->is_opponent_ra = TRUE;
@@ -5727,10 +5769,14 @@ sb32 func_ovl3_80135B78(FTStruct *this_fp)
                                             {
                                                 if
                                                 (
+#if defined(PORT) && defined(REGION_REMIX)
+                                                    ftRemixAiReflectItemRaisesFlag(this_fp)
+#else
                                                     (this_fp->fkind == (0, nFTKindFox))  || // I AM LOSING MY MIND
                                                     (this_fp->fkind == nFTKindNess)      ||
                                                     (this_fp->fkind == nFTKindNFox)   ||
                                                     (this_fp->fkind == nFTKindNNess)
+#endif
                                                 )
                                                 {
                                                     com->is_opponent_ra = TRUE;
@@ -6103,6 +6149,10 @@ sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
     case REMIX_ID_GBOWSER:
         ftRemixAiSpecialsBowserUspStickReset(fp);
         break;
+
+    case REMIX_ID_SHEIK:
+    case REMIX_ID_PEPPY:
+        return ftRemixAiSpecialsNeedleCharge(fp);
 #endif
 
     case nFTKindSamus:
@@ -6112,9 +6162,6 @@ sb32 ftComputerCheckTryChargeSpecialN(FTStruct *fp)
     case REMIX_ID_ESAMUS:
     case REMIX_ID_JSAMUS:
 #endif
-        /* REMIX-TODO(AI): improve_remix_specials (AI.asm 0x80136B3C and 0x80136BF8 exits) also gives Sheik and Peppy needle
-         * or revolver charges (the Samus B press when needle ammo is below 6). Not ported: the two vanilla exits are not
-         * mapped to lines of this function. */
         if
         (
             (fp->status_id != nFTSamusStatusSpecialNStart)     &&
@@ -6656,6 +6703,12 @@ s32 ftComputerProcDefault(GObj *fighter_gobj)
         }
         break;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiReflectMaintainInput(fp))
+    {
+        return FALSE;
+    }
+#endif
     if ((fp->status_id >= nFTCommonStatusGuardStart) && (fp->status_id <= nFTCommonStatusGuardEnd))
     {
         ftComputerSetCommandWaitShort(fp, 0x24);
@@ -6954,6 +7007,9 @@ void ftComputerFollowObjectiveCounterAttack(FTStruct *fp)
             }
             break;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixAiReflectApplyInput(fp);
+#endif
     }
     else if (com->is_shield_item_weapon)
     {
@@ -7292,9 +7348,19 @@ sb32 func_ovl3_80138AA8(FTStruct *this_fp, sb32 is_delay)
             }
 #endif
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        fkind = ftRemixAiCopiedPowerKind(this_fp);
+
+        if (ftRemixAiSpecialsFarRangeIsCharging(this_fp, fkind))
+        {
+            return FALSE;
+        }
+        if (ftRemixAiSpecialsFarRangeUsesSamusActions(fkind))
+#else
         fkind = (this_fp->fkind == nFTKindKirby) ? this_fp->passive_vars.kirby.copy_id : this_fp->fkind;
 
         if (fkind == nFTKindSamus)
+#endif
         {
             if
             (

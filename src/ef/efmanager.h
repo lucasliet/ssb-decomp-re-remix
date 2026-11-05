@@ -118,6 +118,10 @@ extern void efManagerPikachuThunderTrailProcUpdate(GObj *effect_gobj);
 extern void efManagerPikachuThunderTrailProcDisplay(GObj *effect_gobj);
 extern GObj* efManagerPikachuThunderTrailMakeEffect(Vec3f *pos, s32 lifetime, s32 texture_index);
 extern GObj* efManagerPikachuThunderJoltMakeEffect(Vec3f *pos, f32 rotate);
+#ifdef REGION_REMIX
+extern GObj* efManagerPikachuThunderTrailMakeEffectForWeapon(GObj *weapon_gobj, Vec3f *pos, s32 lifetime, s32 texture_index);
+extern GObj* efManagerPikachuThunderJoltMakeEffectForWeapon(GObj *jolt_gobj);
+#endif
 extern void efManagerKirbyVulcanJabProcUpdate(GObj *effect_gobj);
 extern GObj* efManagerKirbyVulcanJabMakeEffect(Vec3f *pos, s32 lr, f32 rotate, f32 vel, f32 add);
 extern GObj* efManagerSamusGrappleBeamGlowMakeEffect(GObj *fighter_gobj);
