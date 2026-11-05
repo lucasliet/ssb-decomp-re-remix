@@ -4,7 +4,7 @@
  *
  * The minion (Waddle Dee, Waddle Doo or Gordo) is a Remix custom item in
  * it/itremix/. This file keeps the held and field minion slots. The
- * max-charge spark starts GFXRoutine DEDEDE_CHARGE. Details: docs/remix/notes/40_DEDEDE_DSP.md.
+ * max-charge spark starts GFXRoutine DEDEDE_CHARGE. Details: docs/remix/deviations.md.
  */
 
 #ifdef PORT

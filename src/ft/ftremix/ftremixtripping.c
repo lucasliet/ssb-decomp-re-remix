@@ -3,7 +3,7 @@
  * reset that keeps a trip, and the recovery from a trip damage status.
  *
  * ftCommonTurnSetStatus, ftCommonTurnProcInterrupt, ftCommonDashSetStatus, ftCommonTurnRunSetStatus and
- * ftCommonDamageCommonProcUpdate call into this file (see docs/remix/notes/f8_tripping.md).
+ * ftCommonDamageCommonProcUpdate call into this file (see docs/remix/toggles.md).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)

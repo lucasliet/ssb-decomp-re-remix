@@ -56,7 +56,7 @@ static void ftRemixFootStooledProcMap(GObj *fighter_gobj);
 static void ftRemixFootStooledProcInterrupt(GObj *fighter_gobj);
 
 /* FootStool.asm _team_check: Remix compares the target team with the jumper GObj byte at 0x0C (link_id), not with the
- * jumper's team. Kept as in Remix, see docs/remix/notes/f8_footstool.md. */
+ * jumper's team. Kept as in Remix, see docs/remix/toggles.md. */
 static sb32 ftRemixFootStoolIsTeamBlocked(GObj *jumper_gobj, FTStruct *target_fp)
 {
     if (!gSCManagerBattleState->is_team_battle || gSCManagerBattleState->is_team_attack)

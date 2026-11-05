@@ -6,7 +6,7 @@
  * (moveset commands 5C0000XX / 580000XX). Air pull copies vanilla air physics (0x800D90E0)
  * with a custom gravity, a custom friction and no fast fall. The drain of the captured
  * player is ftRemixDragonKingUSPDrain. Deviations and open questions are in
- * docs/remix/notes/47_DRAGONKING_USP.md.
+ * docs/remix/deviations.md.
  */
 
 #ifdef PORT
@@ -233,7 +233,7 @@ static void ftRemixDragonKingUSPAirPullCollision(GObj *fighter_gobj)
     mpCommonProcFighterLanding(fighter_gobj, ftRemixDragonKingUSPLandingThrowInitial);
 }
 
-/* Called by the vanilla damage digits hook (drain_flash_fix_, notes 47_DRAGONKING_USP.md). `player_gobj` is the
+/* Called by the vanilla damage digits hook (drain_flash_fix_, docs/remix/deviations.md). `player_gobj` is the
  * gobj read from the hook's a1 + 0x78. Returns TRUE while a Dragon King capture keeps the % colour. */
 sb32 ftRemixDragonKingUSPIsCaptureFlashOverride(GObj *player_gobj)
 {

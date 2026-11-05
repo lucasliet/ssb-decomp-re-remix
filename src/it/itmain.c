@@ -624,7 +624,7 @@ void itMainSetGroundAllowPickup(GObj *item_gobj) // Airborne item becomes ground
 }
 
 #ifdef REGION_REMIX
-/* H1 (notes 1F_YLINK.md): YoungLinkSpecial.asm state_change_ swaps the status table of a Young Link bomb
+/* H1 (docs/remix/deviations.md, Young Link): YoungLinkSpecial.asm state_change_ swaps the status table of a Young Link bomb
  * (item kind nITKindLinkBomb, creator id stored in coll_data.cliff_id by ftRemixYoungLinkBombSetOwner) for
  * the Bombchu table. The vanilla status ids map onto the first six Bombchu states; state 6 (moving) is
  * entered only from the Bombchu routines themselves. */

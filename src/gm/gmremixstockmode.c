@@ -33,7 +33,7 @@ static s32 sStockModeInitialCount[GMREMIX_STOCK_MODE_PORTS] =
     GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET, GMREMIX_STOCK_COUNT_UNSET
 };
 
-/** Hooks for the CSS reset and the salty runback. Call them from the port; see docs/remix/notes/f14_stockmode_last.md. */
+/** Hooks for the CSS reset and the salty runback. Call them from the port; see docs/remix/modes_base.md (Stock Mode). */
 void gmRemixStockModeResetLast(void);
 void gmRemixStockModeSaltyRunbackLast(void);
 sb32 gmRemixStockModeIsManual(s32 player);

@@ -5010,13 +5010,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         }
     }
 
-    /* SR change_action_ extras (CrashSpecial.asm: training-mode action
-     * frame reset, Item.respawn_with_item_). Training-mode is a separate
-     * SR engine subsystem that hasn't been ported; respawn_with_item is
-     * SR's item-respawn loop. Both fire from the same change_action_ patch
-     * site in SR but the port has no equivalent target to drive. They are
-     * left unimplemented here because the SR systems they depend on are
-     * not present in the BattleShip port. */
+    /* change_action_ extras (CrashSpecial.asm): Item.respawn_with_item_ is ftremixstartitem.c (it fires on
+     * RebirthStand where the asm uses RebirthDown, docs/remix/patch_audit.md GP-9); the Training action frame
+     * reset is not ported (GP-10). */
 #endif
 
     status_struct = NULL;

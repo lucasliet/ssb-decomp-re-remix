@@ -5805,7 +5805,7 @@ GObj* efManagerDonkeyEntryTaruMakeEffect(Vec3f *pos)
 // 0x80103474
 /* Dark Samus (file 6) and Crash (file 8) entry glows get their owner file from ftRemixEntryBeginEffect
  * (ftremixentry.c, rows in ftremixentrydata.c, samusshared.asm get_entry_anim_gfx_struct). Remix fighters reach
- * this maker through ftRemixEntryMakeEffect, so the signature needs no fighter. Resolved, see shared_samus2.md. */
+ * this maker through ftRemixEntryMakeEffect, so the signature needs no fighter. Resolved, see docs/remix/deviations.md (vanilla hook sites). */
 GObj* efManagerSamusEntryPointMakeEffect(Vec3f *pos)
 {
     GObj *effect_gobj;

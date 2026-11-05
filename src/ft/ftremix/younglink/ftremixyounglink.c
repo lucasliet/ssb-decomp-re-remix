@@ -5,7 +5,7 @@
  * YoungLinkUSP.direction_ is the Up Special air interrupt. YoungLinkDSP is the
  * Bombchu item (Link's bomb cloned as item id 0x15): its state routines are
  * ported below, and dFTRemixYoungLinkBombchuStatusDescs is the state table that the
- * itMainSetStatus hook (notes 1F_YLINK.md H1) installs for Young Link's bombs.
+ * itMainSetStatus hook (docs/remix/deviations.md, Young Link) installs for Young Link's bombs.
  */
 
 #ifdef PORT

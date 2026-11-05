@@ -4,7 +4,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 /*
- * Layout of the 12-Character Battle character select (TwelveCharBattle.asm lines 79-357, f15_twelvecb_css_spec.md): 24
+ * Layout of the 12-Character Battle character select (TwelveCharBattle.asm lines 79-357, docs/remix/css_reference.md): 24
  * portraits in 3 rows of 8 columns. Player 1 owns the columns 0 to 3 and player 2 the columns 4 to 7, so every character shows up
  * twice and each player has 12 portraits of his own. Pure so the headless unit tests (tests/remix) run it.
  */

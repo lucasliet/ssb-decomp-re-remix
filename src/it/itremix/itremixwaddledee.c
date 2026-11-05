@@ -4,7 +4,7 @@
  *
  * Waddle Doo (itremixwaddledoo.c) and Gordo reuse the routines exported in
  * itremixwaddledee.h. SKIPPED(Dedede minion slots): the owner minion pointers are not named in the port; see
- * docs/remix/notes/item_WaddleDee.md for every deviation.
+ * docs/remix/deviations.md for every deviation.
  */
 
 #ifdef PORT

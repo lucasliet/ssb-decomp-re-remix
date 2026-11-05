@@ -3,7 +3,7 @@
  * with a multiplier that depends on the mode, and a fighter above 100% damage gives off smoke.
  *
  * ftMainProcessHitCollisionStatsMain, ftCommonThrownReleaseThrownUpdateStats, ftParamGetCommonKnockback and
- * ftMainProcPhysicsMap call into this file (see docs/remix/notes/f8_rage.md). Every entry point is a no-op while the
+ * ftMainProcPhysicsMap call into this file (see docs/remix/toggles.md). Every entry point is a no-op while the
  * setting is off.
  */
 

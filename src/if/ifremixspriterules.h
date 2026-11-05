@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 /*
- * Table of the Remix button and extension sprites (docs/remix/notes/f15_button_sprites.md), pure so the headless unit
+ * Table of the Remix button and extension sprites (docs/remix/menus.md), pure so the headless unit
  * tests (tests/remix) can check it. Each entry names the reloc file that holds the sprite and the offset of its Sprite
  * header in that file (Render.file_c5_offsets in the asm).
  */

@@ -193,7 +193,7 @@ static void ftRemixPianoDSPAirEndSetStatus(GObj *fighter_gobj)
 }
 
 /* absorb_initial_ (ground and aerial): starts the absorb, arms the Ness absorb and clears temp variable 2.
- * Non-static: the Ness absorb patch calls it (see docs/remix/notes/36_PIANO_DSP.md). */
+ * Non-static: the Ness absorb patch calls it (see docs/remix/deviations.md). */
 static void ftRemixPianoDSPAbsorbSetStatus(GObj *fighter_gobj, s32 status_id)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);

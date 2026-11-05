@@ -7947,8 +7947,7 @@ void ftComputerFollowObjectiveRush(FTStruct *fp)
 }
 
 // 0x8013A38C
-/* REMIX-TODO(AI): cpu_di_ (AI.asm 6533-6812, hook at 0x8013A3C8) is not ported. It needs Training.entry_di_* and
- * SinglePlayerModes flag symbols, the smash/slide DI tables (DI_* script ids not mapped in C) and the per-port combo state. */
+/* AI.asm cpu_di_ (6533-6812, hook at 0x8013A3C8) is ftRemixAiCpuDiSetObjective (ft/ftremix/ftremixaidi.c), called below. */
 void ftComputerProcessObjective(FTStruct *fp)
 {
     FTComputer *com = &fp->computer;

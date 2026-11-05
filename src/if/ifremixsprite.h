@@ -9,7 +9,7 @@
 
 /*
  * Remix button and extension sprites as native SObjs (Render.draw_texture_at_offset, TEXTURE_INIT_ and TEXTURE_RENDER_
- * in the asm; docs/remix/notes/f15_button_sprites.md). The sprite is drawn by the game display list, so it sits under
+ * in the asm; docs/remix/menus.md). The sprite is drawn by the game display list, so it sits under
  * the ImGui text overlay (remix_hud_text) and above everything the same camera draws earlier.
  */
 

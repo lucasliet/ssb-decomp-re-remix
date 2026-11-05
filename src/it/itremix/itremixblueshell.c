@@ -467,7 +467,7 @@ static void itRemixBlueShellGroundedGfx(GObj *item_gobj)
     ip->owner_gobj = NULL;
     pos = dobj->translate.vec.f;
     pos.y += ip->attr->map_coll_bottom;
-    /* DEVIATION(pink smoke): BlueShell.asm custom_smoke_ (line 955) calls lbParticleMakeScriptID (0x800CE9E8) with script 0x8A and a bank id read from RAM 0x801313C4 (not in the port); the port uses the vanilla dust effect, so the smoke colour differs. See docs/remix/notes/f14_items_fx.md */
+    /* DEVIATION(pink smoke): BlueShell.asm custom_smoke_ (line 955) calls lbParticleMakeScriptID (0x800CE9E8) with script 0x8A and a bank id read from RAM 0x801313C4 (not in the port); the port uses the vanilla dust effect, so the smoke colour differs. See docs/remix/deviations.md */
     efManagerDustLightMakeEffect(&pos, ip->lr, 1.0F);
     ip->item_vars.shell.dust_effect_int = ITREMIX_BLUESHELL_GFX_INTERVAL - 1;
 }

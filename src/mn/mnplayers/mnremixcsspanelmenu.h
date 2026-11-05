@@ -10,7 +10,7 @@
 /*
  * Per-port panel menu of the Remix character select screens (src/CharacterSelectDebugMenu.asm): a gold button at the top-left of
  * each panel opens a menu over the panel with the options of the player panel registry (port/remix/remix_player_panel.h), three
- * per page, with item arrows, page arrows and a reset button. docs/remix/notes/f16_css_panel_menu.md has the asm map.
+ * per page, with item arrows, page arrows and a reset button. docs/remix/panel.md has the asm map.
  *
  * Each CSS tells the menu where its panels are once per frame (mnRemixPanelMenuSetPanel), forwards the A button of its cursors
  * (mnRemixPanelMenuPress, mnRemixPanelMenuHoldPress) and asks mnRemixPanelMenuIsOpen where the asm hooks hide or disable

@@ -22,7 +22,7 @@
 
 /**
  * Classic mode is the vanilla 1P/RTTF game type (AI.asm reads Global.match_info, GAMEMODE.CLASSIC). See the deviation
- * note in docs/remix/notes/f13_ai_port.md.
+ * note in docs/remix/ai.md.
  */
 sb32 ftRemixAiRecoveryIsClassicMode(void)
 {

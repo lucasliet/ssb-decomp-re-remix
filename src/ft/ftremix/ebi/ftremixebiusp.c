@@ -4,7 +4,7 @@
  * EbiUSPRefresh hook in the same file).
  *
  * The collision routine splices Mario's up special landing check (0x80156358).
- * See docs/remix/notes/46_EBI_USP.md.
+ * See docs/remix/deviations.md.
  */
 
 #ifdef PORT
