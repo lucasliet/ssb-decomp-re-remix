@@ -63,11 +63,25 @@ extern s32 sc1PRemix1PPolygonKind(void);
 /** TRUE for the Giga Bowser CPU of the final stage of Remix 1P, which takes the damage and defeat path of Master Hand. @param fkind Fighter kind. @param team Battle team. */
 extern sb32 sc1PRemix1PIsFinalBoss(s32 fkind, s32 team);
 
+/**
+ * The player left the 1P game through the pause menu (pause_exit): in the Remix 1P mode the size the player had from the character
+ * select panel does not carry over to the next run (CharacterSelectDebugMenu.Size.clear_settings_for_1p_). No-op in other modes.
+ */
+extern void sc1PRemix1POnPauseExit(void);
+
 /** TRUE when a CPU of this kind may not start its grounded up special in Remix 1P (_giga_usp_prevent: Mad Piano, Fox and Falco). @param fkind Fighter kind. @param is_cpu TRUE for a CPU. */
 extern sb32 sc1PRemix1PBlocksCpuUpSpecial(s32 fkind, sb32 is_cpu);
 
 /** Damage Giga Bowser takes before it is defeated: 200 on Very Easy and Easy, 250 on Normal and Hard, 300 on Very Hard (giga_stamina_check_). */
 extern s32 sc1PRemix1PBossHitPoints(void);
+
+/**
+ * Test hook: SSB64_REMIX_1P_BOSS_PRESET_DAMAGE=<n> starts the final boss of the Remix 1P with n percent, so the end of the stage (the
+ * wallpaper steps at 90 and 180 damage, then the defeat) can be reached with a few hits. No-op for other fighters or without the variable.
+ *
+ * @param fp Fighter just made.
+ */
+extern void sc1PRemix1PPresetBossDamage(FTStruct *fp);
 
 /** TRUE when the Star Fox line is a duo whose partner loads first (`duo_spawn`). */
 extern sb32 sc1PRemix1PIsDuoPartnerFirst(void);

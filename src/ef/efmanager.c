@@ -8,6 +8,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "sc/sc1pmode/sc1premixenemy.h"
 #include "ft/ftremix/ftremixsizeness.h"
+#include "ft/ftremix/ftremixpartimage.h"
 #include "if/ifremixannouncer.h"
 #endif
 #ifdef PORT
@@ -4312,6 +4313,7 @@ void efManagerYoshiShieldProcDisplay(GObj *effect_gobj)
 
 #ifdef REGION_REMIX
     ftRemixSizeScaleYoshiShield(effect_gobj, fp);
+    ftRemixPartImageYoshiEggShieldApply(effect_gobj, fp);
 #endif
 
     gcDrawDObjDLHead1(effect_gobj);

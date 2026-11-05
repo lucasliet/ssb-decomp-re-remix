@@ -152,8 +152,8 @@ static sb32 gmRemixGameEndShowFullResults(void)
  * @param kind sMNVSResultsKind.
  * @return The time layout for the stock kinds when full results are on, otherwise kind unchanged.
  * The extra rows (KOTH time, Smashketball baskets) take their values from gmremixgameendrows.h and the numbers from
- * gmremixgameendrowsrules.h. REMIX-TODO(results-mode-rows): mnvsresults.c does not draw them yet (VsRemixMenu.asm:1007
- * add_row_to_results_), so those modes show only the vanilla rows until that hook is wired.
+ * gmremixgameendrowsrules.h; mnVSResultsMakeRemixRow draws them in the slot of the routine this kind selects
+ * (VsRemixMenu.asm:1007 add_row_to_results_).
  */
 s32 gmRemixGameEndResultsDrawKind(s32 kind)
 {

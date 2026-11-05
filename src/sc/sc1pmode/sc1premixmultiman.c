@@ -37,6 +37,10 @@ static f32 sSC1PRemixMultimanCounterY;
 
 s32 sc1PRemixMultimanFirstStage(s32 mode)
 {
+    if (mode == SC1PREMIX_MODE_BONUS3)
+    {
+        return nSC1PGameStageBonus3;
+    }
     return (sc1PRemixModeIsMultiman(mode) != 0) ? nSC1PGameStageZako : 0;
 }
 

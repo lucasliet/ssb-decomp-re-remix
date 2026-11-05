@@ -82,6 +82,21 @@ extern void sc1PRemixAllstarOnPlayerKo(void);
 /** The human continued after losing: the kept percent is zero and the limbo is over (clear_percent_continue). */
 extern void sc1PRemixAllstarOnContinue(void);
 
+/** TRUE while the 1P game being played is the Rest Area of an All-Star run (stage type 0). */
+extern sb32 sc1PRemixAllstarIsRestArea(void);
+
+/**
+ * Rules of the Rest Area battle (_time_limit): no time limit. Call after the stage table set the time limit; no-op outside the Rest Area.
+ */
+extern void sc1PRemixAllstarSetupBattle(void);
+
+/**
+ * Whether the run has already begun (match_begin_flag, set by rest_area_setup and cleared when START is pressed on the CSS): the
+ * scene start of the 1P game then keeps the stocks, the total damage and the score of the run (stock_prevent, damage_prevent,
+ * prevent_erase) instead of clearing them.
+ */
+extern sb32 sc1PRemixAllstarKeepsRunState(void);
+
 /** Places the Rest Area hearts a run still has (rest_area_setup): three, minus the ones already used. */
 extern void sc1PRemixAllstarSetupRestArea(void);
 

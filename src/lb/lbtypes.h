@@ -252,6 +252,8 @@ struct LBBackup1PRecord
 	u32 hrc_distance;           // Home-Run Contest record in tenths of a foot (Character.HRC_HIGH_SCORE_TABLE)
 	u16 multiman_kos;           // Multi-Man record (Character.MULTIMAN_HIGH_SCORE_TABLE)
 	u16 cruel_kos;              // Cruel Multi-Man record (Character.CRUEL_HIGH_SCORE_TABLE)
+	u32 bonus3_time;            // Bonus 3 best finish time in ticks, Normal course (Character.BONUS3_HIGH_SCORE_TABLE)
+	u32 bonus3_remix_time;      // Bonus 3 best finish time in ticks, Remix course (Bonus.REMIX_BONUS3_HIGH_SCORE_TABLE)
 #endif
 };
 

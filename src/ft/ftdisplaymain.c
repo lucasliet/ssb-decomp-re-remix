@@ -6,6 +6,7 @@
 #include "ft/ftremix/ftremixenvcolor.h"
 #include "ft/ftremix/ftremixdkmode.h"
 #include "ft/ftremix/ftremixswordtrail.h"
+#include "ft/ftremix/ftremixpartimage.h"
 #endif
 #include <if/interface.h>
 #include <sc/scene.h>
@@ -1169,6 +1170,7 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
     fp = ftGetStruct(fighter_gobj);
 #if defined(PORT) && defined(REGION_REMIX)
     ftRemixDKModeResizeHead(fp);
+    ftRemixPartImageApplyFighter(fp);
 #endif
     attr = fp->attr;
 

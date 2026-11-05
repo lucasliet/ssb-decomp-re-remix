@@ -5,7 +5,9 @@
 
 /* Random Stage Roulette of the Remix stage select (Stages.asm random_stage_roulette, a_, roulette_cursor_timer), as a pure
  * timer so the headless unit tests (tests/remix) can run it. C-down over RANDOM starts it; the cursor then jumps to a random
- * stage of the page every MNREMIX_ROULETTE_DELAY frames until B, L or C-down stops it or A or Start picks the hovered stage. */
+ * cell of the page every MNREMIX_ROULETTE_DELAY frames until B, L or C-down stops it or A or Start picks the hovered stage. The
+ * cell is drawn by mnremixstagegridrules (mnRemixStageGridRulesRouletteRerolls); the slot mask functions at the end are kept for the
+ * unit tests of the earlier per-page draw. */
 
 /* random_stage_roulette.DELAY: frames between two cursor jumps. */
 #define MNREMIX_ROULETTE_DELAY 8

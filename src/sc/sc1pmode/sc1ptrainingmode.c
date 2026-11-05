@@ -9,7 +9,10 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "if/ifremixhud.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixtraining.h"
+#include "sc/sc1pmode/sc1ptrainingleftoverrules.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
+#include "sc/sc1pmode/sc1ptrainingremixaction.h"
+#include "sc/sc1pmode/sc1ptrainingremixexit.h"
 #include "sc/sc1pmode/sc1ptrainingremixlegend.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenudraw.h"
@@ -306,6 +309,29 @@ void sc1PTrainingModeSetMenuGObjFlags(u32 flags)
 	}
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/** Training.asm disable_during_pause_ and enable_during_unpause_: every port with a fighter loses or regains control, not only the owner and the dummy. */
+static void sc1PTrainingModeSetPortsLocked(sb32 is_locked)
+{
+	s32 port;
+
+	for (port = 0; port < ARRAY_COUNT(gSCManagerBattleState->players); port++)
+	{
+		GObj *fighter_gobj = gSCManagerBattleState->players[port].fighter_gobj;
+
+		if ((gSCManagerBattleState->players[port].pkind == nFTPlayerKindNot) || (fighter_gobj == NULL))
+		{
+			continue;
+		}
+		if (is_locked != FALSE)
+		{
+			ftParamLockPlayerControl(fighter_gobj);
+		}
+		else ftParamUnlockPlayerControl(fighter_gobj);
+	}
+}
+#endif
+
 // 0x8018D0E8
 void sc1PTrainingModeCheckEnterMenu(void)
 {
@@ -322,7 +348,11 @@ void sc1PTrainingModeCheckEnterMenu(void)
 			sc1PTrainingModeSetMenuGObjFlags(GOBJ_FLAG_NONE);
 			gmRumbleInitPlayers();
 			ftParamLockPlayerControl(gSCManagerBattleState->players[player].fighter_gobj);
+#if defined(PORT) && defined(REGION_REMIX)
+			sc1PTrainingModeSetPortsLocked(TRUE);
+#else
 			ftParamLockPlayerControl(gSCManagerBattleState->players[sSC1PTrainingModeMenu.dummy].fighter_gobj);
+#endif
 
 			gSCManagerBattleState->game_status = nSCBattleGameStatusPause;
 
@@ -354,7 +384,11 @@ void sc1PTrainingModeCheckLeaveMenu(void)
 
 		gSCManagerBattleState->game_status = nSCBattleGameStatusGo;
 
+#if defined(PORT) && defined(REGION_REMIX)
+		sc1PTrainingModeSetPortsLocked(FALSE);
+#else
 		ftParamUnlockPlayerControl(gSCManagerBattleState->players[sSC1PTrainingModeMenu.dummy].fighter_gobj);
+#endif
 		fighter_gobj = gSCManagerBattleState->players[player].fighter_gobj;
 		ftParamUnlockPlayerControl(fighter_gobj);
 
@@ -617,7 +651,11 @@ sb32 sc1PTrainingModeUpdateResetOption(void)
 // 0x8018D830
 sb32 sc1PTrainingModeUpdateExitOption(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PTrainingRemixExitIsRequested() != FALSE)
+#else
 	if (gSYControllerDevices[gSCManagerSceneData.player].button_tap & A_BUTTON)
+#endif
 	{
 		func_800266A0_272A0();
 		func_800269C0_275C0(nSYAudioFGMTrainingSel2);
@@ -627,6 +665,13 @@ sb32 sc1PTrainingModeUpdateExitOption(void)
 	}
 	else return FALSE;
 }
+
+#if defined(PORT) && defined(REGION_REMIX)
+sb32 sc1PTrainingModeIsCursorOnExit(void)
+{
+	return (sSC1PTrainingModeMenu.main_menu_option == nSC1PTrainingModeMenuMainExit) ? TRUE : FALSE;
+}
+#endif
 
 // 0x8018D898
 void sc1PTrainingModeUpdateMainOption(void)
@@ -654,6 +699,12 @@ void sc1PTrainingModeUpdateMainOption(void)
 void sc1PTrainingModeUpdateMenu(void)
 {
 	sc1PTrainingModeUpdateMenuInputs();
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PTrainingModeIsCursorOnExit() == FALSE)
+	{
+		sc1PTrainingRemixExitResetHold();
+	}
+#endif
 
 	if (dSC1PTrainingModeMenuUpdateFuncList[sSC1PTrainingModeMenu.main_menu_option]() == FALSE)
 	{
@@ -748,6 +799,9 @@ void sc1PTrainingModeUpdateAll(void)
 		ftRemixTrainingUpdateFighters();
 #endif
 		gcRunAll();
+#if defined(PORT) && defined(REGION_REMIX)
+		sc1PTrainingRemixActionCountFrame();
+#endif
 	}
 	else gmCameraRunFuncCamera(gGMCameraGObj);
 
@@ -1270,6 +1324,8 @@ void sc1PTrainingModeUpdateItemDisplaySprite(void)
 	if (sSC1PTrainingModeMenu.item_hold >= nSC1PTrainingModeMenuItemEnumCount)
 	{
 		root_sobj->sprite = *sc1PTrainingModeGetRemixItemName(sSC1PTrainingModeRemixItemHudNames, sSC1PTrainingModeMenu.item_hold - nSC1PTrainingModeMenuItemEnumCount);
+		port_log("SSB64: training item hud: held entry %d sprite %dx%d\n", (int)(sSC1PTrainingModeMenu.item_hold - nSC1PTrainingModeMenuItemEnumCount),
+		         (int)root_sobj->sprite.width, (int)root_sobj->sprite.height);
 	}
 	else
 #endif
@@ -1299,9 +1355,11 @@ void sc1PTrainingModeItemDisplayProcDisplay(GObj *interface_gobj)
 			}
 		}
 #if defined(PORT) && defined(REGION_REMIX)
-		if ((ip->kind >= ITREMIX_KIND_START) && (ip->kind < (ITREMIX_KIND_START + SC1PTRAININGREMIX_ITEM_COUNT)))
+		s32 remix_entry = sc1PTrainingLeftoverRulesGetHeldItemEntry(ip->kind, ITREMIX_KIND_START, SC1PTRAININGREMIX_ITEM_COUNT);
+
+		if (remix_entry >= 0)
 		{
-			kind = nSC1PTrainingModeMenuItemEnumCount + (ip->kind - ITREMIX_KIND_START);
+			kind = nSC1PTrainingModeMenuItemEnumCount + remix_entry;
 		}
 		else
 #endif
@@ -2120,6 +2178,27 @@ void sc1PTrainingModeSetGameStatusGo(void)
 }
 
 // 0x801901F4
+#if defined(PORT) && defined(REGION_REMIX)
+/* Training.asm obey_cp_state_ 506-544: the CP menu option is applied to every CPU port, not only to the dummy. */
+void sc1PTrainingModeUpdateDummyBehavior(void)
+{
+	s32 port;
+
+	for (port = 0; port < ARRAY_COUNT(gSCManagerBattleState->players); port++)
+	{
+		SCPlayerData *player_data = &gSCManagerBattleState->players[port];
+		FTStruct *fp;
+
+		if ((player_data->pkind != nFTPlayerKindCom) || (player_data->fighter_gobj == NULL))
+		{
+			continue;
+		}
+		fp = ftGetStruct(player_data->fighter_gobj);
+		fp->computer.behavior = dSC1PTrainingModeDummyBehaviors[sSC1PTrainingModeMenu.cp_menu_option];
+		fp->computer.trait = nFTComputerTraitNone;
+	}
+}
+#else
 void sc1PTrainingModeUpdateDummyBehavior(void)
 {
 	FTStruct *fp = ftGetStruct(gSCManagerBattleState->players[sSC1PTrainingModeMenu.dummy].fighter_gobj);
@@ -2130,6 +2209,7 @@ void sc1PTrainingModeUpdateDummyBehavior(void)
 		fp->computer.trait = nFTComputerTraitNone;
 	}
 }
+#endif
 
 // 0x80190260
 void sc1PTrainingModeFuncStart(void)

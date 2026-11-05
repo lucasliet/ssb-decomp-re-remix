@@ -2,6 +2,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixintro.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
 #endif
 #include <sc/scene.h>
 #include <sys/video.h>
@@ -2514,7 +2515,11 @@ void sc1PIntroFuncRun(GObj *gobj)
     
     if (sySchedulerGetTicCount() >= 60)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        if (sc1PRemixAfkTapButtons(A_BUTTON | B_BUTTON | START_BUTTON) != FALSE)
+#else
         if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | B_BUTTON | START_BUTTON) != FALSE)
+#endif
         {
             func_800266A0_272A0();
             

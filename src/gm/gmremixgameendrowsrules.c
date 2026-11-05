@@ -44,4 +44,26 @@ int gmRemixGameEndRowsForcesTensDigit(int is_koth_time_row)
     return (is_koth_time_row != 0) ? 1 : 0;
 }
 
+int gmRemixGameEndRowsRowTics(int layout)
+{
+    if (layout == GMREMIX_GAMEEND_ROWS_LAYOUT_NO_CONTEST)
+    {
+        return GMREMIX_GAMEEND_ROWS_NO_CONTEST_NEW_ROW_TICS;
+    }
+    if (layout == GMREMIX_GAMEEND_ROWS_LAYOUT_STOCK)
+    {
+        return GMREMIX_GAMEEND_ROWS_NO_ROW_TICS;
+    }
+    return GMREMIX_GAMEEND_ROWS_NEW_ROW_TICS;
+}
+
+int gmRemixGameEndRowsRowY(int layout)
+{
+    if (layout == GMREMIX_GAMEEND_ROWS_LAYOUT_NO_CONTEST)
+    {
+        return GMREMIX_GAMEEND_ROWS_NO_CONTEST_ROW_Y;
+    }
+    return GMREMIX_GAMEEND_ROWS_NEW_ROW_Y;
+}
+
 #endif

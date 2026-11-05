@@ -17,22 +17,11 @@ extern sb32 mnRemixTournamentLatchLayout(void);
 extern sb32 mnRemixTournamentIsActive(void);
 
 /**
- * Stages of the tournament layout in Remix order (Stages.stage_table_tournament, the RANDOM squares dropped). A stage can
- * appear on more than one page of the Remix grid.
- *
- * @param out_gkinds Receives the stage ids.
- * @param out_source_pages Receives, for each stage, the page of the Remix grid (18 squares) it sits on.
- * @param max_count Capacity of both arrays.
- * @return Number of stages written.
- */
-extern s32 mnRemixTournamentGetStages(s32 *out_gkinds, s32 *out_source_pages, s32 max_count);
-
-/**
  * Forces the Hazard Mode toggle to the value the tournament layout gives the hovered stage (get_stage_id_). Does nothing for
  * a stage without a table entry.
  *
  * @param gkind Hovered stage id.
- * @param source_page Page of the Remix tournament grid the hovered square sits on.
+ * @param source_page Page of the tournament grid (0 based) the cursor is on.
  */
 extern void mnRemixTournamentApplyHazardMode(s32 gkind, s32 source_page);
 

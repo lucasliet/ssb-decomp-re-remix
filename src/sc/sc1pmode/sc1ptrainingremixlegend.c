@@ -11,6 +11,8 @@
 #include "if/ifremixsprite.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_training.h"
+#include "sc/sc1pmode/sc1ptrainingremixaction.h"
+#include "sc/sc1pmode/sc1ptrainingremixexit.h"
 #include "sc/sc1pmode/sc1ptrainingremixlegend.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingrules.h"
@@ -72,6 +74,8 @@ void sc1PTrainingRemixLegendMake(void)
     ifRemixSpriteMake(IFREMIX_SPRITE_BUTTON_Z, SC1PTRAININGREMIXLEGEND_GROUP_PROMPT, SC1PTRAININGREMIXLEGEND_DL_LINK,
                       SC1PTRAININGREMIXLEGEND_PROMPT_GLYPH_X, SC1PTRAININGREMIXLEGEND_PROMPT_GLYPH_Y, SC1PTRAININGREMIXLEGEND_TINT,
                       SC1PTRAININGREMIXLEGEND_PALETTE, 1.0F);
+    sc1PTrainingRemixActionMakeLegend();
+    sc1PTrainingRemixExitMakeLegend();
 }
 
 /* The prompt shows on the pause, with the HUD on, until the Z menu is opened (the normal menu group is hidden then). */

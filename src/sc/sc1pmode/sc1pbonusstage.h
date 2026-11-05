@@ -36,6 +36,7 @@ extern void sc1PBonusStageTimerProcUpdate(GObj *interface_gobj);
 extern void sc1PBonusStageSetTimeUp(void);
 extern void sc1PBonusStageTimeUpProcUpdate(GObj *interface_gobj);
 extern void sc1PBonusStageMakeTimeUp(void);
+extern void sc1PBonusStageMakeCountUpTimer(void);
 extern void sc1PBonusStageMakeTimer(void);
 extern void sc1PBonusStageSetPlayerInterfacePositions(void);
 extern void sc1PBonusStageFuncStart(void);

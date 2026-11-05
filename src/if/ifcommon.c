@@ -22,11 +22,35 @@
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmodename.h"
+#include "ft/ftremix/ftremixpartimage.h"
 #endif
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 
 extern void syAudioSetBGMVolume(u32, u32);
+
+#ifdef PORT
+/**
+ * Stock icon palette of a fighter's costume. Remix extra costumes (Costumes.asm icon_palette_override_) have their own
+ * palette and sit past the end of the vanilla LUT array, so that array is only read for a native costume.
+ *
+ * @param fp Fighter whose stock icon is drawn.
+ * @param luts Resolved vanilla stock LUT array of the fighter.
+ * @return The LUT token to draw with.
+ */
+static u32 ifCommonGetFighterStockLUT(FTStruct *fp, u32 *luts)
+{
+#ifdef REGION_REMIX
+    u32 remix_lut = ftRemixPartImageGetStockIconLUT(fp, 0);
+
+    if (remix_lut != 0)
+    {
+        return remix_lut;
+    }
+#endif
+    return luts[fp->costume];
+}
+#endif
 
 #ifdef PORT
 #include <stddef.h>
@@ -1151,7 +1175,7 @@ void ifCommonPlayerStockMultiProcDisplay(GObj *interface_gobj)
                             FTSprites *_spr = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
                             lt_sobj->sprite = *(Sprite*)PORT_RESOLVE(_spr->stock_sprite);
                             u32 *_luts = (u32*)PORT_RESOLVE(_spr->stock_luts);
-                            lt_sobj->sprite.LUT = _luts[fp->costume];
+                            lt_sobj->sprite.LUT = ifCommonGetFighterStockLUT(fp, _luts);
                         }
 #else
                         lt_sobj->sprite = *fp->attr->sprites->stock_sprite;
@@ -1184,7 +1208,7 @@ void ifCommonPlayerStockMultiProcDisplay(GObj *interface_gobj)
                     FTSprites *_spr = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
                     gt_sobj->sprite = *(Sprite*)PORT_RESOLVE(_spr->stock_sprite);
                     u32 *_luts = (u32*)PORT_RESOLVE(_spr->stock_luts);
-                    gt_sobj->sprite.LUT = _luts[fp->costume];
+                    gt_sobj->sprite.LUT = ifCommonGetFighterStockLUT(fp, _luts);
                 }
 #else
                 gt_sobj->sprite = *fp->attr->sprites->stock_sprite;
@@ -1355,7 +1379,7 @@ void ifCommonPlayerStockSingleMakeInterface(s32 player)
 #ifdef PORT
         {
             u32 *_luts = (u32*)PORT_RESOLVE(_spr->stock_luts);
-            sobj->sprite.LUT = _luts[fp->costume];
+            sobj->sprite.LUT = ifCommonGetFighterStockLUT(fp, _luts);
         }
 #else
         sobj->sprite.LUT = fp->attr->sprites->stock_luts[fp->costume];
@@ -1447,7 +1471,7 @@ void ifCommonPlayerStockStealMakeInterface(s32 thief, s32 stolen)
             {
                 FTSprites *_spr = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
                 u32 *_luts = (u32*)PORT_RESOLVE(_spr->stock_luts);
-                sobj->sprite.LUT = _luts[fp->costume];
+                sobj->sprite.LUT = ifCommonGetFighterStockLUT(fp, _luts);
             }
 #else
             sobj->sprite.LUT = fp->attr->sprites->stock_luts[fp->costume];

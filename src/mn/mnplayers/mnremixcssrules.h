@@ -84,6 +84,87 @@ typedef enum MNRemixCssVariantIcon
  */
 extern int mnRemixCssCostumeButtonsActive(int is_team_battle, int is_fighter_selected, int held_player);
 
+/** Offset from the cursor sprite position to the point that presses an image (CharacterSelect.asm check_press_: x + 20, y + 3). */
+#define MNREMIX_CSS_PRESS_OFFSET_X 20.0F
+#define MNREMIX_CSS_PRESS_OFFSET_Y 3.0F
+
+/**
+ * TRUE when a cursor presses an image (CharacterSelect.asm check_press_, every edge inclusive).
+ *
+ * @param cursor_x Position x of the cursor sprite.
+ * @param cursor_y Position y of the cursor sprite.
+ * @param image_x Position x of the image sprite.
+ * @param image_y Position y of the image sprite.
+ * @param image_width Width of the image sprite.
+ * @param image_height Height of the image sprite.
+ */
+extern int mnRemixCssCursorPressesImage(float cursor_x, float cursor_y, float image_x, float image_y, int image_width, int image_height);
+
+/**
+ * Panel whose costume the C buttons change when a cursor presses with them (Costumes.asm cpu_costumes_): the first CPU
+ * panel, in port order and other than the panel of the cursor, that the cursor is over; the own panel when there is none.
+ *
+ * @param own_panel Panel of the cursor.
+ * @param is_cpu_panel Per panel, non-zero when the panel is a CPU panel.
+ * @param is_cursor_over Per panel, non-zero when the cursor is over the panel image.
+ * @param panel_count Number of panels.
+ */
+extern int mnRemixCssCpuCostumePanel(int own_panel, const int *is_cpu_panel, const int *is_cursor_over, int panel_count);
+
+/** Index of the Random bookend in the portrait numbering of the asm (BOOKEND_RANDOM_PORTRAIT, one past the bonus bookend). */
+#define MNREMIX_CSS_RANDOM_BOOKEND_SLOT 31
+
+/** Left edge of the Random bookend: right of the grid (START_VISUAL + START_X + PORTRAIT_WIDTH * NUM_COLUMNS), same top and size as the bonus one. */
+#define MNREMIX_CSS_RANDOM_BOOKEND_X 279
+
+/** Position of a token dropped on the Random bookend (token_autoposition_ _random_bookend: RANDOM_TOKEN_X 278, BOOKEND_TOKEN_Y 70). */
+#define MNREMIX_CSS_RANDOM_TOKEN_X 278.0F
+#define MNREMIX_CSS_RANDOM_TOKEN_Y 70.0F
+
+/** Entries of the recent randoms list of a player (CharacterSelect.asm RRL_NUM_SLOTS). */
+#define MNREMIX_CSS_RECENT_RANDOMS_SLOTS 6
+
+/** Fighters a player's last Random rolls came out as, and the slot the next roll writes to. */
+typedef struct MNRemixCssRecentRandoms
+{
+    signed char entries[MNREMIX_CSS_RECENT_RANDOMS_SLOTS];
+    int index;
+} MNRemixCssRecentRandoms;
+
+/** TRUE when the point (pos_x, pos_y), the centre of a token, is over the Random bookend right of the grid. */
+extern int mnRemixCssRandomBookendContains(int pos_x, int pos_y);
+
+/** Empties a recent randoms list (the asm table starts as -1 in every entry and index 0). */
+extern void mnRemixCssRecentRandomsReset(MNRemixCssRecentRandoms *recent);
+
+/**
+ * Writes a pending roll into the slot at the index and counts it (_recent_randoms_lookup).
+ *
+ * @param recent List of the player.
+ * @param fkind Fighter just rolled.
+ * @return Entries equal to fkind, the pending one included, so 1 when the fighter is new in the list.
+ */
+extern int mnRemixCssRecentRandomsStore(MNRemixCssRecentRandoms *recent, int fkind);
+
+/**
+ * Size of the dice that decides whether a repeated roll stays: 0 when the fighter is new in the list (no dice), otherwise the match
+ * count, so the roll is kept with probability 1 / matches (50% for one earlier match, 33% for two).
+ */
+extern int mnRemixCssRecentRandomsDiceRange(int matches);
+
+/** Moves the index to the next slot, wrapping after the last, once a roll was kept. */
+extern void mnRemixCssRecentRandomsCommit(MNRemixCssRecentRandoms *recent);
+
+/**
+ * Shade of a team fighter that Random picked (save_random_char_._vs, _teams_loop): the number of earlier ports that hold the same
+ * fighter on the same team, so two teammates with the same fighter do not share a colour.
+ *
+ * @param port Port being resolved.
+ * @param fkinds Fighter of every port; entries before `port` are already resolved.
+ * @param teams Team of every port.
+ */
+extern int mnRemixCssRandomTeamShade(int port, const int *fkinds, const int *teams);
+
 /** TRUE when the point (pos_x, pos_y), the centre of a token, is over the bonus bookend left of the grid. */
 extern int mnRemixCssBonusBookendContains(int pos_x, int pos_y);
 

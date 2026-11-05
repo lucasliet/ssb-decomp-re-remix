@@ -19,7 +19,15 @@
 #define GMREMIX_GAMEEND_ROWS_PLACE_PUSH_Y 16
 /* The place line is drawn this many tics after the new row (VsRemixMenu.asm _delay_place, addiu at, at, 20). */
 #define GMREMIX_GAMEEND_ROWS_PLACE_DELAY_TICS 20
+/* Tic of the new row: the vanilla place line tic of the time layouts (_delay_place), 100 on no contest (_no_contest_new_row). */
+#define GMREMIX_GAMEEND_ROWS_NEW_ROW_TICS 290
 #define GMREMIX_GAMEEND_ROWS_NO_CONTEST_NEW_ROW_TICS 100
+#define GMREMIX_GAMEEND_ROWS_NO_ROW_TICS (-1)
+
+/* Results layouts as the extra row sees them: only the time routines and the no contest routine are patched. */
+#define GMREMIX_GAMEEND_ROWS_LAYOUT_TIME 0
+#define GMREMIX_GAMEEND_ROWS_LAYOUT_STOCK 1
+#define GMREMIX_GAMEEND_ROWS_LAYOUT_NO_CONTEST 2
 
 /* Image offsets of the row labels in the results file (VsRemixMenu.asm _draw_alt_texture): "Times" and "FGs". */
 #define GMREMIX_GAMEEND_ROWS_KOTH_LABEL_OFFSET 0xE648
@@ -73,6 +81,23 @@ extern int gmRemixGameEndRowsPlaceY(int place_y, int has_row);
  * @return is_koth_time_row as a boolean.
  */
 extern int gmRemixGameEndRowsForcesTensDigit(int is_koth_time_row);
+
+/**
+ * Tic at which the extra row is made (VsRemixMenu.asm _delay_place and _no_contest_new_row; the stock routines are not patched).
+ *
+ * @param layout GMREMIX_GAMEEND_ROWS_LAYOUT_*.
+ * @return GMREMIX_GAMEEND_ROWS_NEW_ROW_TICS, GMREMIX_GAMEEND_ROWS_NO_CONTEST_NEW_ROW_TICS, or GMREMIX_GAMEEND_ROWS_NO_ROW_TICS
+ * for the stock layouts.
+ */
+extern int gmRemixGameEndRowsRowTics(int layout);
+
+/**
+ * Height of the extra row (lli a0, 124 in _delay_place, lli a0, 96 in _no_contest_new_row).
+ *
+ * @param layout GMREMIX_GAMEEND_ROWS_LAYOUT_*.
+ * @return GMREMIX_GAMEEND_ROWS_NO_CONTEST_ROW_Y on no contest, otherwise GMREMIX_GAMEEND_ROWS_NEW_ROW_Y.
+ */
+extern int gmRemixGameEndRowsRowY(int layout);
 
 #endif
 

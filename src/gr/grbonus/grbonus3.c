@@ -6,6 +6,8 @@
 #include <sys/debug.h>
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixrttf.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
+#include "sc/sc1pmode/sc1premixbonus3.h"
 #define GRBONUS3_BUMPERS_ANIM_JOINT_OFFSET grRemixBonus3GetBumpersAnimJointOffset()
 #else
 #define GRBONUS3_BUMPERS_ANIM_JOINT_OFFSET llGRBonus3MapBumpersAnimJoint
@@ -107,9 +109,17 @@ void grBonus3FinishProcUpdate(GObj *ground_gobj)
 {
     FTStruct *fp = ftGetStruct(gSCManagerBattleState->players[gSCManagerSceneData.player].fighter_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((fp->ga == nMPKineticsGround) && (sc1PRemixAfkForceTrue((fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK) == nMPMaterialDetect) != FALSE))
+#else
     if ((fp->ga == nMPKineticsGround) && ((fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK) == nMPMaterialDetect))
+#endif
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        ifCommonAnnounceCompleteInitInterface(sc1PRemixBonus3OnComplete(nSYAudioVoiceAnnounceComplete));
+#else
         ifCommonAnnounceCompleteInitInterface(nSYAudioVoiceAnnounceComplete);
+#endif
         ifCommonBattleEndAddSoundQueueID(nSYAudioFGMBonusComplete);
     }
 }

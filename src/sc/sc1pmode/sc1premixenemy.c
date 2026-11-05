@@ -11,6 +11,7 @@
 #include <sys/audio.h>
 #include <sys/controller.h>
 #include "sc/sc1pmode/sc1premixenemy.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
 #include "sc/sc1pmode/sc1premixenemyrules.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/scsubsys/scsubsys.h"
@@ -73,7 +74,11 @@ static s32 sc1PRemixEnemyGetSetupPort(s32 mapobj_kind)
 
 void sc1PRemixEnemySetupSlot(s32 slot, s32 mapobj_kind)
 {
-    s32 port = sc1PRemixEnemyGetSetupPort(mapobj_kind);
+    s32 port;
+
+    sc1PRemixAfkSetupSlot(slot, mapobj_kind);
+
+    port = sc1PRemixEnemyGetSetupPort(mapobj_kind);
 
     if (port < 0)
     {

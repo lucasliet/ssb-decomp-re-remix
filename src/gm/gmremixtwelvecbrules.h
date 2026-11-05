@@ -70,9 +70,10 @@ extern void gmRemixTwelveCBInit(GMRemixTwelveCBState *state);
 extern void gmRemixTwelveCBUpdateStocks(GMRemixTwelveCBState *state, int32_t stocks);
 
 /**
- * Portrait slot a character takes in the default character set: the 12 original fighters sit in the slots 0..11, any other
- * fighter in the slots 12..23 by its number (REMIX-TODO(twelvecb-css): the 24 slot CSS of the Remix lets the player place
- * characters, the port has no such CSS yet).
+ * Portrait slot of a character with no character select to place it: the 12 original fighters sit in the slots 0..11, any other
+ * fighter in the slots 12..23 by its number. The 24 slot CSS (mnremixtwelvecb*.c) reports the real slot of each token through
+ * gmRemixTwelveCBSetCssPortrait, and the match prefers the slot a fighter holds in the layout of his character set, so this
+ * mapping is only the last fallback (a fighter that the layout of the set does not hold, where the asm returns slot 0).
  *
  * @param fkind Fighter kind of the character.
  */

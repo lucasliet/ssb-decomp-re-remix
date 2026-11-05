@@ -25,13 +25,14 @@
 #define MNREMIX_CSS_MARK_RECT_SLOT_FIRST 34
 #define MNREMIX_CSS_MARK_SIZE 2.0F
 #define MNREMIX_CSS_MARK_RGBA 0xFFFF00FF
-/* render_10_._handicap: the icon sits 33 units right of the HANDICAP label at y 199, the level bar under it at y 210 */
+/* render_10_._handicap: the icon sits 33 units right of the HANDICAP label at y 199, the level bar under it at y 210. The bar is
+ * the 8x29 rectangle at 0x330 of the common file with `sh 3, 0x3C(v0)`: that is Sprite.bmheight, the texel rows drawn (lbCommonDrawSObjAttr
+ * takes the quad height from it), so the bar is the first 3 rows of the rectangle at scale 1, not the whole rectangle squeezed to 3. */
 #define MNREMIX_CSS_HANDICAP_ICON_X_OFFSET 33.0F
 #define MNREMIX_CSS_HANDICAP_ICON_Y 199.0F
 #define MNREMIX_CSS_HANDICAP_BAR_Y 210.0F
-#define MNREMIX_CSS_HANDICAP_BAR_HEIGHT 3.0F
+#define MNREMIX_CSS_HANDICAP_BAR_ROWS 3
 #define MNREMIX_CSS_HANDICAP_BAR_OFFSET 0x330
-#define MNREMIX_CSS_HANDICAP_BAR_SPRITE_HEIGHT 29.0F
 
 static GObj *sMNRemixCssDpadGObjs[MNREMIX_CSS_INDICATOR_PANELS];
 static GObj *sMNRemixCssIconGObjs[MNREMIX_CSS_INDICATOR_PANELS];
@@ -329,7 +330,7 @@ void mnRemixCssMakeHandicapIcon(GObj *gobj, s32 value, f32 label_x, void *css_im
     bar = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, common_file, MNREMIX_CSS_HANDICAP_BAR_OFFSET));
     bar->pos.x = icon_x;
     bar->pos.y = MNREMIX_CSS_HANDICAP_BAR_Y;
-    bar->sprite.scaley = MNREMIX_CSS_HANDICAP_BAR_HEIGHT / MNREMIX_CSS_HANDICAP_BAR_SPRITE_HEIGHT;
+    bar->sprite.bmheight = MNREMIX_CSS_HANDICAP_BAR_ROWS;
     bar->sprite.red = mnRemixCssHandicapLevelColor(level) >> 24;
     bar->sprite.green = mnRemixCssHandicapLevelColor(level) >> 16;
     bar->sprite.blue = mnRemixCssHandicapLevelColor(level) >> 8;

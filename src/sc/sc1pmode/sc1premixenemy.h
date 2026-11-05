@@ -10,7 +10,7 @@
 /*
  * Single Player Enemy (SinglePlayerEnemy.asm): on the 1P character select Z of another port makes that port play the first enemy
  * of the 1P game instead of the CPU, B of another port takes it back. The choice lives until the 1P menu is used again. The "afk"
- * tag automation of the asm (_afk_1p) is not ported: it needs the custom player tag names, which the port does not store.
+ * tag automation of the asm (_afk_1p) lives in sc1premixenemyafk.h.
  */
 
 /** Enemy port variable: 0 when the CPU plays the enemy, otherwise the port index plus one. */

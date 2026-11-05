@@ -6,6 +6,7 @@
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixpartimage.h"
 #endif
 #ifdef PORT
 #include <string.h>
@@ -1057,7 +1058,11 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     fp->detail_curr = fp->detail_base = desc->detail;
 #endif
 
+#if defined(PORT) && defined(REGION_REMIX)
+    fp->costume = ftRemixPartImageDebugCostume(fp->player, desc->costume);
+#else
     fp->costume = desc->costume;
+#endif
     fp->shade = desc->shade;
 
     fp->shade_color.r = (attr->shade_color[fp->shade - 1].r * attr->shade_color[fp->shade - 1].a) / 0xFF;

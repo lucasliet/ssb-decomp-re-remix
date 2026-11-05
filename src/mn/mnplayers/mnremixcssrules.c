@@ -19,6 +19,98 @@ int mnRemixCssCostumeButtonsActive(int is_team_battle, int is_fighter_selected, 
     return ((is_fighter_selected != 0) && (held_player < 0)) ? 1 : 0;
 }
 
+int mnRemixCssCursorPressesImage(float cursor_x, float cursor_y, float image_x, float image_y, int image_width, int image_height)
+{
+    float press_x = cursor_x + MNREMIX_CSS_PRESS_OFFSET_X;
+    float press_y = cursor_y + MNREMIX_CSS_PRESS_OFFSET_Y;
+
+    if ((press_y < image_y) || (press_y > (image_y + (float)image_height)))
+    {
+        return 0;
+    }
+    if ((press_x < image_x) || (press_x > (image_x + (float)image_width)))
+    {
+        return 0;
+    }
+    return 1;
+}
+
+int mnRemixCssCpuCostumePanel(int own_panel, const int *is_cpu_panel, const int *is_cursor_over, int panel_count)
+{
+    int panel;
+
+    for (panel = 0; panel < panel_count; panel++)
+    {
+        if ((panel != own_panel) && (is_cpu_panel[panel] != 0) && (is_cursor_over[panel] != 0))
+        {
+            return panel;
+        }
+    }
+    return own_panel;
+}
+
+int mnRemixCssRandomBookendContains(int pos_x, int pos_y)
+{
+    if ((pos_x < MNREMIX_CSS_RANDOM_BOOKEND_X) || (pos_x >= (MNREMIX_CSS_RANDOM_BOOKEND_X + MNREMIX_CSS_BOOKEND_WIDTH)))
+    {
+        return 0;
+    }
+    return ((pos_y >= MNREMIX_CSS_BOOKEND_Y) && (pos_y < (MNREMIX_CSS_BOOKEND_Y + MNREMIX_CSS_BOOKEND_HEIGHT))) ? 1 : 0;
+}
+
+void mnRemixCssRecentRandomsReset(MNRemixCssRecentRandoms *recent)
+{
+    int slot;
+
+    for (slot = 0; slot < MNREMIX_CSS_RECENT_RANDOMS_SLOTS; slot++)
+    {
+        recent->entries[slot] = -1;
+    }
+    recent->index = 0;
+}
+
+int mnRemixCssRecentRandomsStore(MNRemixCssRecentRandoms *recent, int fkind)
+{
+    int slot;
+    int matches = 0;
+
+    recent->entries[recent->index] = (signed char)fkind;
+
+    for (slot = 0; slot < MNREMIX_CSS_RECENT_RANDOMS_SLOTS; slot++)
+    {
+        if (recent->entries[slot] == fkind)
+        {
+            matches++;
+        }
+    }
+    return matches;
+}
+
+int mnRemixCssRecentRandomsDiceRange(int matches)
+{
+    return (matches > 1) ? matches : 0;
+}
+
+void mnRemixCssRecentRandomsCommit(MNRemixCssRecentRandoms *recent)
+{
+    recent->index = ((recent->index + 1) < MNREMIX_CSS_RECENT_RANDOMS_SLOTS) ? (recent->index + 1) : 0;
+}
+
+int mnRemixCssRandomTeamShade(int port, const int *fkinds, const int *teams)
+{
+    int earlier;
+    int shade = 0;
+
+    for (earlier = 0; earlier < port; earlier++)
+    {
+        if ((fkinds[earlier] == fkinds[port]) && (teams[earlier] == teams[port]))
+        {
+            shade++;
+        }
+    }
+    return shade;
+}
+
 int mnRemixCssBonusBookendContains(int pos_x, int pos_y)
 {
     if ((pos_x < MNREMIX_CSS_BOOKEND_X) || (pos_x >= (MNREMIX_CSS_BOOKEND_X + MNREMIX_CSS_BOOKEND_WIDTH)))

@@ -1,7 +1,7 @@
 /*
  * ftremixpoison.c - poison damage over time of Smash Remix (.toolchain/pkgs/smashremix-src/src/Poison.asm).
- * ftMainProcUpdateInterrupt calls ftRemixPoisonUpdate where the heal block is skipped (damage_heal == 0), which is
- * Poison.asm poison_hook. The Spawned Fear acid (Hazards.asm) writes the entries through ftRemixPoisonSet.
+ * ftMainProcUpdateInterrupt calls ftRemixPoisonUpdate right before its heal block when no heal is pending (damage_heal == 0),
+ * which is Poison.asm poison_hook; a CSS Heal therefore heals on the same frame. The Spawned Fear acid (Hazards.asm) writes the entries through ftRemixPoisonSet.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)

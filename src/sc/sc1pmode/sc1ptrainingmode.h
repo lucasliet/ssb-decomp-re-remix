@@ -26,6 +26,10 @@ extern sb32 sc1PTrainingModeUpdateSpeedOption(void);
 extern sb32 sc1PTrainingModeUpdateViewOption(void);
 extern sb32 sc1PTrainingModeUpdateResetOption(void);
 extern sb32 sc1PTrainingModeUpdateExitOption(void);
+#if defined(PORT) && defined(REGION_REMIX)
+/** TRUE when the cursor of the pause menu is on the Exit option (Training.asm cursor index 5, hold_to_exit_). */
+extern sb32 sc1PTrainingModeIsCursorOnExit(void);
+#endif
 extern void sc1PTrainingModeUpdateMainOption(void);
 extern void sc1PTrainingModeUpdateMenu(void);
 extern sb32 sc1PTrainingModeCheckLagTic(void);

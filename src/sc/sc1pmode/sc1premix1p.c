@@ -9,6 +9,7 @@
 #include <sc/scene.h>
 #include "ft/ftremix/ftremixhooks.h"
 #include "gr/grremix/grremixids.h"
+#include "remix/remix_player_panel.h"
 #include "remix/remix_roster_data.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premix1prules.h"
@@ -368,6 +369,15 @@ s32 sc1PRemix1PPolygonKind(void)
     return SC1PREMIX_1P_POLYGON_FIRST + sc1PRemix1PRandom(SC1PREMIX_1P_POLYGON_LAST - SC1PREMIX_1P_POLYGON_FIRST + 1);
 }
 
+void sc1PRemix1POnPauseExit(void)
+{
+    if (sc1PRemixModeIs(SC1PREMIX_MODE_REMIX_1P) == FALSE)
+    {
+        return;
+    }
+    remix_panel_set(REMIX_PANEL_SIZE, gSCManagerSceneData.player, 0);
+}
+
 sb32 sc1PRemix1PIsFinalBoss(s32 fkind, s32 team)
 {
     if ((sc1PRemix1PIsActive() == FALSE) || (gSCManagerSceneData.spgame_stage != nSC1PGameStageBoss))
@@ -405,6 +415,18 @@ s32 sc1PRemix1PBossHitPoints(void)
         return SC1PREMIX_1P_BOSS_HP_NORMAL;
     }
     return SC1PREMIX_1P_BOSS_HP_VERY_HARD;
+}
+
+void sc1PRemix1PPresetBossDamage(FTStruct *fp)
+{
+    const char *damage_env = getenv("SSB64_REMIX_1P_BOSS_PRESET_DAMAGE");
+
+    if ((damage_env == NULL) || (sc1PRemix1PIsFinalBoss(fp->fkind, fp->team) == FALSE))
+    {
+        return;
+    }
+    fp->percent_damage = atoi(damage_env);
+    gSCManagerBattleState->players[fp->player].stock_damage_all = fp->percent_damage;
 }
 
 sb32 sc1PRemix1PIsDuoPartnerFirst(void)

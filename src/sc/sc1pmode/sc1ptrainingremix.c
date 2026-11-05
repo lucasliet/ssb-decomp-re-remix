@@ -16,7 +16,10 @@
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #include "remix/remix_toggles.h"
+#include "sc/sc1pmode/sc1ptrainingmode.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
+#include "sc/sc1pmode/sc1ptrainingremixaction.h"
+#include "sc/sc1pmode/sc1ptrainingremixexit.h"
 #include "sc/sc1pmode/sc1ptrainingremixlegend.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingportrules.h"
@@ -44,6 +47,8 @@ void sc1PTrainingRemixStartScene(sb32 is_reset)
     sSC1PTrainingRemixIsFrozen = FALSE;
     sSC1PTrainingRemixIsAdvancing = FALSE;
     sc1PTrainingRemixMenuStartScene();
+    sc1PTrainingRemixActionStartScene();
+    sc1PTrainingRemixExitStartScene();
     ftRemixTrainingStartScene();
 
     if (is_reset == FALSE)
@@ -248,6 +253,8 @@ void sc1PTrainingRemixDrawHud(void)
 {
     sc1PTrainingRemixLegendUpdate();
     sc1PTrainingRemixMenuUpdate();
+    sc1PTrainingRemixActionUpdate();
+    sc1PTrainingRemixExitUpdate(sc1PTrainingModeIsCursorOnExit());
 
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusPause)
     {

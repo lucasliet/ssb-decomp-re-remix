@@ -7,13 +7,12 @@
  * The Costume option (17) takes the colour index of the fighter costume from Character.costume_shield_color
  * (ftremixshieldcostume.c).
  *
- * Not portable, Yoshi egg colour (Shield.asm alter_yoshi_egg_color_, patches 0x801013A8, 0x8010318C, 0x8015EAF4, 0x8014D080,
- * 0x8014C984, 0x80102F5C): the asm rewrites the egg display lists (a 0xDE000000 branch over the TLUT load at +0x50, +0x58 or
- * +0x48) and calls Render.MODEL_PART_IMAGE_INIT_ to attach a model part image with a 16 entry palette array (Shield.asm
- * table_palettes, table_entry_palettes: 32 literal TLUTs), then writes the palette index as a float at +0x88. The port has no
- * model part image support (no MODEL_PART_IMAGE or palette array code in decomp/src or port), and the egg display lists are
- * relocatable file data. Character.yoshi_egg_color.table is never filled by any Remix file, so the index is 0 (the unchanged
- * palette) for every option but Vanilla (also 0) and Costume, which uses the costume index. The egg keeps the vanilla colour.
+ * Yoshi egg colour (Shield.asm alter_yoshi_egg_color_, patches 0x801013A8, 0x8010318C, 0x8015EAF4, 0x8014D080, 0x8014C984,
+ * 0x80102F5C): the asm rewrites the egg display lists (a 0xDE000000 branch over the TLUT load at +0x50, +0x58 or +0x48) and
+ * attaches a model part image with a 16 entry palette array (table_palettes, table_entry_palettes), then writes the palette
+ * index. The shield and escape egg are ported in ftremixyoshiegg.c (M11 I7); the thrown egg, egg lay and entry egg are not.
+ * Character.yoshi_egg_color.table is never filled by any Remix file, so the index is 0 (the unchanged palette) for every option
+ * but Costume, which uses the costume index.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)

@@ -9,6 +9,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 #include "mn/mn1pmode/mnremix1pmode.h"
 #include "remix/remix_player_panel.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
 #endif
 extern void *func_800269C0_275C0(u16 id);
 #ifdef PORT
@@ -1104,7 +1105,11 @@ void mnPlayers1PGameContinueFuncRun(GObj *gobj)
             if
             (
                 (sMN1PContinueTotalTimeTics > I_SEC_TO_TICS(2.5)) && 
+#if defined(PORT) && defined(REGION_REMIX)
+                (sc1PRemixAfkTapButtons(A_BUTTON | B_BUTTON | START_BUTTON) != FALSE)
+#else
                 (scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON) != FALSE)
+#endif
             )
             {
                 switch (sMN1PContinueOptionSelect)

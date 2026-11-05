@@ -13,10 +13,16 @@
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
 #include "mn/mnmaps/mnremixemblem.h"
+#include "mn/mnmaps/mnremixstagegridrules.h"
+#include "mn/mnmaps/mnremixstagepager.h"
+#include "mn/mnmaps/mnremixstagepages.h"
 #include "mn/mnmaps/mnremixstagepanel.h"
+#include "mn/mnmaps/mnremixstagerandom.h"
 #include "mn/mnmaps/mnremixstageroulette.h"
 #include "mn/mnmaps/mnremixstagetournament.h"
 #include "mn/mnmaps/mnremixstagevariant.h"
+#include "remix/remix_ram_image.h"
+#include "remix/remix_symbols.h"
 #endif
 #ifdef PORT
 extern void *func_800269C0_275C0(u16 id);
@@ -44,10 +50,24 @@ extern int port_enhancement_bonus_stages_enabled(void);
 #endif
 
 #define nMNMapsSlotRandom	9
-#define nMNMapsSlotCount	10
 #ifdef REGION_REMIX
+/* Stages.NUM_ICONS: the Remix grid is 3 rows of 6 icons and RANDOM is a cell of the stage table, not a fixed slot. */
+#define nMNMapsSlotCount	MNREMIX_GRID_CELLS
 #define nMNMapsRemixIconsFileID	2564 /* File.STAGE_ICONS (0xA04) */
 #define nMNMapsFileRemixIcons	6
+#define nMNMapsFileRemixArrows	7
+#define nMNMapsRemixCursorScale	0.84375F
+/* Stages.asm patches the four direction checks (0x801340E4, 0x801341E8, 0x80134014, 0x80133F40) to the D-pad: the C buttons pick the music, L is the hazard toggle and R the page. */
+#define nMNMapsButtonsUp	U_JPAD
+#define nMNMapsButtonsDown	D_JPAD
+#define nMNMapsButtonsLeft	L_JPAD
+#define nMNMapsButtonsRight	R_JPAD
+#else
+#define nMNMapsSlotCount	10
+#define nMNMapsButtonsUp	(U_JPAD | U_CBUTTONS)
+#define nMNMapsButtonsDown	(D_JPAD | D_CBUTTONS)
+#define nMNMapsButtonsLeft	(L_JPAD | L_TRIG | L_CBUTTONS)
+#define nMNMapsButtonsRight	(R_JPAD | R_TRIG | R_CBUTTONS)
 #endif
 #define nMNMapsRandomGKind	0xDE
 #define nMNMapsFileMasterHandIcon	5
@@ -56,13 +76,17 @@ extern int port_enhancement_bonus_stages_enabled(void);
 // PORT: empty-slot sentinel for pages that don't fill all 10 grid positions.
 // mnMapsCheckLocked treats it as locked, so mnMapsMakeIcons skips it and
 // cursor-movement helpers skip past it.
+#ifdef REGION_REMIX
+#define nMNMapsEmptyGKind	MNREMIX_STAGE_PAGES_EMPTY
+#else
 #define nMNMapsEmptyGKind	0xDD
+#endif
 
 #define nMNMapsPageOriginal	0
 #define nMNMapsPagePort		1
 #ifdef REGION_REMIX
-/* The Remix pages are built from Stages.stage_table_normal when the screen opens (mnMapsBuildRemixPages). */
-#define nMNMapsPageCountMax	16
+/* The Remix pages are read from Stages.stage_table_normal or stage_table_tournament when the screen opens (mnMapsBuildRemixPages). */
+#define nMNMapsPageCountMax	MNREMIX_GRID_PAGES_MAX
 #define nMNMapsPageCount	sMNMapsPageCount
 #else
 #define nMNMapsPageCountMax	2
@@ -101,6 +125,7 @@ u32 dMNMapsFileIDs[/* */] =
 	llMasterHandIconFileID
 #ifdef REGION_REMIX
 	, nMNMapsRemixIconsFileID
+	, llMNPlayersCommonFileID
 #endif
 #else
 	&llFTEmblemSpritesFileID,
@@ -310,9 +335,10 @@ f32 sMNMapsPreviewBaseAtY;
 #ifdef REGION_REMIX
 static s32 sMNMapsPageCount = 1;
 s32 dMNMapsPageGkinds[nMNMapsPageCountMax][nMNMapsSlotCount];
-/* Page of the 18 square Remix tournament grid each slot came from; the page decides the forced hazard mode of a stage. */
-static s32 sMNMapsRemixSourcePage[nMNMapsPageCountMax][nMNMapsSlotCount];
 static MNRemixRoulette sMNMapsRemixRoulette;
+/* Stages.row, column and page_number live in Remix RAM, so the cursor is where it was left when the screen opens again. */
+static s32 sMNMapsRemixSavedPage = 0;
+static s32 sMNMapsRemixSavedSlot = 0;
 #else
 s32 dMNMapsPageGkinds[nMNMapsPageCount][nMNMapsSlotCount] =
 {
@@ -333,48 +359,12 @@ s32 dMNMapsPageGkinds[nMNMapsPageCount][nMNMapsSlotCount] =
 
 #ifdef REGION_REMIX
 /*
- * Pages of nMNMapsSlotRandom stages in Stages.stage_table_normal order (Stages.stage_table_tournament order on the tournament
- * layout), Random in the last slot of every page.
+ * Reads the pages of the grid (Stages.stage_table_normal, Stages.stage_table_tournament on the tournament layout), RANDOM cells
+ * included.
  */
 static void mnMapsBuildRemixPages(void)
 {
-	s32 stages[GRREMIX_SELECT_ENTRIES_MAX];
-	s32 source_pages[GRREMIX_SELECT_ENTRIES_MAX] = { 0 };
-	s32 count;
-	s32 page;
-	s32 slot;
-	s32 index = 0;
-
-	if (mnRemixTournamentLatchLayout() != FALSE)
-	{
-		count = mnRemixTournamentGetStages(stages, source_pages, GRREMIX_SELECT_ENTRIES_MAX);
-	}
-	else count = grRemixSelectGetStages(stages, GRREMIX_SELECT_ENTRIES_MAX);
-
-	sMNMapsPageCount = (count + nMNMapsSlotRandom - 1) / nMNMapsSlotRandom;
-	if (sMNMapsPageCount < 1)
-	{
-		sMNMapsPageCount = 1;
-	}
-	if (sMNMapsPageCount > nMNMapsPageCountMax)
-	{
-		sMNMapsPageCount = nMNMapsPageCountMax;
-	}
-	for (page = 0; page < sMNMapsPageCount; page++)
-	{
-		for (slot = 0; slot < nMNMapsSlotRandom; slot++)
-		{
-			sMNMapsRemixSourcePage[page][slot] = (index < count) ? source_pages[index] : 0;
-			dMNMapsPageGkinds[page][slot] = (index < count) ? stages[index++] : nMNMapsEmptyGKind;
-		}
-		sMNMapsRemixSourcePage[page][nMNMapsSlotRandom] = 0;
-		dMNMapsPageGkinds[page][nMNMapsSlotRandom] = nMNMapsRandomGKind;
-	}
-	port_log("[mnmaps] remix stage pages: %d stages in %d pages\n", count, sMNMapsPageCount);
-	for (index = 0; index < count; index++)
-	{
-		port_log("[mnmaps] stage select entry %d gkind %d\n", index, stages[index]);
-	}
+	sMNMapsPageCount = mnRemixStagePagesLoad(mnRemixTournamentLatchLayout(), dMNMapsPageGkinds);
 }
 #endif
 
@@ -522,6 +512,7 @@ sb32 mnMapsCheckLocked(s32 gkind)
 		// skips it and cursor-movement helpers walk past it.
 		return TRUE;
 	}
+#ifndef REGION_REMIX
 	if (!sMNMapsBonusStagesEnabled && mnMapsGetPageForGkind(gkind) > nMNMapsPageOriginal)
 	{
 		// Port-added bonus stages, hideable via the LUS "Bonus Stages" toggle
@@ -534,6 +525,7 @@ sb32 mnMapsCheckLocked(s32 gkind)
 		// per-screen snapshot, not the live CVar — see sMNMapsBonusStagesEnabled.
 		return TRUE;
 	}
+#endif
 #endif
 	if (gkind == nGRKindInishie)
 	{
@@ -549,6 +541,11 @@ sb32 mnMapsCheckLocked(s32 gkind)
 // 0x80131BB0
 void mnMapsGetSlotPosition(s32 slot, f32 *x, f32 *y)
 {
+#ifdef REGION_REMIX
+	*x = mnRemixStageGridRulesGetIconX(mnRemixStageGridRulesGetColumn(slot));
+	*y = mnRemixStageGridRulesGetIconY(mnRemixStageGridRulesGetRow(slot));
+	return;
+#endif
 	// Original ROM layout: 5 icons per row, step 50, row 1 y=30, row 2 y=68.
 	// The original mnMapsMakeIcons inlined this as `x + 30` (row 1) and `x - 220`
 	// (row 2 with `x = i * 50`); we share the same math through a helper so the
@@ -1007,6 +1004,18 @@ s32 mnMapsGetSlot(s32 gkind)
 #endif
 }
 
+#ifdef REGION_REMIX
+/** Offset of the icon of a stage in the Remix stage icons file (Stages.icon_offset_table, icon_offset_random for RANDOM); 0 when it has none. */
+static u32 mnMapsRemixGetIconOffset(s32 gkind)
+{
+	if (gkind == nMNMapsRandomGKind)
+	{
+		return remix_ram_image_read_word(REMIX_SYM_Stages__icon_offset_random) & 0x00FFFFFF;
+	}
+	return grRemixGetStageIconOffset(gkind);
+}
+#endif
+
 // 0x80132528
 void mnMapsMakeIcons(void)
 {
@@ -1046,6 +1055,13 @@ void mnMapsMakeIcons(void)
 
 		if (mnMapsCheckLocked(gkind) == FALSE)
 		{
+#ifdef REGION_REMIX
+			if (mnMapsRemixGetIconOffset(gkind) != 0)
+			{
+				sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMapsFiles[nMNMapsFileRemixIcons], mnMapsRemixGetIconOffset(gkind)));
+			}
+			else
+#endif
 			if (gkind == nMNMapsRandomGKind)
 			{
 #ifdef PORT
@@ -1483,6 +1499,16 @@ void mnMapsMakeEmblem(GObj *gobj, s32 gkind)
 	mnMapsSetLogoPosition(gobj, gkind);
 }
 
+/** TRUE when the slot is the RANDOM one: a fixed slot on the vanilla grid, any cell that holds the RANDOM id on the Remix grid. */
+static sb32 mnMapsIsRandomSlot(s32 slot)
+{
+#ifdef REGION_REMIX
+	return (mnMapsGetGroundKind(slot) == nMNMapsRandomGKind) ? TRUE : FALSE;
+#else
+	return (slot == nMNMapsSlotRandom) ? TRUE : FALSE;
+#endif
+}
+
 // 0x801329AC
 void mnMapsMakeNameAndEmblem(s32 slot)
 {
@@ -1497,7 +1523,7 @@ void mnMapsMakeNameAndEmblem(s32 slot)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
 	mnMapsMakeEmblem(sMNMapsNameLogoGObj, mnMapsGetDisplayGroundKind(slot));
 
-	if (slot != nMNMapsSlotRandom)
+	if (mnMapsIsRandomSlot(slot) == FALSE)
 	{
 		mnMapsMakeName(sMNMapsNameLogoGObj, mnMapsGetDisplayGroundKind(slot));
 #if defined(REGION_JP)
@@ -1520,6 +1546,11 @@ void mnMapsSetCursorPosition(GObj *gobj, s32 slot)
 	f32 x;
 	f32 y;
 
+#ifdef REGION_REMIX
+	SObjGetStruct(gobj)->pos.x = mnRemixStageGridRulesGetCursorX(mnRemixStageGridRulesGetColumn(slot));
+	SObjGetStruct(gobj)->pos.y = mnRemixStageGridRulesGetCursorY(mnRemixStageGridRulesGetRow(slot));
+	return;
+#endif
 	mnMapsGetSlotPosition(slot, &x, &y);
 	SObjGetStruct(gobj)->pos.x = x - 7.0F;
 	SObjGetStruct(gobj)->pos.y = y - 7.0F;
@@ -1545,11 +1576,16 @@ void mnMapsMakeCursor(void)
 	sobj->sprite.red = 0xFF;
 	sobj->sprite.green = 0x00;
 	sobj->sprite.blue = 0x00;
+#ifdef REGION_REMIX
+	/* Stages.asm 0x80132B40: the cursor frame is scaled to 0.84375 to fit the 40 x 30 icons */
+	sobj->sprite.scalex = nMNMapsRemixCursorScale;
+	sobj->sprite.scaley = nMNMapsRemixCursorScale;
+#endif
 
 	mnMapsSetCursorPosition(gobj, sMNMapsCursorSlot);
 }
 
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 // TRUE when the page holds at least one unlocked slot, i.e. a page jump could
 // land there. Keeps the right-arrow indicator honest when the whole bonus page
 // is hidden by the "Bonus Stages" toggle — mnMapsTryPageJump would refuse the
@@ -2296,6 +2332,10 @@ s32 mnMapsGetVerticalSlot(s32 slot, sb32 is_down)
 {
 	s32 next_slot;
 
+#ifdef REGION_REMIX
+	/* Stages.asm down_ and up_: the row wraps, the column and the page stay */
+	return (is_down != FALSE) ? mnRemixStageGridRulesMoveDown(slot) : mnRemixStageGridRulesMoveUp(slot);
+#endif
 	if (is_down != FALSE)
 	{
 		if (slot >= 5) return slot;
@@ -2321,6 +2361,10 @@ s32 mnMapsGetHorizontalSlot(s32 slot, sb32 is_right)
 	s32 next_slot = slot;
 	s32 i;
 
+#ifdef REGION_REMIX
+	/* Stages.asm right_ and left_: the column wraps, the row and the page stay */
+	return (is_right != FALSE) ? mnRemixStageGridRulesMoveRight(slot) : mnRemixStageGridRulesMoveLeft(slot);
+#endif
 	for (i = 0; i < nMNMapsSlotCount; i++)
 	{
 		if (is_right != FALSE)
@@ -2343,7 +2387,7 @@ s32 mnMapsGetHorizontalSlot(s32 slot, sb32 is_right)
 	return slot;
 }
 
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 // PORT: shift every SObj on a GObj's list by (dx, dy). Used to slide the icons
 // GObj as a unit during a page transition. NULL-safe.
 static void mnMapsShiftSObjs(GObj *gobj, f32 dx, f32 dy)
@@ -2568,15 +2612,41 @@ void mnMapsMakePreviewCamera(void)
 	gcAddGObjProcess(gobj, mnMapsPreviewCameraThreadUpdate, nGCProcessKindThread, 1);
 }
 
+#ifdef REGION_REMIX
+/**
+ * The stage the RANDOM cell resolves to (Stages.asm swap_stage_): a pick of the Random Stage Toggles list. The tournament layout
+ * also forces the hazard mode of the drawn stage. An empty list cannot happen in Remix; the first cell of the grid stands in.
+ */
+static s32 mnMapsRemixPickRandomGroundKind(void)
+{
+	sb32 is_tournament = mnRemixTournamentIsActive();
+	s32 gkind = mnRemixStageRandomPick(is_tournament);
+
+	if (gkind < 0)
+	{
+		return dMNMapsPageGkinds[0][0];
+	}
+	if (is_tournament != FALSE)
+	{
+		mnRemixTournamentApplyRandomHazardMode(gkind);
+	}
+	return gkind;
+}
+#endif
+
 // 0x80133B78
 void mnMapsSaveSceneData(void)
 {
+#ifndef REGION_REMIX
 	s32 gkind;
 	s32 slot;
+#endif
 
-	if (sMNMapsCursorSlot == nMNMapsSlotRandom)
+	if (mnMapsIsRandomSlot(sMNMapsCursorSlot) != FALSE)
 	{
-#ifdef PORT
+#ifdef REGION_REMIX
+		gSCManagerSceneData.gkind = mnMapsRemixPickRandomGroundKind();
+#elif defined(PORT)
 		// Random picks across all pages — collect every unlocked, non-random,
 		// non-current gkind and pick uniformly. That way FD (and any future
 		// expansion stages on page 1+) participate.
@@ -2603,12 +2673,6 @@ void mnMapsSaveSceneData(void)
 		{
 			gSCManagerSceneData.gkind = mnMapsGetGroundKind(0);
 		}
-#ifdef REGION_REMIX
-		if (mnRemixTournamentIsActive() != FALSE)
-		{
-			mnRemixTournamentApplyRandomHazardMode(gSCManagerSceneData.gkind);
-		}
-#endif
 #else
 		do
 		{
@@ -2630,6 +2694,10 @@ void mnMapsSaveSceneData(void)
 	{
 		gSCManagerSceneData.maps_training_gkind = mnMapsGetGroundKind(sMNMapsCursorSlot);
 	}
+#ifdef REGION_REMIX
+	sMNMapsRemixSavedPage = sMNMapsCursorPage;
+	sMNMapsRemixSavedSlot = sMNMapsCursorSlot;
+#endif
 }
 
 // 0x80133C6C
@@ -2698,6 +2766,10 @@ void mnMapsInitVars(void)
 		sMNMapsCursorSlot = mnMapsGetSlot(gSCManagerSceneData.maps_vsmode_gkind);
 		break;
 	}
+#ifdef REGION_REMIX
+	sMNMapsCursorPage = mnRemixStageGridRulesClampPage(sMNMapsRemixSavedPage, sMNMapsPageCount);
+	sMNMapsCursorSlot = sMNMapsRemixSavedSlot;
+#endif
 #ifdef PORT
 	{
 		/* Smoke-test harness: SSB64_MAPS_START_GKIND opens the stage select on that stage (decimal gkind). */
@@ -2759,37 +2831,25 @@ static sb32 mnMapsRemixCheckReleased(u16 buttons)
 	return FALSE;
 }
 
-/** Slots of the current page the Roulette can land on: every unlocked stage, the RANDOM square left out (random_stage_roulette rerolls it). */
-static u32 mnMapsRemixGetRouletteSlotMask(void)
-{
-	u32 slot_mask = 0;
-	s32 slot;
-
-	for (slot = 0; slot < nMNMapsSlotCount; slot++)
-	{
-		s32 gkind = mnMapsGetGroundKind(slot);
-
-		if ((gkind != nMNMapsRandomGKind) && (mnMapsCheckLocked(gkind) == FALSE))
-		{
-			slot_mask |= 1U << slot;
-		}
-	}
-	return slot_mask;
-}
-
-/** One Roulette jump: the cursor goes to a random stage of the page and the name and emblem follow; the preview stays put. */
+/**
+ * One Roulette jump (random_stage_roulette randomize_coords): a random column and row of the page, drawn again over the bottom
+ * right cell. The cell is not checked for its stage, so it can be a RANDOM cell too. The name and emblem follow; the preview
+ * stays put.
+ */
 static void mnMapsRemixMoveRouletteCursor(void)
 {
-	u32 slot_mask = mnMapsRemixGetRouletteSlotMask();
-	s32 slot_count = mnRemixRouletteCountSlots(slot_mask);
+	s32 row;
+	s32 column;
 
-	if (slot_count == 0)
+	do
 	{
-		mnRemixRouletteStop(&sMNMapsRemixRoulette);
-		return;
+		column = syUtilsRandTimeUCharRange(MNREMIX_GRID_COLUMNS);
+		row = syUtilsRandTimeUCharRange(MNREMIX_GRID_ROWS);
 	}
-	sMNMapsCursorSlot = mnRemixRouletteNthSlot(slot_mask, syUtilsRandTimeUCharRange(slot_count));
-	port_log("[mnmaps] roulette jumps to slot %d stage %d\n", (int)sMNMapsCursorSlot, (int)mnMapsGetGroundKind(sMNMapsCursorSlot));
+	while (mnRemixStageGridRulesRouletteRerolls(row, column) != 0);
+
+	sMNMapsCursorSlot = mnRemixStageGridRulesGetCell(row, column);
+	port_log("[mnmaps] roulette jumps to page %d slot %d stage %d\n", (int)sMNMapsCursorPage, (int)sMNMapsCursorSlot, (int)mnMapsGetGroundKind(sMNMapsCursorSlot));
 	func_800269C0_275C0(nMNMapsRemixFGMScroll);
 	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 	mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
@@ -2831,9 +2891,51 @@ static void mnMapsRemixUpdateRoulette(sb32 *is_select_tapped, sb32 *is_back_tapp
 	}
 }
 
+/** Page to go to after a R or Z tap (right_check_ _page_up and _page_down), or -1 when neither was tapped. */
+static s32 mnMapsRemixGetPageAfterTap(void)
+{
+	if (scSubsysControllerGetPlayerTapButtons(R_TRIG) != 0)
+	{
+		return mnRemixStageGridRulesNextPage(sMNMapsCursorPage, sMNMapsPageCount);
+	}
+	if (scSubsysControllerGetPlayerTapButtons(Z_TRIG) != 0)
+	{
+		return mnRemixStageGridRulesPreviousPage(sMNMapsCursorPage, sMNMapsPageCount);
+	}
+	return -1;
+}
+
 /**
- * Remix controls of the stage select on top of the vanilla ones (Stages.asm right_check_): the Roulette, L to switch the hazard
- * mode and C-down to start the Roulette over RANDOM or to cycle the variants of a stage. Takes the A, Start and B taps away from
+ * R and Z switch the page and keep the cursor cell (right_check_ _end_update). The icons are drawn again and, unless the Roulette
+ * runs, the name, emblem and preview follow; a running Roulette keeps its preview.
+ *
+ * @return TRUE when a page switch was handled this frame.
+ */
+static sb32 mnMapsRemixUpdatePage(void)
+{
+	s32 page = mnMapsRemixGetPageAfterTap();
+
+	if (page < 0)
+	{
+		return FALSE;
+	}
+	sMNMapsCursorPage = page;
+	gcEjectGObj(sMNMapsIconsGObj);
+	mnMapsMakeIcons();
+	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
+	mnMapsSetCursorPosition(sMNMapsCursorGObj, sMNMapsCursorSlot);
+
+	if (mnRemixRouletteIsActive(&sMNMapsRemixRoulette) == FALSE)
+	{
+		mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
+	}
+	port_log("[mnmaps] page %d of %d\n", (int)(sMNMapsCursorPage + 1), (int)sMNMapsPageCount);
+	return TRUE;
+}
+
+/**
+ * Remix controls of the stage select on top of the vanilla ones (Stages.asm right_check_): R and Z to switch the page, the Roulette,
+ * L to switch the hazard mode and C-down to start the Roulette over RANDOM or to cycle the variants of a stage. Takes the A, Start and B taps away from
  * the caller while the Roulette owns them.
  */
 static void mnMapsRemixUpdateControls(sb32 *is_select_tapped, sb32 *is_back_tapped)
@@ -2845,6 +2947,10 @@ static void mnMapsRemixUpdateControls(sb32 *is_select_tapped, sb32 *is_back_tapp
 	if (mnRemixRouletteTakeSelect(&sMNMapsRemixRoulette) != FALSE)
 	{
 		*is_select_tapped = TRUE;
+		return;
+	}
+	if ((sMNMapsScrollWait == 0) && (mnMapsRemixUpdatePage() != FALSE))
+	{
 		return;
 	}
 	if (mnRemixRouletteIsActive(&sMNMapsRemixRoulette) != FALSE)
@@ -2894,9 +3000,10 @@ void mnMapsFuncRun(GObj *gobj)
 	sMNMapsTotalTimeTics++;
 
 #ifdef REGION_REMIX
-	mnRemixStagePanelUpdate(sMNMapsCursorGObj, mnMapsGetGroundKind(sMNMapsCursorSlot), mnMapsGetDisplayGroundKind(sMNMapsCursorSlot), sMNMapsRemixSourcePage[sMNMapsCursorPage][sMNMapsCursorSlot]);
+	mnRemixStagePanelUpdate(sMNMapsCursorGObj, mnMapsGetGroundKind(sMNMapsCursorSlot), mnMapsGetDisplayGroundKind(sMNMapsCursorSlot), sMNMapsCursorPage);
+	mnRemixStagePagerUpdate(sMNMapsCursorPage);
 #endif
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 	// Page-slide animation has the floor — while sliding, block all input and
 	// don't run the rest of the per-frame logic. mnMapsTickScrollAnimation
 	// finalizes (eject old icons, refresh name/emblem/preview) on the last tick.
@@ -3024,7 +3131,7 @@ void mnMapsFuncRun(GObj *gobj)
 		if (sMNMapsScrollWait == 0)
 #endif
 		{
-			button_input = scSubsysControllerGetPlayerHoldButtons(U_JPAD | U_CBUTTONS);
+			button_input = scSubsysControllerGetPlayerHoldButtons(nMNMapsButtonsUp);
 
 			if ((button_input != 0) || (stick_input = scSubsysControllerGetPlayerStickUD(20, 1), (stick_input != 0)))
 			{
@@ -3048,7 +3155,7 @@ void mnMapsFuncRun(GObj *gobj)
 
 				return;
 			}
-			button_input = scSubsysControllerGetPlayerHoldButtons(D_JPAD | D_CBUTTONS);
+			button_input = scSubsysControllerGetPlayerHoldButtons(nMNMapsButtonsDown);
 
 			if ((button_input != 0) || (stick_input = scSubsysControllerGetPlayerStickUD(-20, 0), (stick_input != 0)))
 			{
@@ -3072,11 +3179,11 @@ void mnMapsFuncRun(GObj *gobj)
 
 				return;
 			}
-			button_input = scSubsysControllerGetPlayerHoldButtons(L_JPAD | L_TRIG | L_CBUTTONS);
+			button_input = scSubsysControllerGetPlayerHoldButtons(nMNMapsButtonsLeft);
 
 			if ((button_input != 0) || (stick_input = scSubsysControllerGetPlayerStickLR(-20, 0), (stick_input)))
 			{
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 				// Page jump kicks off a slide; the slide's last frame finalizes name+emblem+preview.
 				// We skip the per-stage snap-updates and cursor reposition in that case.
 				if (mnMapsTryPageJump(FALSE) != FALSE)
@@ -3101,11 +3208,11 @@ void mnMapsFuncRun(GObj *gobj)
 
 				return;
 			}
-			button_input = scSubsysControllerGetPlayerHoldButtons(R_JPAD | R_TRIG | R_CBUTTONS);
+			button_input = scSubsysControllerGetPlayerHoldButtons(nMNMapsButtonsRight);
 
 			if ((button_input != 0) || (stick_input = scSubsysControllerGetPlayerStickLR(20, 1), (stick_input)))
 			{
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 				if (mnMapsTryPageJump(TRUE) != FALSE)
 				{
 					func_800269C0_275C0(nSYAudioFGMMenuScroll2);
@@ -3169,13 +3276,14 @@ void mnMapsFuncStart(void)
 	mnMapsMakePlaque();
 	mnMapsMakeLabels();
 	mnMapsMakeIcons();
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 	mnMapsMakeArrows();
 #endif
 	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 	mnMapsMakeCursor();
 #ifdef REGION_REMIX
 	mnRemixStagePanelMake();
+	mnRemixStagePagerMake(sMNMapsFiles[nMNMapsFileRemixArrows]);
 #endif
 	mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
 }

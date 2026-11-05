@@ -23,9 +23,12 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixmenumusic.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixcsspanelmenu.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnplayers/mnremixenemylabel.h"
 #include "sc/sc1pmode/sc1premixenemy.h"
+#include "sc/sc1pmode/sc1premixmode.h"
+#include <string.h>
 #endif
 extern void *func_800269C0_275C0(u16 id);
 extern void func_80026738_27338(void *arg0);
@@ -68,11 +71,14 @@ u32 dMNPlayers1PGameFileIDs[/* */] =
 #ifdef REGION_REMIX
 	/* [11] Remix portrait sheet; the 30 grid portraits are sliced from it. */
 	, REMIX_CSS_PORTRAITS_FILE_ID
+	/* [12] Remix CSS images (the button of the panel menu) */
+	, REMIX_CSS_IMAGES_FILE_ID
 #endif
 };
 
 #ifdef REGION_REMIX
 #define MN_PLAYERS_1PGAME_REMIX_PORTRAITS_FILE 11
+#define MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE 12
 #endif
 
 // 0x80138660
@@ -2959,12 +2965,18 @@ void mnPlayers1PGameCursorProcUpdate(GObj *gobj)
 	s32 player = gobj->user_data.s;
 
 	mnPlayers1PGameAdjustCursor(gobj, player);
-
+#ifdef REGION_REMIX
+	mnRemixPanelMenuHoldPress(player, (gSYControllerDevices[player].button_hold & A_BUTTON) ? TRUE : FALSE, SObjGetStruct(gobj)->pos.x,
+	                          SObjGetStruct(gobj)->pos.y);
+#endif
 	if
 	(
 		(gSYControllerDevices[player].button_tap & A_BUTTON) &&
 		(mnPlayers1PGameCheckSelectFighter(gobj, player, sMNPlayers1PGameSlot.held_player, 0) == FALSE) &&
 		(mnPlayers1PGameCheckCursorPuckGrab(gobj, player) == FALSE)
+#ifdef REGION_REMIX
+		&& (mnRemixPanelMenuPress(SObjGetStruct(gobj)->pos.x, SObjGetStruct(gobj)->pos.y) == FALSE)
+#endif
 	)
 	{
 		if (mnPlayers1PGameCheckTimeArrowRInRange(gobj) != FALSE)
@@ -3452,6 +3464,12 @@ void mnPlayers1PGameSpotlightProcUpdate(GObj *gobj)
 #endif
 	}
 	else gobj->flags = GOBJ_FLAG_HIDDEN;
+#ifdef REGION_REMIX
+	if (mnRemixPanelMenuIsOpen(0) != FALSE)
+	{
+		gobj->flags = GOBJ_FLAG_HIDDEN;
+	}
+#endif
 }
 
 // 0x80137B04
@@ -3664,10 +3682,47 @@ void mnPlayers1PGamePauseSlotProcesses(void)
 	}
 }
 
+#ifdef REGION_REMIX
+/**
+ * Tells the panel menu where the panel is and which objects it hides while the menu is open (CharacterSelectDebugMenu.asm
+ * update_debug_menu_ and set_panel_display_), and brings the extra costume of the panel fighter up to date.
+ */
+static void mnPlayers1PGameRemixPanelMenuFrameUpdate(void)
+{
+	MNRemixPanelMenuPanelInfo info;
+	GObj *targets[2];
+	SObj *card_sobj;
+	sb32 is_listed = (sMNPlayers1PGameSlot.panel != NULL) ? TRUE : FALSE;
+
+	memset(&info, 0, sizeof(info));
+	info.is_present = is_listed;
+	info.is_enabled = is_listed;
+	info.port = sMNPlayers1PGameManPlayer;
+
+	if (is_listed != FALSE)
+	{
+		card_sobj = SObjGetStruct(sMNPlayers1PGameSlot.panel);
+		info.x = card_sobj->pos.x;
+		info.y = card_sobj->pos.y;
+		info.width = card_sobj->sprite.width;
+		mnRemixPanelMenuSetGateSprite(0, card_sobj->next);
+	}
+	targets[0] = sMNPlayers1PGameSlot.player;
+	targets[1] = sMNPlayers1PGameSlot.name_emblem_gobj;
+
+	mnRemixPanelMenuSetPanel(0, &info);
+	mnRemixPanelMenuSetHideTargets(0, targets, ARRAY_COUNT(targets));
+	mnRemixCostumeApplyPartImage(sMNPlayers1PGameSlot.player);
+}
+#endif
+
 // 0x80137FCC
 void mnPlayers1PGameFuncRun(GObj *gobj)
 {
 	sMNPlayers1PGameTotalTimeTics++;
+#ifdef REGION_REMIX
+	mnPlayers1PGameRemixPanelMenuFrameUpdate();
+#endif
 
 	if (mnRemixTimeoutsCSSReturns(sMNPlayers1PGameTotalTimeTics, sMNPlayers1PGameReturnTic))
 	{
@@ -3896,6 +3951,10 @@ void mnPlayers1PGameFuncStart(void)
 	mnPlayers1PGameMakePuckAdjust();
 	mnPlayers1PGameMakeSpotlight();
 	mnPlayers1PGameMakeReady();
+#ifdef REGION_REMIX
+	mnRemixPanelMenuStart((sc1PRemixModeIs(SC1PREMIX_MODE_ALLSTAR) != FALSE) ? MNREMIX_PANELMENU_MODE_ALLSTAR : MNREMIX_PANELMENU_MODE_1P,
+	                      sMNPlayers1PGameFiles[MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE], sMNPlayers1PGameFiles[0]);
+#endif
 	scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
 
 	if (gSCManagerSceneData.scene_prev != nSCKindMaps)

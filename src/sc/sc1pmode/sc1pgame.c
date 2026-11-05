@@ -2,6 +2,8 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "if/ifremixannouncer.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
+#include "sc/sc1pmode/sc1premixbonus3.h"
+#include "sc/sc1pmode/sc1pbonusstage.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
@@ -1106,6 +1108,7 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
 
 #if defined(PORT) && defined(REGION_REMIX)
     level = sc1PRemix1PEnemyLevel(level);
+    level = sc1PRemixBonus3EnemyLevel(level);
 #endif
     level -= gSC1PManagerLevelDrop;
 
@@ -1129,6 +1132,7 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
     sSC1PGamePlayerSetups[player].cp_trait = stagesetup->opponent_behavior;
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupEnemy(player);
+    sc1PRemixBonus3SetupEnemy(player);
     sc1PRemixHrcSetupEnemy(player);
     sc1PRemix1PSetupEnemy(player);
 
@@ -1218,6 +1222,8 @@ void sc1PGameSetupStageAll(void)
     gSCManagerBattleState->item_appearance_rate = comsetup->item_appearance_rate;
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupBattle();
+    sc1PRemixBonus3SetupBattle();
+    sc1PRemixAllstarSetupBattle();
     sc1PRemixHrcSetupBattle();
 #endif
 
@@ -1315,8 +1321,9 @@ void sc1PGameSetupStageAll(void)
         break;
     }
 #if defined(PORT) && defined(REGION_REMIX)
-    if (sc1PRemixHrcIsActive() != FALSE)
+    if ((sc1PRemixHrcIsActive() != FALSE) || (sc1PRemixAllstarIsRestArea() != FALSE))
     {
+        /* instant_spawn: the Rest Area spawns the player like the race stage does */
         sSC1PGamePlayerSetups[gSCManagerSceneData.player].is_skip_entry = TRUE;
     }
 #endif
@@ -1588,7 +1595,7 @@ void sc1PGameSetupStageAll(void)
             variations--;
         }
 #if defined(PORT) && defined(REGION_REMIX)
-        if (sc1PRemix1PIsActive() != FALSE)
+        if ((sc1PRemix1PIsActive() != FALSE) || (sc1PRemixBonus3UsesRemixPolygons() != FALSE))
         {
             for (i = 0; i < SC1PGAME_STAGE_MAX_OPPONENT_COUNT; i++)
             {
@@ -1968,9 +1975,15 @@ void sc1PGameWaitStageBonus3Update(void)
 #else
     gcSleepCurrentGObjThread(60);
 #endif
-    ifCommonAnnounceGoMakeInterface();
-    ifCommonPlayerDamageSetShowInterface();
-    func_800269C0_275C0(nSYAudioVoiceAnnounceGo);
+#if defined(PORT) && defined(REGION_REMIX)
+    /* skip_go: the Rest Area has no GO object, no GO voice and no damage meters */
+    if (sc1PRemixAllstarIsRestArea() == FALSE)
+#endif
+    {
+        ifCommonAnnounceGoMakeInterface();
+        ifCommonPlayerDamageSetShowInterface();
+        func_800269C0_275C0(nSYAudioVoiceAnnounceGo);
+    }
     ifCommonAnnounceGoSetStatus();
     gcEjectGObj(NULL);
     gcSleepCurrentGObjThread(1);
@@ -2070,7 +2083,7 @@ void sc1PGameWaitThreadUpdate(GObj *gobj)
     {
     case nSC1PGameStageLink:
 #if defined(PORT) && defined(REGION_REMIX)
-        if (sc1PRemixHrcIsActive() != FALSE)
+        if ((sc1PRemixHrcIsActive() != FALSE) || (sc1PRemixAllstarIsRestArea() != FALSE))
         {
             sc1PGameWaitStageBonus3Update();
             break;
@@ -2395,6 +2408,13 @@ void sc1PGameTryInitPlayerArrows(void)
 // 0x8018F1F8
 void sc1PGameInitTimeUpMessage(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixBonus3IsActive() != FALSE)
+    {
+        sc1PBonusStageMakeCountUpTimer();
+        return;
+    }
+#endif
     if (gSCManagerSceneData.spgame_stage != nSC1PGameStageBonus3)
     {
         ifCommonTimerMakeInterface(ifCommonAnnounceTimeUpInitInterface);
@@ -2839,6 +2859,9 @@ void sc1PGameFuncStart(void)
         fp->computer.trait = sSC1PGamePlayerSetups[i].cp_trait;
 
         fp->camera_zoom_frame *= sSC1PGamePlayerSetups[i].camera_frame_mul;
+#if defined(PORT) && defined(REGION_REMIX)
+        sc1PRemix1PPresetBossDamage(fp);
+#endif
     }
     ftManagerSetupFilesPlayablesAll();
     ifCommonBattleSetGameStatusWait();

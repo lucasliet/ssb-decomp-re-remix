@@ -5,6 +5,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premixbonus3.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
 #include "gm/gmremixpractice.h"
@@ -366,13 +367,22 @@ void sc1PManagerUpdateScene(void)
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].tag = gSCManagerSceneData.player;
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].fkind = gSCManagerSceneData.fkind;
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].costume = gSCManagerSceneData.costume;
+#if defined(PORT) && defined(REGION_REMIX)
+    /* stock_prevent: a run of All-Star that already began keeps the stocks the player has */
+    if (sc1PRemixAllstarKeepsRunState() == FALSE)
+#endif
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].stock_count = gSCManagerBackupData.spgame_stock_count;
     gSCManager1PGameBattleState.players[gSCManagerSceneData.player].is_spgame_enemy = FALSE;
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupPlayer(gSCManagerSceneData.player);
     sc1PRemixHrcSetupPlayer(gSCManagerSceneData.player);
+    sc1PRemixBonus3SetupPlayer(gSCManagerSceneData.player);
 #endif
 
+#if defined(PORT) && defined(REGION_REMIX)
+    /* prevent_erase and damage_prevent: the score and the total damage of an All-Star run that already began are kept */
+    if (sc1PRemixAllstarKeepsRunState() == FALSE)
+#endif
     gSCManagerSceneData.spgame_score = 0;
     gSCManagerSceneData.continues_used = 0;
     gSCManagerSceneData.bonus_count = 0;
@@ -380,6 +390,9 @@ void sc1PManagerUpdateScene(void)
     gSC1PManagerTotalTimeTics = 0;
 
     gSC1PManagerTotalFalls = 0;
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixAllstarKeepsRunState() == FALSE)
+#endif
     gSC1PManagerTotalDamage = 0;
     gSC1PManagerLevelDrop = 0;
     sSC1PManagerLevelGuard = 2;
@@ -558,7 +571,7 @@ void sc1PManagerUpdateScene(void)
             gSCManagerSceneData.scene_curr = nSCKind1PIntro;
 
 #if defined(PORT) && defined(REGION_REMIX)
-            if ((sc1PRemixMultimanIsActive() == FALSE) && (sc1PRemixHrcIsActive() == FALSE) && (sc1PRemixAllstarIsActive() == FALSE) &&
+            if ((sc1PRemixMultimanIsActive() == FALSE) && (sc1PRemixHrcIsActive() == FALSE) && (sc1PRemixBonus3IsActive() == FALSE) && (sc1PRemixAllstarIsActive() == FALSE) &&
                 (gmRemixPracticeConsumeIntroSkip() == FALSE))
 #endif
             {
@@ -632,9 +645,17 @@ void sc1PManagerUpdateScene(void)
                 sc1PRemixHrcLeaveRun();
                 return;
             }
+            if (sc1PRemixBonus3IsActive() != FALSE)
+            {
+                sc1PRemixBonus3LeaveRun();
+                return;
+            }
 #endif
             if (gSCManagerSceneData.is_reset != FALSE)
             {
+#if defined(PORT) && defined(REGION_REMIX)
+                sc1PRemix1POnPauseExit();
+#endif
                 gSCManagerSceneData.scene_prev = nSCKind1PGame;
                 gSCManagerSceneData.scene_curr = nSCKind1PMode;
 

@@ -1686,6 +1686,14 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
             ftParamTryUpdateItemMusic();
         }
     }
+#ifdef REGION_REMIX
+    /* Poison.asm poison_hook (0x800E1820) runs the poison before the heal block reads damage_heal, so a CSS Heal
+     * (PoisonDmg.asm _anti_venom) heals on this same frame */
+    if (this_fp->damage_heal == 0)
+    {
+        ftRemixPoisonUpdate(fighter_gobj);
+    }
+#endif
     if (this_fp->damage_heal != 0)
     {
         this_fp->damage_heal--;
@@ -1707,12 +1715,6 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
             ftParamResetStatUpdateColAnim(fighter_gobj);
         }
     }
-#ifdef REGION_REMIX
-    else
-    {
-        ftRemixPoisonUpdate(fighter_gobj);
-    }
-#endif
     if ((this_fp->item_gobj != NULL) && (this_fp->status_id != nFTCommonStatusLightGet) && (itGetStruct(this_fp->item_gobj)->kind == nITKindHammer))
     {
         ftHammerUpdateStats(fighter_gobj);

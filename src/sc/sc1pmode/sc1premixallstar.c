@@ -13,6 +13,7 @@
 #include <sys/utils.h>
 #include <sc/scene.h>
 #include "sc/sc1pmode/sc1premixallstar.h"
+#include "sc/sc1pmode/sc1premixallstarrest.h"
 #include "sc/sc1pmode/sc1premix1pdata.h"
 #include "sc/sc1pmode/sc1premixbonusexit.h"
 #include "sc/sc1pmode/sc1premixmode.h"
@@ -34,6 +35,7 @@ static s32 sSC1PRemixAllstarGkinds[SC1PREMIX_ALLSTAR_FIGHTER_COUNT];
 static s32 sSC1PRemixAllstarProgress;
 static sb32 sSC1PRemixAllstarIsReady;
 static sb32 sSC1PRemixAllstarIsLeaving;
+static sb32 sSC1PRemixAllstarIsMatchBegun;
 static s32 sSC1PRemixAllstarPercent;
 static sb32 sSC1PRemixAllstarIsLimbo;
 static s32 sSC1PRemixAllstarHearts;
@@ -64,6 +66,7 @@ void sc1PRemixAllstarRandomize(void)
 
     sSC1PRemixAllstarIsReady = FALSE;
     sSC1PRemixAllstarIsLeaving = FALSE;
+    sSC1PRemixAllstarIsMatchBegun = FALSE;
     sSC1PRemixAllstarProgress = 0;
     sSC1PRemixAllstarPercent = 0;
     sSC1PRemixAllstarIsLimbo = FALSE;
@@ -254,16 +257,39 @@ void sc1PRemixAllstarOnContinue(void)
     sSC1PRemixAllstarIsLimbo = FALSE;
 }
 
+sb32 sc1PRemixAllstarIsRestArea(void)
+{
+    if (sc1PRemixAllstarIsActive() == FALSE)
+    {
+        return FALSE;
+    }
+    return (gSCManagerSceneData.spgame_stage == SC1PREMIX_ALLSTAR_STAGE_REST) ? TRUE : FALSE;
+}
+
+void sc1PRemixAllstarSetupBattle(void)
+{
+    if (sc1PRemixAllstarIsRestArea() != FALSE)
+    {
+        gSCManagerBattleState->time_limit = SCBATTLE_TIMELIMIT_INFINITE;
+    }
+}
+
+sb32 sc1PRemixAllstarKeepsRunState(void)
+{
+    return ((sc1PRemixAllstarIsActive() != FALSE) && (sSC1PRemixAllstarIsMatchBegun != FALSE)) ? TRUE : FALSE;
+}
+
 void sc1PRemixAllstarSetupRestArea(void)
 {
     Vec3f pos;
     Vec3f vel;
     s32 i;
 
-    if ((sc1PRemixAllstarIsActive() == FALSE) || (gSCManagerSceneData.spgame_stage != SC1PREMIX_ALLSTAR_STAGE_REST))
+    if (sc1PRemixAllstarIsRestArea() == FALSE)
     {
         return;
     }
+    sSC1PRemixAllstarIsMatchBegun = TRUE;
     vel.x = vel.y = vel.z = 0.0F;
 
     pos.y = SC1PREMIX_ALLSTAR_HEART_Y;
@@ -275,6 +301,7 @@ void sc1PRemixAllstarSetupRestArea(void)
 
         itManagerMakeItemSetupCommon(NULL, nITKindHeart, &pos, &vel, ITEM_FLAG_PARENT_DEFAULT);
     }
+    sc1PRemixAllstarRestMakeIcons();
 }
 
 void sc1PRemixAllstarOnHeartUsed(void)

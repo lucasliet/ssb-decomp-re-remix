@@ -12,6 +12,7 @@
 #include "gm/gmremixstockmode.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbrules.h"
+#include "mn/mnplayers/mnremixtwelvecblayout.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 
 static GMRemixTwelveCBState sGMRemixTwelveCB;
@@ -120,14 +121,26 @@ void gmRemixTwelveCBSetCssPortrait(s32 port, s32 slot)
     }
 }
 
-/** Portrait of a port: the one the CSS reported, else the default set slot of the fighter. */
+/**
+ * Portrait of a port: the one the CSS reported (the slot under the token, TwelveCharBattle.asm get_portrait_id_ reads the same
+ * panel field). Without a CSS run, as when the battle scene is entered directly, the slot the fighter holds in the half of the
+ * port in his character set, so the two ports never share a portrait; else the plain fighter mapping.
+ */
 static s32 gmRemixTwelveCBPortraitOfPort(s32 port, s32 fkind)
 {
-    if ((port >= 0) && (port < GMREMIX_TWELVECB_PLAYERS) && (sGMRemixTwelveCBCssPortrait[port] >= 0))
+    s32 slot;
+
+    if ((port < 0) || (port >= GMREMIX_TWELVECB_PLAYERS))
+    {
+        return gmRemixTwelveCBPortraitOf(fkind);
+    }
+    if (sGMRemixTwelveCBCssPortrait[port] >= 0)
     {
         return sGMRemixTwelveCBCssPortrait[port];
     }
-    return gmRemixTwelveCBPortraitOf(fkind);
+    slot = mnRemixTwelveCBLayoutSlotOfFkind(gmRemixTwelveCBGetCssSet(port), port, fkind);
+
+    return (slot != MNREMIX_TCB_NO_SLOT) ? slot : gmRemixTwelveCBPortraitOf(fkind);
 }
 
 static void gmRemixTwelveCBPickPortraits(void)

@@ -1,6 +1,10 @@
 #include <ft/fighter.h>
 #if defined(PORT) && defined(REGION_REMIX)
 #include "sc/sc1pmode/sc1premixmode.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
+#include "sc/sc1pmode/sc1premixbonus3.h"
+#include "sc/sc1pmode/sc1premixbonus3rules.h"
+#include "gm/gmremixtoggle.h"
 #endif
 #ifdef PORT
 extern void port_coroutine_yield(void);
@@ -17,6 +21,9 @@ extern void port_coroutine_yield(void);
 extern void sc1PBonusStageSetupFiles(void);
 extern void *func_800269C0_275C0(u16 id);
 extern void func_800266A0_272A0(void);
+
+#define SC1PBONUSSTAGE_TIMER_DIGIT_Y 30.0F
+#define SC1PBONUSSTAGE_TIMER_SYMBOL_Y 20.0F
 
 // // // // // // // // // // // //
 //                               //
@@ -337,6 +344,9 @@ SCBattleState sSC1PBonusStageBattleState;
 
 // 0x8018F3A0
 u8 sSC1PBonusStageTimerDigits[6];
+#if defined(PORT) && defined(REGION_REMIX)
+f32 sSC1PBonusStageTimerDigitY = SC1PBONUSSTAGE_TIMER_DIGIT_Y;
+#endif
 
 // 0x8018F3A8
 sb32 sSC1PBonusStageIsTimeUp;
@@ -1004,7 +1014,11 @@ void sc1PBonusStageTimerProcUpdate(GObj *interface_gobj)
 		{
 			sobj->sprite = *lbRelocGetFileData(Sprite*, gGMCommonFiles[3], dIFCommonTimerDigitSpriteOffsets[digit]);
 			sobj->pos.x = dSC1PBonusStageTimerDigitPositions[i] - (sobj->sprite.width * 0.5F);
+#if defined(PORT) && defined(REGION_REMIX)
+			sobj->pos.y = sSC1PBonusStageTimerDigitY - (sobj->sprite.height * 0.5F);
+#else
 			sobj->pos.y = 30.0F - (sobj->sprite.height * 0.5F);
+#endif
 
 			sSC1PBonusStageTimerDigits[i] = digit;
 
@@ -1027,7 +1041,11 @@ void sc1PBonusStageSetTimeUp(void)
 // 0x8018E2A8
 void sc1PBonusStageTimeUpProcUpdate(GObj *interface_gobj)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PRemixAfkForceTrue(sSC1PBonusStageIsTimeUp) != FALSE)
+#else
 	if (sSC1PBonusStageIsTimeUp != FALSE)
+#endif
 	{
 		ifCommonAnnounceFailureInitInterface();
 		sSC1PBonusStageIsTimeUp = FALSE;
@@ -1059,44 +1077,59 @@ void sc1PBonusStageMakeTimeUp(void)
 }
 #endif
 
-// 0x8018E344
-void sc1PBonusStageMakeTimer(void)
+/** Makes the count-up timer of the Bonus stages: the elapsed time in minutes, seconds and hundredths at the top of the screen. */
+void sc1PBonusStageMakeCountUpTimer(void)
 {
 	GObj *interface_gobj;
 	SObj *sobj;
 	s32 i;
+	f32 digit_y = SC1PBONUSSTAGE_TIMER_DIGIT_Y;
+	f32 symbol_y = SC1PBONUSSTAGE_TIMER_SYMBOL_Y;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PRemixBonus3IsActive() != FALSE)
+	{
+		sc1PRemixBonus3TimerY(gmRemixToggle(dragon_king_hud), &digit_y, &symbol_y);
+	}
+	sSC1PBonusStageTimerDigitY = digit_y;
+#endif
+	ifCommonTimerMakeInterface(NULL);
+	ifCommonTimerSetAttr();
+
+	interface_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
+
+	gcAddGObjDisplay(interface_gobj, lbCommonDrawSObjAttr, 23, GOBJ_PRIORITY_DEFAULT, ~0);
+
+	for (i = 0; i < ARRAY_COUNT(sSC1PBonusStageTimerDigits); i++)
+	{
+		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerDigit0Sprite));
+
+		sobj->pos.x = dSC1PBonusStageTimerDigitPositions[i] - (sobj->sprite.width * 0.5F);
+		sobj->pos.y = digit_y - (sobj->sprite.height * 0.5F);
+
+		sSC1PBonusStageTimerDigits[i] = 0;
+	}
+	sobj = SObjGetStruct(interface_gobj);
+
+	sobj->sprite.attr |= SP_HIDDEN;
+
+	sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerSymbolSecSprite));
+	sobj->pos.x = (s32) (231.0F - (sobj->sprite.width * 0.5F));
+	sobj->pos.y = (s32) (symbol_y - (sobj->sprite.height * 0.5F));
+
+	sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerSymbolCSecSprite));
+	sobj->pos.x = (s32) (264.0F - (sobj->sprite.width * 0.5F));
+	sobj->pos.y = (s32) (symbol_y - (sobj->sprite.height * 0.5F));
+
+	gcAddGObjProcess(interface_gobj, sc1PBonusStageTimerProcUpdate, nGCProcessKindFunc, 5);
+}
+
+// 0x8018E344
+void sc1PBonusStageMakeTimer(void)
+{
 	if (gSCManagerSceneData.scene_prev != nSCKind1PGame)
 	{
-		ifCommonTimerMakeInterface(NULL);
-		ifCommonTimerSetAttr();
-
-		interface_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
-
-		gcAddGObjDisplay(interface_gobj, lbCommonDrawSObjAttr, 23, GOBJ_PRIORITY_DEFAULT, ~0);
-
-		for (i = 0; i < ARRAY_COUNT(sSC1PBonusStageTimerDigits); i++)
-		{
-			sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerDigit0Sprite));
-
-			sobj->pos.x = dSC1PBonusStageTimerDigitPositions[i] - (sobj->sprite.width * 0.5F);
-			sobj->pos.y = 30.0F - (sobj->sprite.height * 0.5F);
-
-			sSC1PBonusStageTimerDigits[i] = 0;
-		}
-		sobj = SObjGetStruct(interface_gobj);
-
-		sobj->sprite.attr |= SP_HIDDEN;
-
-		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerSymbolSecSprite));
-		sobj->pos.x = (s32) (231.0F - (sobj->sprite.width * 0.5F));
-		sobj->pos.y = (s32) (20.0F - (sobj->sprite.height * 0.5F));
-
-		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerSymbolCSecSprite));
-		sobj->pos.x = (s32) (264.0F - (sobj->sprite.width * 0.5F));
-		sobj->pos.y = (s32) (20.0F - (sobj->sprite.height * 0.5F));
-
-		gcAddGObjProcess(interface_gobj, sc1PBonusStageTimerProcUpdate, nGCProcessKindFunc, 5);
+		sc1PBonusStageMakeCountUpTimer();
 		return;
 	}
 	else

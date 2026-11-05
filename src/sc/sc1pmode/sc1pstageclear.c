@@ -8,6 +8,7 @@
 #include <sys/audio.h>
 #if defined(PORT) && defined(REGION_REMIX)
 #include "gm/gmremixpractice.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
 #endif
 #ifdef PORT
 #include <bridge/framebuffer_capture.h>
@@ -2150,7 +2151,11 @@ void sc1PStageClearFuncRun(GObj *gobj)
 
 	if (sSC1PStageClearTotalTimeTics >= 10)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		if (sc1PRemixAfkTapButtons(A_BUTTON | B_BUTTON | START_BUTTON) != FALSE)
+#else
 		if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | B_BUTTON | START_BUTTON) != FALSE)
+#endif
 		{
 			if (sSC1PStageClearIsAllowProceedNext != FALSE)
 			{

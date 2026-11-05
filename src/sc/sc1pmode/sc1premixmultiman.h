@@ -11,7 +11,7 @@
  * and no time limit, and the KOs the player scores are counted until the player is KO'd.
  */
 
-/** First 1P stage of the current mode: the polygon stage for the horde modes, the first stage otherwise. */
+/** First 1P stage of the current mode: the polygon stage for the horde modes, the race stage for Bonus 3, the first stage otherwise. */
 extern s32 sc1PRemixMultimanFirstStage(s32 mode);
 
 /** TRUE while the 1P game being played is a horde mode on its polygon stage. */

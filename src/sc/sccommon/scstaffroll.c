@@ -6,6 +6,10 @@
 #include <sys/rdp.h>
 #include <sys/audio.h>
 #include <reloc_data.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1premixenemyafk.h"
+#include "sc/sc1pmode/sc1premixending.h"
+#endif
 extern void *func_800269C0_275C0(u16 id);
 
 // // // // // // // // // // // //
@@ -1454,6 +1458,24 @@ sb32 scStaffrollGetPauseStatusHighlight(void)
 	return is_paused;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Whether the roll speed toggles this frame: Start was tapped, or the "afk" player tag assist is on at the first Remix name while
+ * the roll is fast (Credits.asm:1310 remix_credits_speed_assist_, patch at 0x801335C4 in place of the Start test).
+ *
+ * @param button_tap Buttons tapped this frame.
+ * @return TRUE when the speed toggles.
+ */
+static sb32 scStaffrollIsStartPressed(u16 button_tap)
+{
+	if (button_tap & START_BUTTON)
+	{
+		return TRUE;
+	}
+	return sc1PRemixAfkIsSpeedAssistActive(sSCStaffrollNameID, sSCStaffrollRollSpeed, 0.0037500001F);
+}
+#endif
+
 // 0x801334E4
 void scStaffrollFuncRun(GObj *gobj)
 {
@@ -1489,12 +1511,15 @@ void scStaffrollFuncRun(GObj *gobj)
 		}
 		sSCStaffrollIsPaused = is_paused;
 
+#if defined(PORT) && defined(REGION_REMIX)
+		if (scStaffrollIsStartPressed(button_tap) != FALSE)
+#else
 		if (button_tap & START_BUTTON)
+#endif
 		{
 			if (sSCStaffrollRollSpeed == 0.0037500001F)
 			{
 #ifdef REGION_REMIX
-				/* n/a: Credits.asm:1310 (remix_credits_speed_assist_) only simulates Start when the second player tag is "afk" (string_table + 8 compared with 0x61666B00 at 1318-1321). The port keeps no custom player tags (if/ifremixplayertag.c), so the condition never holds. */
 				sSCStaffrollRollSpeed = 0.11F;
 #else
 				sSCStaffrollRollSpeed = 0.049999997F;
@@ -2292,7 +2317,11 @@ void scStaffrollFuncStart(void)
 	scStaffrollMakeCamera();
 
 	syAudioStopBGMAll();
+#if defined(PORT) && defined(REGION_REMIX)
+	syAudioPlayBGM(0, sc1PRemixEndingGetCreditsSong(nSYAudioBGMStaffroll));
+#else
 	syAudioPlayBGM(0, nSYAudioBGMStaffroll);
+#endif
 }
 
 // 0x8013A6C8

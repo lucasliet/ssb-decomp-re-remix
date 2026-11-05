@@ -3440,7 +3440,6 @@ void func_ovl31_801388A4(void)
 }
 
 #if defined(PORT) && defined(REGION_REMIX)
-#define MNVSRESULTS_REMIX_ROW_TICS 290
 #define MNVSRESULTS_REMIX_ROW_LABEL_X 26.0F
 #define MNVSRESULTS_REMIX_ROW_MINUTES_X (-20.0F)
 #define MNVSRESULTS_REMIX_ROW_COLON_X 11.0F
@@ -3503,20 +3502,39 @@ static void mnVSResultsMakeRemixRowTime(GObj *gobj, f32 x, f32 y, s32 frames, s3
 	mnVSResultsSetNumberColor(sobj, color_id);
 }
 
-/** Makes the King of the Hill and Smashketball row once its time has come, in the slot of the vanilla layout (VsRemixMenu.asm add_row_to_results_). */
+/** @return GMREMIX_GAMEEND_ROWS_LAYOUT_* of the draw routine the results screen runs (gmRemixGameEndResultsDrawKind). */
+static s32 mnVSResultsGetRemixRowLayout(void)
+{
+	switch (gmRemixGameEndResultsDrawKind(sMNVSResultsKind))
+	{
+	case nMNVSResultsKindNoContest:
+		return GMREMIX_GAMEEND_ROWS_LAYOUT_NO_CONTEST;
+
+	case nMNVSResultsKindStockRoyal:
+	case nMNVSResultsKindStockTeam:
+		return GMREMIX_GAMEEND_ROWS_LAYOUT_STOCK;
+
+	default:
+		return GMREMIX_GAMEEND_ROWS_LAYOUT_TIME;
+	}
+}
+
+/** Makes the King of the Hill and Smashketball row on its tic, in the slot of the vanilla layout (VsRemixMenu.asm add_row_to_results_). */
 static void mnVSResultsMakeRemixRow(void)
 {
+	s32 layout = mnVSResultsGetRemixRowLayout();
+	f32 y = gmRemixGameEndRowsRowY(layout);
 	sb32 is_koth;
 	GObj *gobj;
 	s32 i;
 
-	if ((gmRemixGameEndRowsHasRow() == FALSE) || (sMNVSResultsIsRemixRowMade != FALSE) || (sMNVSResultsTotalTimeTics < MNVSRESULTS_REMIX_ROW_TICS))
+	if ((gmRemixGameEndRowsHasRow() == FALSE) || (sMNVSResultsIsRemixRowMade != FALSE) || (sMNVSResultsTotalTimeTics != gmRemixGameEndRowsRowTics(layout)))
 	{
 		return;
 	}
 	sMNVSResultsIsRemixRowMade = TRUE;
 	is_koth = gmRemixModeIs(MNREMIX_VSMODE_KOTH);
-	gobj = mnVSResultsMakeRemixRowLabel(GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, is_koth);
+	gobj = mnVSResultsMakeRemixRowLabel(y, is_koth);
 
 	for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
 	{
@@ -3528,10 +3546,10 @@ static void mnVSResultsMakeRemixRow(void)
 		}
 		if (is_koth != FALSE)
 		{
-			mnVSResultsMakeRemixRowTime(gobj, mnVSResultsGetColumnX(i), GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, value, mnVSResultsGetNumberColorID(i));
+			mnVSResultsMakeRemixRowTime(gobj, mnVSResultsGetColumnX(i), y, value, mnVSResultsGetNumberColorID(i));
 			continue;
 		}
-		mnVSResultsMakeNumber(gobj, mnVSResultsGetColumnX(i), GMREMIX_GAMEEND_ROWS_NEW_ROW_Y, gmRemixGameEndRowsClampCount(value), mnVSResultsGetNumberColorID(i));
+		mnVSResultsMakeNumber(gobj, mnVSResultsGetColumnX(i), y, gmRemixGameEndRowsClampCount(value), mnVSResultsGetNumberColorID(i));
 	}
 }
 #endif
