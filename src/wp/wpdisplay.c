@@ -8,6 +8,10 @@
 #include <enhancements/enhancements.h>
 #endif
 
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhitbox.h"
+#endif
+
 extern SYMallocRegion gSYTaskmanGraphicsHeap;
 
 // // // // // // // // // // // //
@@ -152,6 +156,11 @@ void wpDisplayMain(GObj *weapon_gobj, void (*proc_display)(GObj*))
 {
     WPStruct *wp = wpGetStruct(weapon_gobj);
 
+#ifdef REGION_REMIX
+    /* Hitbox.asm projectile_ (RAM 0x80167538): the toggle sets the display mode of every projectile */
+    wp->display_mode = ftRemixHitboxDisplayObjectMode();
+#endif
+
 #ifdef PORT
     wp->display_mode = port_enhancement_hitbox_display_override(wp->display_mode);
 #endif
@@ -166,13 +175,26 @@ void wpDisplayMain(GObj *weapon_gobj, void (*proc_display)(GObj*))
 
         wpDisplayMapCollisions(weapon_gobj);
     }
+#ifdef REGION_REMIX
+    /* Hitbox.asm render_hitbox_plus_projectile_ (RAM 0x80167578): hitbox+model draws the projectile in every case */
+    else if ((wp->display_mode == nDBDisplayModeMaster) || (wp->attack_coll.attack_state == nGMAttackStateOff) || ftRemixHitboxDisplayIsOverlay())
+#else
     else if ((wp->display_mode == nDBDisplayModeMaster) || (wp->attack_coll.attack_state == nGMAttackStateOff))
+#endif
     {
         wpDisplayDrawNormal();
 
         proc_display(weapon_gobj);
 
         wpDisplayDrawZBuffer();
+
+#ifdef REGION_REMIX
+        /* Hitbox.asm render_hitbox_plus_projectile_ (RAM 0x801675AC): the hitboxes follow the projectile */
+        if (ftRemixHitboxDisplayIsOverlay())
+        {
+            wpDisplayHitCollisions(weapon_gobj);
+        }
+#endif
     }
     else wpDisplayHitCollisions(weapon_gobj);
 }

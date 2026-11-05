@@ -347,13 +347,13 @@ static void ftRemixEntryMakeLinkEffects(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerLinkEntryWaveEffectDesc, nFTKindLink, nFTRemixEntryEffectLinkWave, &saved_wave) != FALSE)
     {
-        efManagerLinkEntryWaveMakeEffect(&fp->entry_pos);
+        ftRemixSizeEntryMakeLinkWave(fp);
     }
     ftRemixEntryEndEffect(&dEFManagerLinkEntryWaveEffectDesc, &saved_wave);
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerLinkEntryBeamEffectDesc, nFTKindLink, nFTRemixEntryEffectLinkBeam, &saved_beam) != FALSE)
     {
-        efManagerLinkEntryBeamMakeEffect(&fp->entry_pos);
+        ftRemixSizeEntryMakeLinkBeam(fp);
     }
     ftRemixEntryEndEffect(&dEFManagerLinkEntryBeamEffectDesc, &saved_beam);
 }
@@ -367,7 +367,7 @@ static void ftRemixEntryMakeMarioPipe(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerMarioEntryDokanEffectDesc, vanilla_fkind, nFTRemixEntryEffectMarioPipe, &saved) != FALSE)
     {
-        efManagerMarioEntryDokanMakeEffect(&fp->entry_pos, fp->fkind);
+        ftRemixSizeEntryTopJoint(efManagerMarioEntryDokanMakeEffect(&fp->entry_pos, fp->fkind), fp);
     }
     ftRemixEntryEndEffect(&dEFManagerMarioEntryDokanEffectDesc, &saved);
 }
@@ -396,7 +396,7 @@ static void ftRemixEntryMakeDonkeyBarrel(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerDonkeyEntryTaruEffectDesc, nFTKindDonkey, effect, &saved) != FALSE)
     {
-        efManagerDonkeyEntryTaruMakeEffect(&fp->entry_pos);
+        ftRemixSizeEntryTopJoint(efManagerDonkeyEntryTaruMakeEffect(&fp->entry_pos), fp);
     }
     ftRemixEntryEndEffect(&dEFManagerDonkeyEntryTaruEffectDesc, &saved);
 }
@@ -407,7 +407,7 @@ static void ftRemixEntryMakeSamusPoint(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerSamusEntryPointEffectDesc, nFTKindSamus, nFTRemixEntryEffectSamusPoint, &saved) != FALSE)
     {
-        efManagerSamusEntryPointMakeEffect(&fp->entry_pos);
+        ftRemixSizeEntryTopJoint(efManagerSamusEntryPointMakeEffect(&fp->entry_pos), fp);
     }
     ftRemixEntryEndEffect(&dEFManagerSamusEntryPointEffectDesc, &saved);
 }
@@ -429,7 +429,7 @@ static void ftRemixEntryMakeKirbyStar(FTStruct *fp)
 
     if (ftRemixEntryBeginEffect(fp, &dEFManagerKirbyEntryStarEffectDesc, nFTKindKirby, nFTRemixEntryEffectKirbyStar, &saved) != FALSE)
     {
-        efManagerKirbyEntryStarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr);
+        ftRemixSizeEntrySecondJoint(efManagerKirbyEntryStarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr), fp);
     }
     ftRemixEntryEndEffect(&dEFManagerKirbyEntryStarEffectDesc, &saved);
 }
@@ -445,16 +445,14 @@ static void ftRemixEntryMakeCaptainCar(FTStruct *fp)
     if (ftRemixEntryBeginEffect(fp, &dEFManagerCaptainEntryCarEffectDesc, nFTKindCaptain, nFTRemixEntryEffectCaptainCar, &saved) != FALSE)
     {
         sFTRemixEntryCarFighter = fp;
-        efManagerCaptainEntryCarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr);
+        ftRemixSizeEntryCaptainCar(efManagerCaptainEntryCarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr), fp);
         sFTRemixEntryCarFighter = NULL;
     }
     ftRemixEntryEndEffect(&dEFManagerCaptainEntryCarEffectDesc, &saved);
 }
 
-/* Entry hook of every synth fighter: runs the entry script the Remix tables give its id. */
-/* REMIX-TODO(Size): Size.asm entry gfx_ scope not ported. The top joint z offset and scale of the effects built by
- * efManagerMarioEntryDokan, DonkeyEntryTaru, SamusEntryPoint, LinkEntryWave, LinkEntryBeam, KirbyEntryStar and CaptainEntryCar
- * (0x80103768, 0x8010345C, 0x801034B8, 0x80102B28, 0x80102B84, 0x80102C10, 0x80103670) keep their vanilla scale. */
+/* Entry hook of every synth fighter: runs the entry script the Remix tables give its id. The effects are scaled by the
+ * entering fighter size (Size.asm entry gfx_, ftremixsizeentrygfx.c). */
 void ftRemixEntryMakeEffect(FTStruct *fp)
 {
     if (fp->fkind >= ARRAY_COUNT(dFTRemixEntryScripts))

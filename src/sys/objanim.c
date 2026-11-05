@@ -4,6 +4,9 @@
 #include <port_log.h>
 extern void portFixupMObjSub(void *mobjsub);
 #endif
+#ifdef REGION_REMIX
+extern f32 itRemixCloudScaleAnimValue(DObj *dobj, f32 value);
+#endif
 
 extern void syInterpCubic(Vec3f*, void*, f32);
 
@@ -1056,14 +1059,23 @@ void gcPlayDObjAnimJoint(DObj *dobj)
                         break;
 
                     case nGCAnimTrackScaX: 
+#ifdef REGION_REMIX
+                        value = itRemixCloudScaleAnimValue(dobj, value);
+#endif
                         dobj->scale.vec.f.x = value; 
                         break;
                         
                     case nGCAnimTrackScaY: 
+#ifdef REGION_REMIX
+                        value = itRemixCloudScaleAnimValue(dobj, value);
+#endif
                         dobj->scale.vec.f.y = value; 
                         break;
 
                     case nGCAnimTrackScaZ: 
+#ifdef REGION_REMIX
+                        value = itRemixCloudScaleAnimValue(dobj, value);
+#endif
                         dobj->scale.vec.f.z = value; 
                         break;
                     }

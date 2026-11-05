@@ -2690,11 +2690,19 @@ SYTaskmanSetup dSC1PIntroTaskmanSetup =
         0,                          // Allocatable memory pool size
         1,                          // ???
         2,                          // Number of contexts?
+#ifdef REGION_REMIX
+        sizeof(Gfx) * (6250 + 0x10000 / 8), // Display List Buffer 0 Size, Hitbox.asm (RAM 0x80135B70): +0x10000 N64 bytes of Gfx
+#else
         sizeof(Gfx) * 6250,         // Display List Buffer 0 Size
+#endif
         sizeof(Gfx) * 128,          // Display List Buffer 1 Size
         0,                          // Display List Buffer 2 Size
         0,                          // Display List Buffer 3 Size
+#ifdef REGION_REMIX
+        0x10000 + 0x11000,          // Graphics Heap Size, Hitbox.asm (RAM 0x80135B80)
+#else
         0x10000,                    // Graphics Heap Size
+#endif
         2,                          // ???
         0xC000,                     // RDP Output Buffer Size
         sc1PIntroFuncLights,    // Pre-render function

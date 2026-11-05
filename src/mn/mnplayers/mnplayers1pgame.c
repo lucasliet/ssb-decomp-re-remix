@@ -3905,7 +3905,11 @@ SYTaskmanSetup dMNPlayers1PGameTaskmanSetup =
         0,                          // Allocatable memory pool size
         1,                          // ???
         2,                          // Number of contexts?
+#ifdef REGION_REMIX
+        sizeof(Gfx) * (2375 + 0x4000 / 8), // Display List Buffer 0 Size, Hitbox.asm (RAM 0x80138CC8): +0x4000 N64 bytes of Gfx
+#else
         sizeof(Gfx) * 2375,         // Display List Buffer 0 Size
+#endif
         sizeof(Gfx) * 64,          	// Display List Buffer 1 Size
         0,                          // Display List Buffer 2 Size
         0,                          // Display List Buffer 3 Size

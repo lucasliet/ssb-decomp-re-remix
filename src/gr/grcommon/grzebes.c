@@ -265,7 +265,15 @@ GObj* grZebesMakeGround(void)
     GObj *acid_gobj;
 
 #ifdef REGION_REMIX
-    /* REMIX-TODO(camera): Hazards.asm 172-175 copies the correct camera Y (0x8013EB1C -> 0x801313FC) before the hazard check. 0x801313FC is GRCommonGroundVarsZebes.acid_level_curr (offset 0xC) in the decomp layout, and no Remix reader of 0x801313FC was found, so it is not ported. The source 0x8013EB1C has no decomp camera field in the decomp, so the copy is not proven and stays unported. */
+    /*
+     * Hazards.asm 172-175 (planet_zebes_acid_._no_hazards_check, hook at 0x80108450 inside this function) copies the word
+     * at 0x8013EB1C ("correct camera position") to 0x801313FC before the hazard check. Not ported, because the store is
+     * dead: 0x801313FC is gGRCommonStruct.zebes.acid_level_curr (0x801313F0 + 0xC). With hazards on,
+     * grZebesMakeAcid writes acid_level_curr before any reader runs. With hazards off, no acid exists and the Remix AI
+     * patch (Hazards.asm 234-254, _ai_fix) stops the CPU from treating the stage as Zebes, so grZebesAcidGetLevelInfo,
+     * the only reader besides the acid routines, is never reached. A search of the Remix asm finds no other read of 0x13FC,
+     * and 0x8013EB1C has no owner in the decomp.
+     */
     if (grRemixHazardToggleIsOn() == FALSE)
     {
         return NULL;

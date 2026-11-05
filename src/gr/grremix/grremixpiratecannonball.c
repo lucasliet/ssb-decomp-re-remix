@@ -37,7 +37,6 @@ static struct
 {
     sb32 is_first_frame;
     s32 smoke_timer;
-    sb32 is_exploding;
 } sGRRemixPirateCannonball;
 
 static WPDesc sGRRemixPirateCannonballWeaponDesc =
@@ -66,7 +65,6 @@ static void grRemixPirateCannonballResetState(void)
 {
     sGRRemixPirateCannonball.is_first_frame = TRUE;
     sGRRemixPirateCannonball.smoke_timer = 0;
-    sGRRemixPirateCannonball.is_exploding = FALSE;
 }
 
 /** Plays the joint animation track that places the barrel of the shot (asm: 0x8000BD1C). */
@@ -77,9 +75,11 @@ static void grRemixPirateCannonballApplyTrack(GObj *weapon_gobj, AObjEvent32 *an
 
 /**
  * Creates a cannonball at spawn_pos. Returns NULL when the weapon pool is full (asm: 0x801655C8 returns 0).
- * REMIX-TODO(launch velocity): the properties struct sets speed 100 at angle 270 (ground and air), gravity 0. The
- * asm applies it in the vanilla generic projectile setup (0x801655C8, not in the Remix asm), which the port's
- * wpManagerMakeWeapon does not read, so the cannonball starts at rest. Porting it needs the vanilla angle convention.
+ * The cannonball has no launch velocity: wpManagerMakeWeapon (0x801655C8) zeroes vel_air and the asm never writes it.
+ * cannonball_properties_struct (speed 100, angle 270, gravity 0) is dead data: its only reference is the file pointer
+ * store at pirate_land_setup (Hazards.asm 3736-3737), and cannonball_stage_setting_ passes only
+ * cannonball_projectile_struct to 0x801655C8 (4171-4175), which has no field that points to it. The ball is moved by
+ * the barrel joint animation applied at the end of this function.
  */
 GObj* grRemixPirateCannonballMake(Vec3f *spawn_pos, void *hitbox_file, AObjEvent32 *anim_track)
 {
@@ -95,8 +95,6 @@ GObj* grRemixPirateCannonballMake(Vec3f *spawn_pos, void *hitbox_file, AObjEvent
     wp = wpGetStruct(weapon_gobj);
     wp->lifetime = GRREMIX_PIRATE_CANNONBALL_LIFETIME;
     wp->is_camera_follow = TRUE;
-    wp->physics.vel_air.x = 0.0F;
-    wp->physics.vel_air.y = 0.0F;
     /* Hazards.asm 4185-4193: the first joint is turned 90 degrees before the barrel animation is applied. The RAM float
        at 0x8019CA80 is taken to be pi/2 from the asm comment; its bit pattern was not read. */
     DObjGetStruct(weapon_gobj)->rotate.vec.f.y = GRREMIX_PIRATE_CANNONBALL_JOINT_ROTATION_Y;
@@ -118,18 +116,9 @@ static void grRemixPirateCannonballUpdateSmoke(GObj *weapon_gobj)
     efManagerDustExpandLargeMakeEffect(&DObjGetStruct(weapon_gobj)->translate.vec.f);
 }
 
-/**
- * Sets the explosion hitbox on the cannonball and starts its explosion timer (asm: cannonball_explosion_).
- * REMIX-TODO(samus bomb): the asm copies the Samus bomb hit-setup code from ROM 0xE396C (0x38 bytes) and 0xE39A8
- * (0x28 bytes), vanilla 0x80168F2C, and drops its size line. The port equivalent is wpSamusBombExplodeInitVars
- * (wpsamusbomb.c), but mapping those raw MIPS words to its statements needs the ROM bytes, which were not decoded, so
- * the hit records are kept.
- */
-static void grRemixPirateCannonballExplode(GObj *weapon_gobj)
+/** Writes the explosion hit record values the asm stores before the Samus bomb setup (cannonball_explosion_). */
+static void grRemixPirateCannonballSetExplosionHitbox(WPStruct *wp)
 {
-    WPStruct *wp = wpGetStruct(weapon_gobj);
-    Vec3f *pos = &DObjGetStruct(weapon_gobj)->translate.vec.f;
-
     wp->attack_coll.attack_state = 1;
     wp->attack_coll.size = GRREMIX_PIRATE_CANNONBALL_SIZE;
     wp->attack_coll.damage = GRREMIX_PIRATE_CANNONBALL_DAMAGE;
@@ -138,28 +127,54 @@ static void grRemixPirateCannonballExplode(GObj *weapon_gobj)
     wp->attack_coll.knockback_scale = GRREMIX_PIRATE_CANNONBALL_KB_SCALE;
     wp->attack_coll.knockback_base = GRREMIX_PIRATE_CANNONBALL_KB_BASE;
     wp->attack_coll.fgm_id = GRREMIX_PIRATE_CANNONBALL_HIT_FGM;
+}
+
+/** Forgets the victims of the flight and removes the owner (asm: "refresh hitbox" and "remove owner" stores). */
+static void grRemixPirateCannonballRefreshHitbox(WPStruct *wp)
+{
+    s32 i;
+
+    for (i = 0; i < ARRAY_COUNT(wp->attack_coll.attack_records); i++)
+    {
+        wp->attack_coll.attack_records[i].victim_gobj = NULL;
+    }
+    wp->owner_gobj = NULL;
+}
+
+/**
+ * Turns the cannonball into its explosion and starts the explosion timer (asm: cannonball_explosion_).
+ * The asm copies the first 14 and the next 10 instructions of the vanilla Samus bomb explosion setup
+ * (ROM 0xE396C / 0xE39A8 = RAM 0x80168F2C..0x80168F60 and 0x80168F68..0x80168F8C, ROM to RAM delta 0x800855C0),
+ * skips the size store at 0x80168F64 (sets 180.0F) and the final jr, and adds sw r0, 0x290(v0). That is every
+ * statement of wpSamusBombExplodeInitVars except the size line: lifetime 6, can_rehit_item set, can_hop clear, zero
+ * vel_air, hidden model, proc_update = wpSamusBombExplodeProcUpdate, and all other procs cleared. The hitbox values
+ * are written after the call so the size stays 360, and the lifetime is then overwritten with 15.
+ */
+static void grRemixPirateCannonballExplode(GObj *weapon_gobj)
+{
+    WPStruct *wp = wpGetStruct(weapon_gobj);
+    Vec3f *pos = &DObjGetStruct(weapon_gobj)->translate.vec.f;
 
     port_log("[remix-stage] pirate cannonball explode x=%.0f y=%.0f frame=%.1f\n", pos->x, pos->y, weapon_gobj->anim_frame);
     efManagerSparkleWhiteMultiExplodeMakeEffect(pos);
+    wpSamusBombExplodeInitVars(weapon_gobj);
+    grRemixPirateCannonballSetExplosionHitbox(wp);
     func_800269C0_275C0(GRREMIX_PIRATE_CANNONBALL_EXPLODE_FGM);
     efManagerQuakeMakeEffect(GRREMIX_PIRATE_CANNONBALL_SHAKE_SEVERITY);
 
     wp->lifetime = GRREMIX_PIRATE_CANNONBALL_EXPLOSION_TIMER;
-    sGRRemixPirateCannonball.is_exploding = TRUE;
+    grRemixPirateCannonballRefreshHitbox(wp);
 }
 
 /**
- * Per-frame process of the cannonball: flies, explodes when its model animation ends (asm reads the GObj frame at
- * 0x78), then expires. The lifetime only guards against an animation that never ends. Returns TRUE to destroy the weapon.
+ * Per-frame process of the cannonball: flies and explodes when its model animation ends (asm reads the GObj frame at
+ * 0x78). The explosion replaces this process with wpSamusBombExplodeProcUpdate, which expires the weapon. The lifetime
+ * only guards against an animation that never ends. Returns TRUE to destroy the weapon.
  */
 static sb32 grRemixPirateCannonballProcUpdate(GObj *weapon_gobj)
 {
     WPStruct *wp = wpGetStruct(weapon_gobj);
 
-    if (sGRRemixPirateCannonball.is_exploding)
-    {
-        return wpMainDecLifeCheckExpire(wp);
-    }
     if (sGRRemixPirateCannonball.is_first_frame)
     {
         sGRRemixPirateCannonball.is_first_frame = FALSE;

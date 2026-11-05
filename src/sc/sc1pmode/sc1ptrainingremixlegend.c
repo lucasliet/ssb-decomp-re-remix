@@ -12,6 +12,7 @@
 #include "remix/remix_hud_text.h"
 #include "remix/remix_training.h"
 #include "sc/sc1pmode/sc1ptrainingremixlegend.h"
+#include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingrules.h"
 
 /* Training.asm: the Render groups of the legend are GObj links, drawn by the interface camera on the pause display link. */
@@ -73,7 +74,7 @@ void sc1PTrainingRemixLegendMake(void)
                       SC1PTRAININGREMIXLEGEND_PALETTE, 1.0F);
 }
 
-/* The prompt shows on the pause, with the HUD on, until the port menu that stands for the Z menu is opened. */
+/* The prompt shows on the pause, with the HUD on, until the Z menu is opened (the normal menu group is hidden then). */
 static sb32 sc1PTrainingRemixLegendIsPromptShown(void)
 {
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusPause)
@@ -84,7 +85,7 @@ static sb32 sc1PTrainingRemixLegendIsPromptShown(void)
     {
         return FALSE;
     }
-    return (remix_training_is_menu_open() == 0) ? TRUE : FALSE;
+    return (sc1PTrainingRemixMenuIsOpen() == FALSE) ? TRUE : FALSE;
 }
 
 static sb32 sc1PTrainingRemixLegendIsGroupShown(s32 group, s32 dpad_setting)

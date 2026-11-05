@@ -51,12 +51,29 @@ static void grRemixSpawnedFearPoison(GObj *fighter_gobj, FTStruct *fp)
 }
 
 /**
- * KO part of spawned_fear_acid_main_: the gfx routine (colanim override) is cleared, then the fighter is KO'd.
- * REMIX-TODO(overlay): the asm also clears the Practice overlay fields 0x0A20, 0x0A24, 0x0A30 and 0x0A88 (Hazards.asm
- * 8554..8558). ftremixoverlay.c has no clear function, and that file is outside this scope, so they are not cleared here.
+ * Clears the words the asm calls the Practice overlay routine, flag and current overlay (Hazards.asm 8554..8558). They
+ * are vanilla FTStruct fields: 0x0A20 p_loop_sfx, 0x0A24 loop_sfx_id, 0x0A30 colanim.cs[0].p_subroutine[0] and the word at
+ * 0x0A88 with the colanim use-flags and skeleton id (struct_offsets.txt). 0x0A28, the gfx routine, is cleared separately
+ * through gmRemixColScriptsSetOverride. The overlay colour of ftremixoverlay.c is the colanim colour 1 use-flag.
+ */
+static void grRemixSpawnedFearClearOverlay(FTStruct *fp)
+{
+    fp->p_loop_sfx = NULL;
+    fp->loop_sfx_id = 0;
+    fp->colanim.cs[0].p_subroutine[0] = NULL;
+    fp->colanim.is_use_color1 = FALSE;
+    fp->colanim.is_use_light = FALSE;
+    fp->colanim.is_use_color2 = FALSE;
+    fp->colanim.skeleton_id = 0;
+}
+
+/**
+ * KO part of spawned_fear_acid_main_: the overlay words and the gfx routine (colanim override) are cleared, then the
+ * fighter is KO'd.
  */
 static void grRemixSpawnedFearKnockOut(GObj *fighter_gobj, FTStruct *fp)
 {
+    grRemixSpawnedFearClearOverlay(fp);
     gmRemixColScriptsSetOverride(fp->player, 0);
     ftCommonDeadDownSetStatus(fighter_gobj);
 }

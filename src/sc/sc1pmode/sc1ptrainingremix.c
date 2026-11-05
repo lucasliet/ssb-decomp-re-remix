@@ -18,6 +18,7 @@
 #include "remix/remix_toggles.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
 #include "sc/sc1pmode/sc1ptrainingremixlegend.h"
+#include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingportrules.h"
 #include <if/ifdef.h>
 #include "ft/ftremix/ftremixtraining.h"
@@ -42,6 +43,7 @@ void sc1PTrainingRemixStartScene(sb32 is_reset)
 {
     sSC1PTrainingRemixIsFrozen = FALSE;
     sSC1PTrainingRemixIsAdvancing = FALSE;
+    sc1PTrainingRemixMenuStartScene();
     ftRemixTrainingStartScene();
 
     if (is_reset == FALSE)
@@ -128,14 +130,9 @@ void sc1PTrainingRemixStartMusic(void)
     gMPCollisionBGMCurrent = bgm;
 }
 
-void sc1PTrainingRemixPollMusic(void)
+/** Makes `bgm` the stage track and plays it, unless a hammer or a star is playing its own theme. */
+static void sc1PTrainingRemixApplyMusic(u32 bgm)
 {
-    u32 bgm = sc1PTrainingRemixGetBGM();
-
-    if (bgm == sSC1PTrainingRemixPlayedBGM)
-    {
-        return;
-    }
     sSC1PTrainingRemixPlayedBGM = bgm;
     gMPCollisionBGMDefault = bgm;
 
@@ -148,12 +145,33 @@ void sc1PTrainingRemixPollMusic(void)
     gMPCollisionBGMCurrent = bgm;
 }
 
+void sc1PTrainingRemixPollMusic(void)
+{
+    u32 bgm = sc1PTrainingRemixGetBGM();
+
+    if (bgm == sSC1PTrainingRemixPlayedBGM)
+    {
+        return;
+    }
+    sc1PTrainingRemixApplyMusic(bgm);
+}
+
+void sc1PTrainingRemixPlayMusic(void)
+{
+    sc1PTrainingRemixApplyMusic(sc1PTrainingRemixGetBGM());
+}
+
 static s32 sc1PTrainingRemixGetPortFkind(s32 port, s32 menu_port)
 {
     s32 select_fkind = (port == menu_port) ? gSCManagerSceneData.training_man_fkind : gSCManagerSceneData.training_com_fkind;
     s32 chosen = remix_training_character_fkind(remix_training_get(REMIX_TRAINING_CHARACTER(port)));
 
     return (chosen >= 0) ? chosen : select_fkind;
+}
+
+s32 sc1PTrainingRemixGetPortFighter(s32 port)
+{
+    return sc1PTrainingRemixGetPortFkind(port, gSCManagerSceneData.player);
 }
 
 static void sc1PTrainingRemixSetupPort(s32 port, s32 menu_port, s32 type)
@@ -226,31 +244,14 @@ s32 sc1PTrainingRemixGetItemKind(s32 entry)
     return ITREMIX_KIND_START + entry;
 }
 
-static sb32 sc1PTrainingRemixIsZTapped(void)
-{
-    s32 port;
-
-    for (port = 0; port < MAXCONTROLLERS; port++)
-    {
-        if (gSYControllerDevices[port].button_tap & Z_TRIG)
-        {
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
 void sc1PTrainingRemixDrawHud(void)
 {
     sc1PTrainingRemixLegendUpdate();
+    sc1PTrainingRemixMenuUpdate();
 
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusPause)
     {
         return;
-    }
-    if (sc1PTrainingRemixIsZTapped() != FALSE)
-    {
-        remix_training_open_menu();
     }
     remix_hud_text_put(SC1PTRAININGREMIX_HUD_SLOT, "Reset Count:", SC1PTRAININGREMIX_HUD_LABEL_X, SC1PTRAININGREMIX_HUD_Y,
                        SC1PTRAININGREMIX_HUD_COLOR, SC1PTRAININGREMIX_HUD_SCALE, REMIX_HUD_ALIGN_LEFT);

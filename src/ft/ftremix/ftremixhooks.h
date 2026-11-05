@@ -208,6 +208,7 @@ f32 ftRemixSizeGetModeMultiplier(s32 player);
 void ftRemixSizeApplyTopJointAndEcb(FTStruct *fp);
 f32 ftRemixSizeCameraZoomFactor(FTStruct *fp);
 f32 ftRemixSizeScaleValue(FTStruct *fp, f32 value);
+f32 ftRemixSizeKirbyAirHiScale(FTStruct *fp, f32 vanilla_scale);
 
 /* Size phase (b): 1 + coefficient * (size - 1) for the attribute coefficients of Size.asm */
 f32 ftRemixSizeAttrMultiplier(s32 player, f32 coefficient);
@@ -260,15 +261,33 @@ void ftRemixSizeEntryAnimationScale(FTStruct *fp);
 void ftRemixSizeEntryArwingBind(GObj *effect_gobj, GObj *fighter_gobj);
 void ftRemixSizeEntryArwingUpdate(GObj *effect_gobj);
 
+/* Size phase (c) entry gfx, ftremix/ftremixsizeentrygfx.c (Size.asm entry.gfx_): the entry effects scaled by the entering
+ * fighter. The Top and Second joint helpers and the Captain car take the effect a maker returned (NULL accepted), the Link
+ * wave and beam are made by the helper because their update is wrapped */
+void ftRemixSizeEntryTopJoint(GObj *effect_gobj, FTStruct *fp);
+void ftRemixSizeEntrySecondJoint(GObj *effect_gobj, FTStruct *fp);
+void ftRemixSizeEntryCaptainCar(GObj *effect_gobj, FTStruct *fp);
+GObj* ftRemixSizeEntryMakeLinkWave(FTStruct *fp);
+GObj* ftRemixSizeEntryMakeLinkBeam(FTStruct *fp);
+
 /* Size phase (c): effect GFX scaled by the owner size, ftremix/ftremixsizefx.c (Size.asm yoshi_egg, ground_gfx,
  * kirby nsp suck, falcon punch). The Yoshi shield is 1.5F in Remix, times the owner multiplier. */
 #define FTREMIX_SIZE_YOSHI_SHIELD_SCALE 1.5F
 void ftRemixSizeScaleYoshiShield(GObj *effect_gobj, FTStruct *fp);
 void ftRemixSizeScaleEntryEgg(GObj *egg_gobj, FTStruct *fp);
+void ftRemixSizeScaleYoshiEggLay(GObj *effect_gobj);
 void ftRemixSizeAttachGroundGfx(GObj *effect_gobj, GObj *fighter_gobj);
 void ftRemixSizeGroundGfxProcUpdate(GObj *effect_gobj);
 void ftRemixSizeKirbySuckTransform(LBTransform *xf, GObj *fighter_gobj);
+void ftRemixSizeScaleThunderAmp(LBTransform *xf, GObj *fighter_gobj);
 void ftRemixSizeFalconPunchProcDisplay(GObj *effect_gobj);
+
+/* Size phase (c), ftremix/ftremixsizemovefx.c (Size.asm samus_gun_blast, kirby.usp, falcon.kick): the render or update of the
+ * Samus gun blast (FireSpark), Kirby Final Cutter and Falcon kick effect descriptors */
+void ftRemixSizeFireSparkProcDisplay(GObj *effect_gobj);
+void ftRemixSizeKirbyCutterProcDisplay(GObj *effect_gobj);
+void ftRemixSizeKirbyCutterTrailProcDisplay(GObj *effect_gobj);
+void ftRemixSizeFalconKickProcUpdate(GObj *effect_gobj);
 
 /* Knockback.asm (knockback angle randomizer), ftremixknockback.c: randomize_angles_ (ftManagerMakeFighter),
  * get_angle_hitbox_ (ftMainParseMotionEvent) and get_angle_throw_ (ftCommonThrownReleaseThrownUpdateStats) */
@@ -360,6 +379,10 @@ void ftRemixTrippingStoreZCancelFlag(s32 player);
 /* Z-Cancel settings (ZCancel.asm, Practice.asm flash_on_z_cancel_), ftremix/ftremixzcancel.c: the landing of an aerial
  * attack, called by ftCommonAttackAirProcMap */
 void ftRemixZCancelAttackAirLanding(GObj *fighter_gobj);
+
+/* ZCancel.asm setup_, ftremix/ftremixzcancel.c: loads the Yoshi egg file for the Egg and Random punishments. Called by
+ * ftManagerAllocFighter in the battle scenes. */
+void ftRemixZCancelSetup(void);
 
 /* Air Dodging setting (Toggles.asm entry_air_dodge), ftremix/ftremixairdodge.c (AirDodge.asm): the jump check of
  * ftCommonJumpAerialCheckInterruptCommon (TRUE when the dodge or air dash started) and the air dash flag reset of the
@@ -581,8 +604,10 @@ void ftRemixInputDelayReset(FTStruct *fp);
 s32 ftRemixKirbyHatPanelModelPart(FTStruct *fp);
 
 /* Remix CSS panel Shield, ftremix/ftremixshield.c (Shield.asm color_fix_): the env colour of a shield, vanilla unless the
- * port picked a colour 1 to 15 */
-SYColorRGB ftRemixShieldGetEnvColor(s32 port, sb32 is_damage_shield, SYColorRGB vanilla);
+ * port picked a colour 1 to 15 or Costume. ftremixshieldcostume.c gives the Character.costume_shield_color index of the
+ * costume of a fighter, or -1 when it has none */
+SYColorRGB ftRemixShieldGetEnvColor(GObj *fighter_gobj, sb32 is_damage_shield, SYColorRGB vanilla);
+s32 ftRemixShieldGetCostumeColorIndex(const FTStruct *fp);
 
 /* Taunt Button setting (Joypad.asm set_taunt_mask_, prevent_taunt_jump_), ftremix/ftremixtauntbutton.c: the taunt mask of a
  * fighter at creation (ftManagerMakeFighter), and TRUE when the C button presses may jump (ftCommonKneeBendCheckButtonTap,

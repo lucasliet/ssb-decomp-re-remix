@@ -168,15 +168,35 @@ static void grRemixMetallicLaserHitVictim(GObj *victim_gobj)
     grRemixMetallicShrinkPlayer(fp->player);
 }
 
+/*
+ * Flag word patterns of the asm, expressed as fields because the host bit order differs from the N64 one. In N64 bit
+ * order (MSB first, index 0 = 0x80000000) 0x04000010 is bit 5 (is_reflect) and bit 27 (is_effect_attach). 0x08800110 is
+ * bit 4 (is_texturepart_modify), bit 8 (is_absorb), bit 23 (the 0x4 bit of the 4-bit effect_joint_array_id, value 4) and
+ * bit 27 (is_effect_attach). Every other bit must be 0, as in the whole word compare of the asm.
+ */
+static const FTStruct sGRRemixMetallicLaserReflectPattern =
+{
+    .is_reflect = TRUE,
+    .is_effect_attach = TRUE
+};
+
+static const FTStruct sGRRemixMetallicLaserAbsorbPattern =
+{
+    .is_texturepart_modify = TRUE,
+    .is_absorb = TRUE,
+    .effect_joint_array_id = 4,
+    .is_effect_attach = TRUE
+};
+
 /**
- * The asm compares the whole FTStruct word at 0x18C with the reflect (0x04000010) and psi magnet (0x08800110)
- * patterns. REMIX-TODO(FTStruct): the port checks the reflect and absorb bitfields instead of the whole word. ft/fttypes.h
- * has no word view of that bitfield group, so an exact word compare needs a union there; a fighter with other bits set
- * is immune here but not in the asm.
+ * The asm compares the whole FTStruct flag word at 0x18C with the reflect (0x04000010) and psi magnet (0x08800110)
+ * patterns, so a fighter is immune only when its flag word equals one of them exactly. This uses the whole-word view
+ * flag_word of ft/fttypes.h against the two pattern structs above.
  */
 static sb32 grRemixMetallicLaserIsImmune(FTStruct *fp)
 {
-    return (fp->is_reflect != FALSE) || (fp->is_absorb != FALSE);
+    return (fp->flag_word == sGRRemixMetallicLaserReflectPattern.flag_word) ||
+           (fp->flag_word == sGRRemixMetallicLaserAbsorbPattern.flag_word);
 }
 
 /**

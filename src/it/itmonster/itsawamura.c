@@ -242,6 +242,10 @@ void itSawamuraAttackInitVars(GObj *item_gobj)
 #endif
     s32 players = 0;
 
+#ifdef PORT
+    victim_gobj = NULL;
+#endif
+
     while (fighter_gobj != NULL)
     {
         FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -273,6 +277,14 @@ void itSawamuraAttackInitVars(GObj *item_gobj)
 
         continue;
     }
+#ifdef PORT
+    /* Training.asm fix_pokemon_crashes_ _hitmonlee: the N64 build reads an uninitialized victim_gobj when no opponent is left (a lone
+     * fighter or only teammates in Training); the kick then follows the owner, like starmie_no_victim_2026-10-15.md. */
+    if (victim_gobj == NULL)
+    {
+        victim_gobj = ip->owner_gobj;
+    }
+#endif
     itSawamuraAttackSetFollowPlayerLR(item_gobj, victim_gobj);
 
     if (ip->kind == nITKindSawamura)

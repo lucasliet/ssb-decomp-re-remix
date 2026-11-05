@@ -101,7 +101,7 @@ extern GObj* efManagerShieldMakeEffect(GObj *fighter_gobj);
 extern GObj* LBParticle_Shield_MakeEffect(GObj *fighter_gobj);
 extern void efManagerYoshiShieldProcDisplay(GObj *effect_gobj);
 extern GObj* efManagerYoshiShieldMakeEffect(GObj *fighter_gobj);
-extern LBParticle* efManagerThunderAmpMakeEffect(Vec3f *pos);
+extern LBParticle* efManagerThunderAmpMakeEffect(Vec3f *pos, GObj *fighter_gobj);
 extern LBGenerator* efManagerRippleMakeEffect(Vec3f *pos);
 extern GObj* efManagerCatchSwirlMakeEffect(Vec3f *pos);
 extern GObj* efManagerReflectBreakMakeEffect(Vec3f *pos, s32 lr);

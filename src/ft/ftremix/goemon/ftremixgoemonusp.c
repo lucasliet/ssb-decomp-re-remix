@@ -118,7 +118,6 @@ static void ftRemixGoemonUSPAttachCloud(GObj *fighter_gobj)
     {
         cloud_gobj->proc_display = ftRemixGoemonUSPCloudProcDisplay;
     }
-    /* REMIX-TODO(Size): Size.item.apply_size_to_animation_ (cloud joint scale, jump table 0x8003DE5C) is not ported. It needs the animation command interpreter. */
     GOEMON_USP_CLOUD_GOBJ(fp) = cloud_gobj;
 }
 

@@ -214,7 +214,7 @@ static sb32 itRemixLightningCanZap(FTStruct *owner_fp, FTStruct *fp)
 /* Lightning: lightning_zap_players_ _zap_player */
 static void itRemixLightningZapPlayer(FTStruct *fp)
 {
-    efManagerThunderAmpMakeEffect(fp->coll_data.p_translate);
+    efManagerThunderAmpMakeEffect(fp->coll_data.p_translate, fp->fighter_gobj);
     sITRemixLightningShrinkTimers[fp->player] = ITREMIX_LIGHTNING_SHRINK_TIME;
     ftRemixSizeSetMultiplier(fp->player, ITREMIX_LIGHTNING_SHRUNK_SIZE);
     itRemixSuperMushroomDestroyForPlayer(fp->player);

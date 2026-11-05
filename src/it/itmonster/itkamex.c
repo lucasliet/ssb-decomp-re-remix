@@ -377,6 +377,10 @@ void itKamexCommonFindTargetsSetLR(GObj *item_gobj)
     f32 square_xy;
     s32 players = 0;
 
+#ifdef PORT
+    victim_gobj = NULL;
+#endif
+
     while (fighter_gobj != NULL)
     {
         FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -406,6 +410,14 @@ void itKamexCommonFindTargetsSetLR(GObj *item_gobj)
         }
         fighter_gobj = fighter_gobj->link_next;
     }
+#ifdef PORT
+    /* Training.asm fix_pokemon_crashes_ _blastoise: the N64 build reads an uninitialized victim_gobj when no opponent is left (a lone
+     * fighter or only teammates in Training); Blastoise then turns towards its owner. */
+    if (victim_gobj == NULL)
+    {
+        victim_gobj = ip->owner_gobj;
+    }
+#endif
     dist_x = DObjGetStruct(victim_gobj)->translate.vec.f.x - dobj->translate.vec.f.x;
 
     ip->lr = (dist_x < 0.0F) ? -1 : +1;

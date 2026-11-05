@@ -147,7 +147,11 @@ void itPippiCommonProcDisplay(GObj *item_gobj)
 
             gcDrawDObjTreeForGObj(item_gobj);
         }
+#ifdef REGION_REMIX
+        else itDisplayRemixHitCollisions(item_gobj, nITDisplayRemixModelMonsterTexEdge);
+#else
         else itDisplayHitCollisions(item_gobj);
+#endif
     }
     gDPPipeSync(gSYTaskmanDLHeads[0]++);
 }
@@ -184,7 +188,11 @@ void itPippiCommonMoveDLProcDisplay(GObj *item_gobj)
 
             gcDrawDObjTreeForGObj(item_gobj);
         }
+#ifdef REGION_REMIX
+        else itDisplayRemixHitCollisions(item_gobj, nITDisplayRemixModelMonsterXLU);
+#else
         else itDisplayHitCollisions(item_gobj);
+#endif
     }
     gDPPipeSync(gSYTaskmanDLHeads[0]++);
 }

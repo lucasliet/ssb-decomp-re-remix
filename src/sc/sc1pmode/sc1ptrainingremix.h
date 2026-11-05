@@ -26,6 +26,9 @@ extern sb32 sc1PTrainingRemixPollDpad(void);
 /** Starts the track of the Music entry (Training.asm play_custom_music_: bgm_table[entry_music]; entry 0 is the Training Mode theme). */
 extern void sc1PTrainingRemixStartMusic(void);
 
+/** Plays the Music entry now, even when the track did not change (Training.asm play_bgm_, the A button on the Music entry of the Z menu). */
+extern void sc1PTrainingRemixPlayMusic(void);
+
 /**
  * Plays the Music entry when its value changed since the last call (play_bgm_), and keeps it as the stage track so it resumes after
  * a hammer or star. A hammer or star in play keeps its own theme.
@@ -41,6 +44,13 @@ extern void sc1PTrainingRemixPollMusic(void);
  * @return The port the dummy statistics and behavior follow.
  */
 extern s32 sc1PTrainingRemixSetupPorts(s32 menu_port, s32 select_cpu_port);
+
+/**
+ * Fighter `port` starts the match with: the Character option of the per-port chain, or the one the character select gave the port.
+ *
+ * @param port Port 0 to 3.
+ */
+extern s32 sc1PTrainingRemixGetPortFighter(s32 port);
 
 /** Port whose spawn point `port` starts on (the Spawn entry of the chain). */
 extern s32 sc1PTrainingRemixSpawnPort(s32 port);
@@ -66,10 +76,14 @@ extern s32 sc1PTrainingRemixGetItemKind(s32 entry);
 #define SC1PTRAININGREMIX_ITEM_HUD_TABLE 0x0330
 
 /*
- * REMIX-TODO(Training) steps 10 to 13: the custom Z menu (Training.asm run_, setup_, the entries at :3899-3913 and the per-port
- * chain tail_px at :3658). Missing: the menu state byte Training.toggle_menu (RAM 0x80190979, shared with the vanilla pause menu),
- * the Remix text path (Render.draw_string / draw_number) in the decomp training scene, and the per-port training struct
- * (Training.struct port_1..4). Step 14 guards (fix_sector_z_crashes_, fix_pokemon_crashes_, skip_crowd_cheer_) are not checked yet.
+ * The custom Z menu (Training.asm run_, setup_, entries 3899-3913, tail_px 3658) is sc1ptrainingremixmenu.h; its entries, rules, drawing
+ * and custom spawn are sc1ptrainingmenuentries.h, sc1ptrainingmenurules.h, sc1ptrainingremixmenudraw.h and sc1ptrainingremixspawn.h.
+ *
+ * Not ported from the Z menu setup (no Remix text path needed, they depend on features the port does not have yet):
+ *  - setup_ 1597-1613 "(Hold --)" and the hold-A bar, Toggles.entry_hold_to_exit_training, and hold_to_exit_ 751: the Exit option of
+ *    the vanilla pause menu would need a held-frames counter on the exit input of sc1PTrainingModeUpdateExitOption.
+ *  - setup_ 1634-1637 and run_ 1954-1981 the L "Show Action" legend and the action and frame strings (create_action_strings_ 1475,
+ *    update_frame_counts_ 2097, update_actions_ 2156): they need the action names of every status and a frame counter per port.
  */
 
 #endif

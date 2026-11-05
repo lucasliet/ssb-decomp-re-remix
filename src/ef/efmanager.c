@@ -417,7 +417,11 @@ EFDesc dEFManagerFireSparkEffectDesc =
     },
 
     efManagerHaveStructProcUpdate,     // Proc Update
+#ifdef REGION_REMIX
+    ftRemixSizeFireSparkProcDisplay,   // Proc Render
+#else
     lbCommonDObjScaleXProcDisplay,     // Proc Render
+#endif
 
     llEFCommonEffects2FireSparkDObjDesc,    // DObj Setup attributes offset (?)
     llEFCommonEffects2FireSparkMObjSub,     // MObjSub offset
@@ -795,7 +799,11 @@ EFDesc dEFManagerCaptainFalconKickEffectDesc =
         0x00                                // ???
     },
 
+#ifdef REGION_REMIX
+    ftRemixSizeFalconKickProcUpdate,                // Proc Update
+#else
     efManagerNoEjectProcUpdate,                     // Proc Update
+#endif
     gcDrawDObjTreeForGObj,                // Proc Render
 
     llCaptainSpecial2FalconKickDObjDesc,                // DObj Setup attributes offset (?)
@@ -814,7 +822,11 @@ EFDesc dEFManagerCaptainFalconPunchEffectDesc =
     // DObj transformation struct 1
     {
         0x50,                               // Main matrix transformations
+#ifdef REGION_REMIX
+        nGCMatrixKindTraRotRpyRSca,         // Secondary matrix transformations (captainshared.asm 0xA9AF5: 0x1C, so the punch scales)
+#else
         nGCMatrixKindRotRpyR,            // Secondary matrix transformations
+#endif
         0x00                                // ???
     },
 
@@ -932,7 +944,11 @@ EFDesc dEFManagerKirbyCutterUpEffectDesc =
     },
 
     efManagerNoEjectProcUpdate,                     // Proc Update
+#ifdef REGION_REMIX
+    ftRemixSizeKirbyCutterProcDisplay,    // Proc Render
+#else
     gcDrawDObjTreeForGObj,                // Proc Render
+#endif
 
     llKirbySpecial2CutterUpDObjDesc,             // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
@@ -962,7 +978,11 @@ EFDesc dEFManagerKirbyCutterDownEffectDesc =
     },
 
     efManagerNoEjectProcUpdate,                     // Proc Update
+#ifdef REGION_REMIX
+    ftRemixSizeKirbyCutterProcDisplay,    // Proc Render
+#else
     gcDrawDObjTreeForGObj,                // Proc Render
+#endif
 
     llKirbySpecial2CutterDownDObjDesc,           // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
@@ -1022,7 +1042,11 @@ EFDesc dEFManagerKirbyCutterTrailEffectDesc =
     },
 
     efManagerNoEjectProcUpdate,                     // Proc Update
+#ifdef REGION_REMIX
+    ftRemixSizeKirbyCutterTrailProcDisplay,      // Proc Render
+#else
     gcDrawDObjTreeDLLinksForGObj,                // Proc Render
+#endif
 
     llKirbySpecial2CutterTrailDObjDesc,          // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
@@ -4223,7 +4247,7 @@ void efManagerShieldProcDisplay(GObj *effect_gobj)
     SYColorRGB env = dEFManagerShieldColors[id].env;
 
 #ifdef REGION_REMIX
-    env = ftRemixShieldGetEnvColor(ep->effect_vars.shield.player, ep->effect_vars.shield.is_damage_shield, env);
+    env = ftRemixShieldGetEnvColor(ep->fighter_gobj, ep->effect_vars.shield.is_damage_shield, env);
 #endif
 
     gDPPipeSync(gSYTaskmanDLHeads[1]++);
@@ -4321,10 +4345,7 @@ GObj* efManagerYoshiShieldMakeEffect(GObj *fighter_gobj)
 }
 
 // 0x80101408
-/* REMIX-TODO(Size): Size.asm pikachu.adjust_gfx_size_ (0x8010146C) sets this DSP connect gfx x/y scale to the owner
- * multiplier. Needs a fighter/player argument, which efManagerThunderAmpMakeEffect(Vec3f *pos) lacks; its callers
- * (ftparam.c effect dispatch, itremixlightning.c zap) are outside efmanager.c, so the scale is not applied. */
-LBParticle* efManagerThunderAmpMakeEffect(Vec3f *pos)
+LBParticle* efManagerThunderAmpMakeEffect(Vec3f *pos, GObj *fighter_gobj)
 {
     LBParticle *pc = lbParticleMakeScriptID(gEFManagerParticleBankID, 0x74);
 
@@ -4341,6 +4362,9 @@ LBParticle* efManagerThunderAmpMakeEffect(Vec3f *pos)
                 return NULL;
             }
             xf->translate = *pos;
+#ifdef REGION_REMIX
+            ftRemixSizeScaleThunderAmp(xf, fighter_gobj);
+#endif
         }
         else
         {
@@ -5553,6 +5577,9 @@ void efManagerYoshiEggLayProcUpdate(GObj *effect_gobj)
 {
     EFStruct *ep = efGetStruct(effect_gobj);
 
+#ifdef REGION_REMIX
+    ftRemixSizeScaleYoshiEggLay(effect_gobj);
+#endif
     if (ep->effect_vars.yoshi_egg_lay.force_index != ep->effect_vars.yoshi_egg_lay.index)
     {
         efManagerYoshiEggLaySetAnim(effect_gobj, ep->effect_vars.yoshi_egg_lay.force_index);
@@ -5598,6 +5625,9 @@ GObj* efManagerYoshiEggLayMakeEffect(GObj *fighter_gobj)
     dobj->scale.vec.f.x = dobj->scale.vec.f.y = dFTCommonYoshiEggDamageCollDescs[fp->fkind].effect_size;
 #endif
     dobj->scale.vec.f.z = 1.0F;
+#ifdef REGION_REMIX
+    ftRemixSizeScaleYoshiEggLay(effect_gobj);
+#endif
 
     dobj->child->child->xobjs[0]->kind = nGCMatrixKindTra;
 

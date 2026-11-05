@@ -7,6 +7,10 @@
 #include "if/ifremixannouncer.h"
 #endif
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define FTCOMMON_THROW_REMIX_BOWSER_STATUS 0xE5
+#endif
+
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
 #endif
@@ -103,10 +107,6 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
                    ? (s32)nFTKindMario : (s32)catch_fp->fkind;
 #endif
 
-#ifdef REGION_REMIX
-    /* REMIX-TODO(PokemonAnnouncer): kirby_fthrow_1_fix also plays the seismic toss announcement and sets action 0xE5 for
-     * the BOWSER and GBOWSER forward throws; not ported, so those forward throws stay vanilla. */
-#endif
     if ((is_throwf != FALSE) || ((this_fp->input.pl.stick_range.x * this_fp->lr) >= 0))
     {
         if ((this_fp->fkind == nFTKindKirby) || (this_fp->fkind == nFTKindNKirby)
@@ -117,7 +117,10 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
         {
             status_id = nFTKirbyStatusThrowF;
 #if defined(PORT) && defined(REGION_REMIX)
-            if ((this_fp->fkind == REMIX_ID_JKIRBY) && ifRemixAnnouncerIsActive())
+            /* kirby_fthrow_1_fix (jigglypuffkirbyshared.asm 261-300): the 0x8014A238 hook jumps to
+             * seismic_toss_announcement_ for Kirby, JKirby, Bowser and Giga Bowser. NKirby falls through to
+             * the vanilla check (the hook also leaves t3 = 0xE5 there, which is not ported). */
+            if ((this_fp->fkind != nFTKindNKirby) && ifRemixAnnouncerIsActive())
             {
                 ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallSeismicToss);
             }
@@ -125,6 +128,20 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
 
             mpCommonSetFighterAir(this_fp);
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        else if ((this_fp->fkind == REMIX_ID_BOWSER) || (this_fp->fkind == REMIX_ID_GBOWSER))
+        {
+            /* kirby_fthrow_1_fix: t3 = 0xE5 (BowserFThrow action) before jumping to the Kirby throw routine at
+             * 0x8014A24C, which enters the air and sets that status after the announcement. */
+            status_id = FTCOMMON_THROW_REMIX_BOWSER_STATUS;
+
+            if (ifRemixAnnouncerIsActive())
+            {
+                ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallSeismicToss);
+            }
+            mpCommonSetFighterAir(this_fp);
+        }
+#endif
         else status_id = nFTCommonStatusThrowF;
 #ifdef PORT
         thrown_status = &((FTThrownStatusArray*)PORT_RESOLVE(this_fp->attr->thrown_status))[catch_vk].ft_thrown[0];

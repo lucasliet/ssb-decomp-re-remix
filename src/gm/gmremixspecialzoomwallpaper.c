@@ -121,8 +121,11 @@ void ftRemixSpecialZoomWallpaperShow(void)
     dobj->translate.vec.f.x = 0.0F;
     dobj->translate.vec.f.y = 0.0F;
     dobj->translate.vec.f.z = FTREMIX_SPECIAL_ZOOM_BACKGROUND_TRANSLATE_Z;
-    /* REMIX-TODO(unknown global): create_zoom_camera sets dobj->rotate.vec.f.y from the float at RAM 0x80132704, which no
-     * port names yet; the DObj keeps its default rotation. */
+    /* SpecialZoom.asm 1015 loads rotate.y from RAM 0x80132704, a leftover of the cloned opening clash code. In the battle
+     * scenes that address is ftcomputer code (overlay delta 0x800855C0, checked against the AI.asm patch at 0x80131DA4 and
+     * the ftComputerSetCommandWaitShort prologue at 0x80132564): the word is the branch 0x10000007, about 2.5e-29 as a
+     * float, so the rotation is 0. */
+    dobj->rotate.vec.f.y = 0.0F;
     dobj->scale.vec.f.x = FTREMIX_SPECIAL_ZOOM_BACKGROUND_SCALE;
     dobj->scale.vec.f.y = FTREMIX_SPECIAL_ZOOM_BACKGROUND_SCALE;
     dobj->scale.vec.f.z = FTREMIX_SPECIAL_ZOOM_BACKGROUND_SCALE;

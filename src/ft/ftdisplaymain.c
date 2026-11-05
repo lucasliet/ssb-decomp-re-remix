@@ -2,6 +2,7 @@
 #ifdef REGION_REMIX
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixhitbox.h"
 #include "ft/ftremix/ftremixenvcolor.h"
 #include "ft/ftremix/ftremixdkmode.h"
 #include "ft/ftremix/ftremixswordtrail.h"
@@ -1094,7 +1095,12 @@ void ftDisplayMainDrawParts(DObj *dobj)
             {
             case nGMHitStatusNormal:
                 gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF);
+#ifdef REGION_REMIX
+                /* Hitbox.asm grab_immunity_and_armor_frames_ (RAM 0x800F279C) */
+                ftRemixHitboxDisplayNormalHurtboxColor(fp, damage_coll);
+#else
                 gDPSetEnvColor(gSYTaskmanDLHeads[0]++, 0xD0, 0xD0, 0x00, 0xFF);
+#endif
                 break;
 
             case nGMHitStatusInvincible:
@@ -1107,11 +1113,20 @@ void ftDisplayMainDrawParts(DObj *dobj)
                 gDPSetEnvColor(gSYTaskmanDLHeads[0]++, 0x00, 0x00, 0xD0, 0xFF);
                 break;
             }
+#ifdef REGION_REMIX
+            /* Hitbox.asm make_hurtboxes_transparent_ (RAM 0x800F2830) */
+            ftRemixHitboxDisplayDrawHurtbox();
+#else
             gSPDisplayList(gSYTaskmanDLHeads[0]++, dFTDisplayMainHurtCollisionCuboidDL);
+#endif
             gSPPopMatrix(gSYTaskmanDLHeads[0]++, G_MTX_MODELVIEW);
             break;
         }
     }
+#ifdef REGION_REMIX
+    /* Hitbox.asm add_reflect_absorb_hitboxes (RAM 0x800F3358) */
+    ftRemixHitboxDisplayDrawSpecialColl(fp, dobj);
+#endif
     if (dobj->child != NULL)
     {
         ftDisplayMainDrawParts(dobj->child);
@@ -1168,7 +1183,13 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
     sFTDisplayMainSkyFogAlpha = 0xFF;
     sFTDisplayMainIsShadeFog = FALSE;
 
+#ifdef REGION_REMIX
+    /* Hitbox.asm star KO fix (RAM 0x800F29A0): `addu t3, r0, r0` replaces the load of the display mode, so an invisible
+     * fighter always stops here, in every display mode */
+    if (fp->is_invisible)
+#else
     if ((fp->is_invisible) && (fp->display_mode == nDBDisplayModeMaster))
+#endif
     {
         fp->is_magnify_show = FALSE;
 
@@ -1503,9 +1524,21 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
             gSPPopMatrix(gSYTaskmanDLHeads[0]++, G_MTX_MODELVIEW);
         }
     }
+#ifdef REGION_REMIX
+    /* Hitbox.asm render_hitbox_plus_model_ (RAM 0x800F2FD0): in hitbox+model the model branch above is followed by the
+     * hitbox branch */
+    if (((fp->display_mode != nDBDisplayModeMaster) && (fp->display_mode != nDBDisplayModeMapCollision)) ||
+        ((fp->display_mode == nDBDisplayModeMaster) && ftRemixHitboxDisplayIsOverlay()))
+#else
     else
+#endif
     {
+#ifdef REGION_REMIX
+        /* Hitbox.asm fix_hitbox_position_ (RAM 0x800F3310) */
+        if ((gGCCurrentCamera->id == nGCCommonKindMainCamera) || ftRemixHitboxDisplayFixesPosition())
+#else
         if (gGCCurrentCamera->id == nGCCommonKindMainCamera)
+#endif
         {
             ftDisplayMainDrawParts(DObjGetStruct(fighter_gobj));
         }
@@ -1525,7 +1558,12 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
             {
                 gDPPipeSync(gSYTaskmanDLHeads[0]++);
 
+#ifdef REGION_REMIX
+                /* Hitbox.asm make_hitboxes_transparent_ (RAM 0x800F33B0): the toggle replaces the display mode */
+                if ((fp->display_mode == nDBDisplayModeHitAttackOutline) || ftRemixHitboxDisplayIsOverlay())
+#else
                 if (fp->display_mode == nDBDisplayModeHitAttackOutline)
+#endif
                 {
                     gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0xB0, 0x00, 0x00, 0xFF);
                     gDPSetEnvColor(gSYTaskmanDLHeads[0]++, 0xB0, 0x00, 0x00, 0xFF);

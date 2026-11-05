@@ -23,6 +23,20 @@ extern void *func_800269C0_275C0(u16 id);
 #define GRREMIX_RAINBOW_CHOMP_SOUND_ROLL_HIT 2
 #define GRREMIX_RAINBOW_CHOMP_SOUND_FRAMES 0x0F
 #define GRREMIX_RAINBOW_CHOMP_FGM 0x0401
+/* Hazards.asm chainchomp_hitbox_main_ loop: three records (WPStruct 0x214, stride 8) and counters (WPStruct 0x29C). */
+#define GRREMIX_RAINBOW_CHOMP_HITBOX_SLOTS 3
+/* Hazards.asm chain_chomp_projectile_counter: refresh period (0x19) stored when a hit record is created. */
+#define GRREMIX_RAINBOW_CHOMP_REFRESH_FRAMES 0x19
+
+/* Per-record refresh counter. The asm keeps these bytes in the weapon_vars union (WPStruct 0x29C..0x29E). */
+typedef struct GRRemixRainbowChompHitSlot
+{
+    u8 refresh_frames;
+    sb32 is_counting;
+
+} GRRemixRainbowChompHitSlot;
+
+static GRRemixRainbowChompHitSlot sGRRemixRainbowChompHitSlots[GRREMIX_RAINBOW_CHOMP_HITBOX_SLOTS];
 
 /** Hurtbox, shield, shield edge and clang handler: the asm routine does nothing and never destroys the weapon. */
 static sb32 grRemixRainbowChompProcConnect(GObj *wp_gobj)
@@ -61,6 +75,57 @@ static void grRemixRainbowChompRollSound(WPStruct *wp)
 }
 
 /**
+ * Refreshes one hit record (chainchomp_hitbox_main_ _loop). The asm patch chain_chomp_projectile_counter, inside the
+ * vanilla hit record routine (0x801666A0, wpProcessSetHitInteractStats), stores 0x19 in the counter of every record the
+ * chomp creates. The port has no such hook, so a record seen with no counter running is a new one and starts it here;
+ * the first update after creation then decrements it, as in the asm. A counter at 0 clears only the victim pointer,
+ * the flags are kept as in the asm.
+ */
+static void grRemixRainbowChompRefreshHitSlot(GMAttackRecord *record, GRRemixRainbowChompHitSlot *slot)
+{
+    if (record->victim_gobj == NULL)
+    {
+        slot->is_counting = FALSE;
+        return;
+    }
+    if (!slot->is_counting)
+    {
+        slot->is_counting = TRUE;
+        slot->refresh_frames = GRREMIX_RAINBOW_CHOMP_REFRESH_FRAMES;
+    }
+    if (slot->refresh_frames == 0)
+    {
+        record->victim_gobj = NULL;
+        slot->is_counting = FALSE;
+        return;
+    }
+    slot->refresh_frames--;
+}
+
+/** Lets the chomp hit the same fighter again 0x1A frames after a hit. The fourth record is never refreshed (asm loops 3 times). */
+static void grRemixRainbowChompRefreshHitSlots(WPStruct *wp)
+{
+    s32 i;
+
+    for (i = 0; i < GRREMIX_RAINBOW_CHOMP_HITBOX_SLOTS; i++)
+    {
+        grRemixRainbowChompRefreshHitSlot(&wp->attack_coll.attack_records[i], &sGRRemixRainbowChompHitSlots[i]);
+    }
+}
+
+/** Stops the counters of a previous chomp weapon (the asm counters live in the weapon, so a new weapon starts at 0). */
+static void grRemixRainbowChompResetHitSlots(void)
+{
+    s32 i;
+
+    for (i = 0; i < GRREMIX_RAINBOW_CHOMP_HITBOX_SLOTS; i++)
+    {
+        sGRRemixRainbowChompHitSlots[i].refresh_frames = 0;
+        sGRRemixRainbowChompHitSlots[i].is_counting = FALSE;
+    }
+}
+
+/**
  * Per-frame hitbox routine (chainchomp_hitbox_main_). Destroys the weapon when its lifetime is spent, otherwise counts
  * it down.
  */
@@ -69,7 +134,7 @@ static sb32 grRemixRainbowChompProcUpdate(GObj *wp_gobj)
     WPStruct *wp = wpGetStruct(wp_gobj);
 
     grRemixRainbowChompSyncPosition(wp_gobj);
-    /* REMIX-TODO(hitbox monitor): the asm also refreshes three hitbox slots (offsets 0x214, 0x29C); not mapped in the port. */
+    grRemixRainbowChompRefreshHitSlots(wp);
     grRemixRainbowChompRollSound(wp);
 
     if (wp->lifetime == 0)
@@ -122,6 +187,7 @@ GObj *grRemixRainbowChompSpawn(GObj *chomp_gobj, void **hitbox_file_slot)
     GObj *wp_gobj;
 
     grRemixRainbowChompSpawnPosition(chomp_gobj, &spawn_pos);
+    grRemixRainbowChompResetHitSlots();
     sRainbowChompDesc.p_weapon = hitbox_file_slot;
     wp_gobj = wpManagerMakeWeapon(NULL, &sRainbowChompDesc, &spawn_pos, WEAPON_FLAG_PARENT_GROUND);
     if (wp_gobj == NULL)

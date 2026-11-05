@@ -6860,7 +6860,11 @@ SYTaskmanSetup dMNPlayersVSTaskmanSetup =
         sizeof(Gfx) * 64,          	// Display List Buffer 1 Size
         0,                          // Display List Buffer 2 Size
         0,                          // Display List Buffer 3 Size
+#ifdef REGION_REMIX
+        0x3A98 + 0x4000,            // Graphics Heap Size, Hitbox.asm (RAM 0x8013B9C8): hitbox display over the model
+#else
         0x3A98,                     // Graphics Heap Size
+#endif
         2,                          // ???
         0x8000,                     // RDP Output Buffer Size
         mnPlayersVSFuncLights,   	// Pre-render function

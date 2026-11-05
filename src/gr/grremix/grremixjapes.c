@@ -21,7 +21,16 @@
 #define GRREMIX_JAPES_WATER_Y -1000.0F /* asm 0xC47A0000 */
 #define GRREMIX_JAPES_WATER_SPEED 90.0F /* asm 0x42B40000 */
 #define GRREMIX_JAPES_WATER_PULL 0.0006F /* asm 0x3A1D4952, same multiplier as Whispy */
-#define GRREMIX_JAPES_WATER_BASE_X 0.0F /* REMIX-TODO(f20 never set in rushing_water): asm subtracts f20, assumed 0. f20 is not written in Hazards.asm rushing_water (1870..1955); it is the callee-saved register the caller left, so its value is not proven */
+/*
+ * Base x of the pull (asm sub.s f2, f0, f20, Hazards.asm 1950). f20 is never written in rushing_water (1870..1955, the
+ * only f20 writes in Hazards.asm are 2628, 3150 and a restore at 4358, all in other routines) and the routine does not
+ * save it, so the value is whatever the caller chain left in the callee-saved register: gcRunAll -> gcRunGObjProcess
+ * (objman.c, no float code, so neither saves or loads f20) -> rushing_water, running on the scene thread. That is the
+ * f20 the thread had at its first FPU use, a residue of an earlier thread that no source defines. The Remix author copied
+ * the routine from the Dream Land wind (0x8010595C), where f20 is the wind center x set up by the same function. The
+ * port therefore uses 0.0F (center at x = 0) as an explicit choice, not as a proven value: it is not portable exactly.
+ */
+#define GRREMIX_JAPES_WATER_BASE_X 0.0F
 #define GRREMIX_JAPES_SPLASH_FGM 0x3D1 /* asm fgm id Splash */
 #define GRREMIX_JAPES_PLAYERS_NUM 4
 

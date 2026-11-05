@@ -22,6 +22,7 @@
 #include <ft/ftchar/ftpikachu/ftpikachu.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
 #include <ft/ftmain.h>
+#include <ft/ftparam.h>
 #include <ft/ftphysics.h>
 #include <gm/gmcollision.h>
 #include <mp/mpcommon.h>
@@ -278,9 +279,17 @@ static void ftRemixDragonKingNSPAirProcMap(GObj *fighter_gobj)
     mpCommonProcFighterLanding(fighter_gobj, ftRemixDragonKingNSPAirToGround);
 }
 
-/* REMIX-TODO(lag): kirby_ground_to_air_ and kirby_air_to_ground_ also store 0x800F9C8C and 0x800F9CC4 in
- * proc_lagstart and proc_lagend. Neither address names a decomp function (0x800F9C8C lies just after
- * mpCollisionCheckProjectRWall at 0x800F9C30), so the lag procs are not set here. See the notes file. */
+/* Lag procs stored by kirby_ground_to_air_ and kirby_air_to_ground_ (DragonKingSpecial.asm 885-886 and 943-944).
+ * "lui 0x800F" plus "addiu 0x9C8C / 0x9CC4" sign-extends the low half: 0x800E9C8C is ftParamProcPauseEffect
+ * (the proc after ftParamPauseEffect, 0x14 bytes past 0x800E9C78) and 0x800E9CC4 is ftParamProcResumeEffect.
+ *
+ * Sets the hit lag pause and resume procs that Remix stores at FTStruct 0x0A04 and 0x0A08. */
+static void ftRemixDragonKingNSPSetKirbyLagProcs(FTStruct *fp)
+{
+    fp->proc_lagstart = ftParamProcPauseEffect;
+    fp->proc_lagend = ftParamProcResumeEffect;
+}
+
 /* DragonKingNSP.kirby_ground_to_air_: moves a grounded Kirby special to its aerial status. */
 static void ftRemixDragonKingNSPKirbyGroundToAir(GObj *fighter_gobj)
 {
@@ -290,6 +299,7 @@ static void ftRemixDragonKingNSPKirbyGroundToAir(GObj *fighter_gobj)
     ftMainSetStatus(fighter_gobj, nFTRemixDragonKingKirbyStatusNSPAir, fighter_gobj->anim_frame, 1.0F,
         DRAGONKING_NSP_KIRBY_TRANSITION_FLAGS);
     ftPhysicsClampAirVelXMax(fp);
+    ftRemixDragonKingNSPSetKirbyLagProcs(fp);
     fp->proc_damage = ftRemixDragonKingNSPDestroyBallOnHit;
 }
 
@@ -301,6 +311,7 @@ static void ftRemixDragonKingNSPKirbyAirToGround(GObj *fighter_gobj)
     mpCommonSetFighterGround(fp);
     ftMainSetStatus(fighter_gobj, nFTRemixDragonKingKirbyStatusNSPGround, fighter_gobj->anim_frame, 1.0F,
         DRAGONKING_NSP_KIRBY_TRANSITION_FLAGS);
+    ftRemixDragonKingNSPSetKirbyLagProcs(fp);
     fp->proc_damage = ftRemixDragonKingNSPDestroyBallOnHit;
 }
 

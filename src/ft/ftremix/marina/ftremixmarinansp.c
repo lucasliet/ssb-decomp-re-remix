@@ -95,6 +95,8 @@ enum
 
 /* Remix 0xB18 turn frame timer, shares the vanilla common status slot. */
 #define MARINA_TURN_TICS(fp) ((fp)->status_vars.common.dead.wait)
+/* asm 664-665: f8 = 0x41000000. */
+#define MARINA_TURN_TIC_DIVISOR 8.0F
 /* Remix 0xB28 gem_spawned flag, shares the vanilla turn.lr_turn slot. */
 #define MARINA_GEM_SPAWNED(fp) ((fp)->status_vars.common.turn.lr_turn)
 
@@ -286,23 +288,28 @@ static void ftRemixMarinaSpecialNAirPullProcUpdate(GObj *fighter_gobj)
 }
 
 /**
- * Remix throw_turn_: counts down the turn timer. Its rotation step is not
- * ported (see the REMIX-TODO below).
+ * Remix throw_turn_ (MarinaSpecial.asm 652-697): counts down the turn timer and
+ * turns the model like the vanilla Donkey Kong cargo turn.
  */
 static void ftRemixMarinaSpecialNThrowProcInterrupt(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 turn_tics = MARINA_TURN_TICS(fp);
+    f32 turn_target;
 
     if (turn_tics == 0)
     {
         return;
     }
-    MARINA_TURN_TICS(fp) = turn_tics - 1;
-    /* REMIX-TODO(throw_turn rotation): the step reads f16/f4 from RAM
-     * 0x8018C230..0x8018C23C (copied from DK cargo). Those words are not
-     * found in baserom.us.z64 at the linear RAM map, so the DObj rotate.vec.f.y
-     * write is skipped. Marina keeps her facing during the throw turn. */
+    turn_tics--;
+    MARINA_TURN_TICS(fp) = turn_tics;
+
+    /* asm 671-690: f16/f4 come from the floats at 0x8018C230..0x8018C23C (lui 0x8019 plus the signed
+     * lwc1 offset 0xC230..0xC23C). Read from baserom.us.z64 (battle overlay, ROM 0x106C70, RAM - 0x800855C0):
+     * 0x40490FDB (180 deg), 0x3FC90FDB (90 deg), 0x40490FDB (180 deg), 0xBFC90FDB (-90 deg). The asm
+     * subtracts step * turn_tics / 8 from the target in both directions. */
+    turn_target = (fp->lr == +1) ? F_CST_DTOR32(90.0F) : F_CST_DTOR32(-90.0F);
+    DObjGetStruct(fighter_gobj)->rotate.vec.f.y = turn_target - (((f32)turn_tics / MARINA_TURN_TIC_DIVISOR) * F_CST_DTOR32(180.0F));
 }
 
 /** Remix NSPGround.physics_: grounded grab movement and the end-move friction. */

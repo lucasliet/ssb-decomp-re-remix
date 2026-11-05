@@ -16,6 +16,7 @@ extern WPDesc dGRSectorArwingWeaponLaser2DWeaponDesc;
 
 #define GREAT_FOX_FGM_ID 0x0109
 #define GREAT_FOX_RESTART_TIMER 0x107D
+#define GREAT_FOX_LASER_ATTRIBUTES_OFFSET 0x130 /* great_fox_projectile_struct +0x0C: attributes offset in the Corneria stage header file (vanilla Arwing shot: 0xBC) */
 
 typedef struct RemixCorneriaState
 {
@@ -24,6 +25,7 @@ typedef struct RemixCorneriaState
 } RemixCorneriaState;
 
 static RemixCorneriaState sCorneriaState;
+static WPDesc sGreatFoxLaserWeaponDesc;
 
 static const u32 sGreatFoxShotTimers[] =
 {
@@ -55,17 +57,29 @@ static sb32 grRemixCorneriaIsGreatFoxShotTimer(u32 timer)
 }
 
 /**
+ * Builds the Great Fox laser descriptor (asm great_fox_projectile_struct, Hazards.asm 2156-2171): the Arwing laser
+ * descriptor, whose header pointer 0x80131428 is gGRCommonStruct.sector.weapon_head (the stage header file, set by
+ * grSectorInitAll), with the attributes offset moved from 0xBC to 0x130. File 2270 (STG_CORNERIA2_HEADER) holds a
+ * WPAttributes there: it is the vanilla Arwing laser one with another model token (intern relocation to 0x5C of the
+ * same file) and another sfx/priority word (0x25800000 instead of 0x11800000).
+ */
+static void grRemixCorneriaInitLaserDesc(void)
+{
+    sGreatFoxLaserWeaponDesc = dGRSectorArwingWeaponLaser2DWeaponDesc;
+    sGreatFoxLaserWeaponDesc.o_attributes = GREAT_FOX_LASER_ATTRIBUTES_OFFSET;
+}
+
+/**
  * Spawns one Arwing-type laser from the Great Fox.
  * The asm passes the Great Fox object as parent for the right shot; the left shot passes an undefined
- * register (see REMIX-TODO below), so both use the Great Fox object.
- * REMIX-TODO(Remix header attribute 0x130): the asm reads the hitbox and graphic attributes at header offset 0x130,
- * a Remix addition to the Sector Z header. This port uses the vanilla Arwing laser descriptor, which points at
- * llGRSectorMapArwingLaser2DWeaponAttributes.
+ * register (the a0 left by the fgm call), so both use the Great Fox object.
+ * The weapon descriptor is the Arwing laser one with the attributes read at header offset 0x130
+ * (grRemixCorneriaInitLaserDesc).
  * @return The spawned laser, or NULL when the weapon manager refused it.
  */
 static GObj* grRemixCorneriaGreatFoxSpawnShot(GObj *great_fox_gobj, Vec3f *spawn_pos)
 {
-    GObj *shot_gobj = wpManagerMakeWeapon(great_fox_gobj, &dGRSectorArwingWeaponLaser2DWeaponDesc, spawn_pos, WEAPON_FLAG_PARENT_GROUND);
+    GObj *shot_gobj = wpManagerMakeWeapon(great_fox_gobj, &sGreatFoxLaserWeaponDesc, spawn_pos, WEAPON_FLAG_PARENT_GROUND);
     WPStruct *wp;
 
     if (shot_gobj == NULL)
@@ -135,6 +149,7 @@ void grRemixCorneriaSetup(void)
     gcAddGObjProcess(great_fox_gobj, grRemixCorneriaGreatFoxProcUpdate, nGCProcessKindFunc, 4);
 
     sCorneriaState.great_fox_timer = 0;
+    grRemixCorneriaInitLaserDesc();
 }
 
 #endif

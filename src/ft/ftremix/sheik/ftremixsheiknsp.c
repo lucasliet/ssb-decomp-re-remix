@@ -324,6 +324,23 @@ static void ftRemixSheikNSPAirBeginProcMap(GObj *fighter_gobj)
     mpCommonProcFighterLanding(fighter_gobj, ftRemixSheikNSPGroundBeginTransition);
 }
 
+/*
+ * SheikNSP.charge_main_ _charge_continue (SheikSpecial.asm 1221-1225): copies the charge level to
+ * user_data + 0x2A4 of the GObj stored at FTStruct 0x0B20. 0x0B20 is status_vars.samus.specialn.charge_gobj
+ * (Samus 0x8015D5AC layout) and 0x2A4 is weapon_vars.charge_shot.charge_size, which scales the charge shot
+ * model. The begin status init (0x8015DB4C) leaves charge_gobj NULL, so the store is skipped in that case.
+ */
+static void ftRemixSheikNSPSetChargeShotLevel(FTStruct *fp, s32 charge)
+{
+    GObj *charge_gobj = fp->status_vars.samus.specialn.charge_gobj;
+
+    if (charge_gobj == NULL)
+    {
+        return;
+    }
+    wpGetStruct(charge_gobj)->weapon_vars.charge_shot.charge_size = charge;
+}
+
 /* SheikNSP.charge_main_: counts the needle charge up every 18 frames and returns to idle at full charge. */
 static void ftRemixSheikNSPChargeProcUpdate(GObj *fighter_gobj)
 {
@@ -348,10 +365,9 @@ static void ftRemixSheikNSPChargeProcUpdate(GObj *fighter_gobj)
     {
         ftParamCheckSetFighterColAnimID(fighter_gobj, SHEIK_NSP_CHARGE_GFX_ROUTINE, 0);
         mpCommonSetFighterWaitOrFall(fighter_gobj);
+        return;
     }
-    /* REMIX-TODO(GFXRoutine.SHEIK_CHARGE): SheikSpecial.asm 1221-1225 writes the charge level to
-     * user_data+0x2A4 of the spark GObj stored at FTStruct 0x0B20 on every charge tick. The port has
-     * no spark GObj (colour animations carry no per-fighter data), so only the start at max is wired. */
+    ftRemixSheikNSPSetChargeShotLevel(fp, charge);
 }
 
 /* SheikNSP.ground_charge_interrupt_ */

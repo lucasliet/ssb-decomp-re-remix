@@ -11,6 +11,10 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "ft/ftremix/ftremixtraining.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
 #include "sc/sc1pmode/sc1ptrainingremixlegend.h"
+#include "sc/sc1pmode/sc1ptrainingremixmenu.h"
+#include "sc/sc1pmode/sc1ptrainingremixmenudraw.h"
+#include "sc/sc1pmode/sc1ptrainingremixspawn.h"
+#include "gm/gmremixtoggle.h"
 #include "it/itremix/itremix.h"
 #endif
 #include <gr/ground.h>
@@ -708,6 +712,13 @@ void sc1PTrainingModeUpdateAll(void)
 		break;
 
 	case nSCBattleGameStatusPause:
+#if defined(PORT) && defined(REGION_REMIX)
+		/* Training.toggle_menu == CUSTOM_UP: the Z menu has the controls, the vanilla pause menu does not update. */
+		if (sc1PTrainingRemixMenuIsOpen() != FALSE)
+		{
+			break;
+		}
+#endif
 		sc1PTrainingModeUpdateMenu();
 		break;
 	}
@@ -803,17 +814,23 @@ void sc1PTrainingModeInitVars(void)
 	dummy = sc1PTrainingRemixSetupPorts(gSCManagerSceneData.player, dummy);
 #endif
 
-	sSC1PTrainingModeMenu.main_menu_option = nSC1PTrainingModeMenuMainCP;
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Training.asm handle_reset_menu_selections_: "Preserve Menu Selections" keeps the cursor, CPU, Speed and Item of a reset. */
+	if ((sSC1PTrainingModeMenu.exit_or_reset == 0) || (sc1PTrainingRemixMenuIsPreserved() == FALSE))
+#endif
+	{
+		sSC1PTrainingModeMenu.main_menu_option = nSC1PTrainingModeMenuMainCP;
+		sSC1PTrainingModeMenu.cp_menu_option = nSC1PTrainingModeMenuCPStand;
+		sSC1PTrainingModeMenu.speed_menu_option = nSC1PTrainingModeMenuSpeedFull;
+		sSC1PTrainingModeMenu.item_menu_option = nSC1PTrainingModeMenuItemNone;
+	}
 	sSC1PTrainingModeMenu.damage = 0;
 	sSC1PTrainingModeMenu.combo = 0;
 	sSC1PTrainingModeMenu.item_hold = -1;
-	sSC1PTrainingModeMenu.cp_menu_option = nSC1PTrainingModeMenuCPStand;
-	sSC1PTrainingModeMenu.speed_menu_option = nSC1PTrainingModeMenuSpeedFull;
 	sSC1PTrainingModeMenu.view_menu_option = nSC1PTrainingModeMenuViewNormal;
 	sSC1PTrainingModeMenu.lagtic_wait = 0;
 	sSC1PTrainingModeMenu.frameadvance_wait = 0;
 	sSC1PTrainingModeMenu.item_spawn_wait = 0;
-	sSC1PTrainingModeMenu.item_menu_option = nSC1PTrainingModeMenuItemNone;
 	sSC1PTrainingModeMenu.dummy = dummy;
 	sSC1PTrainingModeMenu.button_hold = sSC1PTrainingModeMenu.button_tap = sSC1PTrainingModeMenu.button_queue = 0;
 	sSC1PTrainingModeMenu.rapid_scroll_wait = 30;
@@ -1373,6 +1390,31 @@ void sc1PTrainingModeMakeMenuLabels(void)
 		sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
 	}
 }
+
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Training.asm draw_modal_frame_: the four border sprites of the pause frame (menu label sprites 6 to 9, the rest of 8018EBB4 after
+ * the six orange labels) in a GObj of their own, so the Z menu has the same frame while the vanilla menu is hidden.
+ *
+ * @param gobj_link GObj link (Remix group) of the frame.
+ * @return The frame GObj.
+ */
+GObj* sc1PTrainingModeMakeModalFrame(s32 gobj_link)
+{
+	GObj *frame_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, gobj_link, GOBJ_PRIORITY_DEFAULT);
+	s32 i;
+
+	gcAddGObjDisplay(frame_gobj, lbCommonDrawSObjAttr, 23, GOBJ_PRIORITY_DEFAULT, ~0);
+
+	for (i = 6; i < 10; i++)
+	{
+		SObj *sobj = sc1PTrainingModeMakeStatDisplay(frame_gobj, &sSC1PTrainingModeMenu.menu_label_sprites[i]);
+
+		sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
+	}
+	return frame_gobj;
+}
+#endif
 
 // 0x8018ECA4
 void sc1PTrainingModeInitMenuOptionSpriteAttrs(void)
@@ -2136,6 +2178,9 @@ void sc1PTrainingModeFuncStart(void)
 #endif
 
 		desc.lr = (desc.pos.x >= 0.0F) ? -1 : +1;
+#if defined(PORT) && defined(REGION_REMIX)
+		sc1PTrainingRemixSpawnApplyDesc(player, &desc);
+#endif
 		desc.team = gSCManagerBattleState->players[player].team;
 		desc.player = player;
 		desc.detail = ((gSCManagerBattleState->pl_count + gSCManagerBattleState->cp_count) < 3) ? nFTPartsDetailHigh : nFTPartsDetailLow;
@@ -2150,6 +2195,9 @@ void sc1PTrainingModeFuncStart(void)
 		desc.figatree_heap = ftManagerAllocFigatreeHeapKind(gSCManagerBattleState->players[player].fkind);
 		desc.is_skip_entry = TRUE;
 		fighter_gobj = ftManagerMakeFighter(&desc);
+#if defined(PORT) && defined(REGION_REMIX)
+		sc1PTrainingRemixSpawnEnterLedge(player, fighter_gobj);
+#endif
 
 		ftParamInitPlayerBattleStats(player, fighter_gobj);
 	}
@@ -2170,6 +2218,9 @@ void sc1PTrainingModeFuncStart(void)
 	ifCommonPlayerStockInitInterface();
 	sc1PTrainingModeMakeStatDisplayAll();
 	sc1PTrainingModeMakeMenuAll();
+#if defined(PORT) && defined(REGION_REMIX)
+	sc1PTrainingRemixMenuDrawMake();
+#endif
 #ifdef REGION_REMIX
 	if (ifRemixHudDisabledAll())
 	{
@@ -2178,7 +2229,15 @@ void sc1PTrainingModeFuncStart(void)
 #endif
 	sc1PTrainingModeSetPlayDefaultBGM();
 	func_800266A0_272A0();
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Training.asm skip_crowd_cheer_ _training: Toggles.entry_skip_start_cheer is 1 (Training) or 2 (Bonus too) to skip the cheer. */
+	if (gmRemixToggle(skip_start_cheer) == 0)
+	{
+		func_800269C0_275C0(nSYAudioVoicePublicExcited);
+	}
+#else
 	func_800269C0_275C0(nSYAudioVoicePublicExcited);
+#endif
 
 	color = dSC1PTrainingModeFadeColor;
 

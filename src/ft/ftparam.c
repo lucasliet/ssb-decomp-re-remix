@@ -2470,7 +2470,7 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
         break;
 
     case nEFKindThunderAmp:
-        effect = efManagerThunderAmpMakeEffect(&pos);
+        effect = efManagerThunderAmpMakeEffect(&pos, fighter_gobj);
         break;
 
     case nEFKindRipple:

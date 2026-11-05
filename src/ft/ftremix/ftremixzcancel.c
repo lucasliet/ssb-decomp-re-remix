@@ -15,6 +15,11 @@
 #include "mn/mnvsmode/mnremixvsstats.h"
 #include "sc/scmanager.h"
 #include "sc/sctypes.h"
+#include "sc/scdef.h"
+#include "if/interface.h"
+#include <ft/ftchar/ftyoshi/ftyoshi.h>
+#include <lb/library.h>
+#include <reloc_data.h>
 
 extern void *func_800269C0_275C0(u16 id);
 
@@ -64,10 +69,33 @@ static void ftRemixZCancelSetSurfaceFlag(FTStruct *fp, u32 surface_flag)
     fp->coll_data.floor_flags = (fp->coll_data.floor_flags & 0xFFFF0000) | surface_flag;
 }
 
-/* ZCancel.asm _instant_ko. REMIX-TODO(1P final boss): Remix skips the KO in the 1P final stage while the match is off. */
+/*
+ * ZCancel.asm _instant_ko gate: on the 1P screen in the Master Hand stage the KO is skipped while the "match off" byte
+ * at 0x80131580 is 0. That byte is the first member of gIFCommonPlayerInterface (is_magnify_display), see
+ * docs/remix/notes/n64_address_resolutions.md.
+ */
+static sb32 ftRemixZCancelInstantKOIsBlocked(void)
+{
+    if (gSCManagerSceneData.scene_curr != nSCKind1PGame)
+    {
+        return FALSE;
+    }
+    if (gSCManagerSceneData.spgame_stage != nSC1PGameStageBoss)
+    {
+        return FALSE;
+    }
+    return gIFCommonPlayerInterface.is_magnify_display == FALSE;
+}
+
+/* ZCancel.asm _instant_ko. */
 static void ftRemixZCancelInstantKO(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+
+    if (ftRemixZCancelInstantKOIsBlocked())
+    {
+        return;
+    }
 
     fp->p_loop_sfx = NULL;
     fp->loop_sfx_id = 0;
@@ -75,12 +103,31 @@ static void ftRemixZCancelInstantKO(GObj *fighter_gobj)
     ftCommonDeadDownSetStatus(fighter_gobj);
 }
 
-/* ZCancel.asm _egg. REMIX-TODO(ZCancel.setup_): the Yoshi egg file (0x153) that setup_ loads is not ported. */
+/*
+ * ZCancel.asm setup_: with the Egg or Random punishment, loads the Yoshi egg lay file (0x153, llYoshiSpecial3FileID)
+ * into the Yoshi Special3 pointer, so the egg works when no Yoshi is in the match.
+ */
+void ftRemixZCancelSetup(void)
+{
+    s32 mode = gmRemixToggle(punish_on_failed_z_cancel);
+
+    if ((mode != FTREMIX_ZCANCEL_PUNISH_EGG) && (mode != FTREMIX_ZCANCEL_PUNISH_RANDOM))
+    {
+        return;
+    }
+    gFTDataYoshiSpecial3 = lbRelocGetExternHeapFile((u32)llYoshiSpecial3FileID,
+                                                    syTaskmanMalloc(lbRelocGetFileSize((u32)llYoshiSpecial3FileID), 0x10));
+}
+
+/* ZCancel.asm _egg. The egg file is loaded by ftRemixZCancelSetup. */
 static void ftRemixZCancelEgg(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    fp->status_vars.common.dead.wait = 0;
+    /* sw r0, 0x0B18: the first status var is captureyoshi.effect_gobj, a pointer (8 bytes on LP64), so the whole pointer
+     * is cleared; clearing a 32-bit member left the high half of the previous status vars and crashed in
+     * ftCommonYoshiEggProcUpdate. */
+    fp->status_vars.common.captureyoshi.effect_gobj = NULL;
     fp->unk_ft_0x7A0 = 0.0F;
     ftMainSetStatus(fighter_gobj, nFTCommonStatusYoshiEgg, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftCommonYoshiEggProcStatus(fighter_gobj);

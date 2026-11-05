@@ -87,7 +87,11 @@ void ftPortVanillaEntryMakeEffect(FTStruct *fp)
     case nFTKindMario:
     case nFTKindLuigi:
     case nFTKindMMario:
+#ifdef REGION_REMIX
+        ftRemixSizeEntryTopJoint(efManagerMarioEntryDokanMakeEffect(&fp->entry_pos, fp->fkind), fp);
+#else
         efManagerMarioEntryDokanMakeEffect(&fp->entry_pos, fp->fkind);
+#endif
         break;
 
     case nFTKindFox:
@@ -96,16 +100,29 @@ void ftPortVanillaEntryMakeEffect(FTStruct *fp)
 
     case nFTKindDonkey:
     case nFTKindGDonkey:
+#ifdef REGION_REMIX
+        ftRemixSizeEntryTopJoint(efManagerDonkeyEntryTaruMakeEffect(&fp->entry_pos), fp);
+#else
         efManagerDonkeyEntryTaruMakeEffect(&fp->entry_pos);
+#endif
         break;
 
     case nFTKindSamus:
+#ifdef REGION_REMIX
+        ftRemixSizeEntryTopJoint(efManagerSamusEntryPointMakeEffect(&fp->entry_pos), fp);
+#else
         efManagerSamusEntryPointMakeEffect(&fp->entry_pos);
+#endif
         break;
 
     case nFTKindLink:
+#ifdef REGION_REMIX
+        ftRemixSizeEntryMakeLinkWave(fp);
+        ftRemixSizeEntryMakeLinkBeam(fp);
+#else
         efManagerLinkEntryWaveMakeEffect(&fp->entry_pos);
         efManagerLinkEntryBeamMakeEffect(&fp->entry_pos);
+#endif
         break;
 
     case nFTKindYoshi:
@@ -117,7 +134,11 @@ void ftPortVanillaEntryMakeEffect(FTStruct *fp)
         break;
 
     case nFTKindKirby:
+#ifdef REGION_REMIX
+        ftRemixSizeEntrySecondJoint(efManagerKirbyEntryStarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr), fp);
+#else
         efManagerKirbyEntryStarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr);
+#endif
         break;
 
     case nFTKindPikachu:
@@ -130,7 +151,11 @@ void ftPortVanillaEntryMakeEffect(FTStruct *fp)
         {
             fp->status_vars.common.entry.is_rotate = TRUE;
         }
+#ifdef REGION_REMIX
+        ftRemixSizeEntryCaptainCar(efManagerCaptainEntryCarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr), fp);
+#else
         efManagerCaptainEntryCarMakeEffect(&fp->entry_pos, fp->status_vars.common.entry.lr);
+#endif
         break;
 
     case nFTKindBoss:

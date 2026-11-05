@@ -8,6 +8,10 @@
 #include <enhancements/enhancements.h>
 #endif
 
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhitbox.h"
+#endif
+
 extern SYMallocRegion gSYTaskmanGraphicsHeap;
 
 // // // // // // // // // // // //
@@ -118,10 +122,64 @@ void itDisplayHitCollisions(GObj *item_gobj)
             gDPSetEnvColor(gSYTaskmanDLHeads[0]++, 0x00, 0x00, 0xD0, 0xFF);
             break;
         }
+#ifdef REGION_REMIX
+        /* Hitbox.asm make_hurtboxes_transparent_._items (RAM 0x8017193C) */
+        ftRemixHitboxDisplayDrawHurtbox();
+#else
         gSPDisplayList(gSYTaskmanDLHeads[0]++, dFTDisplayMainHurtCollisionCuboidDL);
+#endif
         gSPPopMatrix(gSYTaskmanDLHeads[0]++, G_MTX_MODELVIEW);
     }
 }
+
+#ifdef REGION_REMIX
+/**
+ * Hitbox.asm render_hitbox_plus_item_: draws the hitboxes and hurtbox of an item in the hitbox branch of its display
+ * routine. In hitbox+model the model is drawn first, by the routine of the call site; the monsters set the render mode of
+ * their model before the toggle check, so it is set in every mode.
+ *
+ * @param item_gobj The item object.
+ * @param model The model draw routine of the call site.
+ */
+void itDisplayRemixHitCollisions(GObj *item_gobj, ITDisplayRemixModel model)
+{
+    switch (model)
+    {
+    case nITDisplayRemixModelMonsterTexEdge:
+        gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_ZB_TEX_EDGE, G_RM_AA_ZB_TEX_EDGE2);
+        break;
+
+    case nITDisplayRemixModelMonsterXLU:
+        gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2);
+        break;
+
+    default:
+        break;
+    }
+    if (ftRemixHitboxDisplayIsOverlay() != FALSE)
+    {
+        switch (model)
+        {
+        case nITDisplayRemixModelXLU:
+            gcDrawDObjTreeDLLinksForGObj(item_gobj);
+            break;
+
+        case nITDisplayRemixModelColAnimOPA:
+            itDisplayColAnimOPA(item_gobj);
+            break;
+
+        case nITDisplayRemixModelColAnimXLU:
+            itDisplayColAnimXLU(item_gobj);
+            break;
+
+        default:
+            gcDrawDObjTreeForGObj(item_gobj);
+            break;
+        }
+    }
+    itDisplayHitCollisions(item_gobj);
+}
+#endif
 
 // 0x801719AC
 void itDisplayMapCollisions(GObj *item_gobj)
@@ -213,7 +271,11 @@ void itDisplayOPAProcDisplay(GObj *item_gobj)
         {
             gcDrawDObjTreeForGObj(item_gobj);
         }
+#ifdef REGION_REMIX
+        else itDisplayRemixHitCollisions(item_gobj, nITDisplayRemixModelOPA);
+#else
         else itDisplayHitCollisions(item_gobj);
+#endif
     }
 }
 
@@ -241,7 +303,11 @@ void itDisplayXLUProcDisplay(GObj *item_gobj)
         {
             gcDrawDObjTreeDLLinksForGObj(item_gobj);
         }
+#ifdef REGION_REMIX
+        else itDisplayRemixHitCollisions(item_gobj, nITDisplayRemixModelXLU);
+#else
         else itDisplayHitCollisions(item_gobj);
+#endif
     }
 }
 
@@ -291,7 +357,11 @@ void itDisplayColAnimOPAProcDisplay(GObj *item_gobj)
         {
             itDisplayColAnimOPA(item_gobj);
         }
+#ifdef REGION_REMIX
+        else itDisplayRemixHitCollisions(item_gobj, nITDisplayRemixModelColAnimOPA);
+#else
         else itDisplayHitCollisions(item_gobj);
+#endif
     }
 }
 
@@ -351,6 +421,10 @@ void itDisplayColAnimXLUProcDisplay(GObj *item_gobj)
         {
             itDisplayColAnimXLU(item_gobj);
         }
+#ifdef REGION_REMIX
+        else itDisplayRemixHitCollisions(item_gobj, nITDisplayRemixModelColAnimXLU);
+#else
         else itDisplayHitCollisions(item_gobj);
+#endif
     }
 }

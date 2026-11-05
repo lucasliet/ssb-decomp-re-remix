@@ -291,6 +291,12 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
     gFTManagerCommonFile = lbRelocGetExternHeapFile((u32)llFTManagerCommonFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)llFTManagerCommonFileID), 0x10));
 
     lbRelocGetExternHeapFile((u32)ll_201_FileID, syTaskmanMalloc(lbRelocGetFileSize((u32)ll_201_FileID), 0x10));
+#ifdef REGION_REMIX
+    if (data_flags == FTDATA_FLAG_MAINMOTION)
+    {
+        ftRemixZCancelSetup();
+    }
+#endif
 
     for (i = 0; i < (nFTKindEnumCount + ARRAY_COUNT(gSCManagerFighterFileSizes)) / 2; i++)
     {

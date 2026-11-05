@@ -8,7 +8,9 @@
 #include <gm/gmdef.h>
 #include <sys/objman.h>
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixhooks.h"
 
+#define ITREMIX_CLOUD_KIND 0x49 /* Item.Cloud.id */
 #define ITREMIX_CLOUD_TOTAL_TIMER 30
 #define ITREMIX_CLOUD_TIME_UNTIL_FADE 8
 #define ITREMIX_CLOUD_FLASH_FRAME_BEGIN 70
@@ -124,10 +126,29 @@ static void itRemixCloudSetFlashFlag(GObj *item_gobj, s32 timer)
     item_gobj->flags = (timer & 2) >> 1;
 }
 
-/* SKIPPED(Size): Size.asm item scope not ported. apply_size_to_animation_ (0x8003DE5C jump table, cloud joint scale) needs
- * the animation command interpreter, and render_routine_ (ECB scale of the cloud from its holder, wraps 0x80171F4C) needs the
- * item render wiring. The existing ftremixsize helpers scale the fighter top joint and ECB, not an item, so they do not fit.
- * The cloud keeps its vanilla scale and ECB at every size until both are ported. */
+/*
+ * Size.asm item apply_size_to_animation_ _apply_scale: an animated scale value of a DObj whose GObj is an item (id 0x03F5) of
+ * kind Item.Cloud with an owner is multiplied by the owner size. The ECB part of Size.asm item render_routine_ is
+ * ftRemixGoemonUSPCloudApplySize (ftremixgoemonusp.c).
+ */
+f32 itRemixCloudScaleAnimValue(DObj *dobj, f32 value)
+{
+    GObj *item_gobj = dobj->parent_gobj;
+    ITStruct *ip;
+
+    if ((item_gobj == NULL) || (item_gobj->id != nGCCommonKindItem))
+    {
+        return value;
+    }
+    ip = itGetStruct(item_gobj);
+
+    if ((ip->kind != ITREMIX_CLOUD_KIND) || (ip->owner_gobj == NULL))
+    {
+        return value;
+    }
+    return value * ftRemixSizeGetMultiplier(ftGetStruct(ip->owner_gobj)->player);
+}
+
 /* Cloud.asm stage_setting_: the spawn routine, called with Item.Cloud's desc from the Remix dispatcher. */
 GObj* itRemixCloudMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {

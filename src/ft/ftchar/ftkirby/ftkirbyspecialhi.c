@@ -1,5 +1,8 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#ifdef REGION_REMIX
+#include "ft/ftremix/ftremixhooks.h"
+#endif
 #ifdef PORT
 #include <sc/scmanager.h>
 #include <sys/debug.h>
@@ -171,11 +174,19 @@ void ftKirbySpecialAirHiProcPhysics(GObj *fighter_gobj)
 
     ftKirbySpecialHiUpdateEffect(fighter_gobj);
 
+#ifdef REGION_REMIX
+    fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = ftRemixSizeKirbyAirHiScale(fp, 0.8F);
+
+    ftPhysicsApplyAirVelTransNYZ(fighter_gobj);
+
+    fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = ftRemixSizeKirbyAirHiScale(fp, 1.0F);
+#else
     fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = 0.8F;
 
     ftPhysicsApplyAirVelTransNYZ(fighter_gobj);
 
     fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = 1.0F;
+#endif
 
     if (ftPhysicsCheckClampAirVelXDecMax(fp, attr) == FALSE)
     {

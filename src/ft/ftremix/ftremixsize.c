@@ -152,6 +152,22 @@ static void ftRemixSizeApplyTopJointScale(FTStruct *fp, f32 multiplier)
     topn_joint->scale.vec.f.z = scale;
 }
 
+/**
+ * Size.asm kirby_ausp_ (RAM 0x80160F34 and 0x80160F60, the scale writes of ftKirbySpecialAirHiProcPhysics): the scale the
+ * move gives the top joint becomes the body size of the player (the big Kirby glitch, the body size stays after the move),
+ * and the joint is scaled by that value times the multiplier. Returns the top joint scale to write.
+ */
+f32 ftRemixSizeKirbyAirHiScale(FTStruct *fp, f32 vanilla_scale)
+{
+    if (!ftRemixSizePlayerIsValid(fp->player))
+    {
+        return vanilla_scale;
+    }
+    sFTRemixSizeBaseMultiplier[fp->player] = vanilla_scale;
+
+    return vanilla_scale * ftRemixSizeGetMultiplier(fp->player);
+}
+
 /** Scales the ECB diamond and the ledge grab box from the attributes. */
 static void ftRemixSizeApplyEcb(FTStruct *fp, f32 multiplier)
 {

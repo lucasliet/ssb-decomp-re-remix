@@ -98,4 +98,8 @@ extern void sc1PTrainingModeFuncLights(Gfx **dls);
 extern void sc1PTrainingModeStartScene(void);
 extern void sc1PTrainingModeSetupFiles(void);
 
+#if defined(PORT) && defined(REGION_REMIX)
+extern GObj* sc1PTrainingModeMakeModalFrame(s32 gobj_link);
+#endif
+
 #endif

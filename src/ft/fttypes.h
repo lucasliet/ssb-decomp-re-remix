@@ -1508,6 +1508,20 @@ struct FTStruct
 
     } motion_vars;
 
+#ifdef PORT
+    /*
+     * The 32 bits from is_attack_active to is_hitstun fill exactly one word (N64 FTStruct 0x18C). The anonymous union
+     * adds a whole-word view, flag_word, over that word without changing the size or any member offset. Remix tests the
+     * whole word (Hazards.asm robot_bee_laser_hit_). Host bit order is LSB-first, the N64 order is MSB-first, so never
+     * compare flag_word with an N64 constant: build the expected word with the same fields and compare the two words.
+     */
+    union
+    {
+        u32 flag_word;
+
+        struct
+        {
+#endif
     ub32 is_attack_active : 1;          // Whether fighter has active hitboxes
     ub32 is_hitstatus_nodamage : 1;     // Whether fighter's hurtbox state is impervious
     ub32 is_damage_coll_modify : 1;     // Whether fighter is using custom temporary hurtboxes
@@ -1535,6 +1549,10 @@ struct FTStruct
     ub32 is_have_translate_scale : 1;   // Whether fighter is using translation vector transformation scales for animations
     ub32 is_control_disable : 1;        // Fighter cannot be controlled if TRUE; enabled when training mode menu is up
     ub32 is_hitstun : 1;                // Whether fighter is in hitstun
+#ifdef PORT
+        };
+    };
+#endif
     u32 slope_contour : 3;              // "Slope Contour" behavior flags: 0x1 = left foot, 0x2 = right foot, 0x4 = full body rotation relative to slanted surfaces
     ub32 is_use_animlocks : 1;          // If TRUE, fighter will ignore animation of specified joints
     ub32 is_muted : 1;                  // This is set to TRUE only in the Characters menu; prevents motion script sound effects from playing

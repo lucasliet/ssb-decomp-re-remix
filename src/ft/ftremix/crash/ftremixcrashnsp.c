@@ -18,6 +18,7 @@
 #include <sys/objdisplay.h>
 #include <ft/ftmain.h>
 #include <ft/ftphysics.h>
+#include <it/item.h>
 #include <mp/mpcommon.h>
 
 enum
@@ -199,11 +200,79 @@ static void ftRemixCrashNSPSpawnSpinGFX(GObj *fighter_gobj)
     }
 }
 
-/* REMIX-TODO(Item): spin_detect_item_ (CrashSpecial.asm:264-329) and the item fling in ground_main_ and air_main_
- * (asm 371-440, item_fling_ at 891-907 with Remix's flung_item_state_table) are not ported. Crash does not pick up
- * items with the spin. */
-static void ftRemixCrashNSPSpinItem(void)
+/* FLING_WIDTH, FLING_HEIGHT and FLING_HEIGHT_MIDDLE are all `lui 0x4396` (CrashSpecial.asm 17-19), and the fling
+ * speed is the same float with the sign of the side (asm 366-368 and 417-419). */
+#define CRASH_NSP_FLING_WIDTH 300.0F              /* 0x43960000 */
+#define CRASH_NSP_FLING_HEIGHT 300.0F             /* 0x43960000 */
+#define CRASH_NSP_FLING_HEIGHT_MIDDLE 300.0F      /* 0x43960000, added to the fighter y */
+#define CRASH_NSP_FLING_SPEED_X 300.0F            /* 0x4396 / 0xC396 */
+#define CRASH_NSP_FLING_FGM_ID 0x5BD              /* FGM.play(0x5BD), item throw sound */
+
+extern void *func_800269C0_275C0(u16 id);
+
+/* flung_item_state_table (CrashSpecial.asm 1045-1046): eight zero words, so the flung item has no procs. */
+static ITStatusDesc sFTRemixCrashNSPFlungItemStatusDesc;
+
+/* spin_detect_item_ (CrashSpecial.asm:264-329) range test. The item position is the item struct at 0x40
+ * (MPCollData.pos_prev) and the fighter position is the TopN translate. */
+static sb32 ftRemixCrashNSPIsItemInSpinRange(GObj *fighter_gobj, ITStruct *ip)
 {
+    Vec3f *fighter_pos = &DObjGetStruct(fighter_gobj)->translate.vec.f;
+    f32 diff_x = fighter_pos->x - ip->coll_data.pos_prev.x;
+    f32 diff_y = (fighter_pos->y + CRASH_NSP_FLING_HEIGHT_MIDDLE) - ip->coll_data.pos_prev.y;
+
+    return (ABSF(diff_x) <= CRASH_NSP_FLING_WIDTH) && (ABSF(diff_y) <= CRASH_NSP_FLING_HEIGHT);
+}
+
+/* spin_detect_item_: returns the first pickable (flag 0x80 of byte 0x2CE = is_allow_pickup, flag 0x01 = light weight)
+ * item in range, NULL when there is none. The asm walks the item list at 0x80046700, gGCCommonLinks[nGCCommonLinkIDItem]. */
+static GObj *ftRemixCrashNSPFindSpinItem(GObj *fighter_gobj)
+{
+    GObj *item_gobj = gGCCommonLinks[nGCCommonLinkIDItem];
+
+    while (item_gobj != NULL)
+    {
+        ITStruct *ip = itGetStruct(item_gobj);
+
+        if (ip->is_allow_pickup && (ip->weight == nITWeightLight) && ftRemixCrashNSPIsItemInSpinRange(fighter_gobj, ip))
+        {
+            return item_gobj;
+        }
+        item_gobj = item_gobj->link_next;
+    }
+    return NULL;
+}
+
+/* item_fling_ (CrashSpecial.asm:891-907): disables the pickup flag, puts the item in the air and gives it the empty
+ * flung_item_state_table status. */
+static void ftRemixCrashNSPSetItemFlung(GObj *item_gobj)
+{
+    ITStruct *ip = itGetStruct(item_gobj);
+
+    ip->is_allow_pickup = FALSE;
+    itMapSetAir(ip);
+    itMainSetStatus(item_gobj, &sFTRemixCrashNSPFlungItemStatusDesc, 0);
+}
+
+/* The item check shared by ground_main_ and air_main_ (asm 371-396 and 422-446): flings a nearby item away from
+ * the fighter at CRASH_NSP_FLING_SPEED_X, positive when fighter x <= item x, and plays the throw sound. */
+static void ftRemixCrashNSPSpinItem(GObj *fighter_gobj)
+{
+    GObj *item_gobj = ftRemixCrashNSPFindSpinItem(fighter_gobj);
+    ITStruct *ip;
+    f32 fighter_x;
+    f32 item_x;
+
+    if (item_gobj == NULL)
+    {
+        return;
+    }
+    ip = itGetStruct(item_gobj);
+    fighter_x = DObjGetStruct(fighter_gobj)->translate.vec.f.x;
+    item_x = DObjGetStruct(item_gobj)->translate.vec.f.x;
+    ip->physics.vel_air.x = (fighter_x <= item_x) ? CRASH_NSP_FLING_SPEED_X : -CRASH_NSP_FLING_SPEED_X;
+    ftRemixCrashNSPSetItemFlung(item_gobj);
+    func_800269C0_275C0(CRASH_NSP_FLING_FGM_ID);
 }
 
 /* Character.get_hitbox_collision_flags_ (Character.asm:3322), reduced to the shield test that shield_hit_routine_
@@ -433,7 +502,7 @@ static void ftRemixCrashNSPGroundProcUpdate(GObj *fighter_gobj)
     if (fighter_gobj->anim_frame <= 0.0F)
     {
         mpCommonSetFighterWaitOrFall(fighter_gobj);
-        ftRemixCrashNSPSpinItem();
+        ftRemixCrashNSPSpinItem(fighter_gobj);
         return;
     }
     if ((fp->motion_vars.flags.flag1 == 0) && (ftCommonKneeBendGetInputTypeCommon(fp) != 0))
@@ -441,7 +510,7 @@ static void ftRemixCrashNSPGroundProcUpdate(GObj *fighter_gobj)
         ftRemixCrashNSPGroundToAirJump(fighter_gobj);
         return;
     }
-    ftRemixCrashNSPSpinItem();
+    ftRemixCrashNSPSpinItem(fighter_gobj);
 }
 
 /* air_main_ */
@@ -451,7 +520,7 @@ static void ftRemixCrashNSPAirProcUpdate(GObj *fighter_gobj)
     {
         mpCommonSetFighterWaitOrFall(fighter_gobj);
     }
-    ftRemixCrashNSPSpinItem();
+    ftRemixCrashNSPSpinItem(fighter_gobj);
 }
 
 /* blocked_main_ */
