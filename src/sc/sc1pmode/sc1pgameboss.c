@@ -6,6 +6,7 @@
 #include <reloc_data.h>
 #if defined(PORT) && defined(REGION_REMIX)
 #include "sc/sc1pmode/sc1premix1p.h"
+#include "sc/sc1pmode/sc1premixmoderules.h"
 #endif
 
 #ifdef PORT
@@ -1043,7 +1044,7 @@ void sc1PGameBossSetBossPlayer(void)
     for (player = 0; player < ARRAY_COUNT(gSCManagerBattleState->players); player++)
     {
 #if defined(PORT) && defined(REGION_REMIX)
-        if ((gSCManagerBattleState->players[player].fkind == nFTKindBoss) ||
+        if ((sc1PRemixSlotIsCpuMasterHand(gSCManagerBattleState->players[player].pkind, gSCManagerBattleState->players[player].fkind) != FALSE) ||
             (sc1PRemix1PIsFinalBoss(gSCManagerBattleState->players[player].fkind, gSCManagerBattleState->players[player].team) != FALSE))
 #else
         if (gSCManagerBattleState->players[player].fkind == nFTKindBoss)

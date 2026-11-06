@@ -13,6 +13,7 @@
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmoderules.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
+#include "sc/sc1pmode/sc1premixretry.h"
 
 #define SC1PREMIX_BONUSEXIT_TIME_LIMIT 5
 
@@ -52,7 +53,7 @@ sb32 sc1PRemixModeExitBonusCSS(s32 fkind, s32 costume)
 
 sb32 sc1PRemixModeLeaveRun(void)
 {
-    sb32 is_restart = (sc1PRemixMultimanRestartsRun(gSCManagerSceneData.is_reset) != 0) ? TRUE : FALSE;
+    sb32 is_restart = sc1PRemixRetryConsume();
 
     gSCManagerSceneData.is_reset = FALSE;
     gSCManagerSceneData.scene_prev = nSCKind1PGame;

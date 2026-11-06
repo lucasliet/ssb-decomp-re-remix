@@ -129,6 +129,36 @@ extern void gmRemixTwelveCBSetNextPortrait(GMRemixTwelveCBState *state, int32_t 
 extern int32_t gmRemixTwelveCBGetWinnerPortraitOf(const GMRemixTwelveCBState *state, int32_t port);
 
 /**
+ * Whether a player ended the last game with stocks left (get_last_match_portrait_and_stocks_): the stocks of the last game record are
+ * not the "none left" value. 0 before the first game, whatever the status of the battle.
+ *
+ * @param state Battle state.
+ * @param port Player port (0 or 1).
+ */
+extern int32_t gmRemixTwelveCBLastGameHadStocks(const GMRemixTwelveCBState *state, int32_t port);
+
+/**
+ * Whether the token of a port can be picked up on the CSS (prevent_token_pickup_): a CPU that ended the last game with stocks left keeps
+ * its token, everything else is free.
+ *
+ * @param state Battle state.
+ * @param port Player port the token belongs to (0 or 1).
+ * @param is_human Non-zero when the player of the token is a human.
+ * @return Non-zero when the token can be picked up.
+ */
+extern int32_t gmRemixTwelveCBCanPickUpToken(const GMRemixTwelveCBState *state, int32_t port, int32_t is_human);
+
+/**
+ * Whether a CSS slot may take part in the next game (treat_selected_defeated_chars_as_unselected_): the character it holds has stocks
+ * left and the pool of the player is not empty. A player with an empty pool has lost the battle, so the game cannot start until RESET.
+ *
+ * @param portrait_stocks Stocks left of the portrait the slot holds, 1-based (0 is defeated).
+ * @param pool_remaining Stocks left in the pool of the player.
+ * @return Non-zero when the slot may start.
+ */
+extern int32_t gmRemixTwelveCBSlotMayStart(int32_t portrait_stocks, int32_t pool_remaining);
+
+/**
  * Stock count (0-based) a player starts the next game with (set_initial_stock_count_): the stocks the player ended the last
  * game with when any are left to spare, otherwise the stocks of the portrait chosen.
  *
@@ -175,6 +205,45 @@ extern void gmRemixTwelveCBCalculateBest(GMRemixTwelveCBState *state);
  * @param state Battle state.
  */
 extern void gmRemixTwelveCBUndoGame(GMRemixTwelveCBState *state);
+
+/** Player kinds of a CSS slot as the battle rules see them; the same values as nFTPlayerKindMan, nFTPlayerKindCom and nFTPlayerKindNot. */
+#define GMREMIX_TWELVECB_PKIND_HUMAN 0
+#define GMREMIX_TWELVECB_PKIND_CPU 1
+#define GMREMIX_TWELVECB_PKIND_NONE 2
+
+/** Questions the CSS setup of a port asks of the character set the port shows. */
+typedef struct GMRemixTwelveCBPortOps
+{
+    /** First portrait of the port's half that holds the character and still has stocks (get_valid_portrait_for_char_and_port_), -1 when none. */
+    int32_t (*find_valid_portrait)(int32_t port, int32_t fkind);
+    /** Whether the character is in the port's character set at all (is_character_valid_for_port_). */
+    int32_t (*is_fkind_valid)(int32_t port, int32_t fkind);
+} GMRemixTwelveCBPortOps;
+
+/** Player kind, character and portrait a port starts the CSS with. */
+typedef struct GMRemixTwelveCBPortSetup
+{
+    int32_t pkind;
+    int32_t fkind;
+    int32_t portrait;
+} GMRemixTwelveCBPortSetup;
+
+/**
+ * CSS state of port 1 or 2 when the CSS opens (setup_ports_and_characters_): after a game the winner keeps the character he won
+ * with, a CPU that lost keeps its token, a human who lost keeps his only while the port still has a portrait of it with stocks,
+ * and a character the port's set does not hold clears the slot to a human with no character.
+ *
+ * @param state Battle state.
+ * @param port Player port (0 or 1).
+ * @param pkind Player kind the slot comes back with (GMREMIX_TWELVECB_PKIND_*).
+ * @param fkind Character the slot comes back with.
+ * @param saved_portrait Portrait the CSS remembers for the port, -1 when none.
+ * @param none_fkind Value of "no character".
+ * @param ops Questions about the character set of the port.
+ * @param setup Receives the state the slot starts with.
+ */
+extern void gmRemixTwelveCBSetupPort(const GMRemixTwelveCBState *state, int32_t port, int32_t pkind, int32_t fkind, int32_t saved_portrait,
+                                     int32_t none_fkind, const GMRemixTwelveCBPortOps *ops, GMRemixTwelveCBPortSetup *setup);
 
 /**
  * Port that controls the pause after a reset request (gentlemens_reset_ 3689-3703): the opponent when it is a human, so that he

@@ -9,6 +9,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixstaminaaction.h"
 #include "gm/gmremixstamina.h"
 #include "mp/mpdef.h"
 #include "remix/remix_roster_data.h"
@@ -19,6 +20,7 @@
 #define FTREMIX_STAMINA_GIGA_HP_LOW 200
 #define FTREMIX_STAMINA_GIGA_HP_MID 250
 #define FTREMIX_STAMINA_GIGA_HP_HIGH 300
+#define FTREMIX_STAMINA_KO_ANIM_SPEED 1.0F
 
 /* Action.asm DK Cargo (0xEB) to CargoThrowAir (0xF5). The decomp names are nFTDonkeyStatusThrowFWait and
  * nFTDonkeyStatusThrowAirFF (ft/ftchar/ftdonkey/ftdonkey.h). That header cannot be included here (it needs FTStatusDesc
@@ -185,6 +187,19 @@ static sb32 ftRemixStaminaIsGigaBowserOutOfHP(FTStruct *fp)
 }
 
 /**
+ * TRUE when ftMainSetStatus must replace the requested status with the KO action: a stamina KO is pending and the asm does
+ * not let `status_id` play out.
+ */
+static sb32 ftRemixStaminaForcesKO(FTStruct *fp, s32 status_id)
+{
+    if ((ftRemixStaminaIsKOPending(fp) == FALSE) && (ftRemixStaminaIsGigaBowserOutOfHP(fp) == FALSE))
+    {
+        return FALSE;
+    }
+    return (ftRemixStaminaIsProtectedStatus(fp, status_id) == FALSE) ? TRUE : FALSE;
+}
+
+/**
  * Status a fighter goes to when `status_id` is requested by ftMainSetStatus (Stamina.asm stamina_ko_action).
  *
  * Returns `status_id` unchanged when no stamina KO is pending (VS stamina rule or 1P Giga Bowser), or the status is one
@@ -192,15 +207,29 @@ static sb32 ftRemixStaminaIsGigaBowserOutOfHP(FTStruct *fp)
  */
 s32 ftRemixStaminaKOStatus(FTStruct *fp, s32 status_id)
 {
-    if ((ftRemixStaminaIsKOPending(fp) == FALSE) && (ftRemixStaminaIsGigaBowserOutOfHP(fp) == FALSE))
-    {
-        return status_id;
-    }
-    if (ftRemixStaminaIsProtectedStatus(fp, status_id))
+    if (ftRemixStaminaForcesKO(fp, status_id) == FALSE)
     {
         return status_id;
     }
     return ftRemixStaminaKOStatusFor(fp);
+}
+
+/**
+ * Animation speed of the status ftMainSetStatus is about to set (Stamina.asm stamina_ko_action, _corrections: lui a3, 0x3F80).
+ * The forced KO action always plays at normal speed, whatever speed the replaced status was requested with.
+ *
+ * @param fp Fighter struct.
+ * @param status_id Status requested, before ftRemixStaminaKOStatus.
+ * @param anim_speed Animation speed requested.
+ * @return 1.0 when the KO action replaces the request (also when it is the requested status itself), otherwise anim_speed.
+ */
+f32 ftRemixStaminaKOAnimSpeed(FTStruct *fp, s32 status_id, f32 anim_speed)
+{
+    if (ftRemixStaminaForcesKO(fp, status_id) == FALSE)
+    {
+        return anim_speed;
+    }
+    return FTREMIX_STAMINA_KO_ANIM_SPEED;
 }
 
 #endif

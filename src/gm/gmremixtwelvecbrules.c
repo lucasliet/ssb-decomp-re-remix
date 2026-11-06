@@ -155,6 +155,29 @@ void gmRemixTwelveCBSetNextPortrait(GMRemixTwelveCBState *state, int32_t port, i
     state->players[port].matches[next_game].portrait = (uint8_t)portrait;
 }
 
+int32_t gmRemixTwelveCBLastGameHadStocks(const GMRemixTwelveCBState *state, int32_t port)
+{
+    if ((gmRemixTwelveCBPortIsValid(port) == 0) || (state->current_game < 0) || (state->current_game >= GMREMIX_TWELVECB_GAMES))
+    {
+        return 0;
+    }
+    return (state->players[port].matches[state->current_game].stocks_end != GMREMIX_TWELVECB_NO_STOCKS) ? 1 : 0;
+}
+
+int32_t gmRemixTwelveCBCanPickUpToken(const GMRemixTwelveCBState *state, int32_t port, int32_t is_human)
+{
+    if ((state->status == GMREMIX_TWELVECB_STATUS_NOT_STARTED) || (is_human != 0))
+    {
+        return 1;
+    }
+    return (gmRemixTwelveCBLastGameHadStocks(state, port) == 0) ? 1 : 0;
+}
+
+int32_t gmRemixTwelveCBSlotMayStart(int32_t portrait_stocks, int32_t pool_remaining)
+{
+    return ((portrait_stocks > 0) && (pool_remaining > 0)) ? 1 : 0;
+}
+
 int32_t gmRemixTwelveCBGetInitialStocks(const GMRemixTwelveCBState *state, int32_t port)
 {
     const GMRemixTwelveCBPlayer *player = &state->players[port];
@@ -363,6 +386,66 @@ void gmRemixTwelveCBUndoGame(GMRemixTwelveCBState *state)
         state->status = GMREMIX_TWELVECB_STATUS_NOT_STARTED;
     }
     state->current_game = game - 1;
+}
+
+/** Applies the result of the last game to the slot: winner keeps the character, loser keeps what he can still play. */
+static void gmRemixTwelveCBSetupFromLastGame(const GMRemixTwelveCBMatch *last, int32_t port, int32_t none_fkind,
+                                             const GMRemixTwelveCBPortOps *ops, GMRemixTwelveCBPortSetup *setup)
+{
+    int32_t valid_portrait;
+
+    if (last->stocks_end != GMREMIX_TWELVECB_NO_STOCKS)
+    {
+        setup->fkind = last->fkind;
+        setup->portrait = last->portrait;
+        return;
+    }
+    if (setup->portrait < 0)
+    {
+        setup->portrait = last->portrait;
+    }
+    if (setup->pkind == GMREMIX_TWELVECB_PKIND_CPU)
+    {
+        return;
+    }
+    valid_portrait = ops->find_valid_portrait(port, setup->fkind);
+
+    if (valid_portrait < 0)
+    {
+        setup->fkind = none_fkind;
+        return;
+    }
+    setup->portrait = valid_portrait;
+}
+
+void gmRemixTwelveCBSetupPort(const GMRemixTwelveCBState *state, int32_t port, int32_t pkind, int32_t fkind, int32_t saved_portrait,
+                              int32_t none_fkind, const GMRemixTwelveCBPortOps *ops, GMRemixTwelveCBPortSetup *setup)
+{
+    const GMRemixTwelveCBMatch *last;
+
+    setup->pkind = pkind;
+    setup->fkind = fkind;
+    setup->portrait = saved_portrait;
+
+    if ((gmRemixTwelveCBPortIsValid(port) == 0) || (pkind == GMREMIX_TWELVECB_PKIND_NONE))
+    {
+        return;
+    }
+    if ((state->status != GMREMIX_TWELVECB_STATUS_NOT_STARTED) && (state->current_game >= 0) && (state->current_game < GMREMIX_TWELVECB_GAMES))
+    {
+        last = &state->players[port].matches[state->current_game];
+
+        if (last->fkind == none_fkind)
+        {
+            return;
+        }
+        gmRemixTwelveCBSetupFromLastGame(last, port, none_fkind, ops, setup);
+    }
+    if (ops->is_fkind_valid(port, setup->fkind) == 0)
+    {
+        setup->pkind = GMREMIX_TWELVECB_PKIND_HUMAN;
+        setup->fkind = none_fkind;
+    }
 }
 
 int32_t gmRemixTwelveCBResetControllerPort(int32_t pausing_port, int32_t opponent_is_human)

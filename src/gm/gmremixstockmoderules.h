@@ -13,6 +13,14 @@
  */
 extern int gmRemixStockModeRulesLastCount(int stored_count, int match_stocks, int is_tug_of_war);
 
+/**
+ * Stock count a port is left with after losing a stock (update_stocks_remaining_): one less, except that a Stamina fighter that is already
+ * out of stocks stays at -1 so a second KO does not take it lower.
+ *
+ * stock_before: stock count of the port before the KO. is_stamina: nonzero in Stamina mode.
+ */
+extern int gmRemixStockModeRulesCountAfterKo(int stock_before, int is_stamina);
+
 /** Stock count of a port in Stock Mode Manual: the manual count, never above the match count. */
 extern int gmRemixStockModeRulesManualCount(int manual_count, int match_stocks);
 

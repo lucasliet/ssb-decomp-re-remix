@@ -3219,7 +3219,11 @@ void mnVSResultsInitVars(void)
 		}
 		else sMNVSResultsKind = nMNVSResultsKindStockTeam;
 
+#if defined(PORT) && defined(REGION_REMIX)
+		sMNVSResultsAllowExitWait = gmRemixGameEndResultsStockExitWait();
+#else
 		sMNVSResultsAllowExitWait = 370;
+#endif
 	}
 	if (gSCManagerSceneData.is_reset != FALSE)
 	{

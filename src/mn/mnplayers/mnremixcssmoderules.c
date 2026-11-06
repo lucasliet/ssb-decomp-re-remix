@@ -15,6 +15,11 @@ static const int sMNRemixCssModeTitleOffsets[MNREMIX_CSS_MODE_COUNT] = { 0, 0x20
 /* TwelveCharBattle.asm 1752-1770 (update_announcer_on_entry_) and FGM.asm 2002-2017 (announcer.css), indexed by mode. */
 static const int sMNRemixCssModeAnnouncerFgms[MNREMIX_CSS_MODE_COUNT] = { 0, 1016, 783, 775, 776, 479 };
 
+/* FGM.asm announcer.fight PLAYER_1 / PLAYER_2 and announcer.results WINS. */
+#define MNREMIX_CSS_MODE_FGM_PLAYER_1 503
+#define MNREMIX_CSS_MODE_FGM_PLAYER_2 504
+#define MNREMIX_CSS_MODE_FGM_WINS 533
+
 int mnRemixCssModeRulesTitleOffset(int mode, int is_soccer)
 {
     if ((mode < 0) || (mode >= MNREMIX_CSS_MODE_COUNT))
@@ -35,6 +40,16 @@ int mnRemixCssModeRulesAnnouncerFgm(int mode)
         return 0;
     }
     return sMNRemixCssModeAnnouncerFgms[mode];
+}
+
+int mnRemixCssModeRulesTwelveCBWinnerFgm(int player_one_stocks_remaining)
+{
+    return (player_one_stocks_remaining == 0) ? MNREMIX_CSS_MODE_FGM_PLAYER_2 : MNREMIX_CSS_MODE_FGM_PLAYER_1;
+}
+
+int mnRemixCssModeRulesTwelveCBWinsFgm(int is_complete, unsigned int frame)
+{
+    return ((is_complete != 0) && (frame == MNREMIX_CSS_MODE_WINS_FRAME)) ? MNREMIX_CSS_MODE_FGM_WINS : 0;
 }
 
 int mnRemixCssModeRulesHasTwoTeams(const int *teams, const int *is_present, int count)

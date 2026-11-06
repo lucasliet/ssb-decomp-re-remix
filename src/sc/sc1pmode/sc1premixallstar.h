@@ -67,17 +67,28 @@ extern SC1PGameComputer* sc1PRemixAllstarGetComputer(s32 stage_index);
  */
 extern s32 sc1PRemixAllstarStepStage(s32 stage, sb32 is_retry);
 
-/** Per-tic check of the Rest Area: the run leaves it when the player stands on the exit (rest_area_routine). */
+/** Per-tic check of the Rest Area: the run leaves it when the player stands on the exit, or after 120 frames with the "afk" tag (rest_area_routine). */
 extern void sc1PRemixAllstarUpdate(void);
 
-/** Damage the human fighter starts a match with: the percent it ended the last one with (player_percent). @param player Port of the fighter. */
+/**
+ * Damage the human fighter starts a match with: the percent it ended the last one with (player_percent), zero for the enemy human of
+ * the Single Player Enemy option.
+ *
+ * @param player Port of the fighter.
+ */
 extern s32 sc1PRemixAllstarPlayerDamage(s32 player);
 
 /** Keeps the percent of the human fighter at the end of a match (record_percent). */
 extern void sc1PRemixAllstarRecordPercent(s32 percent);
 
-/** The human lost a stock: the kept percent is zero and the run is in limbo until the next fighter is made (clear_percent, _ko_save). */
+/** The human lost a stock: the kept percent is zero until the match ends and records the real one (clear_percent). */
 extern void sc1PRemixAllstarOnPlayerKo(void);
+
+/**
+ * The human lost its last stock, which ends the match: the run is in limbo, so the percent recorded at the end of the match is zero,
+ * until the next fighter is made (_ko_save). Called from the elimination branch of sc1PGameSetPlayerDefeatStats.
+ */
+extern void sc1PRemixAllstarOnPlayerEliminated(void);
 
 /** The human continued after losing: the kept percent is zero and the limbo is over (clear_percent_continue). */
 extern void sc1PRemixAllstarOnContinue(void);

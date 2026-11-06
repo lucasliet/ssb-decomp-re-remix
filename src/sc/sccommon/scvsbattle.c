@@ -748,6 +748,9 @@ void scVSBattleStartScene(void)
 
 	if (!(gSCManagerSceneData.is_reset) && scVSBattleSetScoreCheckSuddenDeath() != FALSE)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		if (gmRemixSmashketballIsActive() == FALSE)
+#endif
 		gSCManagerBattleState = &gSCManagerVSBattleState;
 
 		gSCManagerBattleState->game_type = nSCBattleGameTypeRoyal;

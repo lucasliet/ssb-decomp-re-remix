@@ -6,6 +6,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "it/itremix/itremixbasketball.h"
 #include "it/itremix/itremixcloud.h"
+#include "it/itremix/itremixheartpersist.h"
 #include "gr/grremix/grremixids.h"
 #include <sc/scmanager.h>
 #endif
@@ -126,7 +127,7 @@ void itProcessProcItemMain(GObj *item_gobj)
     if (ip->is_allow_pickup)
     {
 #ifdef REGION_REMIX
-        if (itRemixBasketballIsDespawnBlocked(item_gobj) == FALSE)
+        if ((itRemixBasketballIsDespawnBlocked(item_gobj) == FALSE) && (itRemixHeartIsDespawnBlocked(item_gobj) == FALSE))
 #endif
         ip->pickup_wait--;
 

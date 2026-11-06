@@ -15,6 +15,8 @@ extern void port_dump_backtrace(void);
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixcommand.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixstaminaaction.h"
+#include "ft/ftremix/ftremixtwelvecbdefeated.h"
 #include "ft/ftremix/ftremixhitrecoil.h"
 #include "ft/ftremix/ftremixmagichat.h"
 #include "ft/ftremix/ftremixmain.h"
@@ -5064,6 +5066,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 #ifdef REGION_REMIX
     status_id = ftRemixDededeMapKirbyInhaleStatus(fp, status_id);
     status_id = ftRemixKirbyCloneActionSwap(fighter_gobj, status_id);
+    anim_speed = ftRemixStaminaKOAnimSpeed(fp, status_id, anim_speed);
     status_id = ftRemixStaminaKOStatus(fp, status_id);
     ftRemixKirbyMagicHatRestore(fighter_gobj, fp, status_id);
 #endif
@@ -5380,6 +5383,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         motion_desc = &script_array->motion_desc[motion_id];
 #ifdef REGION_REMIX
         motion_desc = ftRemixSonicClassicSwapMenuMotion(fp, motion_desc);
+        motion_desc = ftRemixTwelveCBDefeatedSwapMotion(fp, motion_desc);
 #endif
 
 #ifdef REGION_REMIX

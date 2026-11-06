@@ -11,6 +11,9 @@
 #include "gm/gmremixstockmoderules.h"
 #include "gm/gmremixtwelvecb.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
+#include <sc/scdef.h>
+#include <sc/scmanager.h>
+#include <sc/sctypes.h>
 
 #define GMREMIX_STOCK_MODE_LAST 1
 #define GMREMIX_STOCK_MODE_MANUAL 2
@@ -159,6 +162,19 @@ sb32 gmRemixStockModeIsLast(s32 player)
 void gmRemixStockModeSetLastCount(s32 player, s32 count)
 {
     sStockModeLastCount[player] = count;
+}
+
+void gmRemixStockModeOnKo(s32 player, s32 stock_before)
+{
+    if ((gSCManagerSceneData.scene_curr != nSCKindVSBattle) || (gmRemixTwelveCBIsActive() != FALSE))
+    {
+        return;
+    }
+    if ((player < 0) || (player >= GMREMIX_STOCK_MODE_PORTS))
+    {
+        return;
+    }
+    sStockModeLastCount[player] = gmRemixStockModeRulesCountAfterKo(stock_before, gmRemixStaminaIsActive());
 }
 
 #endif

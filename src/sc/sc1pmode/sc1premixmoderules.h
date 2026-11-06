@@ -39,12 +39,25 @@ extern int sc1PRemixModeSkipsBonusStartCheer(int toggle_value, int mode, int is_
  */
 extern unsigned int sc1PRemixModeSeedAdvanceCount(unsigned int frame_count);
 
-/** KOs of a Multi-Man run: the enemy KOs the player scored, which stop counting once the player was KO'd (multiman_ko_count_stop). */
+/**
+ * KOs of a Multi-Man run: the enemy KOs the player scored. The count never stops, because the asm flag read by
+ * multiman_ko_count_stop (player_ko) is never written as 1; is_player_ko only records the player KO for diagnostics.
+ */
 typedef struct SC1PRemixMultimanKos
 {
     int kos;
     int is_player_ko;
 } SC1PRemixMultimanKos;
+
+/**
+ * Whether a battle slot is the Master Hand fight (Practice_1P.asm prevent_masterhand_softlock_): the asm matches the halfword
+ * player type + fighter kind against 0x010C (CPU and Boss), so a stale slot of another port type is never taken as the boss.
+ *
+ * @param pkind Player kind of the slot (nFTPlayerKind*).
+ * @param fkind Fighter kind of the slot.
+ * @return Non-zero when the slot is a CPU player with the Master Hand fighter kind.
+ */
+extern int sc1PRemixSlotIsCpuMasterHand(int pkind, int fkind);
 
 /**
  * Whether the mode is one of the horde modes (Multi-Man and Cruel Multi-Man), which fight endless Fighting Polygons in the
@@ -81,10 +94,10 @@ extern int sc1PRemixMultimanRestartsRun(int is_reset);
 /** Starts a run with no KOs and the player alive. */
 extern void sc1PRemixMultimanKosReset(SC1PRemixMultimanKos *counter);
 
-/** Counts one enemy KO unless the player was already KO'd. */
+/** Counts one enemy KO, whether or not the player was KO'd (multiman_ko_count_stop never stops the count). */
 extern void sc1PRemixMultimanKosAddEnemy(SC1PRemixMultimanKos *counter);
 
-/** Marks the player as KO'd, so later enemy KOs are not counted. */
+/** Records that the player was KO'd; it does not stop the KO count. */
 extern void sc1PRemixMultimanKosSetPlayerKo(SC1PRemixMultimanKos *counter);
 
 /**

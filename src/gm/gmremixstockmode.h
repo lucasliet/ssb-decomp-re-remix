@@ -24,6 +24,16 @@ extern sb32 gmRemixStockModeIsLast(s32 player);
 /* Stores the Last mode stock count of the port (Tug of War writes it when a stock is credited, TugOfWar.asm credit_stock_to_koer_). */
 extern void gmRemixStockModeSetLastCount(s32 player, s32 count);
 
+/**
+ * Keeps the stock count a port is left with after a KO, which the Last mode reuses in the next match (TwelveCharBattle.asm
+ * update_stocks_remaining_, the path outside the 12-Character Battle). Does nothing outside the VS match and in the 12-Character
+ * Battle, which keeps its own pools.
+ *
+ * @param player Port index of the fighter that lost the stock (0..3).
+ * @param stock_before Stock count of the port before the KO.
+ */
+extern void gmRemixStockModeOnKo(s32 player, s32 stock_before);
+
 /* TRUE when the StockMode option of the port's panel is Manual. */
 extern sb32 gmRemixStockModeIsManual(s32 player);
 

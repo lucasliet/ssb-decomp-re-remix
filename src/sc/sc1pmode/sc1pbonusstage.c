@@ -6,6 +6,12 @@
 #include "sc/sc1pmode/sc1premixbonus3rules.h"
 #include "sc/sc1pmode/sc1premixhighscores.h"
 #include "sc/sc1pmode/sc1pbonusremix.h"
+#include "sc/sc1pmode/sc1pbonusremixrules.h"
+#include "sc/sc1pmode/sc1pbonusstagerules.h"
+#include "sc/sc1pmode/sc1pbonustimer.h"
+#include "sc/sc1pmode/sc1premixhrc.h"
+#include "sc/sc1pmode/sc1premixretry.h"
+#include "remix/remix_roster_data.h"
 #include "gm/gmremixtoggle.h"
 #include "gr/grremix/grremixbonusbumper.h"
 #include "gr/grremix/grremixjunglebarrels.h"
@@ -390,6 +396,14 @@ static s32 sc1PBonusStageGetGkind(sb32 is_platforms, s32 fkind)
 	return (gkind >= 0) ? gkind : (fkind + ((is_platforms != FALSE) ? nGRKindBonus2Start : nGRKindBonus1Start));
 }
 
+/** Stage of a Bonus 1 or Bonus 2 stage of the 1P game: the default table for the added fighters, the vanilla stage for the others (set_btt_stage_id_1p_, set_btp_stage_id_1p_). */
+static s32 sc1PBonusStageGetGkind1PGame(sb32 is_platforms, s32 fkind)
+{
+	s32 vanilla_gkind = fkind + ((is_platforms != FALSE) ? nGRKindBonus2Start : nGRKindBonus1Start);
+
+	return sc1PBonusStageRulesGkindFor1PGame(fkind, REMIX_ID_BOSS, sc1PBonusRemixGetDefaultStageId(is_platforms, fkind), SC1PBONUS_REMIX_NO_STAGE, vanilla_gkind);
+}
+
 /** Whether the stage being played is a Board the Platforms one, by class for the Remix stages (bonus_fix_3_). */
 static sb32 sc1PBonusStageIsPlatforms(void)
 {
@@ -432,6 +446,7 @@ static void sc1PBonusStageGetBumperOffsets(intptr_t *dobjdesc, intptr_t *anim_jo
 }
 #else
 #define sc1PBonusStageGetGkind(is_platforms, fkind) ((fkind) + (((is_platforms) != FALSE) ? nGRKindBonus2Start : nGRKindBonus1Start))
+#define sc1PBonusStageGetGkind1PGame(is_platforms, fkind) sc1PBonusStageGetGkind(is_platforms, fkind)
 #define sc1PBonusStageIsPlatforms() (gSCManagerBattleState->gkind >= nGRKindBonus2Start)
 #endif
 
@@ -481,7 +496,7 @@ void sc1PBonusStageInitVars(void)
 			{
 				gSCManagerBattleState->time_limit = 2;
 			}
-			gSCManagerBattleState->gkind = sc1PBonusStageGetGkind(FALSE, fkind);
+			gSCManagerBattleState->gkind = sc1PBonusStageGetGkind1PGame(FALSE, fkind);
 		}
 		else
 		{
@@ -489,7 +504,7 @@ void sc1PBonusStageInitVars(void)
 			{
 				gSCManagerBattleState->time_limit = 2;
 			}
-			gSCManagerBattleState->gkind = sc1PBonusStageGetGkind(TRUE, fkind);
+			gSCManagerBattleState->gkind = sc1PBonusStageGetGkind1PGame(TRUE, fkind);
 		}
 	}
 	else
@@ -646,6 +661,43 @@ void sc1PBonusStageUpdateTargetInterface(void)
 	gcEjectSObj(sobj);
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Whether the finished Bonus practice run beats the record that counts for the stage played (extend_high_score_btt/btp_new_record_check_):
+ * the Remix table record on a stage that is not the default one of the fighter, which must be complete and slower than the run, or the
+ * standard record. Runs of the 1P game never get the New Record voice.
+ *
+ * @param is_platforms TRUE for Board the Platforms.
+ * @return TRUE when the voice is New Record.
+ */
+static sb32 sc1PBonusStageIsNewRecord(sb32 is_platforms)
+{
+	s32 fkind = gSCManagerSceneData.bonus_fkind;
+	u32 time_passed = gSCManagerBattleState->time_passed;
+	LBBackup1PRecord *standard_record;
+	u32 standard_count;
+	u32 standard_time;
+
+	if (gSCManagerSceneData.scene_prev == nSCKind1PGame)
+	{
+		return FALSE;
+	}
+	if (sc1PBonusRemixUsesRecordTable(is_platforms, fkind) != FALSE)
+	{
+		return (sc1PBonusStageRulesIsNewRecord(sc1PBonusRemixIsRecordComplete(is_platforms, fkind), sc1PBonusRemixGetRecordTime(is_platforms, fkind), time_passed) != 0) ? TRUE : FALSE;
+	}
+	if (fkind >= GMCOMMON_FIGHTERS_SAVE_NUM)
+	{
+		return FALSE;
+	}
+	standard_record = &gSCManagerBackupData.spgame_records[fkind];
+	standard_count = (is_platforms != FALSE) ? standard_record->bonus2_task_count : standard_record->bonus1_task_count;
+	standard_time = (is_platforms != FALSE) ? standard_record->bonus2_time : standard_record->bonus1_time;
+
+	return ((standard_count == SCBATTLE_BONUSGAME_TASK_MAX) && (time_passed < standard_time)) ? TRUE : FALSE;
+}
+#endif
+
 // 0x8018D510
 void sc1PBonusStageUpdateTargetCount(void)
 {
@@ -661,6 +713,9 @@ void sc1PBonusStageUpdateTargetCount(void)
 
 	if (gGRCommonStruct.bonus1.target_count == 0)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		if (sc1PBonusStageIsNewRecord(FALSE) != FALSE)
+#else
 		if
 		(
 			(gSCManagerSceneData.scene_prev != nSCKind1PGame) &&
@@ -668,6 +723,7 @@ void sc1PBonusStageUpdateTargetCount(void)
 			(gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus1_task_count == SCBATTLE_BONUSGAME_TASK_MAX) &&
 			(gSCManagerBattleState->time_passed < gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus1_time)
 		)
+#endif
 		{
 			ifCommonAnnounceCompleteInitInterface(nSYAudioVoiceAnnounceNewRecord);
 		}
@@ -821,6 +877,9 @@ void sc1PBonusStageUpdatePlatformCount(DObj *dobj)
 
 	if (gGRCommonStruct.bonus2.platform_count == 0)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		if (sc1PBonusStageIsNewRecord(TRUE) != FALSE)
+#else
 		if
 		(
 			(gSCManagerSceneData.scene_prev != nSCKind1PGame) &&
@@ -828,6 +887,7 @@ void sc1PBonusStageUpdatePlatformCount(DObj *dobj)
 			(gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus2_task_count == SCBATTLE_BONUSGAME_TASK_MAX) &&
 			(gSCManagerBattleState->time_passed < gSCManagerBackupData.spgame_records[gSCManagerSceneData.bonus_fkind].bonus2_time)
 		)
+#endif
 		{
 			ifCommonAnnounceCompleteInitInterface(nSYAudioVoiceAnnounceNewRecord);
 		}
@@ -1098,6 +1158,18 @@ void sc1PBonusStageTimerProcUpdate(GObj *interface_gobj)
 	itime = gSCManagerBattleState->time_passed;
 	sobj = SObjGetStruct(interface_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PRemixHrcIsActive() != FALSE)
+	{
+		s32 hrc_tics = sc1PBonusStageRulesHrcTimerTics(itime);
+
+		if (hrc_tics < 0)
+		{
+			return;
+		}
+		itime = hrc_tics;
+	}
+#endif
 	if (itime > I_TIME_TO_TICS(0, 59, 59, 59))
 	{
 		itime = I_TIME_TO_TICS(0, 59, 59, 59);
@@ -1186,7 +1258,7 @@ void sc1PBonusStageMakeCountUpTimer(void)
 	f32 symbol_y = SC1PBONUSSTAGE_TIMER_SYMBOL_Y;
 
 #if defined(PORT) && defined(REGION_REMIX)
-	if (sc1PRemixBonus3IsActive() != FALSE)
+	if (sc1PBonusTimerIsCountUpRun() != FALSE)
 	{
 		sc1PRemixBonus3TimerY(gmRemixToggle(dragon_king_hud), &digit_y, &symbol_y);
 	}
@@ -1533,6 +1605,13 @@ void sc1PBonusStageStartScene(void)
 		default:
 			sc1PBonusStageWriteBackup(tasks_remain, gSCManagerSceneData.bonus_fkind);
 
+#if defined(PORT) && defined(REGION_REMIX)
+			/* hold_l_to_retry_bonus_1/_2: the L retry at GAME SET keeps the Bonus stage as the scene and its CSS as the previous scene */
+			if (sc1PRemixRetryConsume() != FALSE)
+			{
+				return;
+			}
+#endif
 			if (gSCManagerSceneData.scene_prev == nSCKind1PBonus1Players)
 			{
 				gSCManagerSceneData.scene_curr = nSCKind1PBonus1Players;

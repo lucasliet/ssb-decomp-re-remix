@@ -43,11 +43,21 @@ extern s32 gmRemixSmashketballGetWinnerScore(s32 port);
 
 /**
  * Smashketball.asm prevent_sudden_death_ and allow_overtime_: after the time ran out sudden death starts only when the two
- * team scores are tied, with every fighter in it and no time limit. Sets gSCManagerVSBattleState for it.
+ * team scores are tied, with every fighter in it and no time limit. The overtime runs on the main battle state, as in the
+ * asm, so the match stats and the scores carry over (scVSBattleStartScene keeps gSCManagerBattleState while
+ * gmRemixSmashketballIsActive is TRUE); the time limit is put back when the next match sets up.
  *
  * @return TRUE when sudden death must start.
  */
 extern sb32 gmRemixSmashketballPrepareSuddenDeath(void);
+
+/**
+ * Smashketball.asm prevent_match_stats_reset_: in the overtime of a Smashketball match ftParamInitPlayerBattleStats keeps
+ * the place, falls, score, KOs, damage and combo totals instead of clearing them.
+ *
+ * @return TRUE during the overtime of a Smashketball match.
+ */
+extern sb32 gmRemixSmashketballKeepsMatchStats(void);
 
 /** Smashketball.asm no_initial_damage_: fighters of the Smashketball sudden death start at 0% instead of 300%. */
 extern s32 gmRemixSmashketballGetSuddenDeathDamage(s32 default_damage);

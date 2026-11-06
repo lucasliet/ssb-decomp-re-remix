@@ -31,6 +31,14 @@ sb32 gmRemixGameEndIsSaltyRunback(void);
  */
 s32 gmRemixGameEndResultsDrawKind(s32 kind);
 
+/**
+ * Exit wait of the results screen of a stock match (TimedStock.asm show_full_results_): the asm falls into the Time branch of
+ * mnVSResultsInitVars when Always Show Full Results is on, which also sets the Time wait of 410 tics instead of 370.
+ *
+ * @return The tics before the results screen allows leaving it.
+ */
+s32 gmRemixGameEndResultsStockExitWait(void);
+
 #endif
 
 #endif

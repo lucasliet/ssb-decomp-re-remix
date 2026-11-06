@@ -13,10 +13,13 @@
 #include <sys/utils.h>
 #include <sc/scene.h>
 #include "sc/sc1pmode/sc1premixallstar.h"
+#include "sc/sc1pmode/sc1premixallstarpercentrules.h"
 #include "sc/sc1pmode/sc1premixallstarrest.h"
 #include "sc/sc1pmode/sc1premixallstarrestportraits.h"
 #include "sc/sc1pmode/sc1premix1pdata.h"
 #include "sc/sc1pmode/sc1premixbonusexit.h"
+#include "sc/sc1pmode/sc1premixenemy.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 
 extern char *getenv(const char *name);
@@ -212,7 +215,9 @@ void sc1PRemixAllstarUpdate(void)
     }
     player_fp = ftGetStruct(player_gobj);
 
-    if ((player_fp->ga != nMPKineticsGround) || ((player_fp->coll_data.floor_flags & 0xFF) != SC1PREMIX_ALLSTAR_EXIT_CLIP))
+    if (sc1PRemixAllstarRestIsLeft((player_fp->ga == nMPKineticsGround) ? 1 : 0,
+                                   ((player_fp->coll_data.floor_flags & 0xFF) == SC1PREMIX_ALLSTAR_EXIT_CLIP) ? 1 : 0,
+                                   (sc1PRemixAfkIsActive() != FALSE) ? 1 : 0, gSCManagerBattleState->time_passed) == 0)
     {
         return;
     }
@@ -229,6 +234,10 @@ s32 sc1PRemixAllstarPlayerDamage(s32 player)
     {
         return 0;
     }
+    if (sc1PRemixAllstarTakesPercent(sc1PRemixEnemyPortGet(), gSCManagerSceneData.player, player) == 0)
+    {
+        return 0;
+    }
     sSC1PRemixAllstarIsLimbo = FALSE;
 
     return sSC1PRemixAllstarPercent;
@@ -238,7 +247,7 @@ void sc1PRemixAllstarRecordPercent(s32 percent)
 {
     if (sc1PRemixAllstarIsActive() != FALSE)
     {
-        sSC1PRemixAllstarPercent = (sSC1PRemixAllstarIsLimbo != FALSE) ? 0 : percent;
+        sSC1PRemixAllstarPercent = sc1PRemixAllstarRecordedPercent(percent, sSC1PRemixAllstarIsLimbo);
         port_log("allstar: percent %d recorded\n", (int)percent);
     }
 }
@@ -248,6 +257,13 @@ void sc1PRemixAllstarOnPlayerKo(void)
     if (sc1PRemixAllstarIsActive() != FALSE)
     {
         sSC1PRemixAllstarPercent = 0;
+    }
+}
+
+void sc1PRemixAllstarOnPlayerEliminated(void)
+{
+    if (sc1PRemixAllstarIsActive() != FALSE)
+    {
         sSC1PRemixAllstarIsLimbo = TRUE;
     }
 }

@@ -72,6 +72,18 @@ int mnRemixTwelveCBCustomFkind(int slot)
     return sCustomFkinds[mnRemixTwelveCBLayoutOwner(slot)][index];
 }
 
+int mnRemixTwelveCBCustomFkindOf(int player, int slot)
+{
+    int index = mnRemixTwelveCBCustomIndexOfSlot(slot);
+
+    if ((index < 0) || (playerIsValid(player) == 0))
+    {
+        return -1;
+    }
+    ensureReady();
+    return sCustomFkinds[player][index];
+}
+
 static int rosterPositionOf(const int *roster, int roster_count, int fkind)
 {
     int position;

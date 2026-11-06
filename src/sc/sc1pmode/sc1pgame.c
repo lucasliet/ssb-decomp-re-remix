@@ -10,7 +10,12 @@
 #include "sc/sc1pmode/sc1premixhrcrun.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixenemy.h"
+#include "sc/sc1pmode/sc1pbonustimer.h"
+#include "sc/sc1pmode/sc1premixallstarfinal.h"
+#include "sc/sc1pmode/sc1premixgame.h"
+#include "sc/sc1pmode/sc1premixmusic.h"
 #include "gm/gmremixpractice.h"
+#include "gm/gmremixtoggle.h"
 #include "if/ifremixdragonkinghud.h"
 #include <port_log.h>
 #endif
@@ -857,12 +862,33 @@ void sc1PGameSetupFiles(void)
     lbRelocLoadFilesListed(dGMCommonFileIDs,  gGMCommonFiles);
 }
 
+/**
+ * Whether the stage music waits for GO: the prologue stages (Metal Mario, Fighting Polygon Team) hold it back, except the Remix
+ * runs that play it at once (skip_cflag_music_function).
+ *
+ * @return TRUE when the music starts at GO instead of with the crowd cheer.
+ */
+static sb32 sc1PGameIsBgmDeferredToGo(void)
+{
+    if ((gSCManagerSceneData.spgame_stage != nSC1PGameStageMMario) && (gSCManagerSceneData.spgame_stage != nSC1PGameStageZako))
+    {
+        return FALSE;
+    }
+#if defined(PORT) && defined(REGION_REMIX)
+    if (sc1PRemixMusicStartsAtOnce() != FALSE)
+    {
+        return FALSE;
+    }
+#endif
+    return TRUE;
+}
+
 // 0x8018D160
 void sc1PGameSetGameStart(void)
 {
     sSC1PGameIsStartStage = TRUE;
 
-    if ((gSCManagerSceneData.spgame_stage == nSC1PGameStageMMario) || (gSCManagerSceneData.spgame_stage == nSC1PGameStageZako))
+    if (sc1PGameIsBgmDeferredToGo() != FALSE)
     {
         mpCollisionSetPlayBGM();
     }
@@ -1110,6 +1136,7 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
 #if defined(PORT) && defined(REGION_REMIX)
     level = sc1PRemix1PEnemyLevel(level);
     level = sc1PRemixBonus3EnemyLevel(level);
+    level = sc1PRemixGameHordeEnemyLevel(level);
 #endif
     level -= gSC1PManagerLevelDrop;
 
@@ -1121,7 +1148,11 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
     gSCManagerBattleState->players[player].handicap = comsetup->enemy_handicap[gSCManagerBackupData.spgame_difficulty];
     gSCManagerBattleState->players[player].fkind = stagesetup->fkind[enemy_player_num];
     gSCManagerBattleState->players[player].team = nSCBattleTeamIDCom;
+#if defined(PORT) && defined(REGION_REMIX)
+    gSCManagerBattleState->players[player].costume = sc1PRemixGamePolygonTeamCostume();
+#else
     gSCManagerBattleState->players[player].costume = 0;
+#endif
     gSCManagerBattleState->players[player].shade = 0;
     gSCManagerBattleState->players[player].color = nSCBattlePlayerColorCP;
     gSCManagerBattleState->players[player].tag = nIFPlayerTagKindCP;
@@ -1130,7 +1161,11 @@ void sc1PGameSetupEnemyPlayer(SC1PGameStage *stagesetup, SC1PGameComputer *comse
     gSCManagerBattleState->players[player].is_spgame_enemy = TRUE;
     gSCManagerBattleState->players[player].pkind = nFTPlayerKindCom;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    sSC1PGamePlayerSetups[player].cp_trait = sc1PRemixGameEnemyTrait(stagesetup->opponent_behavior);
+#else
     sSC1PGamePlayerSetups[player].cp_trait = stagesetup->opponent_behavior;
+#endif
 #if defined(PORT) && defined(REGION_REMIX)
     sc1PRemixMultimanSetupEnemy(player);
     sc1PRemixBonus3SetupEnemy(player);
@@ -1222,6 +1257,7 @@ void sc1PGameSetupStageAll(void)
     gSCManagerBattleState->item_toggles = stagesetup->item_toggles;
     gSCManagerBattleState->item_appearance_rate = comsetup->item_appearance_rate;
 #if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixGameSetupItemToggles();
     sc1PRemixMultimanSetupBattle();
     sc1PRemixBonus3SetupBattle();
     sc1PRemixAllstarSetupBattle();
@@ -1823,6 +1859,9 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
         ifCommonPlayerDamageStopBreakAnim(fp);
 
         fp->camera_zoom_frame *= sSC1PGamePlayerSetups[player].camera_frame_mul;
+#if defined(PORT) && defined(REGION_REMIX)
+        sc1PRemixAllstarFinalIconsOnSpawn(player);
+#endif
     }
 }
 
@@ -1981,14 +2020,14 @@ void sc1PGameWaitStageBonus3Update(void)
     gcSleepCurrentGObjThread(60);
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
-    /* skip_go: the Rest Area has no GO object, no GO voice and no damage meters */
+    /* skip_go: the Rest Area has no GO object and no GO voice; display_percent still shows the damage meters */
     if (sc1PRemixAllstarIsRestArea() == FALSE)
 #endif
     {
         ifCommonAnnounceGoMakeInterface();
-        ifCommonPlayerDamageSetShowInterface();
         func_800269C0_275C0(nSYAudioVoiceAnnounceGo);
     }
+    ifCommonPlayerDamageSetShowInterface();
     ifCommonAnnounceGoSetStatus();
     gcEjectGObj(NULL);
     gcSleepCurrentGObjThread(1);
@@ -2076,6 +2115,10 @@ void sc1PGameWaitStageBossUpdate(void)
 
     ifCommonPlayerDamageSetShowInterface();
 
+#if defined(PORT) && defined(REGION_REMIX)
+    /* master_hand_music_fix_: with Random Music on, the random track keeps playing instead of the Master Hand theme. */
+    if (gmRemixToggle(random_music) == 0)
+#endif
     gMPCollisionBGMDefault = nSYAudioBGMLast;
 
     ftParamTryUpdateItemMusic();
@@ -2210,6 +2253,12 @@ void sc1PGameTeamStockDisplayProcDisplay(GObj *interface_gobj)
                         break;
 
                     case nSC1PGameStageZako:
+#if defined(PORT) && defined(REGION_REMIX)
+                        if (sc1PRemixAllstarFinalIconsSetStock(sobj, stock_num) != FALSE)
+                        {
+                            break;
+                        }
+#endif
                         sobj->sprite = *lbRelocGetFileData(Sprite*, sSC1PGameZakoStockFile, llFTStocksZakoSprite);
                         break;
                     }
@@ -2273,6 +2322,9 @@ void sc1PGameInitTeamStockDisplay(void)
         goto make_gobj;
 
     case nSC1PGameStageZako:
+#if defined(PORT) && defined(REGION_REMIX)
+        sc1PRemixAllstarFinalIconsSetup();
+#endif
         sSC1PGameZakoStockFile = lbRelocGetExternHeapFile
         (
             (u32)llFTStocksZakoFileID,
@@ -2351,6 +2403,9 @@ void sc1PGameSetPlayerDefeatStats(s32 player, s32 team_order)
             return;
         }
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+        sc1PRemixAllstarOnPlayerEliminated();
+#endif
         ifCommonAnnounceEndMessage();
     }
 #ifdef PORT
@@ -2374,6 +2429,10 @@ void sc1PGameSetPlayerDefeatStats(s32 player, s32 team_order)
             sc1PRemixMultimanOnEnemyKo();
             return;
         }
+#endif
+#if defined(PORT) && defined(REGION_REMIX)
+        /* _infinite_ko: the stock counter of Bonus 3 and the Home-Run Contest stays put, only the finish ends them. */
+        if (sc1PRemixGameKeepsEnemyStocks() == FALSE)
 #endif
         sSC1PGameEnemyStocksRemaining--;
         sSC1PGameEnemyStockSpriteFlags |= (1 << team_order);
@@ -2418,7 +2477,7 @@ void sc1PGameTryInitPlayerArrows(void)
 void sc1PGameInitTimeUpMessage(void)
 {
 #if defined(PORT) && defined(REGION_REMIX)
-    if (sc1PRemixBonus3IsActive() != FALSE)
+    if (sc1PBonusTimerIsCountUpRun() != FALSE)
     {
         sc1PBonusStageMakeCountUpTimer();
         return;
@@ -2704,8 +2763,12 @@ void sc1PGameFuncStart(void)
         ifScreenFlashMakeInterface(sc1PRemixAllstarGetStage(gSCManagerSceneData.spgame_stage)->screenflash_alpha);
     }
     else
-#endif
+    {
+        ifScreenFlashMakeInterface(sc1PRemixGameFlashAlpha(dSC1PGameStageDesc[gSCManagerSceneData.spgame_stage].screenflash_alpha));
+    }
+#else
     ifScreenFlashMakeInterface(dSC1PGameStageDesc[gSCManagerSceneData.spgame_stage].screenflash_alpha);
+#endif
     gmRumbleMakeActor();
     ftPublicMakeActor();
 
@@ -2819,7 +2882,11 @@ void sc1PGameFuncStart(void)
             desc.pos.x += 750.0F;
         }
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+        desc.lr = sc1PRemixGameSpawnFacing(sc1PGameGetEnemyStartLR(i));
+#else
         desc.lr = sc1PGameGetEnemyStartLR(i);
+#endif
 
         desc.team = gSCManagerBattleState->players[i].team;
 
@@ -2890,13 +2957,16 @@ void sc1PGameFuncStart(void)
     sc1PRemixAllstarSetupRestArea();
 #endif
 
-    if ((gSCManagerSceneData.spgame_stage == nSC1PGameStageMMario) || (gSCManagerSceneData.spgame_stage == nSC1PGameStageZako))
+    if (sc1PGameIsBgmDeferredToGo() != FALSE)
     {
         mpCollisionSetBGM();
         func_800269C0_275C0(nSYAudioFGMPublicPrologue);
     }
     else
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        sc1PRemixMusicApplyModeSong();
+#endif
         mpCollisionSetPlayBGM();
 #if defined(PORT) && defined(REGION_REMIX)
         /* Training.asm skip_crowd_cheer_ _bonus (patch 0x8018FCF0). */
@@ -3256,7 +3326,13 @@ check_heavy_damage:
     {
         gSCManagerSceneData.bonus_get_mask[0] |= SC1PGAME_BONUS_MASK0_NOMISS;
     }
-    if ((gSCManagerBattleState->players[gSCManagerSceneData.player].falls == 0) && (gSCManagerBattleState->players[gSCManagerSceneData.player].total_damage_all == 0))
+    if
+    (
+        (gSCManagerBattleState->players[gSCManagerSceneData.player].falls == 0) && (gSCManagerBattleState->players[gSCManagerSceneData.player].total_damage_all == 0)
+#if defined(PORT) && defined(REGION_REMIX)
+        && (sc1PRemixGameAwardsNoDamage() != FALSE)
+#endif
+    )
     {
         // No Damage?
         gSCManagerSceneData.bonus_get_mask[0] |= SC1PGAME_BONUS_MASK0_NODAMAGE;
@@ -3546,7 +3622,7 @@ check_heavy_damage:
 skip_ally_friend_bonus:
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
-        if ((gSC1PGameBonusBrosCalamity != FALSE) && (sc1PRemixAllstarIsActive() == FALSE))
+        if ((gSC1PGameBonusBrosCalamity != FALSE) && (sc1PRemixGameAwardsBrosCalamity() != FALSE))
 #else
         if (gSC1PGameBonusBrosCalamity != FALSE)
 #endif
@@ -3635,6 +3711,9 @@ skip_ally_friend_bonus:
 // 0x80190E58
 void sc1PGameInitBonusStats(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    sc1PRemixGameOnStageEnd((sSC1PGameEnemyStocksRemaining == 0) ? TRUE : FALSE);
+#endif
     gSCManagerSceneData.bonus_get_mask[0] = gSCManagerSceneData.bonus_get_mask[1] = gSCManagerSceneData.bonus_get_mask[2] = 0;
 
     gSCManagerSceneData.spgame_time_remain = (gSCManagerBattleState->time_limit == SCBATTLE_TIMELIMIT_INFINITE) ? 0 : I_TICS_TO_SEC(gSCManagerBattleState->time_remain + 59);

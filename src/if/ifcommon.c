@@ -23,10 +23,12 @@
 #include "if/ifremixpauselegend.h"
 #include "gm/gmremixbgm.h"
 #include "gm/gmremixpractice.h"
+#include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/sc1pmode/sc1premixmodename.h"
+#include "sc/sc1pmode/sc1premixretry.h"
 #include "ft/ftremix/ftremixpartimage.h"
 #endif
 
@@ -621,6 +623,38 @@ static f32 ifCommonTimerGetDigitsY(void)
 #endif
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Whether the player shows H.P. left instead of a percent: Master Hand, and the Giga Bowser of the Remix 1P final stage
+ * (Stamina.asm stamina_display_ `_remix`).
+ *
+ * @param player Player index.
+ * @return TRUE for a boss player.
+ */
+static sb32 ifCommonPlayerDamageIsHitPointsBoss(s32 player)
+{
+    s32 fkind = gSCManagerBattleState->players[player].fkind;
+    s32 team = gSCManagerBattleState->players[player].team;
+
+    return ((fkind == nFTKindBoss) || (sc1PRemix1PIsFinalBoss(fkind, team) != FALSE)) ? TRUE : FALSE;
+}
+
+/**
+ * Maximum H.P. of a boss player: 200, 250 or 300 by difficulty for the Giga Bowser of the Remix 1P final stage
+ * (SinglePlayerModes.asm master_hand_HP_display_), 300 for Master Hand.
+ *
+ * @param player Player index.
+ * @return H.P. the boss starts with.
+ */
+static s32 ifCommonPlayerDamageGetBossHitPointsMax(s32 player)
+{
+    s32 fkind = gSCManagerBattleState->players[player].fkind;
+    s32 team = gSCManagerBattleState->players[player].team;
+
+    return (sc1PRemix1PIsFinalBoss(fkind, team) != FALSE) ? sc1PRemix1PBossHitPoints() : 300;
+}
+#endif
+
 // 0x8010E690
 void ifCommonPlayerDamageSetShowInterface(void)
 {
@@ -757,9 +791,17 @@ void ifCommonPlayerDamageUpdateDigits(GObj *interface_gobj)
     }
     else color_id = player;
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ifCommonPlayerDamageIsHitPointsBoss(player) != FALSE)
+#else
     if (gSCManagerBattleState->players[player].fkind == nFTKindBoss)
+#endif
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        hitpoints = ifCommonPlayerDamageGetBossHitPointsMax(player) - damage;
+#else
         hitpoints = 300 - damage;
+#endif
 
         if (hitpoints < 0)
         {
@@ -3313,10 +3355,9 @@ void ifCommonBattlePauseMakeSObjsAll(GObj *interface_gobj)
     }
     // If we're in Bonus Practice, display "L: RETRY" in the bottom left corner
 #if defined(PORT) && defined(REGION_REMIX)
-    /* SinglePlayerModes.asm _reset_button: Bonus 3, Multi-Man and Cruel Multi-Man show the retry legend of the bonus practice */
+    /* SinglePlayerModes.asm _reset_button: Bonus 3, Multi-Man, Cruel Multi-Man and the Home-Run Contest (fake screen 0x77) show the retry legend of the bonus practice */
     if (((gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) && (gSCManagerSceneData.scene_prev != nSCKind1PGame)) ||
-        (sc1PRemixModeIs(SC1PREMIX_MODE_BONUS3) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_MULTIMAN) != FALSE) || (sc1PRemixModeIs(SC1PREMIX_MODE_CRUEL) != FALSE) ||
-        (gmRemixPracticeIsActive() != FALSE))
+        (sc1PRemixRetryIsModeAvailable() != FALSE) || (gmRemixPracticeIsActive() != FALSE))
 #else
     if ((gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) && (gSCManagerSceneData.scene_prev != nSCKind1PGame)) 
 #endif
@@ -3633,7 +3674,7 @@ void ifCommonBattlePauseUpdateInterface(void)
             return;
         }
 #if defined(PORT) && defined(REGION_REMIX)
-        if (gmRemixPracticeTryRetryByPause(button_tap) != FALSE)
+        if ((gmRemixPracticeTryRetryByPause(button_tap) != FALSE) || (sc1PRemixRetryTryByPause(button_tap) != FALSE))
         {
             func_800266A0_272A0();
             gmRumbleInitPlayers();
@@ -3713,8 +3754,9 @@ void ifCommonBattleEndUpdateInterface(void)
 void ifCommonBattleBossDefeatUpdateInterface(void)
 {
 #if defined(PORT) && defined(REGION_REMIX)
-    /* Practice_1P.asm hold_l_to_retry_: L held while GAME SET shows replays the stage of a practice run. */
-    if ((gSCManagerSceneData.scene_curr == nSCKind1PGame) && (gmRemixPracticeTryRetryByHold() != FALSE))
+    /* Practice_1P.asm hold_l_to_retry_: L held while GAME SET shows replays the stage of a practice run, a Bonus 1 or Bonus 2
+     * practice run, and a Bonus 3, Multi-Man, Cruel Multi-Man or Home-Run Contest run. */
+    if (((gSCManagerSceneData.scene_curr == nSCKind1PGame) && (gmRemixPracticeTryRetryByHold() != FALSE)) || (sc1PRemixRetryTryByGameSet() != FALSE))
     {
         func_800266A0_272A0();
         gmRumbleInitPlayers();

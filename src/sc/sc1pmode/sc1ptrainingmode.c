@@ -22,6 +22,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "gm/gmremixtoggle.h"
 #include "gr/grremix/grremixtrainingbackground.h"
 #include "it/itremix/itremix.h"
+#include "remix/remix_training.h"
 #endif
 #include <gr/ground.h>
 #include <if/interface.h>
@@ -1022,6 +1023,10 @@ void sc1PTrainingModeLoadWallpaper(void)
 // 0x8018DE60
 void sc1PTrainingModeInitDisplayVars(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Training.asm show_stage_bg_ _magnifying_glass: with Stage Background on, the stage keeps its own fog color (the magnify bubble background). */
+	if (remix_training_get(REMIX_TRAINING_STAGE_BG) == 0)
+#endif
 #ifdef PORT
 	gMPCollisionGroundData->fog_color = dSC1PTrainingModeWallpaperDescs[sc1PTrainingModeWallpaperID()].fog_color;
 #else

@@ -26,6 +26,14 @@ extern intptr_t mnRemixCssModeTitleOffset(intptr_t vanilla_offset);
  */
 extern sb32 mnRemixCssModeAnnounce(void);
 
+/**
+ * Per-frame voice of the character select: the finished 12-Character Battle says "Wins" after the winner's name on frame 0x34
+ * (update_announcer_on_entry_._wins). Call it once per frame.
+ *
+ * @param frame Frames the character select has run.
+ */
+extern void mnRemixCssModeAnnounceWins(u32 frame);
+
 /** TRUE when the Free-for-all and Team Battle voice plays on the game mode button; the Remix modes skip it (update_announcer_on_toggle_). */
 extern sb32 mnRemixCssModeKeepsToggleVoice(void);
 

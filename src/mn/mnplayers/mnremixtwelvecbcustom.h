@@ -36,6 +36,9 @@ extern int mnRemixTwelveCBCustomIndexOfSlot(int slot);
 /** Fighter kind the Custom set shows in a slot (the table of the player that owns the slot), -1 for an invalid slot. */
 extern int mnRemixTwelveCBCustomFkind(int slot);
 
+/** Fighter kind a player's own Custom table holds for a portrait slot (the table has all 24 slots, both halves of a row alike), -1 for an invalid player or slot. */
+extern int mnRemixTwelveCBCustomFkindOf(int player, int slot);
+
 /**
  * Moves the character of a portrait to the next or the previous one of the roster, skipping one entry (the Sandbag).
  *

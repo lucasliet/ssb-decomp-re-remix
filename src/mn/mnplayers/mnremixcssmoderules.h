@@ -32,6 +32,27 @@ extern int mnRemixCssModeRulesTitleOffset(int mode, int is_soccer);
  */
 extern int mnRemixCssModeRulesAnnouncerFgm(int mode);
 
+/** Frame of the character select the finished 12-Character Battle says "Wins" on (update_announcer_on_entry_._wins). */
+#define MNREMIX_CSS_MODE_WINS_FRAME 0x34
+
+/**
+ * Announcer voice of the winner of a finished 12-Character Battle (update_announcer_on_entry_): "Player 1" unless the pool of player 1
+ * is empty, then "Player 2".
+ *
+ * @param player_one_stocks_remaining Stocks left in the pool of player 1.
+ * @return FGM id.
+ */
+extern int mnRemixCssModeRulesTwelveCBWinnerFgm(int player_one_stocks_remaining);
+
+/**
+ * "Wins" voice of a finished 12-Character Battle, which follows the winner's name at a fixed frame of the character select.
+ *
+ * @param is_complete Nonzero when the battle is finished.
+ * @param frame Frames the character select has run.
+ * @return FGM id on that frame, otherwise 0.
+ */
+extern int mnRemixCssModeRulesTwelveCBWinsFgm(int is_complete, unsigned int frame);
+
 /**
  * Smashketball start rule: exactly two teams must be present among the panels that are in play with a fighter on them.
  *

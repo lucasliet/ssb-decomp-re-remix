@@ -210,11 +210,21 @@ sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind)
     {
         return (pkind == nFTPlayerKindNot) ? TRUE : FALSE;
     }
-    if ((sGMRemixTwelveCBIsInit == FALSE) || (gmRemixTwelveCBIsComplete() != FALSE) || (pkind == nFTPlayerKindNot))
+    if ((sGMRemixTwelveCBIsInit == FALSE) || (pkind == nFTPlayerKindNot))
     {
         return TRUE;
     }
-    return (gmRemixTwelveCBGetPortraitStocks(&sGMRemixTwelveCB, gmRemixTwelveCBPortraitOfPort(slot, fkind)) > 0) ? TRUE : FALSE;
+    return (gmRemixTwelveCBSlotMayStart(gmRemixTwelveCBGetPortraitStocks(&sGMRemixTwelveCB, gmRemixTwelveCBPortraitOfPort(slot, fkind)),
+                                        sGMRemixTwelveCB.players[slot].stocks_remaining) != 0) ? TRUE : FALSE;
+}
+
+sb32 gmRemixTwelveCBTokenIsFree(s32 port, sb32 is_human)
+{
+    if ((gmRemixTwelveCBIsActive() == FALSE) || (sGMRemixTwelveCBIsInit == FALSE))
+    {
+        return TRUE;
+    }
+    return (gmRemixTwelveCBCanPickUpToken(&sGMRemixTwelveCB, port, (is_human != FALSE) ? 1 : 0) != 0) ? TRUE : FALSE;
 }
 
 s32 gmRemixTwelveCBGetStocks(s32 player, s32 match_stocks)

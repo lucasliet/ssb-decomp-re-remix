@@ -53,8 +53,11 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnplayers/mnremixtwelvecbcustom.h"
 #include "mn/mnplayers/mnremixtwelvecbcustomlegend.h"
+#include "mn/mnplayers/mnremixtwelvecbdkmode.h"
 #include "mn/mnplayers/mnremixtwelvecblayout.h"
 #include "mn/mnplayers/mnremixtwelvecbstockmanual.h"
+#include "ft/ftremix/ftremixtwelvecbdefeated.h"
+#include "ft/ftremix/ftremixpartimage.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
 #include "if/ifremixsprite.h"
 #include <string.h>
@@ -597,6 +600,7 @@ static GObj *sMNPlayersVSTwelveCBResetGObj;
 static GObj *sMNPlayersVSTwelveCBCrownGObj;
 static GObj *sMNPlayersVSTwelveCBCrossGObjs[2];
 static s32 sMNPlayersVSTwelveCBPortrait[2] = { MNREMIX_TCB_NO_SLOT, MNREMIX_TCB_NO_SLOT };
+static s32 sMNPlayersVSTwelveCBStartPortrait[2] = { MNREMIX_TCB_NO_SLOT, MNREMIX_TCB_NO_SLOT };
 
 /** Fighter kind shown by a slot, in the character set of the player that owns it. */
 static s32 mnPlayersVSTwelveCBSlotFkind(s32 slot)
@@ -1088,6 +1092,7 @@ static void mnPlayersVSTwelveCBUpdateCustom(s32 cursor)
 	}
 	if (mnPlayersVSTwelveCBApplyCustomInput(cursor, token_player, slot) != FALSE)
 	{
+		mnRemixTwelveCBDKModeUpdate();
 		mnPlayersVSTwelveCBRebuildHalf(token_player);
 		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 	}
@@ -1426,8 +1431,8 @@ void mnPlayersVSMakePortraitAll(void)
 		memset(sMNPlayersVSTwelveCBSetArrowGObjs, 0, sizeof(sMNPlayersVSTwelveCBSetArrowGObjs));
 		sMNPlayersVSTwelveCBResetGObj = NULL;
 		sMNPlayersVSTwelveCBCrownGObj = NULL;
-		sMNPlayersVSTwelveCBPortrait[0] = MNREMIX_TCB_NO_SLOT;
-		sMNPlayersVSTwelveCBPortrait[1] = MNREMIX_TCB_NO_SLOT;
+		sMNPlayersVSTwelveCBPortrait[0] = sMNPlayersVSTwelveCBStartPortrait[0];
+		sMNPlayersVSTwelveCBPortrait[1] = sMNPlayersVSTwelveCBStartPortrait[1];
 		sMNPlayersVSTwelveCBLegendSide[0] = -1;
 		sMNPlayersVSTwelveCBLegendSide[1] = -1;
 		mnRemixTwelveCBCustomLegendReset();
@@ -3782,11 +3787,30 @@ static sb32 mnPlayersVSCheckTagTeamQueues(void)
 }
 #endif
 
+#if defined(PORT) && defined(REGION_REMIX)
+/** 12-Character Battle: tells the pose override whether the fighter shown for a port is a character with no stocks left (defeated_action_override_). */
+static void mnPlayersVSTwelveCBMarkDefeatedPose(s32 player)
+{
+	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+	s32 fkind = sMNPlayersVSSlots[player].fkind;
+	sb32 is_defeated = FALSE;
+
+	if ((state != NULL) && (player < ARRAY_COUNT(sMNPlayersVSTwelveCBPortrait)) && (fkind != nFTKindNull))
+	{
+		is_defeated = (gmRemixTwelveCBGetPortraitStocks(state, mnPlayersVSTwelveCBGetPortrait(player, fkind)) == 0) ? TRUE : FALSE;
+	}
+	ftRemixTwelveCBDefeatedSetPose(player, is_defeated);
+}
+#endif
+
 // 0x80136128
 void mnPlayersVSUpdateFighter(s32 player)
 {
 	sb32 is_skip_fighter = FALSE;
 	GObj *fighter_gobj = sMNPlayersVSSlots[player].player;
+#if defined(PORT) && defined(REGION_REMIX)
+	mnPlayersVSTwelveCBMarkDefeatedPose(player);
+#endif
 
 	#ifdef PORT
 	s32 costume;
@@ -4400,6 +4424,10 @@ sb32 mnPlayersVSCheckHandicap(void)
 	else return FALSE;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+static sb32 mnPlayersVSTwelveCBCanSelectHeld(s32 held_player);
+#endif
+
 // 0x8013718C
 sb32 mnPlayersVSSelectFighter(GObj *gobj, s32 player, s32 unused, s32 select_button)
 {
@@ -4411,6 +4439,14 @@ sb32 mnPlayersVSSelectFighter(GObj *gobj, s32 player, s32 unused, s32 select_but
 	}
 	if (sMNPlayersVSSlots[sMNPlayersVSSlots[player].held_player].fkind != nFTKindNull)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		if (mnPlayersVSTwelveCBCanSelectHeld(sMNPlayersVSSlots[player].held_player) == FALSE)
+		{
+			func_800269C0_275C0(nSYAudioFGMMenuDenied);
+
+			return FALSE;
+		}
+#endif
 		mnPlayersVSSelectFighterPuck(player, select_button);
 		sMNPlayersVSSlots[player].recall_end_tic = sMNPlayersVSTotalTimeTics + 30;
 #if defined(PORT) && defined(REGION_REMIX)
@@ -4528,6 +4564,12 @@ void mnPlayersVSSetCursorPuckOffset(s32 player)
 void mnPlayersVSSetCursorGrab(s32 player, s32 held_player)
 {
 #if defined(PORT) && defined(REGION_REMIX)
+	if (gmRemixTwelveCBTokenIsFree(held_player, (sMNPlayersVSSlots[held_player].pkind == nFTPlayerKindMan) ? TRUE : FALSE) == FALSE)
+	{
+		func_800269C0_275C0(nSYAudioFGMMenuDenied);
+
+		return;
+	}
 	/* TagTeam.asm css.move_to_next_slot_on_pickup: taking the token again, not the recall, goes to the next slot. */
 	if (sMNPlayersVSSlots[held_player].is_recalling == FALSE)
 	{
@@ -4617,11 +4659,25 @@ static sb32 mnPlayersVSTwelveCBIsSlotSelectable(s32 player, s32 slot)
 	{
 		return TRUE;
 	}
-	if ((state->status != GMREMIX_TWELVECB_STATUS_COMPLETE) && (gmRemixTwelveCBGetPortraitStocks(state, slot) == 0))
+	if (gmRemixTwelveCBGetPortraitStocks(state, slot) == 0)
 	{
 		return FALSE;
 	}
 	return ((winner_slot >= 0) && (winner_slot != slot)) ? FALSE : TRUE;
+}
+
+/**
+ * prevent_defeated_char_select_: whether the portrait the token of a port sits on can be selected. Always TRUE outside the
+ * 12-Character Battle.
+ */
+static sb32 mnPlayersVSTwelveCBCanSelectHeld(s32 held_player)
+{
+	if ((gmRemixTwelveCBIsActive() == FALSE) || (held_player >= ARRAY_COUNT(sMNPlayersVSTwelveCBPortrait)) ||
+	    (sMNPlayersVSTwelveCBPortrait[held_player] == MNREMIX_TCB_NO_SLOT))
+	{
+		return TRUE;
+	}
+	return mnPlayersVSTwelveCBIsSlotSelectable(held_player, sMNPlayersVSTwelveCBPortrait[held_player]);
 }
 
 /** 12-Character Battle Random: a portrait of the player's half that he may take (CharacterSelect.asm 1155-1228). */
@@ -4650,7 +4706,10 @@ static s32 mnPlayersVSRandTwelveCBFighterKind(GObj *puck_gobj)
 	return mnPlayersVSTwelveCBSlotFkind(slot);
 }
 
-/** 12-Character Battle: the fighter under the token of a player, who only reaches the portraits of his own half. */
+/**
+ * 12-Character Battle: the fighter under the token of a player, who only reaches the portraits of his own half. A defeated portrait still
+ * shows its fighter (in the defeated pose); mnPlayersVSSelectFighter refuses to select it.
+ */
 static s32 mnPlayersVSGetTwelveCBPuckFighterKind(s32 player)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayersVSSlots[player].puck);
@@ -4663,8 +4722,7 @@ static s32 mnPlayersVSGetTwelveCBPuckFighterKind(s32 player)
 	}
 	fkind = mnPlayersVSTwelveCBSlotFkind(slot);
 
-	if ((mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE) ||
-	    (mnPlayersVSTwelveCBIsSlotSelectable(player, slot) == FALSE))
+	if ((mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE))
 	{
 		return nFTKindNull;
 	}
@@ -7048,6 +7106,7 @@ void mnPlayersVSFuncRun(GObj *gobj)
 	sMNPlayersVSTotalTimeTics++;
 #if defined(PORT) && defined(REGION_REMIX)
 	gmRemixTwelveCBHudDrawCSS();
+	mnRemixCssModeAnnounceWins(sMNPlayersVSTotalTimeTics);
 #endif
 
 	mnPlayersVSUpdateControllerOrders();
@@ -7244,6 +7303,90 @@ s32 mnPlayersVSGetPrevTimeValue(s32 current_value)
 #endif
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/** get_valid_portrait_for_char_and_port_: first portrait of the port's half that holds the fighter and still has stocks, -1 when none. */
+static s32 mnPlayersVSTwelveCBFindValidPortrait(s32 port, s32 fkind)
+{
+	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+	s32 slot;
+
+	for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
+	{
+		if ((mnRemixTwelveCBLayoutOwner(slot) == port) && (mnPlayersVSTwelveCBSlotFkind(slot) == fkind) &&
+		    (gmRemixTwelveCBGetPortraitStocks(state, slot) > 0))
+		{
+			return slot;
+		}
+	}
+	return -1;
+}
+
+/** is_character_valid_for_port_: whether any portrait of the character set of the port holds the fighter. */
+static s32 mnPlayersVSTwelveCBIsFighterInSet(s32 port, s32 fkind)
+{
+	s32 set = gmRemixTwelveCBGetCssSet(port);
+	s32 slot;
+
+	for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
+	{
+		if (mnRemixTwelveCBLayoutFkind(set, slot) == fkind)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/**
+ * setup_ports_and_characters_ for a port of the 12-Character Battle: after a game the winner comes back on the character he won with,
+ * a defeated human on a character that still has stocks (or on no character), and a character the set does not hold clears the slot.
+ * A resolved Random does not come back in this mode. Call it before the slot is built from the kind and fighter.
+ */
+static void mnPlayersVSTwelveCBSetupPort(s32 player)
+{
+	static const GMRemixTwelveCBPortOps ops = { mnPlayersVSTwelveCBFindValidPortrait, mnPlayersVSTwelveCBIsFighterInSet };
+	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+	GMRemixTwelveCBPortSetup setup;
+	s32 fkind = sMNPlayersVSSlots[player].fkind;
+
+	if (player >= ARRAY_COUNT(sMNPlayersVSTwelveCBStartPortrait))
+	{
+		return;
+	}
+	sMNPlayersVSTwelveCBStartPortrait[player] = MNREMIX_TCB_NO_SLOT;
+
+	if (state == NULL)
+	{
+		return;
+	}
+	if (sMNPlayersVSIsRandomResolved[player] != FALSE)
+	{
+		sMNPlayersVSIsRandomResolved[player] = FALSE;
+		fkind = REMIX_ID_RANDOM;
+	}
+	gmRemixTwelveCBSetupPort(state, player, sMNPlayersVSSlots[player].pkind, fkind, MNREMIX_TCB_NO_SLOT, nFTKindNull, &ops, &setup);
+
+	sMNPlayersVSSlots[player].pkind = setup.pkind;
+	sMNPlayersVSSlots[player].fkind = setup.fkind;
+	sMNPlayersVSTwelveCBStartPortrait[player] = setup.portrait;
+}
+
+/** setup_ports_and_characters_, costume part: a costume the fighter does not have goes back to the first one. */
+static void mnPlayersVSTwelveCBFixCostume(s32 player)
+{
+	s32 fkind = sMNPlayersVSSlots[player].fkind;
+
+	if ((gmRemixTwelveCBIsActive() == FALSE) || (fkind == nFTKindNull))
+	{
+		return;
+	}
+	if (sMNPlayersVSSlots[player].costume > ftRemixPartImageGetMaxCostumeID(fkind))
+	{
+		sMNPlayersVSSlots[player].costume = 0;
+	}
+}
+#endif
+
 // 0x8013AC7C
 void mnPlayersVSInitPlayer(s32 player)
 {
@@ -7280,6 +7423,9 @@ void mnPlayersVSInitPlayer(s32 player)
 		sMNPlayersVSSlots[player].fkind = nFTKindNull;
 	}
 	else sMNPlayersVSSlots[player].pkind = gSCManagerTransferBattleState.players[player].pkind;
+#if defined(PORT) && defined(REGION_REMIX)
+	mnPlayersVSTwelveCBSetupPort(player);
+#endif
 
 	sMNPlayersVSSlots[player].cpu_level = gSCManagerTransferBattleState.players[player].level;
 	sMNPlayersVSSlots[player].handicap = gSCManagerTransferBattleState.players[player].handicap;
@@ -7311,6 +7457,9 @@ void mnPlayersVSInitPlayer(s32 player)
 	}
 	sMNPlayersVSSlots[player].costume = gSCManagerTransferBattleState.players[player].costume;
 	sMNPlayersVSSlots[player].shade = gSCManagerTransferBattleState.players[player].shade;
+#if defined(PORT) && defined(REGION_REMIX)
+	mnPlayersVSTwelveCBFixCostume(player);
+#endif
 
 	if ((sMNPlayersVSControllerOrders[player] != -1) && (sMNPlayersVSSlots[player].pkind == nFTPlayerKindNot))
 	{

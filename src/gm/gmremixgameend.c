@@ -6,6 +6,7 @@
 
 #include "gm/gmremixgameend.h"
 #include "gm/gmremixgameendinputrules.h"
+#include "gm/gmremixgameendwaitrules.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtoggle.h"
 #include "gm/gmremixstockmode.h"
@@ -146,6 +147,15 @@ sb32 gmRemixGameEndIsSaltyRunback(void)
 static sb32 gmRemixGameEndShowFullResults(void)
 {
     return gmRemixToggle(full_results) != 0;
+}
+
+/**
+ * @return The tics before the results screen of a stock match allows leaving it: the Time wait (410) when Always Show Full
+ * Results is on, because the asm then runs the Time branch of mnVSResultsInitVars (TimedStock.asm show_full_results_).
+ */
+s32 gmRemixGameEndResultsStockExitWait(void)
+{
+    return gmRemixGameEndRulesStockExitWait(gmRemixGameEndShowFullResults());
 }
 
 /**

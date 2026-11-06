@@ -8,6 +8,9 @@
 #include "libc/math.h"
 #ifdef PORT
 #include "port_log.h"
+#ifdef REGION_REMIX
+#include "sys/sysremixenvmap.h"
+#endif
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -3331,6 +3334,9 @@ void func_8001663C(Gfx **dls, CObj *cobj, s32 buffer_id)
         gDPSetRenderMode(dl++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
     }
     else gDPSetRenderMode(dl++, G_RM_AA_ZB_XLU_SURF, G_RM_AA_ZB_XLU_SURF2);
+#if defined(PORT) && defined(REGION_REMIX)
+    sysRemixEnvMapAppendLookAt(&dl);
+#endif
 
     dls[0] = dl;
 }

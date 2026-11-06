@@ -350,6 +350,10 @@ void mnPlayers1PGameContinueMakeFighter(s32 fkind)
     desc = dFTManagerDefaultFighterDesc;
 
     desc.fkind = fkind;
+#if defined(PORT) && defined(REGION_REMIX)
+    /* SinglePlayerModes.asm _gameover_and_room_drop (0x8013215C): the game over fighter takes the human's port */
+    desc.player = gSCManagerSceneData.player;
+#endif
 
     desc.pos.x = 90.0F;
 

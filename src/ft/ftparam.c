@@ -17,6 +17,8 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixbury.h"
 #include "ft/ftremix/ftremixparamhooks.h"
+#include "ft/ftremix/ftremixstaminahit.h"
+#include "gm/gmremixsmashketball.h"
 #include "it/itremix/itremixcloakingdevice.h"
 #include "if/ifremixannouncer.h"
 #endif
@@ -199,8 +201,12 @@ void ftParamTryUpdateItemMusic(void)
     }
 }
 
-// 0x800E7C4C
-void ftParamInitPlayerBattleStats(s32 player, GObj *fighter_gobj)
+/**
+ * Clears the score, falls, KOs, damage and combo totals of a player in the battle state.
+ *
+ * @param player Player index.
+ */
+static void ftParamResetPlayerBattleScores(s32 player)
 {
     s32 i;
 
@@ -215,6 +221,17 @@ void ftParamInitPlayerBattleStats(s32 player, GObj *fighter_gobj)
     gSCManagerBattleState->players[player].unk_pblock_0x28 = gSCManagerBattleState->players[player].unk_pblock_0x2C = gSCManagerBattleState->players[player].total_selfdestructs = 0;
     gSCManagerBattleState->players[player].total_damage_given = gSCManagerBattleState->players[player].total_damage_all = 0;
     gSCManagerBattleState->players[player].combo_damage_foe = gSCManagerBattleState->players[player].combo_count_foe = 0;
+}
+
+// 0x800E7C4C
+void ftParamInitPlayerBattleStats(s32 player, GObj *fighter_gobj)
+{
+    s32 i;
+
+#ifdef REGION_REMIX
+    if (gmRemixSmashketballKeepsMatchStats() == FALSE)
+#endif
+    ftParamResetPlayerBattleScores(player);
 
     gSCManagerBattleState->players[player].fighter_gobj = fighter_gobj;
 
@@ -439,6 +456,10 @@ void ftParamStopVoiceRunProcDamage(GObj *fighter_gobj)
     ftRemixPeachEndFloatOnHit(fp);
 #endif
     ftParamStopVoice(fp);
+#ifdef REGION_REMIX
+    ftRemixStaminaClearDeadWaitOnHit(fp);
+    ftRemixAirDodgeResetAirDash(fp);
+#endif
 
     if (fp->proc_damage != NULL)
     {

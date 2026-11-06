@@ -9,6 +9,7 @@
 #include "gr/grremix/grremixstage.h"
 #include "gm/gmremixkoth.h"
 #include "gm/gmremixtugofwar.h"
+#include "gm/gmremixstockmode.h"
 #include "gm/gmremixtwelvecb.h"
 #include "sc/sc1pmode/sc1premixallstar.h"
 #if defined(PORT)
@@ -132,6 +133,9 @@ void ftCommonDeadUpdateScore(FTStruct *this_fp)
     
     if (gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_STOCK)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        s32 stock_before = gSCManagerBattleState->players[this_fp->player].stock_count;
+#endif
         this_fp->stock_count--;
 
         gSCManagerBattleState->players[this_fp->player].stock_count--;
@@ -139,6 +143,7 @@ void ftCommonDeadUpdateScore(FTStruct *this_fp)
         ifCommonBattleUpdateScoreStocks(this_fp);
 #if defined(PORT) && defined(REGION_REMIX)
         gmRemixTwelveCBOnKo(this_fp);
+        gmRemixStockModeOnKo(this_fp->player, stock_before);
 #endif
     }
     if (gSCManagerBattleState->game_rules & SCBATTLE_GAMERULE_1PGAME)

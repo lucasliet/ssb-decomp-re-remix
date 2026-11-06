@@ -1,5 +1,6 @@
 #include <ft/fighter.h>
 #if defined(PORT) && defined(REGION_REMIX)
+#include "sc/sc1pmode/sc1pintrorules.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixintro.h"
 #include "sc/sc1pmode/sc1premixenemyafk.h"
@@ -272,6 +273,52 @@ static s32 sc1PIntroGetDuoFkind(s32 slot, s32 vanilla_fkind)
         return vanilla_fkind;
     }
     return line->fkind[(slot == 0) ? ((is_partner_first != FALSE) ? 1 : 0) : ((is_partner_first != FALSE) ? 0 : 1)];
+}
+
+/**
+ * fix_port_index_: port stored in the player struct of a card fighter of the human side, so the Visibility option of that port applies.
+ *
+ * @param card_anim_frame_id Position of the fighter on the card.
+ * @return Port of the human for the human positions, the other of P1 and P2 for the allies.
+ */
+static s32 sc1PIntroGetHumanSidePort(s32 card_anim_frame_id)
+{
+    return sc1PIntroRulesHumanSidePort(card_anim_frame_id, gSCManagerSceneData.player);
+}
+
+/** fix_port_index_._opponent: port stored in the player struct of an opponent of the card, the other of P1 and P2. */
+static s32 sc1PIntroGetOpponentPort(void)
+{
+    return sc1PIntroRulesOpponentPort(gSCManagerSceneData.player);
+}
+
+/**
+ * singleplayer_gdk_polygon_team_costume_preview_fix_: costume the card gives an opponent by default (costume 0, or the alternate one
+ * when the human would look the same).
+ *
+ * @param fkind Fighter kind of the opponent.
+ * @return Common costume id for the opponent.
+ */
+static s32 sc1PIntroGetOpponentCostume(s32 fkind)
+{
+    s32 index = sc1PIntroRulesOpponentCostumeIndex(fkind, sSC1PIntroPlayerFighterDemoDesc.fkind, sSC1PIntroPlayerFighterDemoDesc.costume,
+                                                   sc1PRemix1PIsActive() != FALSE, sSC1PIntroStage);
+
+    return ftParamGetCostumeCommonID(fkind, index);
+}
+
+/**
+ * singleplayer_mm_costume_preview_fix_: costume the Mario slot of the duo card takes when its default costume is the human's.
+ *
+ * @param fkind Fighter kind shown in the Mario slot.
+ * @return Common costume id for the fighter.
+ */
+static s32 sc1PIntroGetDuoMarioSlotCostume(s32 fkind)
+{
+    s32 index = sc1PIntroRulesDuoMarioSlotCostumeIndex(sc1PRemix1PIsActive() != FALSE, sSC1PIntroStage, fkind,
+                                                       sSC1PIntroPlayerFighterDemoDesc.fkind, sSC1PIntroPlayerFighterDemoDesc.costume);
+
+    return ftParamGetCostumeCommonID(fkind, index);
 }
 #else
 #define sc1PIntroGetLayoutStage(stage) (stage)
@@ -621,12 +668,12 @@ static SObj* sc1PIntroMakeRemixTextSObj(GObj *gobj, intptr_t offset)
     return sobj;
 }
 
-static void sc1PIntroMakeRemixNameSObj(GObj *gobj, const SC1PRemix1PSlotCard *card)
+static void sc1PIntroMakeRemixNameSObj(GObj *gobj, s32 stage, const SC1PRemix1PSlotCard *card)
 {
     SObj *sobj = sc1PIntroMakeRemixTextSObj(gobj, card->name_texture);
     s32 width = sc1PRemixIntroNameWidth(card->title_fkind);
 
-    if (width != 0)
+    if ((width != 0) && (sc1PIntroRulesNameWidthApplies(stage) != 0))
     {
         sobj->sprite.width = width;
     }
@@ -638,11 +685,11 @@ static void sc1PIntroMakeRemixVSNameTexts(GObj *gobj, s32 stage, const SC1PRemix
     {
     case nSC1PGameStageDonkey:
         sc1PIntroMakeRemixTextSObj(gobj, SC1PINTRO_REMIX_GIANT_TEXT);
-        sc1PIntroMakeRemixNameSObj(gobj, card);
+        sc1PIntroMakeRemixNameSObj(gobj, stage, card);
         break;
 
     case nSC1PGameStageYoshi:
-        sc1PIntroMakeRemixNameSObj(gobj, card);
+        sc1PIntroMakeRemixNameSObj(gobj, stage, card);
         sc1PIntroMakeRemixTextSObj(gobj, SC1PINTRO_REMIX_TEAM_TEXT);
         break;
 
@@ -651,7 +698,7 @@ static void sc1PIntroMakeRemixVSNameTexts(GObj *gobj, s32 stage, const SC1PRemix
         break;
 
     default:
-        sc1PIntroMakeRemixNameSObj(gobj, card);
+        sc1PIntroMakeRemixNameSObj(gobj, stage, card);
         break;
     }
 }
@@ -1131,7 +1178,11 @@ void sc1PIntroMakeFighter(FTDemoDesc fighter, s32 card_anim_frame_id, void **fig
     
     desc.figatree_heap = *figatree;
     
+#if defined(PORT) && defined(REGION_REMIX)
+    desc.player = sc1PIntroGetHumanSidePort(card_anim_frame_id);
+#else
     desc.player = 0;
+#endif
     
     fighter_gobj = ftManagerMakeFighter(&desc);
     
@@ -1247,7 +1298,7 @@ void sc1PIntroVSFighterProcUpdate(GObj *fighter_gobj)
     default:
         if (dobj->translate.vec.f.z < 0.0F)
         {
-            dobj->translate.vec.f.z += sc1PIntroGetVSFighterVelocityZ(sSC1PIntroStage, fp->fkind);
+            dobj->translate.vec.f.z += sc1PIntroGetVSFighterVelocityZ(sc1PIntroGetLayoutStage(sSC1PIntroStage), fp->fkind);
             
             if (dobj->translate.vec.f.z > 0.0F)
             {
@@ -1363,10 +1414,18 @@ GObj* sc1PIntroMakeVSFighter(s32 fkind, s32 stage, s32 card_anim_frame_id, void 
     FTDesc desc = dFTManagerDefaultFighterDesc;
 
     desc.fkind = fkind;
+#if defined(PORT) && defined(REGION_REMIX)
+    desc.costume = sc1PIntroGetOpponentCostume(fkind);
+#else
     desc.costume = ftParamGetCostumeCommonID(fkind, 0);
+#endif
     desc.figatree_heap = *figatree;
     desc.proc_display = sc1PIntroVSFighterProcDisplay;
+#if defined(PORT) && defined(REGION_REMIX)
+    desc.player = sc1PIntroGetOpponentPort();
+#else
     desc.player = 0;
+#endif
     desc.unk_rebirth_0x1C = 4;
     desc.unk_rebirth_0x1D = 4;
     
@@ -1696,6 +1755,7 @@ static void sc1PIntroMakeRemixTinyTeamFighters(s32 fkind, s32 stage)
     for (i = 0; i < SC1PINTRO_REMIX_TINY_TEAM_COUNT; i++)
     {
         fighter_gobj = sc1PIntroMakeVSFighter(fkind, stage, 0, &sSC1PIntroFigatreeHeaps[i + 1], 32);
+        ftParamInitAllParts(fighter_gobj, sc1PIntroRulesTinyTeamCostume(i, fkind), 0);
         dobj = DObjGetStruct(fighter_gobj);
 
         dobj->scale.vec.f.x = dobj->scale.vec.f.y = dobj->scale.vec.f.z = SC1PINTRO_REMIX_TINY_TEAM_SCALE;
@@ -1715,7 +1775,7 @@ static void sc1PIntroMakeRemixDuoFighters(s32 stage)
 
     if (sSC1PIntroCheckCostumeUsed(stage, fkind, 0) != FALSE)
     {
-        ftParamInitAllParts(fighter_gobj, ftParamGetCostumeCommonID(fkind, 1), 0);
+        ftParamInitAllParts(fighter_gobj, sc1PIntroGetDuoMarioSlotCostume(fkind), 0);
     }
     cobj = sc1PIntroMakeStageCamera(stage, 33);
 

@@ -39,14 +39,24 @@ extern s32 gmRemixTwelveCBGetStocks(s32 player, s32 match_stocks);
 extern void gmRemixTwelveCBOnKo(FTStruct *fp);
 
 /**
- * Whether one CSS slot lets the 12-Character Battle start: only the ports 1 and 2 play, and a character with no stocks left
- * cannot be taken into another game (treat_selected_defeated_chars_as_unselected_). Always TRUE outside the mode.
+ * Whether one CSS slot lets the 12-Character Battle start: only the ports 1 and 2 play, a character with no stocks left
+ * cannot be taken into another game and a player whose pool is empty (the battle is over) blocks the start until RESET
+ * (treat_selected_defeated_chars_as_unselected_). Always TRUE outside the mode.
  *
  * @param slot Port index of the CSS slot (0..3).
  * @param pkind Player kind of the slot (nFTPlayerKind*).
  * @param fkind Fighter the slot selected.
  */
 extern sb32 gmRemixTwelveCBCheckSlot(s32 slot, s32 pkind, s32 fkind);
+
+/**
+ * Whether the token of a port can be picked up on the CSS (prevent_token_pickup_): once the battle started, the token of a CPU that
+ * ended the last game with stocks left stays where it is. Always TRUE outside the mode.
+ *
+ * @param port Port index of the token (0 or 1).
+ * @param is_human TRUE when the player of the token is a human.
+ */
+extern sb32 gmRemixTwelveCBTokenIsFree(s32 port, sb32 is_human);
 
 /**
  * Remembers the CSS portrait slot (0..23) a player's token sits on; the game takes its portrait stocks from it. -1 forgets it,

@@ -12,6 +12,7 @@
 #define SC1PREMIX_MULTIMAN_ENEMY_HANDICAP 0x15
 #define SC1PREMIX_CRUEL_ENEMY_HANDICAP 0x18
 #define SC1PREMIX_CRUEL_HUMAN_HANDICAP 0x16
+#define SC1PREMIX_CPU_BOSS_SLOT 0x010C
 
 int sc1PRemixModeLeavesBonusCSSFor1P(int mode)
 {
@@ -65,6 +66,11 @@ int sc1PRemixModeHumanHandicap(int mode)
     return (mode == SC1PREMIX_MODE_CRUEL) ? SC1PREMIX_CRUEL_HUMAN_HANDICAP : 0;
 }
 
+int sc1PRemixSlotIsCpuMasterHand(int pkind, int fkind)
+{
+    return ((((pkind & 0xFF) << 8) | (fkind & 0xFF)) == SC1PREMIX_CPU_BOSS_SLOT) ? 1 : 0;
+}
+
 int sc1PRemixMultimanRestartsRun(int is_reset)
 {
     return (is_reset != 0) ? 1 : 0;
@@ -78,10 +84,6 @@ void sc1PRemixMultimanKosReset(SC1PRemixMultimanKos *counter)
 
 void sc1PRemixMultimanKosAddEnemy(SC1PRemixMultimanKos *counter)
 {
-    if (counter->is_player_ko != 0)
-    {
-        return;
-    }
     counter->kos++;
 }
 

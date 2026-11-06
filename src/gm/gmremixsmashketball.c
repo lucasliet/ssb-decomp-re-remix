@@ -28,6 +28,10 @@
 #define GMREMIX_SMASHKETBALL_SPAWN_Y 5.0F
 
 /* Smashketball.spawn_table: home team left to right 2, 0, 1; away team right to left 3, 1, 0. */
+/* Time limit of the match before the overtime made it infinite, put back when the next match sets up. */
+static s32 sGMRemixSmashketballRegularTimeLimit;
+static sb32 sGMRemixSmashketballIsTimeLimitSaved = FALSE;
+
 static const s32 dGMRemixSmashketballSpawnTable[GMCOMMON_PLAYERS_MAX] = { 2, 0, 1, 3 };
 
 /* Spawn.asm 5A and D1 neutral spawns: slots S1 to S4 (x), the same on both stages. */
@@ -203,32 +207,37 @@ sb32 gmRemixSmashketballPrepareSuddenDeath(void)
 {
     s32 home = gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.home_team);
     s32 away = gmRemixSmashketballGetTeamScore(gGMRemixSmashketball.away_team);
-    s32 i;
 
     if (home != away)
     {
         return FALSE;
     }
-    gSCManagerVSBattleState = gSCManagerTransferBattleState;
-    gSCManagerVSBattleState.pl_count = gSCManagerVSBattleState.cp_count = 0;
+    sGMRemixSmashketballRegularTimeLimit = gSCManagerTransferBattleState.time_limit;
+    sGMRemixSmashketballIsTimeLimitSaved = TRUE;
 
-    for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
-    {
-        if (gSCManagerVSBattleState.players[i].pkind == nFTPlayerKindMan)
-        {
-            gSCManagerVSBattleState.pl_count++;
-        }
-        else if (gSCManagerVSBattleState.players[i].pkind == nFTPlayerKindCom)
-        {
-            gSCManagerVSBattleState.cp_count++;
-        }
-    }
-    gSCManagerVSBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
-    gSCManagerVSBattleState.time_limit = SCBATTLE_TIMELIMIT_INFINITE;
-    gSCManagerVSBattleState.is_show_score = FALSE;
+    gSCManagerTransferBattleState.time_limit = SCBATTLE_TIMELIMIT_INFINITE;
     gSCManagerSceneData.is_suddendeath = TRUE;
 
     return TRUE;
+}
+
+sb32 gmRemixSmashketballKeepsMatchStats(void)
+{
+    return ((gmRemixSmashketballIsActive() != FALSE) && (gSCManagerSceneData.is_suddendeath != FALSE)) ? TRUE : FALSE;
+}
+
+/**
+ * Puts back the time limit the match had before the overtime made it infinite (Smashketball.asm allow_overtime_ keeps the
+ * main battle state, so the infinite limit would otherwise carry into a salty runback).
+ */
+static void gmRemixSmashketballRestoreTimeLimit(void)
+{
+    if (sGMRemixSmashketballIsTimeLimitSaved == FALSE)
+    {
+        return;
+    }
+    gSCManagerTransferBattleState.time_limit = sGMRemixSmashketballRegularTimeLimit;
+    sGMRemixSmashketballIsTimeLimitSaved = FALSE;
 }
 
 s32 gmRemixSmashketballGetSuddenDeathDamage(s32 default_damage)
@@ -262,6 +271,10 @@ void gmRemixSmashketballSetup(void)
     GObj *gobj;
     s32 i;
 
+    if (gSCManagerSceneData.is_suddendeath == FALSE)
+    {
+        gmRemixSmashketballRestoreTimeLimit();
+    }
     if (gmRemixSmashketballIsActive() == FALSE)
     {
         gmRemixSmashketballSetupTimeOnly();

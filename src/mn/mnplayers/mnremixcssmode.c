@@ -17,7 +17,7 @@ extern void *func_800269C0_275C0(u16 id);
 
 _Static_assert(MNREMIX_CSS_MODE_COUNT == (MNREMIX_VSMODE_TUG_OF_WAR + 1), "the mode tables follow MNREMIX_VSMODE_*");
 
-/** The finished 12-Character Battle announces the winner instead (TwelveCharBattle.asm update_announcer_on_entry_, STATUS_COMPLETE). */
+/** The finished 12-Character Battle announces the winner (TwelveCharBattle.asm update_announcer_on_entry_, STATUS_COMPLETE). */
 static sb32 mnRemixCssModeIsTwelveCBComplete(void)
 {
     const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
@@ -32,18 +32,46 @@ intptr_t mnRemixCssModeTitleOffset(intptr_t vanilla_offset)
     return (offset != 0) ? (intptr_t)offset : vanilla_offset;
 }
 
+/** FGM of the winner of the finished 12-Character Battle: "Player 1" or "Player 2". */
+static int mnRemixCssModeGetTwelveCBWinnerFgm(void)
+{
+    const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
+
+    return mnRemixCssModeRulesTwelveCBWinnerFgm(state->players[0].stocks_remaining);
+}
+
 sb32 mnRemixCssModeAnnounce(void)
 {
     s32 mode = gmRemixModeGet();
     int fgm = mnRemixCssModeRulesAnnouncerFgm(mode);
 
-    if ((fgm == 0) || ((mode == MNREMIX_VSMODE_TWELVE_CB) && (mnRemixCssModeIsTwelveCBComplete() != FALSE)))
+    if (fgm == 0)
     {
         return FALSE;
+    }
+    if ((mode == MNREMIX_VSMODE_TWELVE_CB) && (mnRemixCssModeIsTwelveCBComplete() != FALSE))
+    {
+        fgm = mnRemixCssModeGetTwelveCBWinnerFgm();
     }
     func_800269C0_275C0((u16)fgm);
 
     return TRUE;
+}
+
+void mnRemixCssModeAnnounceWins(u32 frame)
+{
+    int fgm;
+
+    if (gmRemixTwelveCBIsActive() == FALSE)
+    {
+        return;
+    }
+    fgm = mnRemixCssModeRulesTwelveCBWinsFgm((mnRemixCssModeIsTwelveCBComplete() != FALSE) ? 1 : 0, frame);
+
+    if (fgm != 0)
+    {
+        func_800269C0_275C0((u16)fgm);
+    }
 }
 
 sb32 mnRemixCssModeKeepsToggleVoice(void)
