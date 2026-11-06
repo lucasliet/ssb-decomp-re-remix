@@ -6,6 +6,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include <ssb_types.h>
 #include <math.h>
 #include "ft/ftremix/ftremixairecoverylogicids.h"
 #include "ft/ftremix/ftremixairecoverylogicrules.h"
