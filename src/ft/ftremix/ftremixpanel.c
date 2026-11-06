@@ -21,12 +21,15 @@
  */
 s32 ftRemixPanelGetInitialDamage(FTStruct *fp, s32 desc_damage)
 {
-    s32 game_type = gSCManagerBattleState->game_type;
+    s32 game_type;
 
-    if ((desc_damage != 0) || (fp->pkind == nFTPlayerKindDemo))
+    /* The 1P character select builds its preview fighter before any battle scene has set the battle state
+     * (fresh boot without the attract demo); the N64 reads a fixed struct there, the port has NULL. */
+    if ((desc_damage != 0) || (fp->pkind == nFTPlayerKindDemo) || (gSCManagerBattleState == NULL))
     {
         return desc_damage;
     }
+    game_type = gSCManagerBattleState->game_type;
     if ((game_type == nSCBattleGameTypeTraining) && (fp->player < 4))
     {
         /* Training.asm init_character_: a fighter created for the match takes the menu percent when Reset Sets Percent is on. */
