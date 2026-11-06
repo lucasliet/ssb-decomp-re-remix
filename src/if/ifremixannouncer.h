@@ -5,55 +5,13 @@
 
 #include <ssb_types.h>
 #include <ft/fighter.h>
+#include "if/ifremixannouncerrules.h"
 
 /*
- * Smash Remix Pokemon Stadium announcer (src/PokemonAnnouncer.asm). Each enum value is one call table of the asm, in the
- * order the asm declares them. The toggle announcer_mode decides where the announcer speaks (see ifRemixAnnouncerIsActive).
+ * Smash Remix Pokemon Stadium announcer (src/PokemonAnnouncer.asm). The call tables are listed by IFRemixAnnouncerCall
+ * (ifremixannouncerrules.h), in the order the asm declares them. The toggle announcer_mode decides where the announcer
+ * speaks (see ifRemixAnnouncerIsActive).
  */
-typedef enum IFRemixAnnouncerCall
-{
-    nIFRemixAnnouncerCallPokemon,
-    nIFRemixAnnouncerCallQuickKO,
-    nIFRemixAnnouncerCallRegularKO,
-    nIFRemixAnnouncerCallLongKO,
-    nIFRemixAnnouncerCallGeneral,
-    nIFRemixAnnouncerCallCloseMatch,
-    nIFRemixAnnouncerCallSleep,
-    nIFRemixAnnouncerCallCombo,
-    nIFRemixAnnouncerCallKnockbackHigh,
-    nIFRemixAnnouncerCallKnockbackMid,
-    nIFRemixAnnouncerCallDamage,
-    nIFRemixAnnouncerCallThunder,
-    nIFRemixAnnouncerCallQuick,
-    nIFRemixAnnouncerCallCharge,
-    nIFRemixAnnouncerCallDisable,
-    nIFRemixAnnouncerCallTeleport,
-    nIFRemixAnnouncerCallFirePunch,
-    nIFRemixAnnouncerCallRest,
-    nIFRemixAnnouncerCallPound,
-    nIFRemixAnnouncerCallTough,
-    nIFRemixAnnouncerCallCounter,
-    nIFRemixAnnouncerCallLittleDamage,
-    nIFRemixAnnouncerCallBurn,
-    nIFRemixAnnouncerCallSeismicToss,
-    nIFRemixAnnouncerCallRecovery,
-    nIFRemixAnnouncerCallClang,
-    nIFRemixAnnouncerCallStun,
-    nIFRemixAnnouncerCallTeamKO,
-    nIFRemixAnnouncerCallSlash,
-    nIFRemixAnnouncerCallFlamethrower,
-    nIFRemixAnnouncerCallGymLeader,
-    nIFRemixAnnouncerCallOpening,
-    nIFRemixAnnouncerCallSing,
-    nIFRemixAnnouncerCallAttack,
-    nIFRemixAnnouncerCallDamageEarly,
-    nIFRemixAnnouncerCallBurrow,
-    nIFRemixAnnouncerCallBurrowAgain,
-    nIFRemixAnnouncerCallDig,
-    nIFRemixAnnouncerCallBodySlam,
-    nIFRemixAnnouncerCallTaunt,
-    nIFRemixAnnouncerCallCount
-} IFRemixAnnouncerCall;
 
 /** TRUE when the announcer toggle allows speech on the current stage (asm toggle_announcer_ == 0). */
 sb32 ifRemixAnnouncerIsActive(void);

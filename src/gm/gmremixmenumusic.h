@@ -23,7 +23,8 @@ void gmRemixMenuMusicStop(void);
 
 /**
  * A press on Menu Music (Toggles.asm play_menu_music_): plays the chosen menu track now and always restarts it; OFF stops the
- * music. The port menu calls it after the value changes.
+ * music. The port menu calls it after the value changes. Four presses in a row that land on FILESELECT_SM64 switch it to
+ * MAIN_TRAP_SM64 (Toggles.itsatrap), which the menu screens then play until a press lands on another track.
  */
 void gmRemixMenuMusicAudition(void);
 

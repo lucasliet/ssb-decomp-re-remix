@@ -7,6 +7,7 @@
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "gm/gmremixbgmswap.h"
 #endif
 
 #ifdef PORT
@@ -4145,10 +4146,7 @@ void mpCollisionInitGroundData(void)
 #endif
 
 #ifdef REGION_REMIX
-    if (gSCManagerSceneData.scene_curr == nSCKindVSBattle)
-    {
-        gMPCollisionGroundData->bgm_id = grRemixGetStageBGM(gSCManagerBattleState->gkind, gMPCollisionGroundData->bgm_id);
-    }
+    gMPCollisionGroundData->bgm_id = grRemixGetStageBGM(gSCManagerBattleState->gkind, gMPCollisionGroundData->bgm_id);
 #endif
     gMPCollisionGeometry = (MPGeometryData*)PORT_RESOLVE(gMPCollisionGroundData->map_geometry);
     gdata = gMPCollisionGeometry;
@@ -4299,6 +4297,9 @@ void mpCollisionSetPlayBGM(void)
     syAudioPlayBGM(0, gMPCollisionBGMDefault);
 
     gMPCollisionBGMCurrent = gMPCollisionBGMDefault;
+#if defined(PORT) && defined(REGION_REMIX)
+    gmRemixBgmSwapNoteStageSongPlayed();
+#endif
 }
 
 // 0x800FC42C

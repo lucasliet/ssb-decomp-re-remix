@@ -14,6 +14,10 @@ extern void port_log(const char *fmt, ...);
 #endif
 
 #include <n_audio/n_libaudio.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include "gm/gmremixmidi.h"
+#include "gm/gmremixmidirules.h"
+#endif
 // LUS: Audio Slider Hooks
 extern float port_get_sfx_volume(void);
 extern float port_get_voice_volume(void);
@@ -3378,6 +3382,9 @@ static void __n_CSPHandleMIDIMsg(N_ALCSPlayer *seqp, N_ALEvent *event)
       {
 	ALInstrument *inst = ((ALBank*)*(&seqp->bank + seqp->chanState[chan].unk_0x14))->instArray[key];
 	__n_setInstChanState_Alt((N_ALSeqPlayer*)seqp, inst, chan);	/* sct 11/6/95 */               
+#if defined(PORT) && defined(REGION_REMIX)
+	gmRemixMidiOverrideInstrument(&seqp->chanState[chan], key);
+#endif
       }
     else
       {
@@ -5345,7 +5352,12 @@ ALWhatever8009EDD0_siz34* func_800269C0_275C0(u16 id)
     }
     if (sFgmLogAll != 0)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+      port_log("[fgm] play id=%u table=%u%s\n", (unsigned)id, (unsigned)D_8009EDD0_406D0.fgm_ucode_count,
+               (gmRemixMidiRulesFgmIsSilenced(id) != 0) ? " silenced" : "");
+#else
       port_log("[fgm] play id=%u table=%u\n", (unsigned)id, (unsigned)D_8009EDD0_406D0.fgm_ucode_count);
+#endif
     }
   }
 
@@ -5353,6 +5365,12 @@ ALWhatever8009EDD0_siz34* func_800269C0_275C0(u16 id)
   {
     return NULL;
   }
+#if defined(PORT) && defined(REGION_REMIX)
+  if (gmRemixMidiRulesFgmIsSilenced(id) != 0)
+  {
+    return NULL;
+  }
+#endif
   return func_80026958_27558(D_8009EDD0_406D0.fgm_ucode_data[id]);
 }
 

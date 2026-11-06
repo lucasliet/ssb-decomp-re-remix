@@ -6,11 +6,7 @@
 
 #include "grremixstage.h"
 #include "grremixhazards.h"
-#include "grremixrandommusic.h"
 #include "grremixstagerules.h"
-#include "gm/gmremixbgm.h"
-#include "gm/gmremixbgmrules.h"
-#include "gm/gmremixgameend.h"
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <sc/sc1pmode/sc1pbonusstage.h>
@@ -18,11 +14,6 @@
 #include "remix/remix_symbols.h"
 #include <port_log.h>
 #include <sys/utils.h>
-
-#define GRREMIX_ALT_MUSIC_CHANCE_MAIN 65
-#define GRREMIX_ALT_MUSIC_CHANCE_OCCASIONAL 16
-#define GRREMIX_ALT_MUSIC_CHANCE_RARE 10
-#define GRREMIX_ALT_MUSIC_NONE 0xFFFF
 
 #define GRREMIX_FUNC_PEACHS_CASTLE 0x8010B4AC
 #define GRREMIX_FUNC_SECTOR_Z 0x80107FCC
@@ -213,64 +204,6 @@ s32 grRemixSelectGetStages(s32 *out_gkinds, s32 max_count)
         }
     }
     return count;
-}
-
-u32 grRemixGetStageDefaultTrack(s32 gkind, u32 default_bgm)
-{
-    s32 override_track = grRemixGetDefaultMusicTrack(gkind);
-
-    return (override_track != 0) ? (u32)(override_track - 1) : default_bgm;
-}
-
-void grRemixGetStageAlternateTracks(s32 gkind, s32 *out_tracks)
-{
-    s32 slot;
-
-    for (slot = 0; slot < GMREMIX_BGM_ALT_SLOTS; slot++)
-    {
-        u32 alternate = grRemixReadHalf(REMIX_SYM_Stages__alternate_music_table + (gkind * 8) + (slot * 2));
-
-        out_tracks[slot] = (alternate == GRREMIX_ALT_MUSIC_NONE) ? GMREMIX_BGM_NO_TRACK : (s32)alternate;
-    }
-}
-
-static u32 grRemixGetAlternateStageBGM(s32 gkind, u32 default_bgm)
-{
-    s32 roll;
-    s32 slot;
-    u32 alternate;
-
-    default_bgm = grRemixGetStageDefaultTrack(gkind, default_bgm);
-    roll = syUtilsRandIntRange(100);
-
-    if (roll < GRREMIX_ALT_MUSIC_CHANCE_MAIN)
-    {
-        return default_bgm;
-    }
-    if (roll < (GRREMIX_ALT_MUSIC_CHANCE_MAIN + GRREMIX_ALT_MUSIC_CHANCE_OCCASIONAL))
-    {
-        slot = 0;
-    }
-    else if (roll < (GRREMIX_ALT_MUSIC_CHANCE_MAIN + GRREMIX_ALT_MUSIC_CHANCE_OCCASIONAL + GRREMIX_ALT_MUSIC_CHANCE_RARE))
-    {
-        slot = 1;
-    }
-    else
-    {
-        slot = 2;
-    }
-    alternate = grRemixReadHalf(REMIX_SYM_Stages__alternate_music_table + (gkind * 8) + (slot * 2));
-
-    return (alternate == GRREMIX_ALT_MUSIC_NONE) ? default_bgm : alternate;
-}
-
-u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm)
-{
-    sb32 salty_runback = gmRemixGameEndIsSaltyRunback();
-    u32 stage_bgm = grRemixRandomMusicPick(grRemixGetAlternateStageBGM(gkind, default_bgm), salty_runback);
-
-    gmRemixBgmSetStageTracks(gkind, grRemixGetStageDefaultTrack(gkind, default_bgm), stage_bgm);
-    return stage_bgm;
 }
 
 #define GRREMIX_CLASS_BTP 0x02

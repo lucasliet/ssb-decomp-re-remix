@@ -1,15 +1,15 @@
 /**
  * gmremixmenumusic.c - Menu Music toggle of the Remix settings (BGM.asm alt_menu_music_, Toggles.asm entry_menu_music).
  *
- * RANDOM ALL picks from the Random Music list without its gate (BGM.asm 635-668); the custom MIDI entries of that list
- * have assembly-time ids with no symbol in remix_symbols.h and are not listed (grremixrandommusic.c), so the pick covers
- * the 16 stage and menu tracks. The "do not restart the track already playing" check (BGM.safe_id) is ported in
- * gmRemixMenuMusicKeepsCurrent.
+ * RANDOM ALL picks from the Random Music list without its gate (BGM.asm 635-668), custom MIDI entries included
+ * (grremixrandommusic.c). The "do not restart the track already playing" check (BGM.safe_id) is ported in
+ * gmRemixMenuMusicKeepsCurrent. FILESELECT_SM64 turns into its trap variant after four presses in a row (Toggles.itsatrap).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "gm/gmremixmenumusic.h"
+#include "gm/gmremixmenumusicrules.h"
 #include "gm/gmremixtoggle.h"
 #include "gm/gmremixtoggleactionrules.h"
 #include "gr/grremix/grremixrandommusic.h"
@@ -49,6 +49,7 @@
 #define GMREMIX_BGM_MAIN_GOLDENEYE 231
 #define GMREMIX_BGM_MAIN_MARIOTENNIS 248
 #define GMREMIX_BGM_MAIN_FILESELECT_SM64 259
+#define GMREMIX_BGM_MAIN_TRAP_SM64 260
 #define GMREMIX_BGM_MAIN_BLASTCORPS 262
 #define GMREMIX_BGM_MAIN_DKR 280
 #define GMREMIX_BGM_MAIN_MK64 283
@@ -83,6 +84,9 @@ static const u32 sMenuMusicTrackBGM[] =
     GMREMIX_BGM_MAIN_BOMBERMAN,
     GMREMIX_BGM_MAIN_SONIC_R,
 };
+
+/* Toggles.itsatrap: presses of Menu Music on FILESELECT_SM64 in a row, GMREMIX_MENU_MUSIC_TRAP_ACTIVE while the trap plays. */
+static s32 sGMRemixMenuMusicTrapCount = 0;
 
 /* BGM.asm 649-653: with no track on in the Random Music list RANDOM ALL plays one of four hidden GameBoy songs. */
 #define GMREMIX_MENU_MUSIC_GAMEBOY_SONGS 4
@@ -121,7 +125,8 @@ static u32 gmRemixMenuMusicTitleRoll(u32 default_bgm)
 }
 
 /**
- * Returns the BGM id of a fixed menu track value (2 to 18).
+ * Returns the BGM id of a fixed menu track value (2 to 18). FILESELECT_SM64 plays its trap variant while the itsatrap
+ * counter says so (BGM.asm _check_current_trap).
  *
  * @param value Menu Music value, 2 to 18.
  * @param default_bgm BGM id kept when value is not a fixed track value.
@@ -133,34 +138,39 @@ static u32 gmRemixMenuMusicTrackOf(s32 value, u32 default_bgm)
     {
         return default_bgm;
     }
+    if ((value == GMREMIX_MENU_MUSIC_FILESELECT_SM64) && gmRemixMenuMusicRulesTrapIsActive(sGMRemixMenuMusicTrapCount))
+    {
+        return GMREMIX_BGM_MAIN_TRAP_SM64;
+    }
     return sMenuMusicTrackBGM[value - GMREMIX_MENU_MUSIC_MELEE];
 }
 
 /**
- * Picks a menu track for RANDOM (any track 1 to 18) or RANDOM CLASSICS (tracks 5 to 18, the 64, MELEE, MENU 2 and BRAWL
- * tracks are excluded as in BGM.asm).
+ * Picks the Menu Music value a RANDOM press stands for: any value 1 to 18 for RANDOM, 5 to 18 for RANDOM CLASSICS (the 64,
+ * MELEE, MENU 2 and BRAWL tracks are excluded as in BGM.asm).
  *
  * @param value GMREMIX_MENU_MUSIC_RANDOM or GMREMIX_MENU_MUSIC_RANDOM_CLASSICS.
- * @param default_bgm BGM id kept when the random value has no port id.
+ * @return The track value, 1 to 18.
+ */
+static s32 gmRemixMenuMusicRandomValue(s32 value)
+{
+    if (value == GMREMIX_MENU_MUSIC_RANDOM)
+    {
+        return 1 + syUtilsRandIntRange(GMREMIX_MENU_MUSIC_SONIC_R);
+    }
+    return 5 + syUtilsRandIntRange(GMREMIX_MENU_MUSIC_SONIC_R - 4);
+}
+
+/**
+ * Picks a menu track for RANDOM or RANDOM CLASSICS.
+ *
+ * @param value GMREMIX_MENU_MUSIC_RANDOM or GMREMIX_MENU_MUSIC_RANDOM_CLASSICS.
+ * @param default_bgm BGM id kept when the random value is the 64 track.
  * @return The BGM id to play.
  */
 static u32 gmRemixMenuMusicRandomTrack(s32 value, u32 default_bgm)
 {
-    s32 random_value;
-
-    if (value == GMREMIX_MENU_MUSIC_RANDOM)
-    {
-        random_value = 1 + syUtilsRandIntRange(GMREMIX_MENU_MUSIC_SONIC_R);
-    }
-    else
-    {
-        random_value = 5 + syUtilsRandIntRange(GMREMIX_MENU_MUSIC_SONIC_R - 4);
-    }
-    if (random_value == GMREMIX_MENU_MUSIC_64)
-    {
-        return default_bgm;
-    }
-    return gmRemixMenuMusicTrackOf(random_value, default_bgm);
+    return gmRemixMenuMusicTrackOf(gmRemixMenuMusicRandomValue(value), default_bgm);
 }
 
 /**
@@ -193,7 +203,8 @@ static sb32 gmRemixMenuMusicIsRandom(s32 value)
 }
 
 /**
- * Checks whether a BGM id is one of the menu tracks of sMenuMusicTrackBGM (values 2 to 18).
+ * Checks whether a BGM id is one of the menu tracks of sMenuMusicTrackBGM (values 2 to 18) or the trap variant of
+ * FILESELECT_SM64.
  *
  * @param bgm BGM id to check, -1 when no track is playing.
  * @return TRUE when bgm is a listed menu track.
@@ -202,6 +213,10 @@ static sb32 gmRemixMenuMusicIsListedTrack(s32 bgm)
 {
     u32 i;
 
+    if (bgm == GMREMIX_BGM_MAIN_TRAP_SM64)
+    {
+        return TRUE;
+    }
     for (i = 0; i < sizeof(sMenuMusicTrackBGM) / sizeof(sMenuMusicTrackBGM[0]); i++)
     {
         if (bgm == (s32)sMenuMusicTrackBGM[i])
@@ -316,36 +331,46 @@ void gmRemixMenuMusicStop(void)
 }
 
 /**
- * Picks the track an A press on Menu Music plays (Toggles.asm play_menu_music_). DEFAULT rolls the Smash menu tracks with
- * the A press odds (GMREMIX_AUDITION_DEFAULT_ROLL_RANGE), RANDOM and RANDOM CLASSICS pick from the menu list, RANDOM ALL
- * from the Random Music list; any other value is its own track.
+ * Resolves the Menu Music value an A press stands for: DEFAULT rolls the Smash menu tracks with the A press odds
+ * (GMREMIX_AUDITION_DEFAULT_ROLL_RANGE), RANDOM and RANDOM CLASSICS pick a track value, any other value is itself.
  *
  * @param value Menu Music value, not OFF.
- * @return The BGM id to play.
+ * @return The value of the track to play (RANDOM ALL stays RANDOM ALL).
  */
-static u32 gmRemixMenuMusicAuditionTrack(s32 value)
+static s32 gmRemixMenuMusicAuditionValue(s32 value)
 {
     if (value == GMREMIX_MENU_MUSIC_DEFAULT)
     {
-        value = gmRemixToggleActionGetAuditionDefaultValue(syUtilsRandIntRange(GMREMIX_AUDITION_DEFAULT_ROLL_RANGE));
+        return gmRemixToggleActionGetAuditionDefaultValue(syUtilsRandIntRange(GMREMIX_AUDITION_DEFAULT_ROLL_RANGE));
     }
     if ((value == GMREMIX_MENU_MUSIC_RANDOM) || (value == GMREMIX_MENU_MUSIC_RANDOM_CLASSICS))
     {
-        return gmRemixMenuMusicRandomTrack(value, nSYAudioBGMModeSelect);
+        return gmRemixMenuMusicRandomValue(value);
     }
-    if (value == GMREMIX_MENU_MUSIC_RANDOM_ALL)
+    return value;
+}
+
+/**
+ * Counts the press for the itsatrap easter egg (Toggles.asm play_menu_music_ _check_bgm and _sm64_trap_check): a press that
+ * lands on FILESELECT_SM64 counts, a press on any other track clears the counter.
+ *
+ * @param value Menu Music value the press resolved to.
+ */
+static void gmRemixMenuMusicCountTrapPress(s32 value)
+{
+    if (value != GMREMIX_MENU_MUSIC_FILESELECT_SM64)
     {
-        return gmRemixMenuMusicRandomAllTrack();
+        sGMRemixMenuMusicTrapCount = 0;
+        return;
     }
-    return gmRemixMenuMusicTrackOf(value, nSYAudioBGMModeSelect);
+    sGMRemixMenuMusicTrapCount = gmRemixMenuMusicRulesCountTrapPress(sGMRemixMenuMusicTrapCount);
 }
 
 /**
  * A press on Menu Music (Toggles.asm play_menu_music_): plays the chosen track now, always restarting it, or stops the
- * music for OFF. Unlike gmRemixMenuMusicPlay it never keeps the track already playing.
- *
- * This is the one place the FILESELECT_SM64 press counter of Toggles.asm itsatrap (_sm64_trap_check, ledger MS-4)
- * belongs: it counts presses that land on FILESELECT_SM64 and is cleared by a press on any other track.
+ * music for OFF. Unlike gmRemixMenuMusicPlay it never keeps the track already playing. RANDOM ALL picks from the Random
+ * Music list. FILESELECT_SM64 presses are counted (itsatrap): the fourth in a row plays MAIN_TRAP_SM64 and the screens keep
+ * it until a press lands on another track.
  */
 void gmRemixMenuMusicAudition(void)
 {
@@ -356,7 +381,15 @@ void gmRemixMenuMusicAudition(void)
         syAudioStopBGMAll();
         return;
     }
-    syAudioPlayBGM(0, gmRemixMenuMusicAuditionTrack(value));
+    value = gmRemixMenuMusicAuditionValue(value);
+    gmRemixMenuMusicCountTrapPress(value);
+
+    if (value == GMREMIX_MENU_MUSIC_RANDOM_ALL)
+    {
+        syAudioPlayBGM(0, gmRemixMenuMusicRandomAllTrack());
+        return;
+    }
+    syAudioPlayBGM(0, gmRemixMenuMusicTrackOf(value, nSYAudioBGMModeSelect));
 }
 
 #endif

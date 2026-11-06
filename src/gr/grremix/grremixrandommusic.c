@@ -1,14 +1,16 @@
 /**
  * grremixrandommusic.c - Random Music list of the stage BGM (BGM.asm random_music_, add_song_to_random_list_).
  *
- * Custom MIDI tracks of Toggles.asm (entry_random_music_sorted_<id>) are not listed: their ids are assembly-time
- * values with no symbol in remix_symbols.h. Menu Music RANDOM ALL and the pause D-pad cycle are not ported.
+ * The custom MIDI tracks of Toggles.asm follow the 16 stage and menu tracks. Their toggles are a Menu.entry chain that starts
+ * at entry_random_music_first_custom and is already sorted by title, so the list is built by walking that chain: the value
+ * of each entry is its Random Music toggle and its word 0x24 is the BGM id (the one Toggles.asm preview_bgm_ plays).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "grremixrandommusic.h"
 #include "gm/gmremixtoggle.h"
+#include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #include "remix/remix_toggles.h"
 #include <sys/utils.h>
@@ -41,13 +43,44 @@ static const GRRemixRandomTrack sRandomTracks[] =
     { REMIX_SYM_Toggles__entry_random_music_credits, 39 },
 };
 
+/* Menu.asm entry: word 0x1C is the next entry (0 ends the chain), word 0x24 the extra value (the BGM id of a Random Music row). */
+#define GRREMIX_MENU_ENTRY_NEXT 0x1C
+#define GRREMIX_MENU_ENTRY_EXTRA 0x24
+
+/* midi_count minus the 0x2F vanilla tracks: no chain can be longer, which also bounds a corrupt image. */
+#define GRREMIX_RANDOM_CUSTOM_MAX 328
+#define GRREMIX_RANDOM_LIST_MAX (ARRAY_COUNT(sRandomTracks) + GRREMIX_RANDOM_CUSTOM_MAX)
+
 /* BGM.asm random_music_ current_track as the port keeps it: the index of the last random pick. */
 static s32 sRandomTrackIndex = 0;
 
 /**
- * Collects the BGM ids whose Random Music toggle is on.
+ * Appends the BGM ids of the custom MIDI rows whose Random Music toggle is on, in the order of the entry chain.
  *
- * @param bgm_ids Output array with room for every entry of sRandomTracks.
+ * @param bgm_ids Output array.
+ * @param count Number of ids already written.
+ * @return Number of ids written after the append.
+ */
+static s32 grRemixRandomMusicAppendCustom(u32 *bgm_ids, s32 count)
+{
+    u32 entry_addr = REMIX_SYM_Toggles__entry_random_music_first_custom;
+    s32 visited;
+
+    for (visited = 0; (entry_addr != 0) && (visited < GRREMIX_RANDOM_CUSTOM_MAX); visited++)
+    {
+        if (remix_toggle_get(entry_addr) != 0)
+        {
+            bgm_ids[count++] = remix_ram_image_read_word(entry_addr + GRREMIX_MENU_ENTRY_EXTRA);
+        }
+        entry_addr = remix_ram_image_read_word(entry_addr + GRREMIX_MENU_ENTRY_NEXT);
+    }
+    return count;
+}
+
+/**
+ * Collects the BGM ids whose Random Music toggle is on: the stage and menu tracks, then the custom MIDIs.
+ *
+ * @param bgm_ids Output array with room for GRREMIX_RANDOM_LIST_MAX ids.
  * @return Number of ids written.
  */
 static s32 grRemixRandomMusicBuildList(u32 *bgm_ids)
@@ -62,7 +95,7 @@ static s32 grRemixRandomMusicBuildList(u32 *bgm_ids)
             bgm_ids[count++] = sRandomTracks[index].bgm_id;
         }
     }
-    return count;
+    return grRemixRandomMusicAppendCustom(bgm_ids, count);
 }
 
 /**
@@ -87,7 +120,7 @@ static s32 grRemixRandomMusicPickIndex(s32 count, sb32 salty_runback)
 
 u32 grRemixRandomMusicPick(u32 default_bgm, sb32 salty_runback)
 {
-    u32 bgm_ids[ARRAY_COUNT(sRandomTracks)];
+    u32 bgm_ids[GRREMIX_RANDOM_LIST_MAX];
     s32 count;
 
     if (gmRemixToggle(random_music) == 0)
@@ -104,7 +137,7 @@ u32 grRemixRandomMusicPick(u32 default_bgm, sb32 salty_runback)
 
 u32 grRemixRandomMusicPickForced(u32 default_bgm)
 {
-    u32 bgm_ids[ARRAY_COUNT(sRandomTracks)];
+    u32 bgm_ids[GRREMIX_RANDOM_LIST_MAX];
     s32 count = grRemixRandomMusicBuildList(bgm_ids);
 
     if (count == 0)

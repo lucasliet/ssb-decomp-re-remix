@@ -53,11 +53,14 @@ s32 grRemixGetDefaultMusicTrack(s32 gkind);
 s32 grRemixGetBackgroundStage(s32 gkind);
 
 /**
- * BGM id the stage plays (BGM.asm alternate_music_): the Stages.default_music_track_table override of default_bgm, then
- * the stage's Occasional/Rare/Rare2 alternates by chance (65/16/10/9 percent), then the Random Music pick
- * (grremixrandommusic.h) when that toggle is on.
+ * BGM id the stage plays (BGM.asm apply_alt_or_random_music_ and alternate_music_), for the scenes that play the stage song
+ * (VS, 1P, Bonus, Training, How to Play and the VS demo; other scenes get file_bgm back). The Stages.default_music_track_table
+ * override of file_bgm, then the Occasional/Rare/Rare2 alternate: the one a C button held on any controller forces (C-Up the
+ * default song, C-Left occasional, C-Right rare, C-Down rare 2, which also blocks Random Music), else a roll (65/16/10/9
+ * percent) or, on a Salty Runback that preserves the song, the previous pick. Then the Random Music pick
+ * (grremixrandommusic.h) when that toggle is on and no C button forced a song. The VS demo skips the Final Destination intro.
  */
-u32 grRemixGetStageBGM(s32 gkind, u32 default_bgm);
+u32 grRemixGetStageBGM(s32 gkind, u32 file_bgm);
 
 /** Default BGM of a stage: the Stages.default_music_track_table override when it has one, else default_bgm (BGM.asm default_track). */
 u32 grRemixGetStageDefaultTrack(s32 gkind, u32 default_bgm);

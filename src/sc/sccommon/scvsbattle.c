@@ -35,7 +35,7 @@ extern void port_coroutine_yield(void);
 extern void *func_800269C0_275C0(u16 id);
 extern void func_800266A0_272A0(void);
 
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 /* VS on Final Destination is a port addition — the N64 game never offered
  * FD outside the 1P final battle. The FD map file's bgm_id is the one-shot
  * Master Hand entrance sting (nSYAudioBGMBossEntry), which the 1P flow
@@ -389,7 +389,7 @@ void scVSBattleStartBattle(void)
 	ifCommonPlayerStockInitInterface();
 	ifCommonEntryAllMakeInterface();
 	mpCollisionSetPlayBGM();
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 	scVSBattlePortFixupFDMusic();
 #endif
 	func_800269C0_275C0(nSYAudioVoicePublicExcited);
@@ -695,7 +695,7 @@ void scVSBattleStartSuddenDeath(void)
 	gmRemixSmashketballSetup();
 #endif
 	mpCollisionSetPlayBGM();
-#ifdef PORT
+#if defined(PORT) && !defined(REGION_REMIX)
 	scVSBattlePortFixupFDMusic();
 #endif
 	func_800269C0_275C0(nSYAudioVoicePublicExcited);

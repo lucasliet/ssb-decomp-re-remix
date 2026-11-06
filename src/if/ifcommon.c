@@ -22,6 +22,7 @@
 #include "if/ifremixgentlemensreset.h"
 #include "if/ifremixpauselegend.h"
 #include "gm/gmremixbgm.h"
+#include "gm/gmremixbgmswap.h"
 #include "gm/gmremixpractice.h"
 #include "sc/sc1pmode/sc1premix1p.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
@@ -3018,6 +3019,12 @@ void ifCommonTimerFuncRun(GObj *interface_gobj)
                     }
                     else gSCManagerBattleState->time_remain -= time_delta;
 
+#if defined(PORT) && defined(REGION_REMIX)
+                    if (gSCManagerBattleState->time_remain <= I_SEC_TO_TICS(30))
+                    {
+                        gmRemixBgmSwapHurryUpdate();
+                    }
+#else
                     if
                     (
                         (gSCManagerBattleState->gkind == nGRKindInishie)          &&
@@ -3028,6 +3035,7 @@ void ifCommonTimerFuncRun(GObj *interface_gobj)
                         gMPCollisionBGMDefault = nSYAudioBGMInishieHurry;
                         ftParamTryUpdateItemMusic();
                     }
+#endif
                     if (gSCManagerBattleState->time_remain <= I_SEC_TO_TICS(5))
                     {
                         if (gSCManagerBattleState->time_remain == 0)
@@ -3812,6 +3820,9 @@ void ifCommonSetMaxNumGObj(void)
 // 0x8011485C
 void ifCommonBattleUpdateInterfaceAll(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    gmRemixBgmSwapFdIntroUpdate();
+#endif
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusGo)
     {
         sIFCommonTimerIsStarted = FALSE;
