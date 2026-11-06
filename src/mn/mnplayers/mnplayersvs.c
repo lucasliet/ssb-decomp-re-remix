@@ -2284,6 +2284,12 @@ void mnPlayersVSMakeTimeSetting(s32 number)
 void mnPlayersVSMakeTimeSelect(s32 number)
 {
 	GObj *gobj;
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Computed outside lbRelocGetFileData: MSVC rejects preprocessor directives inside macro arguments. */
+	intptr_t selector_offset = mnRemixGoalPickerImageOffset(llMNPlayersCommonTimeSelectorSprite);
+#else
+	intptr_t selector_offset = llMNPlayersCommonTimeSelectorSprite;
+#endif
 
 	if (sMNPlayersVSGameRuleGObj != NULL)
 	{
@@ -2304,11 +2310,7 @@ void mnPlayersVSMakeTimeSelect(s32 number)
 		(
 			Sprite*,
 			sMNPlayersVSFiles[0],
-#if defined(PORT) && defined(REGION_REMIX)
-			mnRemixGoalPickerImageOffset(llMNPlayersCommonTimeSelectorSprite)
-#else
-			llMNPlayersCommonTimeSelectorSprite
-#endif
+			selector_offset
 		),
 		nGCProcessKindFunc,
 		NULL,
@@ -2637,6 +2639,12 @@ void mnPlayersVSMakeLabels(void)
 		{ 0xE3, 0xAC, 0x04 },
 		{ 0x61, 0xAD, 0x49 }
 	};
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Computed outside lbRelocGetFileData: MSVC rejects preprocessor directives inside macro arguments. */
+	intptr_t header_offset = mnPlayersVSGetModeHeaderOffset(offsets[sMNPlayersVSIsTeamBattle]);
+#else
+	intptr_t header_offset = offsets[sMNPlayersVSIsTeamBattle];
+#endif
 
 #ifdef PORT
 	{
@@ -2666,11 +2674,7 @@ void mnPlayersVSMakeLabels(void)
 		(
 			Sprite*,
 			sMNPlayersVSFiles[4],
-#if defined(PORT) && defined(REGION_REMIX)
-			mnPlayersVSGetModeHeaderOffset(offsets[sMNPlayersVSIsTeamBattle])
-#else
-			offsets[sMNPlayersVSIsTeamBattle]
-#endif
+			header_offset
 		),
 		nGCProcessKindFunc,
 		NULL,

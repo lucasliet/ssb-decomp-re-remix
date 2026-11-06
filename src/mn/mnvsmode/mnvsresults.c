@@ -2725,6 +2725,13 @@ void mnVSResultsMakeLabel(void)
 		mnVSResultsDrawResultsStockTeam,
 		mnVSResultsDrawResultsNoContest
 	};
+#if defined(PORT) && defined(REGION_REMIX)
+	/* TwelveCharBattle.asm (hook 0x80136788, update_css_header_._results): the header sprite of the Remix mode in the game modes file.
+	 * Computed outside lbRelocGetFileData: MSVC rejects preprocessor directives inside macro arguments. */
+	intptr_t header_offset = mnRemixCssModeTitleOffset(offsets[mnVSResultsCheckTeamBattle()]);
+#else
+	intptr_t header_offset = offsets[mnVSResultsCheckTeamBattle()];
+#endif
 
 	gobj = lbCommonMakeSpriteGObj
 	(
@@ -2740,12 +2747,7 @@ void mnVSResultsMakeLabel(void)
 		(
 			Sprite*,
 			sMNVSResultsFiles[2],
-#if defined(PORT) && defined(REGION_REMIX)
-			/* TwelveCharBattle.asm (hook 0x80136788, update_css_header_._results): the header sprite of the Remix mode in the game modes file. */
-			mnRemixCssModeTitleOffset(offsets[mnVSResultsCheckTeamBattle()])
-#else
-			offsets[mnVSResultsCheckTeamBattle()]
-#endif
+			header_offset
 		),
 		nGCProcessKindFunc,
 #if defined(PORT) && defined(REGION_REMIX)
