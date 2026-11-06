@@ -105,8 +105,8 @@ static f32 ftRemixAiWeightComboCommitChance(FTStruct *target_fp, s32 hit_frame, 
 /**
  * Combo stage (AI.asm _check_combo). Only a target in hitstun can be combo'd. Otherwise the not-combo rule applies.
  *
- * REMIX-TODO(AI): the asm comment calls the 0x40 read the opponent hitstun timer, but by FTStruct layout (word after
- * unk_ft_0x3C) 0x40 is hitlag_tics. This port reads hitlag_tics, as the asm does. Confirm in a match.
+ * The asm comment calls the 0x40 read (AI.asm 5684) the opponent hitstun timer, but by the FTStruct layout (the word
+ * after unk_ft_0x3C) 0x40 is hitlag_tics, so the port reads hitlag_tics as the asm does.
  */
 static f32 ftRemixAiWeightComboChanceFor(FTStruct *target_fp, s32 hit_frame, f32 chance)
 {

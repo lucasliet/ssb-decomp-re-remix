@@ -1,10 +1,9 @@
 /*
  * ftremixairoll.c - level 10 routines of the Remix AI (AI.asm fix_multi_doublejump_usage, skip_repeated_input_check,
  * skip_repeated_input_skip, shield_drop_, stop_roll_spam_). Pure rules live in ftremixairollrules.c.
- * REMIX-TODO(AI): stop_roll_spam_ per-character branches (AI.asm 6049-6307: Ness, Yoshi, Lucas, Fox family, Kirby, Puff)
- * are not ported. The Remix build never fills Character.close_quarter_combat.table: the table patches at AI.asm 6309-6360
- * are commented out, so every entry is `_continue` and those branches are unreachable. Porting them needs the patches
- * re-enabled first (lead decision).
+ * The stop_roll_spam_ per-character branches (AI.asm 6049-6307: Ness, Yoshi, Lucas, Fox family, Kirby, Puff) are not
+ * ported because the Remix 2.0.1 build cannot reach them: the Character.close_quarter_combat.table patches at AI.asm
+ * 6309-6360 are commented out, so every entry is `_continue` (ledger CT-22, n/a).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)

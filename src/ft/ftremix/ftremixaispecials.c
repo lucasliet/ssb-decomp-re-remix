@@ -25,7 +25,7 @@ static s32 ftRemixAiSpecialsSwitchKind(FTStruct *fp)
 
 /**
  * improve_remix_charged_NSP_1 (AI.asm): DSamus, Sheik and Mewtwo press Z when their charge action can be cancelled. The
- * DK fighters are cased in the vanilla switch (see ftComputerCheckTryCancelSpecialN). REMIX-TODO(AI): none.
+ * DK fighters are cased in the vanilla switch (see ftComputerCheckTryCancelSpecialN).
  */
 sb32 ftRemixAiSpecialsCancelChargeWithZ(FTStruct *fp)
 {
@@ -71,7 +71,7 @@ void ftRemixAiSpecialsBowserUspStickReset(FTStruct *fp)
 
 /**
  * improve_remix_specials (AI.asm _check_needle and _check_revolver): the needle (Sheik) or revolver (Peppy) ammo is the N64
- * word 0x0AE0. REMIX-TODO(AI): none.
+ * word 0x0AE0.
  */
 sb32 ftRemixAiSpecialsNeedleCharge(FTStruct *fp)
 {

@@ -11,8 +11,7 @@
 #include <ft/fighter.h>
 #include <gm/gmremixpanel.h>
 
-/* REMIX-TODO(AI): the Remix AI reads this byte for its per-character handicap (AI.asm handicap indicator, line 6896).
- * The AI is not ported (M7), so only the byte is set here. */
+/* The CSS handicap indicator (AI.asm 6896, ledger FT-11) draws this value for CPU players. */
 u8 ftRemixHandicapGetFighterValue(FTStruct *fp, u8 vanilla_handicap)
 {
     s32 panel_value;
