@@ -33,7 +33,9 @@
 #define LBREMIXGFX_TEXTURE_HEADER_SIZE 0x18
 #define LBREMIXGFX_PALETTE_BYTES 0x200
 
-extern void *calloc(unsigned long count, unsigned long size);
+#include <stddef.h>
+
+extern void *calloc(size_t count, size_t size);
 extern void free(void *ptr);
 extern s32 sLBParticleScriptBanksNum[];
 extern s32 sLBParticleTextureBanksNum[];

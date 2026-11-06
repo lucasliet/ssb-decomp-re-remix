@@ -19,7 +19,9 @@
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 
-extern void *calloc(unsigned long count, unsigned long size);
+#include <stddef.h>
+
+extern void *calloc(size_t count, size_t size);
 
 #define GMREMIX_COLSCRIPTS_ENTRY_SIZE 8
 #define GMREMIX_COLSCRIPTS_PORTS 4
