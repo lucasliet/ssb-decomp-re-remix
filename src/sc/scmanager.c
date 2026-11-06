@@ -977,6 +977,8 @@ void scManagerRunLoop(sb32 arg)
 		{
 			int f = atoi(fkind_env);
 			gSCManagerSceneData.fkind = f;
+			/* SSB64_START_SCENE=53 (bonus stage) reads bonus_fkind, not fkind */
+			gSCManagerSceneData.bonus_fkind = f;
 			port_log("SSB64: SSB64_SPGAME_FKIND override → fkind=%d\n", f);
 		}
 		/* SSB64_START_SCENE=61 (Auto-Demo) never passes through the title, so

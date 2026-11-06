@@ -2294,6 +2294,18 @@ typedef union {
 #define gsSPMvpRecalc()   gsImmp21(G_SPECIAL_1, 0, 1, 0)
 #endif
 
+#ifdef PORT
+/*
+ * Port extension (libultraship Fast::OTR_G_FORCE_RENDERMODE): while on, the host interpreter replaces the render mode of
+ * every G_SETOTHERMODE_L it executes with `mode` (a gDPSetRenderMode word, cycle 1 | cycle 2). Used where Smash Remix swaps
+ * display lists to force a render mode (CharEnvColor.asm custom_display_lists_*). Never emitted on the N64.
+ */
+#define G_PORT_FORCE_RENDERMODE 0x41
+
+#define gSPForceRenderMode(pkt, mode) gDma0p(pkt, G_PORT_FORCE_RENDERMODE, (mode), 1)
+#define gSPClearForceRenderMode(pkt)  gDma0p(pkt, G_PORT_FORCE_RENDERMODE, 0, 0)
+#endif
+
 /*
  * Insert values into Matrix
  *

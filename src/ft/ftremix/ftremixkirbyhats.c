@@ -15,6 +15,7 @@
 #include "ft/ftremix/ftremixkirbyspawnrules.h"
 #include "ft/ftremix/ftremixfields.h"
 #include <ft/fighter.h>
+#include <ft/ftmanager.h>
 #include <gm/gmremixpanel.h>
 #include <lb/lbreloc.h>
 #include <lb/library.h>
@@ -203,6 +204,12 @@ void ftRemixKirbyHatSpawnInit(GObj *fighter_gobj, s32 spawn_copy_id)
     panel_fighter = ftRemixKirbyHatsPanelFighterID(fp);
     copy_id = (panel_fighter != REMIX_ID_KIRBY) ? panel_fighter : spawn_copy_id;
     fp->passive_vars.kirby.copy_id = copy_id;
+
+    if ((panel_fighter != REMIX_ID_KIRBY) && (panel_fighter != REMIX_ID_NONE))
+    {
+        /* The hat's special reads that fighter's files, loaded only for fighters in the match (see ftRemixKirbyMagicHatRoll) */
+        ftManagerSetupFilesAllKind(panel_fighter);
+    }
 
     copy_table = ftRemixKirbyGetCopyTable();
     ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, copy_table[((copy_id >= 0) && (copy_id < FTREMIX_KIRBYHATS_COPY_ROWS)) ? copy_id : nFTKindKirby].copy_modelpart_id);

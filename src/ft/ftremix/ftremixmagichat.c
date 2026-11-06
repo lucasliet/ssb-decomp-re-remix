@@ -11,6 +11,7 @@
 #include "remix/remix_roster_data.h"
 #include <ef/efmanager.h>
 #include <ft/ftparam.h>
+#include <ft/ftmanager.h>
 #include <gm/gmcollision.h>
 #include <sys/utils.h>
 
@@ -115,6 +116,9 @@ static s32 ftRemixMagicHatPickNewPower(FTStruct *fp)
     *ftRemixFighterWord(fp, ftRemixMagicHatAmmoOffset(REMIX_ID_KIRBY)) = 0;
 
     fkind = ftRemixMagicHatRollFighter();
+    /* The copied special reads the power owner's files (e.g. the boomerang reads Link's special file), which are only
+     * loaded for fighters in the match; the roll can pick any fighter (`r3_ft29_magichat` crashed on Link's boomerang) */
+    ftManagerSetupFilesAllKind(fkind);
     ftRemixMagicHatLoadCharge(fp, fkind);
 
     return fkind;

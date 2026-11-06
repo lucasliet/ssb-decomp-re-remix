@@ -4,6 +4,7 @@
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixhitbox.h"
 #include "ft/ftremix/ftremixenvcolor.h"
+#include "ft/ftremix/ftremixenvcolorrules.h"
 #include "ft/ftremix/ftremixdkmode.h"
 #include "ft/ftremix/ftremixswordtrail.h"
 #include "ft/ftremix/ftremixpartimage.h"
@@ -1166,6 +1167,9 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
     f32 cam_pos_x;
     f32 cam_pos_y;
     Vec3f dist;
+#if defined(PORT) && defined(REGION_REMIX)
+    sb32 is_env_render_mode_forced = FALSE;
+#endif
 
     fp = ftGetStruct(fighter_gobj);
 #if defined(PORT) && defined(REGION_REMIX)
@@ -1345,6 +1349,7 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
         if (sr_env_color == 0u)
         {
             sr_env_color = ftRemixEnvColorGetOverride(fp->player);
+            is_env_render_mode_forced = ftRemixEnvColorRulesForcesTranslucent(sr_env_color);
         }
 #endif
         if (sr_env_color != 0u)
@@ -1358,6 +1363,14 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
                 (u8)( sr_env_color        & 0xFFu)
             );
             sFTDisplayMainSkyFogAlpha = (u8)(sr_env_color & 0xFFu);
+#ifdef REGION_REMIX
+            /* CharEnvColor.asm custom_display_lists_*: parts whose display list sets its own opaque render mode would stay
+             * opaque under a translucent override, so the host renderer forces the alpha render mode until the draw ends */
+            if (is_env_render_mode_forced)
+            {
+                gSPForceRenderMode(gSYTaskmanDLHeads[0]++, FTREMIX_ENVCOLOR_FORCED_RENDER_MODE);
+            }
+#endif
         }
         else
 #endif
@@ -1417,6 +1430,12 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
 
             fp->joints[nFTPartsJointTopN]->xobjs[0]->kind = 0x4B;
         }
+#if defined(PORT) && defined(REGION_REMIX)
+        if (is_env_render_mode_forced)
+        {
+            gSPClearForceRenderMode(gSYTaskmanDLHeads[0]++);
+        }
+#endif
         if (fp->shuffle_tics != 0)
         {
             gSPPopMatrix(gSYTaskmanDLHeads[0]++, G_MTX_MODELVIEW);

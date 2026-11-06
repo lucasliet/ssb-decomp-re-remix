@@ -12,6 +12,7 @@
 #include "ft/ftremix/ftremixeffects.h"
 #include "if/ifremixannouncer.h"
 #include "ef/efremixpuffsing.h"
+#include "lb/lbremixgfx.h"
 #endif
 #ifdef PORT
 #include "fighter_registry.h"
@@ -3425,6 +3426,17 @@ void efManagerImpactWaveProcDisplay(GObj *effect_gobj)
 
     gDPPipeSync(gSYTaskmanDLHeads[0]++);
     gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_ZB_XLU_SURF, G_RM_AA_ZB_XLU_SURF2);
+#ifdef REGION_REMIX
+    /* GFX.asm add_ground_effect_gfx(..., 0x20): the N64 reads index 0x20 past these 5-byte arrays, into the bytes at
+     * 0x8012DEE8/F0/F8 (prim) and 0x8012DF00/08/10 (env); those values are used here instead of an out-of-bounds read */
+    if (index == LBREMIXGFX_GROUND_EFFECT_INDEX)
+    {
+        gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0x00, 0x00, 0xFF, (s32)ep->effect_vars.impact_wave.alpha);
+        gDPSetEnvColor(gSYTaskmanDLHeads[0]++, 0x4B, 0x62, 0x00, 0xFF);
+        gcDrawDObjDLHead0(effect_gobj);
+        return;
+    }
+#endif
     gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, dEFManagerImpactWavePrimColorR[index], dEFManagerImpactWavePrimColorG[index], dEFManagerImpactWavePrimColorB[index], (s32)ep->effect_vars.impact_wave.alpha);
 
     // The following EnvColor RGB key arrays are all zeroes, so using them (and even having them occupy space in the .data section) is completely unnecessary.

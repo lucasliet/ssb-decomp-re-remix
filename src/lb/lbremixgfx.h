@@ -8,6 +8,11 @@
 
 #include <ssb_types.h>
 
+/* GFX.asm:495 add_ground_effect_gfx(Blue/Black Ground Effect, 0x20): GFX id 0x64 is the charge shot ground wave
+ * (0x800EB0A4) drawn with impact wave index 0x20 instead of 4. */
+#define LBREMIXGFX_GROUND_EFFECT_ID 0x64
+#define LBREMIXGFX_GROUND_EFFECT_INDEX 0x20
+
 /** Appends the Remix scripts and texture blocks to a freshly set up particle bank when it is the common effect bank. */
 void lbRemixGfxExtendBank(s32 bank_id);
 

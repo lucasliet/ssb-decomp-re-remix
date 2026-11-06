@@ -2194,13 +2194,21 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
     void *effect;
     f32 scale;
     LBParticle *pc;
+#ifdef REGION_REMIX
+    s32 impact_wave_index = 4;
+#endif
 
     effect = NULL;
 
 #ifdef REGION_REMIX
     gmRemixAccessibilityParamEffectBegin(ftGetStruct(fighter_gobj));
 
-    if (lbRemixGfxIsNewEffect(effect_id))
+    if (effect_id == LBREMIXGFX_GROUND_EFFECT_ID)
+    {
+        effect_id = nEFKindImpactWave;
+        impact_wave_index = LBREMIXGFX_GROUND_EFFECT_INDEX;
+    }
+    else if (lbRemixGfxIsNewEffect(effect_id))
     {
         s32 base_effect_id = lbRemixGfxPrepareEffect(effect_id);
 
@@ -2409,9 +2417,15 @@ void* ftParamMakeEffect(GObj *fighter_gobj, s32 effect_id, s32 joint_id, Vec3f *
     case nEFKindImpactWave:
         if ((fp->ga == nMPKineticsGround) && (fp->coll_data.floor_line_id != -1) && (fp->coll_data.floor_line_id != -2))
         {
+#ifdef REGION_REMIX
+            effect = efManagerImpactWaveMakeEffect(&pos, impact_wave_index, syUtilsArcTan2(-fp->coll_data.floor_angle.x, fp->coll_data.floor_angle.y));
+        }
+        else effect = efManagerImpactAirWaveMakeEffect(&pos, impact_wave_index);
+#else
             effect = efManagerImpactWaveMakeEffect(&pos, 4, syUtilsArcTan2(-fp->coll_data.floor_angle.x, fp->coll_data.floor_angle.y));
         }
         else effect = efManagerImpactAirWaveMakeEffect(&pos, 4);
+#endif
 #ifdef REGION_REMIX
         ftRemixSizeAttachGroundGfx(effect, fighter_gobj);
 #endif

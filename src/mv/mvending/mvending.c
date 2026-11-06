@@ -294,6 +294,10 @@ void mvEndingMakeFighter(s32 fkind)
     FTDesc desc = dFTManagerDefaultFighterDesc;
 
     desc.fkind = fkind;
+#if defined(PORT) && defined(REGION_REMIX)
+    /* SinglePlayer.asm fix_port_index_ _gameover_and_room_drop (0x80131FA4): the room drop fighter takes the human's port */
+    desc.player = gSCManagerSceneData.player;
+#endif
 
     desc.pos.x = -1077.804F;
     desc.pos.y = 4038.864F;

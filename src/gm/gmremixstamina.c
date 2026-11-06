@@ -17,7 +17,9 @@ static sb32 sGMRemixStaminaIsDefeated[GMCOMMON_PLAYERS_MAX];
 
 sb32 gmRemixStaminaIsActive(void)
 {
-    if (gGMRemixStaminaRule == FALSE)
+    /* The CSS preview fighter runs ftMainSetStatus before any battle scene set gSCManagerBattleState
+     * (r13_md20_css crashed here with the Stamina rule on and the CSS opened from boot) */
+    if ((gGMRemixStaminaRule == FALSE) || (gSCManagerBattleState == NULL))
     {
         return FALSE;
     }
