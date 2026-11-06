@@ -170,6 +170,16 @@ void mnRemix1PModeSelect(s32 option, s32 player)
     gSCManagerSceneData.player = player - 1;
 }
 
+/**
+ * Clears the chosen 1P mode when a Mode Select button is picked (Toggles.asm mode_select_screen_change_, which clears
+ * SinglePlayerModes.singleplayer_mode_flag), so a Remix 1P mode does not carry over to VS or Training.
+ */
+void mnRemix1PModeReset(void)
+{
+    gSC1PRemixMode = SC1PREMIX_MODE_STANDARD;
+    gMNRemix1PModePage = MNREMIX_1PMODE_PAGE_1;
+}
+
 void mnRemix1PModeBack(void)
 {
     gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;

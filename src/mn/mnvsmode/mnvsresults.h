@@ -26,7 +26,7 @@ extern s32 mnVSResultsGetFighterKind(s32 player);
 extern void mnVSResultsSetFighterKindAll(void);
 extern void mnVSResultsSetFighterPosition(GObj* fighter_gobj, s32 player, s32 place);
 extern void mnVSResultsFaceWinner(GObj *fighter_gobj, s32 player, s32 place);
-extern s32 mnVSResultsGetStatusWin(s32 fkind);
+extern s32 mnVSResultsGetStatusWin(s32 fkind, s32 player);
 extern s32 mnVSResultsGetStatusLose(s32 fkind);
 extern void mnVSResultsSetFighterStatus(GObj *fighter_gobj, s32 player);
 extern s32 mnVSResultsGetPlayerCountPlace(s32 place);

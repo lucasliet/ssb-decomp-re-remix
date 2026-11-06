@@ -20,7 +20,14 @@ typedef struct MNRemixCssPanelState
     s32 fkind;             /* hovered or selected fighter, nFTKindNull when the panel has none */
     sb32 is_selected;      /* the fighter was dropped on the panel */
     sb32 is_token_held;    /* some hand holds the token of the panel */
+    s32 token;             /* index the variant slot of the token is kept under (the panel on the VS CSS, the port of the token elsewhere) */
 } MNRemixCssPanelState;
+
+/**
+ * Places the D-pads of the panels of a screen: x of the D-pad of panel 0 and the distance between two panels (css_settings, X padding
+ * and panel offset). The VS values are the default and come back with every mnRemixCssIndicatorsReset.
+ */
+extern void mnRemixCssIndicatorsSetLayout(s32 first_panel_x, s32 panel_stride);
 
 /** Forgets the scene objects; called when the character select builds its portraits. */
 extern void mnRemixCssIndicatorsReset(void);

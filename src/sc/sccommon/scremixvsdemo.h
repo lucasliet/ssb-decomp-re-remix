@@ -8,7 +8,7 @@
 extern void scRemixVsDemoPickFocusFighters(void);
 
 /* VsDemo.asm (Smash Remix): picks a non-focused auto-demo fighter for player 2 and up. Hooked in scAutoDemoGetFighterKind. */
-extern s32 scRemixVsDemoPickNonFocusedFighter(void);
+extern s32 scRemixVsDemoPickNonFocusedFighter(s32 player);
 
 /* VsDemo.asm (Smash Remix): picks a random battle stage for the auto demo. Hooked in scAutoDemoInitDemo. */
 extern s32 scRemixVsDemoPickStage(s32 fallback_stage_id);

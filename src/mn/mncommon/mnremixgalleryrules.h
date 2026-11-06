@@ -17,8 +17,24 @@
 /** Offset inside both halves of a custom victory picture (SinglePlayer.asm VICTORY_OFFSET_1). */
 #define MN_REMIX_VICTORY_IMAGE_OFFSET 0x20718
 
+/** Bottom file of the Remix splash image shown after the N64 logo, Character.id NONE (File.SPLASH_IMAGE_BOTTOM). */
+#define MN_REMIX_SPLASH_IMAGE_FILE 0x95E
+
 /** Bottom file of the picture of a character without its own (File.SINGLEPLAYER_VICTORY_IMAGE_BOTTOM). */
 #define MN_REMIX_VICTORY_IMAGE_DEFAULT_FILE 0x92D
+
+/** Frames of the fade between two pictures (Gallery.asm FADE_LENGTH_NORMAL, FADE_LENGTH_QUICK, FADE_LENGTH_IDLE). */
+#define MN_REMIX_GALLERY_FADE_NORMAL 45
+#define MN_REMIX_GALLERY_FADE_QUICK 4
+#define MN_REMIX_GALLERY_FADE_IDLE 100
+
+/** Frames the idle mode shows a picture before the next one (Gallery.asm IDLE_TIME, 150 seconds). */
+#define MN_REMIX_GALLERY_IDLE_FRAMES (150 * 60)
+
+/** Idle modes (Gallery.asm status.idle): off, pictures in a shuffled order, random songs with their pictures. */
+#define MN_REMIX_GALLERY_IDLE_OFF 0
+#define MN_REMIX_GALLERY_IDLE_SHUFFLE 1
+#define MN_REMIX_GALLERY_IDLE_RANDOM_SONG 2
 
 /**
  * Character.id shown by a Gallery page (Gallery.asm id_table).
@@ -36,6 +52,32 @@ extern int mnRemixGalleryRulesGetCharacterId(int index);
  * @return The new page index.
  */
 extern int mnRemixGalleryRulesStepIndex(int index, int step);
+
+/**
+ * Idle mode that START moves to (Gallery.asm _check_start_press): off and the random song mode go to the shuffled pictures, the
+ * shuffled pictures go to the random song mode.
+ *
+ * @param idle_mode Current idle mode.
+ * @return The new idle mode.
+ */
+extern int mnRemixGalleryRulesNextIdleMode(int idle_mode);
+
+/**
+ * Position of the next picture in the shuffled idle order (Gallery.asm initial_ _idle_mode_1): it wraps after the last page.
+ *
+ * @param idle_index Current position, -1 right after START.
+ * @return The next position, 0 to MN_REMIX_GALLERY_ENTRY_COUNT - 1.
+ */
+extern int mnRemixGalleryRulesNextIdleIndex(int idle_index);
+
+/**
+ * Fills the idle order with every page once in a random order (Gallery.asm populate_idle_table_): each page takes a random free
+ * position.
+ *
+ * @param order Output, MN_REMIX_GALLERY_ENTRY_COUNT entries.
+ * @param random_range Returns a random number from 0 to range - 1.
+ */
+extern void mnRemixGalleryRulesBuildIdleOrder(int *order, int (*random_range)(int range));
 
 /**
  * Bottom file of the victory picture of a Remix character (SinglePlayer.asm replace_victory_image_ _custom and the

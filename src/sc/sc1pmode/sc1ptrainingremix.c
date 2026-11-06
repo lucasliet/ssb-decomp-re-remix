@@ -77,6 +77,19 @@ static u16 sc1PTrainingRemixGetDpadTaps(void)
     return taps & SC1PTRAININGREMIX_DPAD_BUTTONS;
 }
 
+/* Training.asm _check_dr reads D-pad right as TURBO (the press frame and its repeats), so a held DR keeps advancing frames. */
+static sb32 sc1PTrainingRemixIsDpadRightRepeated(void)
+{
+    u16 repeats = 0;
+    s32 port;
+
+    for (port = 0; port < MAXCONTROLLERS; port++)
+    {
+        repeats |= gSYControllerDevices[port].button_update;
+    }
+    return ((repeats & R_JPAD) != 0) ? TRUE : FALSE;
+}
+
 static void sc1PTrainingRemixCycleModelDisplay(void)
 {
     s32 value = (gmRemixToggle(special_model) + 1) % SC1PTRAININGREMIX_MODEL_DISPLAY_COUNT;
@@ -104,14 +117,16 @@ sb32 sc1PTrainingRemixPollDpad(void)
     {
         return FALSE;
     }
+    if (sc1PTrainingRemixIsDpadRightRepeated() != FALSE)
+    {
+        /* Training.asm _check_dr: D-pad right wins over up and down pressed on the same frame */
+        sSC1PTrainingRemixIsFrozen = TRUE;
+        sSC1PTrainingRemixIsAdvancing = TRUE;
+        return FALSE;
+    }
     if (taps & U_JPAD)
     {
         sSC1PTrainingRemixIsFrozen = (sSC1PTrainingRemixIsFrozen == FALSE) ? TRUE : FALSE;
-    }
-    if (taps & R_JPAD)
-    {
-        sSC1PTrainingRemixIsFrozen = TRUE;
-        sSC1PTrainingRemixIsAdvancing = TRUE;
     }
     if (taps & D_JPAD)
     {

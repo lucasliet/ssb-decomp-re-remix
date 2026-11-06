@@ -49,6 +49,38 @@ extern void sc1PRemixAfkSetupSlot(s32 slot, s32 mapobj_kind);
  */
 extern sb32 sc1PRemixAfkIsSpeedAssistActive(s32 name_id, f32 speed, f32 normal_speed);
 
+/**
+ * A press of the Sound Test (FGM.asm afk_soundTest._A_away): a real A tap, or the automation's own press after the music played for
+ * SC1PREMIX_AFK_SOUNDTEST_WAIT_TIME frames. Counts the frames, so call it once per frame.
+ *
+ * @return TRUE when A counts as pressed this frame.
+ */
+extern sb32 sc1PRemixAfkSoundTestTapA(void);
+
+/**
+ * Right press of the Sound Test the automation makes one frame before its A press (afk_soundTest._right_away), so the next song plays.
+ *
+ * @return TRUE when right counts as pressed this frame.
+ */
+extern sb32 sc1PRemixAfkSoundTestTapRight(void);
+
+/**
+ * A or B check of the credits cursor (awayMode._auto_shoot): with the automation on the cursor shoots on every frame. Remembers
+ * whether the player tapped, for sc1PRemixAfkCreditsShotIsSilent.
+ *
+ * @param button_tap Buttons tapped this frame.
+ * @return TRUE when the cursor shoots this frame.
+ */
+extern sb32 sc1PRemixAfkCreditsTapShoot(u16 button_tap);
+
+/**
+ * Whether the shot of this frame skips its sound and highlight (awayMode._handle_shoot_fgm, _handle_shoot_gfx): the automation fired
+ * it and the player did not tap A or B. Call after sc1PRemixAfkCreditsTapShoot in the same frame.
+ *
+ * @return TRUE when the sound and the highlight are suppressed.
+ */
+extern sb32 sc1PRemixAfkCreditsShotIsSilent(void);
+
 #endif
 
 #endif

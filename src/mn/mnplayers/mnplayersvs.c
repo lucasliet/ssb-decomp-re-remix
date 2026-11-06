@@ -41,6 +41,10 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnmaps/mnremixstagerandom.h"
 #include "mn/mnplayers/mnremixcssrandom.h"
 #include "mn/mnplayers/mnremixcssslide.h"
+#include "mn/mnplayers/mnremixcsstoken.h"
+#include "mn/mnplayers/mnremixcssafk.h"
+#include "mn/mnplayers/mnremixcsstokenrules.h"
+#include "mn/mnplayers/mnremixstockrangerules.h"
 #include "mn/mnplayers/mnremixcssrules.h"
 #include "mn/mnplayers/mnremixcpulevel.h"
 #include "mn/mnplayers/mnremixcpulevelrules.h"
@@ -58,17 +62,21 @@ extern float port_widescreen_clip_x_scale(void);
 #include "remix/remix_hud_text.h"
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
+#include "mn/mnvsmode/mnremixvsmode.h"
 #define MNPLAYERSVS_GET_TEAM_COSTUME(player, fkind, team) mnRemixSonicClassicGetTeamCostume(player, fkind, team)
 #define MNPLAYERSVS_TEAM_COLOR(team) mnRemixTeamsGetColor(team)
 #define MNPLAYERSVS_TEAM_NEXT(team) mnRemixTeamsRulesNextTeam(team)
 #define MNPLAYERSVS_TEAM_PORT_COLOR(team) mnRemixTeamsGetColor(team)
 #define MNPLAYERSVS_TEAM_BUTTON_OFFSET(offsets, team) mnRemixTeamsGetButtonOffset(team, offsets)
+/* CharacterSelectDebugMenu.asm:2076, 2102: the team button sits 5 pixels right of the vanilla one */
+#define MNPLAYERSVS_TEAM_BUTTON_X 39
 #else
 #define MNPLAYERSVS_GET_TEAM_COSTUME(player, fkind, team) ftParamGetCostumeTeamID(fkind, team)
 #define MNPLAYERSVS_TEAM_COLOR(team) (((team) == nSCBattleTeamIDGreen) ? 3 : (team))
 #define MNPLAYERSVS_TEAM_NEXT(team) (((team) == nSCBattleTeamIDGreen) ? 0 : (team) + 1)
 #define MNPLAYERSVS_TEAM_PORT_COLOR(team) dIFCommonPlayerTeamColorIDs[team]
 #define MNPLAYERSVS_TEAM_BUTTON_OFFSET(offsets, team) ((offsets)[team])
+#define MNPLAYERSVS_TEAM_BUTTON_X 34
 #endif
 
 
@@ -558,23 +566,6 @@ s32 mnPlayersVSRemixGetPortrait(s32 fkind)
 		}
 	}
 	return 0;
-}
-
-/* Width and height of the cell of a portrait slot; the bonus bookend is narrower and taller than a grid cell (CharacterSelect.asm
- * fix_right_boundary_check_ and fix_bottom_boundary_check_). */
-static sb32 mnPlayersVSRemixIsBookendSlot(s32 slot)
-{
-	return ((slot == MNREMIX_CSS_BONUS_BOOKEND_SLOT) || (slot == MNREMIX_CSS_RANDOM_BOOKEND_SLOT)) ? TRUE : FALSE;
-}
-
-static f32 mnPlayersVSRemixCellWidth(s32 slot)
-{
-	return (mnPlayersVSRemixIsBookendSlot(slot) != FALSE) ? (f32)MNREMIX_CSS_BOOKEND_WIDTH : (f32)REMIX_CSS_PORTRAIT_WIDTH;
-}
-
-static f32 mnPlayersVSRemixCellHeight(s32 slot)
-{
-	return (mnPlayersVSRemixIsBookendSlot(slot) != FALSE) ? (f32)MNREMIX_CSS_BOOKEND_HEIGHT : (f32)REMIX_CSS_PORTRAIT_HEIGHT;
 }
 
 void mnPlayersVSMakeRemixPortrait(s32 slot)
@@ -1484,7 +1475,7 @@ void mnPlayersVSMakeTeamSelect(s32 team, s32 player)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 34, GOBJ_PRIORITY_DEFAULT, ~0);
 
 	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], MNPLAYERSVS_TEAM_BUTTON_OFFSET(offsets, team)));
-	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + 34;
+	sobj->pos.x = (mnPlayersVSGetPanelIndex(player) * 69) + MNPLAYERSVS_TEAM_BUTTON_X;
 	sobj->pos.y = 131.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -3265,16 +3256,24 @@ void mnPlayersVSUpdateGameMode(void)
 	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->pos.x = 27.0F;
 	sobj->pos.y = 24.0F;
-	sobj->sprite.red = colors[sMNPlayersVSIsTeamBattle].r;
-	sobj->sprite.green = colors[sMNPlayersVSIsTeamBattle].g;
 #if defined(PORT) && defined(REGION_REMIX)
-	/* Smashketball.asm enable_toggling_mode_ (hook 0x801354A4): the rest of the routine is skipped before the blue is set. */
+	{
+		s32 color_index = mnRemixCssModeGetTitleColorIndex(sMNPlayersVSIsTeamBattle);
+
+		sobj->sprite.red = colors[color_index].r;
+		sobj->sprite.green = colors[color_index].g;
+		sobj->sprite.blue = colors[color_index].b;
+	}
+	/* Smashketball.asm enable_toggling_mode_ (hook 0x801354A4): the rest of the routine is skipped once the colour is set. */
 	if (mnRemixCssModeIsSmashketball() != FALSE)
 	{
 		return;
 	}
-#endif
+#else
+	sobj->sprite.red = colors[sMNPlayersVSIsTeamBattle].r;
+	sobj->sprite.green = colors[sMNPlayersVSIsTeamBattle].g;
 	sobj->sprite.blue = colors[sMNPlayersVSIsTeamBattle].b;
+#endif
 
 	if (sMNPlayersVSIsTeamBattle == TRUE)
 	{
@@ -3312,7 +3311,7 @@ s32 mnPlayersVSCheckTeamSelectInRange(GObj *gobj, s32 player)
 
 	pos_x = sobj->pos.x + 20.0F;
 
-	is_in_range = (pos_x >= (mnPlayersVSGetPanelIndex(player) * 69) + 34) && (pos_x <= (mnPlayersVSGetPanelIndex(player) * 69) + 58) ? TRUE : FALSE;
+	is_in_range = (pos_x >= (mnPlayersVSGetPanelIndex(player) * 69) + MNPLAYERSVS_TEAM_BUTTON_X) && (pos_x <= (mnPlayersVSGetPanelIndex(player) * 69) + 58) ? TRUE : FALSE;
 
 	if (is_in_range != FALSE)
 	{
@@ -3725,6 +3724,20 @@ void mnPlayersVSUpdatePuckDisplay(GObj *gobj, s32 player)
 }
 
 #if defined(PORT) && defined(REGION_REMIX)
+/** Range of the stock picker arrows of the current mode (TwelveCharBattle.asm handle_stock_count_change_). */
+static s32 mnPlayersVSGetStockRange(void)
+{
+	if (gmRemixModeIs(MNREMIX_VSMODE_TAG_TEAM) != FALSE)
+	{
+		return MNREMIX_STOCK_RANGE_TAG_TEAM;
+	}
+	if (gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR) != FALSE)
+	{
+		return MNREMIX_STOCK_RANGE_TUG_OF_WAR;
+	}
+	return MNREMIX_STOCK_RANGE_DEFAULT;
+}
+
 /* TagTeam.asm css.get_stock_count_: the stock picker, lowered to the Manual stock count of the panel (StockMode option). */
 static s32 mnPlayersVSGetTagTeamStockCount(s32 player)
 {
@@ -3949,11 +3962,32 @@ void mnPlayersVSPortraitFlashThreadUpdate(GObj *gobj)
 	}
 }
 
+#ifdef REGION_REMIX
+/** White flash of a 12-Character Battle portrait: the flash image of the portrait at its position, scale 1 (set_white_flash_texture). */
+static void mnPlayersVSMakeTwelveCBFlash(GObj *gobj, s32 slot)
+{
+	s32 fkind = mnPlayersVSTwelveCBSlotFkind(slot);
+	SObj *sobj;
+
+	if (fkind == nFTKindNull)
+	{
+		return;
+	}
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[8], kRemixCssPortraitOffset[fkind] + MNREMIX_CSS_TOKEN_FLASH_DELTA));
+	sobj->pos.x = mnRemixTwelveCBLayoutCellX(slot);
+	sobj->pos.y = mnRemixTwelveCBLayoutCellY(slot);
+	sobj->sprite.attr &= ~SP_FASTCOPY;
+	sobj->sprite.attr |= SP_TRANSPARENT;
+}
+#endif
+
 // 0x8013647C
 void mnPlayersVSMakePortraitFlash(s32 player)
 {
 	GObj *gobj;
+#ifndef REGION_REMIX
 	SObj *sobj;
+#endif
 	s32 portrait = mnPlayersVSGetPortraitOfPlayer(player, sMNPlayersVSSlots[player].fkind);
 
 	mnPlayersVSDestroyPortraitFlash(player);
@@ -3964,35 +3998,14 @@ void mnPlayersVSMakePortraitFlash(s32 player)
 	gcAddGObjProcess(gobj, mnPlayersVSPortraitFlashThreadUpdate, nGCProcessKindThread, 1);
 
 #ifdef REGION_REMIX
-	if ((gmRemixTwelveCBIsActive() == FALSE) && (portrait == MNREMIX_CSS_BONUS_BOOKEND_SLOT))
-	{
-		/* set_white_flash_texture: the bookend flash image sits 0xC60 after the bookend image and takes its place and scale */
-		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[11], REMIX_CSS_BONUS_BOOKEND_OFFSET + 0x0C60));
-		sobj->pos.x = MNREMIX_CSS_BOOKEND_X;
-		sobj->pos.y = MNREMIX_CSS_BOOKEND_Y;
-		sobj->sprite.scalex = MNREMIX_CSS_BONUS_BOOKEND_SCALE_X;
-		sobj->sprite.scaley = MNREMIX_CSS_BONUS_BOOKEND_SCALE_Y;
-		sobj->sprite.attr &= ~SP_FASTCOPY;
-		sobj->sprite.attr |= SP_TRANSPARENT;
-		return;
-	}
-	if ((gmRemixTwelveCBIsActive() == FALSE) && (portrait == MNREMIX_CSS_RANDOM_BOOKEND_SLOT))
-	{
-		mnRemixCssRandomMakeFlash(gobj, sMNPlayersVSFiles[11]);
-		return;
-	}
-#endif
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[5], llMNPlayersPortraitsWhiteSquareSprite));
-#ifdef REGION_REMIX
 	if (gmRemixTwelveCBIsActive() != FALSE)
 	{
-		sobj->pos.x = mnRemixTwelveCBLayoutCellX(portrait) + 1.0F;
-		sobj->pos.y = mnRemixTwelveCBLayoutCellY(portrait) + 1.0F;
+		mnPlayersVSMakeTwelveCBFlash(gobj, portrait);
 		return;
 	}
-	sobj->pos.x = mnPlayersVSRemixCellX(portrait) + 1.0F;
-	sobj->pos.y = mnPlayersVSRemixCellY(portrait) + 1.0F;
+	mnRemixCssTokenMakeSlotFlash(gobj, sMNPlayersVSFiles[8], sMNPlayersVSFiles[11], portrait);
 #else
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[5], llMNPlayersPortraitsWhiteSquareSprite));
 	sobj->pos.x = (((portrait >= 6) ? portrait - 6 : portrait) * 45) + 26;
 	sobj->pos.y = (((portrait >= 6) ? 1 : 0) * 43) + 37;
 #endif
@@ -4819,7 +4832,11 @@ void mnPlayersVSAdjustCursor(GObj *gobj, s32 player)
 		if (is_in_range != FALSE)
 		{
 			delta = (gSYControllerDevices[player].stick_range.y / -20.0F) + SObjGetStruct(gobj)->pos.y;
+#ifdef REGION_REMIX
+			is_in_range = ((delta >= 10.0F) && (delta <= MNREMIX_CSS_CURSOR_MAX_Y)) ? TRUE : FALSE;
+#else
 			is_in_range = ((delta >= 10.0F) && (delta <= 205.0F)) ? TRUE : FALSE;
+#endif
 
 			if (is_in_range != FALSE)
 			{
@@ -5284,7 +5301,7 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 #if defined(PORT) && defined(REGION_REMIX)
 			else if (gGMRemixStaminaRule != FALSE)
 			{
-				mnRemixVSStaminaScrollHP(TRUE);
+				mnRemixVSStaminaScrollHPCSS(TRUE);
 				mnPlayersVSMakeStockSelect(sMNPlayersVSStockValue);
 			}
 #endif
@@ -5300,11 +5317,15 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 					}
 				}
 #endif
+#ifdef REGION_REMIX
+				sMNPlayersVSStockValue = mnRemixStockRangeNext(mnPlayersVSGetStockRange(), sMNPlayersVSStockValue, stock_max);
+#else
 				if ((sMNPlayersVSStockValue + 1) > stock_max)
 				{
 					sMNPlayersVSStockValue = 0;
 				}
 				else sMNPlayersVSStockValue++;
+#endif
 
 				mnPlayersVSMakeStockSelect(sMNPlayersVSStockValue);
 			}
@@ -5320,7 +5341,7 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 #if defined(PORT) && defined(REGION_REMIX)
 			else if (gGMRemixStaminaRule != FALSE)
 			{
-				mnRemixVSStaminaScrollHP(FALSE);
+				mnRemixVSStaminaScrollHPCSS(FALSE);
 				mnPlayersVSMakeStockSelect(sMNPlayersVSStockValue);
 			}
 #endif
@@ -5336,11 +5357,15 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 					}
 				}
 #endif
+#ifdef REGION_REMIX
+				sMNPlayersVSStockValue = mnRemixStockRangePrev(mnPlayersVSGetStockRange(), sMNPlayersVSStockValue, stock_max);
+#else
 				if ((sMNPlayersVSStockValue - 1) < 0)
 				{
 					sMNPlayersVSStockValue = stock_max;
 				}
 				else sMNPlayersVSStockValue--;
+#endif
 
 				mnPlayersVSMakeStockSelect(sMNPlayersVSStockValue);
 			}
@@ -5490,6 +5515,12 @@ void mnPlayersVSUpdatePuck(GObj *gobj, s32 puck)
 	sobj->pos.y = pos_y;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
+#ifdef REGION_REMIX
+	if (gmRemixTwelveCBIsActive() == FALSE)
+	{
+		mnRemixCssTokenScale(gobj);
+	}
+#endif
 }
 
 // 0x80138798
@@ -5507,14 +5538,7 @@ void mnPlayersVSCenterPuckInPortrait(GObj *gobj, s32 fkind)
 		SObjGetStruct(gobj)->pos.y = mnRemixTwelveCBLayoutCellY(portrait) + ((MNREMIX_TCB_CELL_SIZE / 2) - 12);
 		return;
 	}
-	if (portrait == MNREMIX_CSS_RANDOM_BOOKEND_SLOT)
-	{
-		SObjGetStruct(gobj)->pos.x = MNREMIX_CSS_RANDOM_TOKEN_X;
-		SObjGetStruct(gobj)->pos.y = MNREMIX_CSS_RANDOM_TOKEN_Y;
-		return;
-	}
-	SObjGetStruct(gobj)->pos.x = mnPlayersVSRemixCellX(portrait) + ((mnPlayersVSRemixCellWidth(portrait) / 2) - 13);
-	SObjGetStruct(gobj)->pos.y = mnPlayersVSRemixCellY(portrait) + ((mnPlayersVSRemixCellHeight(portrait) / 2) - 12);
+	mnRemixCssTokenPlace(gobj, fkind);
 #else
 	if (portrait >= 6)
 	{
@@ -5604,8 +5628,17 @@ void mnPlayersVSPuckProcUpdate(GObj *gobj)
 		{
 			if (sMNPlayersVSSlots[sMNPlayersVSSlots[player].holder_player].cursor != NULL)
 			{
-				SObjGetStruct(gobj)->pos.x = SObjGetStruct(sMNPlayersVSSlots[sMNPlayersVSSlots[player].holder_player].cursor)->pos.x + 11.0F;
-				SObjGetStruct(gobj)->pos.y = SObjGetStruct(sMNPlayersVSSlots[sMNPlayersVSSlots[player].holder_player].cursor)->pos.y + -14.0F;
+#ifdef REGION_REMIX
+				if (gmRemixTwelveCBIsActive() == FALSE)
+				{
+					mnRemixCssTokenFollow(gobj, sMNPlayersVSSlots[sMNPlayersVSSlots[player].holder_player].cursor);
+				}
+				else
+#endif
+				{
+					SObjGetStruct(gobj)->pos.x = SObjGetStruct(sMNPlayersVSSlots[sMNPlayersVSSlots[player].holder_player].cursor)->pos.x + 11.0F;
+					SObjGetStruct(gobj)->pos.y = SObjGetStruct(sMNPlayersVSSlots[sMNPlayersVSSlots[player].holder_player].cursor)->pos.y + -14.0F;
+				}
 			}
 		}
 	}
@@ -5872,6 +5905,12 @@ void mnPlayersVSMakePuck(s32 player)
 
 	SObjGetStruct(gobj)->sprite.attr &= ~SP_FASTCOPY;
 	SObjGetStruct(gobj)->sprite.attr |= SP_TRANSPARENT;
+#ifdef REGION_REMIX
+	if (gmRemixTwelveCBIsActive() == FALSE)
+	{
+		mnRemixCssTokenScale(gobj);
+	}
+#endif
 }
 
 // 0x801392A8
@@ -5919,10 +5958,10 @@ void mnPlayersVSPuckAdjustPortraitEdge(s32 player)
 	s32 portrait = mnPlayersVSGetPortraitOfPlayer(player, sMNPlayersVSSlots[player].fkind);
 #ifdef REGION_REMIX
 	sb32 is_twelvecb = (gmRemixTwelveCBIsActive() != FALSE) ? TRUE : FALSE;
-	f32 portrait_edge_x = is_twelvecb ? mnRemixTwelveCBLayoutCellX(portrait) : mnPlayersVSRemixCellX(portrait);
-	f32 portrait_edge_y = is_twelvecb ? mnRemixTwelveCBLayoutCellY(portrait) : mnPlayersVSRemixCellY(portrait);
-	f32 portrait_width = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : mnPlayersVSRemixCellWidth(portrait);
-	f32 portrait_height = is_twelvecb ? MNREMIX_TCB_CELL_SIZE : mnPlayersVSRemixCellHeight(portrait);
+	f32 portrait_edge_x = is_twelvecb ? mnRemixTwelveCBLayoutCellX(portrait) : 0.0F;
+	f32 portrait_edge_y = is_twelvecb ? mnRemixTwelveCBLayoutCellY(portrait) : 0.0F;
+	f32 portrait_width = MNREMIX_TCB_CELL_SIZE;
+	f32 portrait_height = MNREMIX_TCB_CELL_SIZE;
 #else
 	f32 portrait_edge_x = ((portrait >= 6) ? portrait - 6 : portrait) * 45 + 25;
 	f32 portrait_edge_y = ((portrait >= 6) ? 1 : 0) * 43 + 36;
@@ -5932,6 +5971,12 @@ void mnPlayersVSPuckAdjustPortraitEdge(s32 player)
 	f32 new_pos_x = SObjGetStruct(sMNPlayersVSSlots[player].puck)->pos.x + sMNPlayersVSSlots[player].puck_vel_x + 13.0F;
 	f32 new_pos_y = SObjGetStruct(sMNPlayersVSSlots[player].puck)->pos.y + sMNPlayersVSSlots[player].puck_vel_y + 12.0F;
 
+#ifdef REGION_REMIX
+	if (is_twelvecb == FALSE)
+	{
+		mnRemixCssTokenEdgeBox(portrait, &portrait_edge_x, &portrait_edge_y, &portrait_width, &portrait_height);
+	}
+#endif
 	if (new_pos_x < (portrait_edge_x + 5.0F))
 	{
 		sMNPlayersVSSlots[player].puck_vel_x = ((portrait_edge_x + 5.0F) - new_pos_x) / 10.0F;
@@ -5949,6 +5994,22 @@ void mnPlayersVSPuckAdjustPortraitEdge(s32 player)
 		sMNPlayersVSSlots[player].puck_vel_y = ((new_pos_y - ((portrait_edge_y + portrait_height) - 5.0F)) * -1.0F) / 10.0F;
 	}
 }
+
+#ifdef REGION_REMIX
+/** TRUE when two tokens sit on the same portrait, so a D-pad variant repels the fighter it varies (CharacterSelect.asm _fix_variant_overlap_detection). */
+static sb32 mnPlayersVSCheckSamePortrait(s32 fkind, s32 other_fkind)
+{
+	if ((fkind == nFTKindNull) || (other_fkind == nFTKindNull))
+	{
+		return FALSE;
+	}
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		return (fkind == other_fkind) ? TRUE : FALSE;
+	}
+	return (mnPlayersVSGetPortrait(fkind) == mnPlayersVSGetPortrait(other_fkind)) ? TRUE : FALSE;
+}
+#endif
 
 // 0x8013961C
 void mnPlayersVSPuckAdjustPlaced(s32 player)
@@ -5973,13 +6034,21 @@ void mnPlayersVSPuckAdjustPlaced(s32 player)
 
 	for (i = 0; i < ARRAY_COUNT(sMNPlayersVSSlots); i++)
 	{
+#ifdef REGION_REMIX
+		is_in_range = ((dists[i] >= 0.0F) && (dists[i] <= MNREMIX_CSS_TOKEN_OVERLAP_RADIUS)) ? TRUE : FALSE;
+#else
 		is_in_range = ((dists[i] >= 0.0F) && (dists[i] <= 15.0F)) ? TRUE : FALSE;
+#endif
 
 		if (is_in_range)
 		{
 			if
 			(
+#ifdef REGION_REMIX
+				(mnPlayersVSCheckSamePortrait(sMNPlayersVSSlots[player].fkind, sMNPlayersVSSlots[i].fkind) != FALSE) &&
+#else
 				(sMNPlayersVSSlots[player].fkind == sMNPlayersVSSlots[i].fkind) &&
+#endif
 				(sMNPlayersVSSlots[player].fkind != nFTKindNull) &&
 				(sMNPlayersVSSlots[i].is_selected == TRUE)
 			)
@@ -6217,6 +6286,9 @@ void func_ovl26_80139DD8(void)
 // 0x80139DE0
 void mnPlayersVSReadyProcUpdate(GObj *gobj)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+	mnRemixCssAfkUpdate(mnPlayersVSCheckReady(), sMNPlayersVSTotalTimeTics);
+#endif
 	if (mnPlayersVSCheckReady() != FALSE)
 	{
 		sMNPlayersVSReadyBlinkWait++;
@@ -6827,6 +6899,7 @@ static void mnPlayersVSRemixIndicatorsFrameUpdate(void)
 		states[player].fkind = fkind;
 		states[player].is_selected = sMNPlayersVSSlots[player].is_selected;
 		states[player].is_token_held = is_token_held;
+		states[player].token = player;
 
 		mnRemixCssBonusUpdateHint(player, ((is_token_held != FALSE) && (fkind != nFTKindNull) &&
 		                                   (mnPlayersVSRemixGetPortrait(fkind) == MNREMIX_CSS_BONUS_BOOKEND_SLOT)) ? TRUE : FALSE, sMNPlayersVSFiles[0]);
@@ -7086,7 +7159,11 @@ void mnPlayersVSFuncRun(GObj *gobj)
 	}
 	else
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		if ((mnRemixCssAfkTapStart() != FALSE) && (sMNPlayersVSTotalTimeTics > I_SEC_TO_TICS(1)))
+#else
 		if ((scSubsysControllerGetPlayerTapButtons(START_BUTTON) != FALSE) && (sMNPlayersVSTotalTimeTics > I_SEC_TO_TICS(1)))
+#endif
 		{
 			if (mnPlayersVSCheckReady() != FALSE)
 			{
@@ -7097,7 +7174,14 @@ void mnPlayersVSFuncRun(GObj *gobj)
 				sMNPlayersVSIsStart = TRUE;
 				mnPlayersVSPauseSlotProcesses();
 			}
+#if defined(PORT) && defined(REGION_REMIX)
+			else if (mnRemixCssAfkPlaysDeniedSound() != FALSE)
+			{
+				func_800269C0_275C0(nSYAudioFGMMenuDenied);
+			}
+#else
 			else func_800269C0_275C0(nSYAudioFGMMenuDenied);
+#endif
 		}
 		for (i = 0; i < ARRAY_COUNT(sMNPlayersVSSlots); i++)
 		{
@@ -7442,6 +7526,12 @@ void mnPlayersVSFuncStart(void)
 	efManagerInitEffects();
 	mnPlayersVSUpdateControllerOrders();
 	mnPlayersVSInitVars();
+#if defined(PORT) && defined(REGION_REMIX)
+	if (gGMRemixStaminaRule != FALSE)
+	{
+		mnRemixVSStaminaRestrictDamage();
+	}
+#endif
 	ftManagerAllocFighter(FTDATA_FLAG_SUBMOTION, 4);
 
 	for (i = nFTKindPlayableStart; i <= nFTKindPlayableEnd; i++)

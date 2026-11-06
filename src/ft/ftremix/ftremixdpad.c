@@ -13,6 +13,10 @@
  * reads its high half, which is zero only for 0.0F), 0xF6 low half of FTStruct.coll_data.floor_flags, 0x1C2
  * FTStruct.input.pl.stick_range (the sample stick, which the caller copies there).
  *
+ * The Training screen is the exception to the fighter side swap: ftRemixDpadMenuTransform (ftremixdpadmenu.c) swaps its global
+ * controller even while the match runs, because the Training D-pad shortcuts read it, so the controller a Stick Swap fighter reads
+ * there is already swapped (ftRemixDpadMenuHasSwappedController) and is not swapped a second time.
+ *
  * Known difference: the asm reads A and B from a3 after Single Button Mode filtered it (the filter runs at the
  * controller struct write, before dpad_macro_check_). The port filters after this transform, so A and B here are the
  * unfiltered buttons.
@@ -30,6 +34,7 @@
 #include "remix/remix_roster_data.h"
 #include "fighter_registry.h"
 #include "ft/ftremix/ftremixdpadcontrolrules.h"
+#include "ft/ftremix/ftremixdpadmenu.h"
 
 #define FTREMIX_DPAD_BUTTONS (U_JPAD | D_JPAD | L_JPAD | R_JPAD)
 #define FTREMIX_DPAD_SWAP_DEADZONE_X 40
@@ -467,11 +472,17 @@ static u16 ftRemixDpadMoveStickWord(FTStruct *fp, u16 buttons)
 }
 
 /**
- * Writes the stick of the sample from the physical D-pad (DpadFunctions.asm 265-279 _dpad_macro_move). With no
- * direction held the stick is 0: Stick Swap moved the physical stick to the D-pad bits and Stickless cleared it
- * (DpadControl.asm 183-191), and the asm returns before touching it.
+ * Writes the stick of the sample from the physical D-pad (DpadFunctions.asm 265-279 _dpad_macro_move). With no direction held
+ * the asm returns before touching the stick, which the global hook left at 0 for Stick Swap (moved to the D-pad bits) and
+ * Stickless (DpadControl.asm 183-191) and untouched for Stickless J, so the physical stick of a Stickless J port still moves
+ * the fighter.
+ *
+ * @param fp Fighter of the port.
+ * @param sample Controller sample the fighter reads.
+ * @param buttons Held buttons with the physical D-pad bits.
+ * @param mode D-pad Control panel value of the port.
  */
-static void ftRemixDpadWriteStick(FTStruct *fp, SYController *sample, u16 buttons)
+static void ftRemixDpadWriteStick(FTStruct *fp, SYController *sample, u16 buttons, s32 mode)
 {
     u16 stick_word = 0;
 
@@ -482,9 +493,35 @@ static void ftRemixDpadWriteStick(FTStruct *fp, SYController *sample, u16 button
     else
     {
         ftRemixDpadCountDownTap(fp->player);
+
+        if (mode == FTREMIX_DPAD_CONTROL_STICKLESS_J)
+        {
+            return;
+        }
     }
     sample->stick_range.x = (s8)(stick_word >> 8);
     sample->stick_range.y = (s8)(stick_word & 0x00FF);
+}
+
+/**
+ * Reads the held buttons and the physical D-pad of a Stick Swap port. The hold of a controller that the global hook already
+ * swapped has the D-pad bits of the stick, and its stick (80 on an axis) is the physical D-pad; otherwise the stick is
+ * turned into D-pad bits here.
+ *
+ * @param controller Controller sample of the port.
+ * @param hold Held buttons, rewritten with the D-pad bits of the stick when this function does the swap.
+ * @param dpad Physical D-pad bits, rewritten when the controller was swapped by the global hook.
+ */
+static void ftRemixDpadControlReadSwap(const SYController *controller, u16 *hold, u16 *dpad)
+{
+    u16 dpad_from_stick = ftRemixDpadFromStick(controller->stick_range);
+
+    if (ftRemixDpadMenuHasSwappedController() != FALSE)
+    {
+        *dpad = dpad_from_stick;
+        return;
+    }
+    *hold = (*hold & ~FTREMIX_DPAD_BUTTONS) | dpad_from_stick;
 }
 
 /**
@@ -517,10 +554,10 @@ SYController *ftRemixDpadControlController(FTStruct *fp, SYController *controlle
 
     if (ftRemixDpadControlSwapsStick(mode))
     {
-        hold = (hold & ~FTREMIX_DPAD_BUTTONS) | ftRemixDpadFromStick(controller->stick_range);
+        ftRemixDpadControlReadSwap(controller, &hold, &dpad);
     }
     sample->button_hold = ftRemixDpadControlRMacro(hold);
-    ftRemixDpadWriteStick(fp, sample, (sample->button_hold & ~FTREMIX_DPAD_BUTTONS) | dpad);
+    ftRemixDpadWriteStick(fp, sample, (sample->button_hold & ~FTREMIX_DPAD_BUTTONS) | dpad, mode);
     return sample;
 }
 

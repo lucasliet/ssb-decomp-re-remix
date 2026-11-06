@@ -21,10 +21,24 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixsonicclassic.h"
 #include "mn/mnplayers/mnremixcss.h"
+#include "mn/mnplayers/mnremixcssrules.h"
+#include "remix/remix_roster_data.h"
+#include "mn/mnplayers/mnremixcsstoken.h"
+#include "mn/mnplayers/mnremixcssunplug.h"
+#include "mn/mnplayers/mnremixbonusmodes.h"
+#include "mn/mnplayers/mnremixcssbonus.h"
+#include "mn/mnplayers/mnremixcssindicators.h"
+#include "mn/mnplayers/mnremixcssrandom.h"
+#include "mn/mnplayers/mnremixcssrandomtoken.h"
+#include "mn/mnplayers/mnremixcssslide.h"
+#include "mn/mnplayers/mnremixcsstokenrules.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #define MN_PLAYERS_1P_TRAINING_REMIX_PORTRAITS_FILE 8
 #define MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE 9
+/* css_settings, Training row: X padding 65, panel offset 132 */
+#define MN_PLAYERS_1P_TRAINING_INDICATOR_X 65
+#define MN_PLAYERS_1P_TRAINING_INDICATOR_STRIDE 132
 #endif
 
 
@@ -339,7 +353,7 @@ s32 mnPlayers1PTrainingGetFighterKind(s32 portrait)
 s32 mnPlayers1PTrainingGetPortrait(s32 fkind)
 {
 #ifdef REGION_REMIX
-	return mnRemixCssGetPortrait(fkind);
+	return mnRemixCssTokenGetSlot(fkind);
 #else
 	s32 portraits[/* */] =
 	{
@@ -473,7 +487,7 @@ void mnPlayers1PTrainingMakePortrait(s32 portrait)
 }
 
 #ifdef REGION_REMIX
-/* Remix portrait: one static sprite per grid slot, sliced from the Remix sheet. It has no wallpaper, cross or slide process. */
+/* Remix portrait: one sprite per grid slot, sliced from the Remix sheet. It has no wallpaper or cross and slides in from the side. */
 void mnPlayers1PTrainingMakeRemixPortrait(s32 slot)
 {
 	GObj *gobj;
@@ -491,6 +505,7 @@ void mnPlayers1PTrainingMakeRemixPortrait(s32 slot)
 	sobj->sprite.scaley = REMIX_CSS_PORTRAIT_SCALE;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
+	mnRemixCssSlideAttach(gobj, slot);
 }
 #endif
 
@@ -504,6 +519,12 @@ void mnPlayers1PTrainingMakePortraitAll(void)
 	{
 		mnPlayers1PTrainingMakeRemixPortrait(slot);
 	}
+	mnRemixCssBonusReset();
+	mnRemixCssBonusSetHintPanelStride(MN_PLAYERS_1P_TRAINING_INDICATOR_STRIDE);
+	mnRemixCssIndicatorsReset();
+	mnRemixCssIndicatorsSetLayout(MN_PLAYERS_1P_TRAINING_INDICATOR_X, MN_PLAYERS_1P_TRAINING_INDICATOR_STRIDE);
+	mnRemixCssBonusMakeBookend(sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE], 18, 27);
+	mnRemixCssRandomMakeBookend(sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE], 18, 27);
 #else
 	s32 i;
 
@@ -1611,7 +1632,9 @@ void mnPlayers1PTrainingPortraitFlashThreadUpdate(GObj *gobj)
 void mnPlayers1PTrainingMakePortraitFlash(s32 player)
 {
 	GObj *gobj;
+#ifndef REGION_REMIX
 	SObj *sobj;
+#endif
 	s32 portrait = mnPlayers1PTrainingGetPortrait(sMNPlayers1PTrainingSlots[player].fkind);
 
 	mnPlayers1PTrainingDestroyPortraitFlash(player);
@@ -1621,11 +1644,10 @@ void mnPlayers1PTrainingMakePortraitFlash(s32 player)
 	gobj->user_data.s = player;
 	gcAddGObjProcess(gobj, mnPlayers1PTrainingPortraitFlashThreadUpdate, nGCProcessKindThread, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PTrainingFiles[6], llMNPlayersPortraitsWhiteSquareSprite));
 #ifdef REGION_REMIX
-	sobj->pos.x = mnRemixCssCellX(portrait) + 1.0F;
-	sobj->pos.y = mnRemixCssCellY(portrait) + 1.0F;
+	mnRemixCssTokenMakeSlotFlash(gobj, sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_PORTRAITS_FILE], sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE], portrait);
 #else
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PTrainingFiles[6], llMNPlayersPortraitsWhiteSquareSprite));
 	sobj->pos.x = (((portrait >= 6) ? portrait - 6 : portrait) * 45) + 26;
 	sobj->pos.y = (((portrait >= 6) ? 1 : 0) * 43) + 37;
 #endif
@@ -2069,7 +2091,15 @@ s32 mnPlayers1PTrainingGetRemixPuckFighterKind(s32 player)
 
 	if (slot < 0)
 	{
-		return nFTKindNull;
+		if (mnRemixCssTokenGetBookendFighter((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12, player, &fkind) == FALSE)
+		{
+			return nFTKindNull;
+		}
+		if (fkind == REMIX_ID_RANDOM)
+		{
+			return fkind;
+		}
+		return (mnPlayers1PTrainingCheckFighterLocked(fkind) != FALSE) ? nFTKindNull : mnRemixVariantGetFighterKind(player, fkind);
 	}
 	fkind = mnRemixCssGetFighterKind(slot);
 
@@ -2201,7 +2231,11 @@ void mnPlayers1PTrainingAdjustCursor(GObj *gobj, s32 player)
 		if (is_in_range != FALSE)
 		{
 			delta = (gSYControllerDevices[sMNPlayers1PTrainingManPlayer].stick_range.y / -20.0F) + SObjGetStruct(gobj)->pos.y;
+#ifdef REGION_REMIX
+			is_in_range = ((delta >= 10.0F) && (delta <= MNREMIX_CSS_CURSOR_MAX_Y)) ? TRUE : FALSE;
+#else
 			is_in_range = ((delta >= 10.0F) && (delta <= 205.0F)) ? TRUE : FALSE;
+#endif
 
 			if (is_in_range != FALSE)
 			{
@@ -2358,7 +2392,11 @@ void mnPlayers1PTrainingBackTo1PMode(void)
 // 0x80135818
 void mnPlayers1PTrainingDetectBack(s32 player)
 {
+#ifdef REGION_REMIX
+	if ((sMNPlayers1PTrainingTotalTimeTics >= 10) && (mnRemixCssUnplugIsBackTapped(player) != FALSE))
+#else
 	if ((sMNPlayers1PTrainingTotalTimeTics >= 10) && (gSYControllerDevices[player].button_tap & B_BUTTON))
+#endif
 	{
 		mnPlayers1PTrainingBackTo1PMode();
 	}
@@ -2392,11 +2430,51 @@ sb32 mnPlayers1PTrainingCheckBackInRange(GObj *gobj)
 	else return FALSE;
 }
 
+#ifdef REGION_REMIX
+/**
+ * Panel the C buttons act on this frame (Costumes.asm cpu_costumes_._training): the CPU panel when the cursor presses it while a C
+ * button is tapped, else the panel of the cursor.
+ *
+ * @param gobj Cursor GObj.
+ * @param player Slot of the cursor.
+ * @return Panel whose costume or shade changes.
+ */
+static s32 mnPlayers1PTrainingGetCostumeButtonPanel(GObj *gobj, s32 player)
+{
+	const u16 c_buttons = U_CBUTTONS | R_CBUTTONS | D_CBUTTONS | L_CBUTTONS;
+	s32 com_player = sMNPlayers1PTrainingComPlayer;
+	SObj *card_sobj;
+	SObj *cursor_sobj;
+
+	if ((gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_tap & c_buttons) == 0)
+	{
+		return player;
+	}
+	if ((com_player == player) || (sMNPlayers1PTrainingSlots[com_player].pkind != nFTPlayerKindCom) || (sMNPlayers1PTrainingSlots[com_player].panel == NULL))
+	{
+		return player;
+	}
+	card_sobj = SObjGetStruct(sMNPlayers1PTrainingSlots[com_player].panel);
+	cursor_sobj = SObjGetStruct(gobj);
+
+	if (mnRemixCssCursorPressesImage(cursor_sobj->pos.x, cursor_sobj->pos.y, card_sobj->pos.x, card_sobj->pos.y, card_sobj->sprite.width, card_sobj->sprite.height) == 0)
+	{
+		return player;
+	}
+	return com_player;
+}
+#endif
+
 // 0x80135934
 void mnPlayers1PTrainingCursorProcUpdate(GObj *gobj)
 {
 	s32 unused[5];
 	s32 player = gobj->user_data.s;
+#ifdef REGION_REMIX
+	s32 costume_panel = mnPlayers1PTrainingGetCostumeButtonPanel(gobj, player);
+#else
+	s32 costume_panel = player;
+#endif
 
 	mnPlayers1PTrainingAdjustCursor(gobj, player);
 #ifdef REGION_REMIX
@@ -2419,44 +2497,50 @@ void mnPlayers1PTrainingCursorProcUpdate(GObj *gobj)
 	}
 #ifdef REGION_REMIX
 	mnRemixVariantHandleInput(sMNPlayers1PTrainingSlots[player].held_player, gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_tap);
+	if (mnRemixBonusModesUpdateScroll(player, sMNPlayers1PTrainingSlots[player].held_player,
+	                                  (sMNPlayers1PTrainingSlots[player].held_player >= 0) ? sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingSlots[player].held_player].fkind : nFTKindNull,
+	                                  gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_hold) != FALSE)
+	{
+		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+	}
 #endif
 	if (sMNPlayers1PTrainingDefaultCostumeOnly == FALSE)
 	{
 		if
 		(
 			(gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_tap & U_CBUTTONS) &&
-			(mnPlayers1PTrainingSelectFighter(gobj, player, sMNPlayers1PTrainingSlots[player].held_player, 0) == FALSE) &&
-			(sMNPlayers1PTrainingSlots[player].is_fighter_selected != FALSE)
+			(mnPlayers1PTrainingSelectFighter(gobj, costume_panel, sMNPlayers1PTrainingSlots[costume_panel].held_player, 0) == FALSE) &&
+			(sMNPlayers1PTrainingSlots[costume_panel].is_fighter_selected != FALSE)
 		)
 		{
-			mnPlayers1PTrainingUpdateCostume(player, 0);
+			mnPlayers1PTrainingUpdateCostume(costume_panel, 0);
 		}
 		if
 		(
 			(gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_tap & R_CBUTTONS) &&
-			(mnPlayers1PTrainingSelectFighter(gobj, player, sMNPlayers1PTrainingSlots[player].held_player, 1) == FALSE) &&
-			(sMNPlayers1PTrainingSlots[player].is_fighter_selected != FALSE)
+			(mnPlayers1PTrainingSelectFighter(gobj, costume_panel, sMNPlayers1PTrainingSlots[costume_panel].held_player, 1) == FALSE) &&
+			(sMNPlayers1PTrainingSlots[costume_panel].is_fighter_selected != FALSE)
 		)
 		{
-			mnPlayers1PTrainingUpdateCostume(player, 1);
+			mnPlayers1PTrainingUpdateCostume(costume_panel, 1);
 		}
 		if
 		(
 			(gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_tap & D_CBUTTONS) &&
-			(mnPlayers1PTrainingSelectFighter(gobj, player, sMNPlayers1PTrainingSlots[player].held_player, 2) == FALSE) &&
-			(sMNPlayers1PTrainingSlots[player].is_fighter_selected != FALSE)
+			(mnPlayers1PTrainingSelectFighter(gobj, costume_panel, sMNPlayers1PTrainingSlots[costume_panel].held_player, 2) == FALSE) &&
+			(sMNPlayers1PTrainingSlots[costume_panel].is_fighter_selected != FALSE)
 		)
 		{
-			mnPlayers1PTrainingUpdateCostume(player, 2);
+			mnPlayers1PTrainingUpdateCostume(costume_panel, 2);
 		}
 		if
 		(
 			(gSYControllerDevices[sMNPlayers1PTrainingManPlayer].button_tap & L_CBUTTONS) &&
-			(mnPlayers1PTrainingSelectFighter(gobj, player, sMNPlayers1PTrainingSlots[player].held_player, 3) == FALSE) &&
-			(sMNPlayers1PTrainingSlots[player].is_fighter_selected != FALSE)
+			(mnPlayers1PTrainingSelectFighter(gobj, costume_panel, sMNPlayers1PTrainingSlots[costume_panel].held_player, 3) == FALSE) &&
+			(sMNPlayers1PTrainingSlots[costume_panel].is_fighter_selected != FALSE)
 		)
 		{
-			mnPlayers1PTrainingUpdateCostume(player, 3);
+			mnPlayers1PTrainingUpdateCostume(costume_panel, 3);
 		}
 	}
 
@@ -2498,6 +2582,9 @@ void mnPlayers1PTrainingUpdatePuck(GObj *gobj, s32 puck)
 	sobj->pos.y = pos_y;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
+#ifdef REGION_REMIX
+	mnRemixCssTokenScale(gobj);
+#endif
 }
 
 // 0x80135CCC
@@ -2506,8 +2593,7 @@ void mnPlayers1PTrainingCenterPuckInPortrait(GObj *gobj, s32 fkind)
 	s32 portrait = mnPlayers1PTrainingGetPortrait(fkind);
 
 #ifdef REGION_REMIX
-	SObjGetStruct(gobj)->pos.x = mnRemixCssCellX(portrait) + ((REMIX_CSS_PORTRAIT_WIDTH / 2) - 13);
-	SObjGetStruct(gobj)->pos.y = mnRemixCssCellY(portrait) + ((REMIX_CSS_PORTRAIT_HEIGHT / 2) - 12);
+	mnRemixCssTokenPlace(gobj, fkind);
 #else
 	if (portrait >= 6)
 	{
@@ -2568,8 +2654,12 @@ void mnPlayers1PTrainingPuckProcUpdate(GObj *gobj)
 		{
 			if (sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingSlots[player].holder_player].is_cursor_adjusting == FALSE)
 			{
+#ifdef REGION_REMIX
+				mnRemixCssTokenFollow(gobj, sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingSlots[player].holder_player].cursor);
+#else
 				SObjGetStruct(gobj)->pos.x = SObjGetStruct(sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingSlots[player].holder_player].cursor)->pos.x + 11.0F;
 				SObjGetStruct(gobj)->pos.y = SObjGetStruct(sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingSlots[player].holder_player].cursor)->pos.y + -14.0F;
+#endif
 			}
 		}
 		else mnPlayers1PTrainingMovePuck(player);
@@ -2820,6 +2910,9 @@ void mnPlayers1PTrainingMakePuck(s32 player)
 
 	SObjGetStruct(gobj)->sprite.attr &= ~SP_FASTCOPY;
 	SObjGetStruct(gobj)->sprite.attr |= SP_TRANSPARENT;
+#ifdef REGION_REMIX
+	mnRemixCssTokenScale(gobj);
+#endif
 }
 
 // 0x801366D0
@@ -2866,10 +2959,7 @@ void mnPlayers1PTrainingPuckAdjustPortraitEdge(s32 player)
 {
 	s32 portrait = mnPlayers1PTrainingGetPortrait(sMNPlayers1PTrainingSlots[player].fkind);
 #ifdef REGION_REMIX
-	f32 portrait_edge_x = mnRemixCssCellX(portrait);
-	f32 portrait_edge_y = mnRemixCssCellY(portrait);
-	f32 portrait_width = REMIX_CSS_PORTRAIT_WIDTH;
-	f32 portrait_height = REMIX_CSS_PORTRAIT_HEIGHT;
+	f32 portrait_edge_x, portrait_edge_y, portrait_width, portrait_height;
 #else
 	f32 portrait_edge_x = ((portrait >= 6) ? portrait - 6 : portrait) * 45 + 25;
 	f32 portrait_edge_y = ((portrait >= 6) ? 1 : 0) * 43 + 36;
@@ -2879,6 +2969,9 @@ void mnPlayers1PTrainingPuckAdjustPortraitEdge(s32 player)
 	f32 new_pos_x = SObjGetStruct(sMNPlayers1PTrainingSlots[player].puck)->pos.x + sMNPlayers1PTrainingSlots[player].puck_vel_x + 13.0F;
 	f32 new_pos_y = SObjGetStruct(sMNPlayers1PTrainingSlots[player].puck)->pos.y + sMNPlayers1PTrainingSlots[player].puck_vel_y + 12.0F;
 
+#ifdef REGION_REMIX
+	mnRemixCssTokenEdgeBox(portrait, &portrait_edge_x, &portrait_edge_y, &portrait_width, &portrait_height);
+#endif
 	if (new_pos_x < (portrait_edge_x + 5.0F))
 	{
 		sMNPlayers1PTrainingSlots[player].puck_vel_x = ((portrait_edge_x + 5.0F) - new_pos_x) / 10.0F;
@@ -2896,6 +2989,18 @@ void mnPlayers1PTrainingPuckAdjustPortraitEdge(s32 player)
 		sMNPlayers1PTrainingSlots[player].puck_vel_y = ((new_pos_y - ((portrait_edge_y + portrait_height) - 5.0F)) * -1.0F) / 10.0F;
 	}
 }
+
+#ifdef REGION_REMIX
+/** TRUE when two tokens sit on the same portrait, so a D-pad variant repels the fighter it varies (CharacterSelect.asm _fix_variant_overlap_detection). */
+static sb32 mnPlayers1PTrainingCheckSamePortrait(s32 fkind, s32 other_fkind)
+{
+	if ((fkind == nFTKindNull) || (other_fkind == nFTKindNull))
+	{
+		return FALSE;
+	}
+	return (mnPlayers1PTrainingGetPortrait(fkind) == mnPlayers1PTrainingGetPortrait(other_fkind)) ? TRUE : FALSE;
+}
+#endif
 
 // 0x80136A44
 void mnPlayers1PTrainingPuckAdjustPlaced(s32 player)
@@ -2918,7 +3023,11 @@ void mnPlayers1PTrainingPuckAdjustPlaced(s32 player)
 	if
 	(
 		(IS_BETWEEN(dists[other_player], 0.0F, 15.0F)) &&
+#ifdef REGION_REMIX
+		(mnPlayers1PTrainingCheckSamePortrait(sMNPlayers1PTrainingSlots[player].fkind, sMNPlayers1PTrainingSlots[other_player].fkind) != FALSE) &&
+#else
 		(sMNPlayers1PTrainingSlots[player].fkind == sMNPlayers1PTrainingSlots[other_player].fkind) &&
+#endif
 		(sMNPlayers1PTrainingSlots[player].fkind != nFTKindNull) &&
 		(sMNPlayers1PTrainingSlots[other_player].is_selected == TRUE)
 	)
@@ -3265,6 +3374,26 @@ void func_ovl28_801375D0(void)
 	return;
 }
 
+#ifdef REGION_REMIX
+static sb32 mnPlayers1PTrainingIsRollUnavailable(s32 fkind)
+{
+	return ((mnPlayers1PTrainingCheckFighterCrossed(fkind) != FALSE) || (mnPlayers1PTrainingCheckFighterLocked(fkind) != FALSE)) ? TRUE : FALSE;
+}
+
+/** Replaces a RANDOM token by a rolled fighter and a random costume when the screen is left (CharacterSelect.asm save_random_char_._training). */
+static void mnPlayers1PTrainingResolveRandom(s32 port, u8 *fkind, u8 *costume)
+{
+	if (*fkind != REMIX_ID_RANDOM)
+	{
+		return;
+	}
+	*fkind = mnRemixCssRandomTokenRoll(port, mnPlayers1PTrainingIsRollUnavailable);
+	*costume = mnRemixCostumeGetRandomLegal(*fkind);
+
+	mnRemixCssRandomTokenMarkResolved(MNREMIX_CSS_RANDOM_TOKEN_SCREEN_TRAINING, port);
+}
+#endif
+
 // 0x801375D8
 void mnPlayers1PTrainingSetSceneData(void)
 {
@@ -3276,6 +3405,10 @@ void mnPlayers1PTrainingSetSceneData(void)
 
 	gSCManagerSceneData.training_com_fkind = sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingComPlayer].fkind;
 	gSCManagerSceneData.training_com_costume = sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingComPlayer].costume;
+#ifdef REGION_REMIX
+	mnPlayers1PTrainingResolveRandom(sMNPlayers1PTrainingManPlayer, &gSCManagerSceneData.training_man_fkind, &gSCManagerSceneData.training_man_costume);
+	mnPlayers1PTrainingResolveRandom(sMNPlayers1PTrainingComPlayer, &gSCManagerSceneData.training_com_fkind, &gSCManagerSceneData.training_com_costume);
+#endif
 }
 
 // 0x80137638
@@ -3336,12 +3469,51 @@ static void mnPlayers1PTrainingRemixPanelMenuFrameUpdate(void)
 }
 #endif
 
+#ifdef REGION_REMIX
+/**
+ * Brings the variant indicators (D-pad, variant images, flag), the bonus scroll hints and the D-pad cursor hold of the two panels up
+ * to date (CharacterSelect.asm update_variant_indicators_ and draw_bonus_scroll_indicators_, which run every frame). Panel 0 is the
+ * human, panel 1 the CPU.
+ */
+static void mnPlayers1PTrainingRemixIndicatorsFrameUpdate(void)
+{
+	MNRemixCssPanelState states[2];
+	s32 ports[2] = { sMNPlayers1PTrainingManPlayer, sMNPlayers1PTrainingComPlayer };
+	s32 panel;
+
+	for (panel = 0; panel < ARRAY_COUNT(states); panel++)
+	{
+		s32 port = ports[panel];
+		sb32 is_token_held = ((sMNPlayers1PTrainingSlots[port].holder_player != GMCOMMON_PLAYERS_MAX) && (sMNPlayers1PTrainingSlots[port].is_selected == FALSE)) ? TRUE : FALSE;
+		s32 fkind = sMNPlayers1PTrainingSlots[port].fkind;
+
+		if (mnRemixPanelMenuIsOpen(port) != FALSE)
+		{
+			fkind = nFTKindNull;
+			is_token_held = FALSE;
+		}
+		states[panel].fkind = fkind;
+		states[panel].is_selected = sMNPlayers1PTrainingSlots[port].is_selected;
+		states[panel].is_token_held = is_token_held;
+		states[panel].token = port;
+
+		if (sMNPlayers1PTrainingSlots[port].panel != NULL)
+		{
+			mnRemixCssBonusSetHintPanelX(SObjGetStruct(sMNPlayers1PTrainingSlots[port].panel)->pos.x - (MN_PLAYERS_1P_TRAINING_INDICATOR_STRIDE * port));
+		}
+		mnRemixBonusModesUpdateHint(port, is_token_held, fkind, sMNPlayers1PTrainingFiles);
+	}
+	mnRemixCssIndicatorsUpdate(sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE], states, ARRAY_COUNT(states));
+}
+#endif
+
 // 0x80137700
 void mnPlayers1PTrainingFuncRun(GObj *gobj)
 {
 	sMNPlayers1PTrainingTotalTimeTics++;
 #ifdef REGION_REMIX
 	mnPlayers1PTrainingRemixPanelMenuFrameUpdate();
+	mnPlayers1PTrainingRemixIndicatorsFrameUpdate();
 #endif
 
 	if (mnRemixTimeoutsCSSReturns(sMNPlayers1PTrainingTotalTimeTics, sMNPlayers1PTrainingReturnTic))
@@ -3486,7 +3658,7 @@ s32 mnPlayers1PTrainingRandFighterKind(void)
 
 	do
 	{
-		fkind = mnRemixRandomResolveFighterKind(kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)]);
+		fkind = mnRemixRandomPickFighterKind();
 	}
 	while ((fkind == nFTKindNull) || (mnPlayers1PTrainingCheckFighterCrossed(fkind) != FALSE) || (mnPlayers1PTrainingCheckFighterLocked(fkind) != FALSE));
 
@@ -3521,6 +3693,14 @@ void mnPlayers1PTrainingInitVars(void)
 		mnPlayers1PTrainingResetPlayer(sMNPlayers1PTrainingManPlayer);
 	}
 	else mnPlayers1PTrainingInitPlayer(sMNPlayers1PTrainingManPlayer);
+#ifdef REGION_REMIX
+	/* load_random_training_._human: the rolled fighter goes back to the "?" token */
+	if ((mnRemixCssRandomTokenTakeResolved(MNREMIX_CSS_RANDOM_TOKEN_SCREEN_TRAINING, sMNPlayers1PTrainingManPlayer) != FALSE) &&
+	    (sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingManPlayer].fkind != nFTKindNull))
+	{
+		sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingManPlayer].fkind = REMIX_ID_RANDOM;
+	}
+#endif
 
 	sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingManPlayer].recall_end_tic = FALSE;
 
@@ -3548,7 +3728,17 @@ void mnPlayers1PTrainingInitVars(void)
 		}
 		else costume = ftParamGetCostumeCommonID(fkind, 0);
 	}
-	else costume = gSCManagerSceneData.training_com_costume;
+	else
+	{
+		costume = gSCManagerSceneData.training_com_costume;
+#ifdef REGION_REMIX
+		/* load_random_training_._cpu */
+		if (mnRemixCssRandomTokenTakeResolved(MNREMIX_CSS_RANDOM_TOKEN_SCREEN_TRAINING, sMNPlayers1PTrainingComPlayer) != FALSE)
+		{
+			fkind = REMIX_ID_RANDOM;
+		}
+#endif
+	}
 
 	sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingComPlayer].fkind = fkind;
 	sMNPlayers1PTrainingSlots[sMNPlayers1PTrainingComPlayer].costume = costume;

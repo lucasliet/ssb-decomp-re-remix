@@ -7,6 +7,9 @@
 #include <sys/rdp.h>
 #include <reloc_data.h>
 #include <mn/mncommon/mnremixtimeouts.h>
+#ifdef REGION_REMIX
+#include <mn/mn1pmode/mnremix1pmode.h>
+#endif
 #ifdef PORT
 #include <sys/audio.h>
 extern void *func_800269C0_275C0(u16 id);
@@ -838,6 +841,9 @@ void mnModeSelectFuncRun(GObj *gobj)
         }
         if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON) != FALSE)
         {
+#ifdef REGION_REMIX
+            mnRemix1PModeReset();
+#endif
             switch (sMNModeSelectOption)
             {
             case nMNModeSelectOption1PMode:

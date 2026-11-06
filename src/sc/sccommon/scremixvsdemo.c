@@ -1,6 +1,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <sc/sccommon/scremixvsdemo.h>
+#include <sc/sccommon/scremixvsdemorules.h>
 #include <sc/sctypes.h>
 #include <sc/scmanager.h>
 #include <sys/utils.h>
@@ -86,15 +87,23 @@ void scRemixVsDemoPickFocusFighters(void)
 }
 
 /**
- * Picks a fighter for a non-focused auto-demo slot: NA Remix fighter that differs from both focused fighters.
- * Replaces the body of scAutoDemoGetFighterKind for players 2 and up (VsDemo.asm enable_nonfocused_remix_chars_,
- * RAM 0x8018D928). The vanilla fighter mask is not updated, as in the asm.
+ * Picks a fighter for a non-focused auto-demo slot: NA Remix fighter that differs from both focused fighters, and for
+ * port 4 also from port 3's fighter. Replaces the body of scAutoDemoGetFighterKind for players 2 and up (VsDemo.asm
+ * enable_nonfocused_remix_chars_, RAM 0x8018D928). The vanilla fighter mask is not updated, as in the asm.
  *
+ * @param player Demo player index being filled, 2 or 3; players[2] must already hold its fighter for player 3.
  * @return Remix fighter kind for the slot.
  */
-s32 scRemixVsDemoPickNonFocusedFighter(void)
+s32 scRemixVsDemoPickNonFocusedFighter(s32 player)
 {
-    return scRemixVsDemoPickEligibleFighter(gSCManagerSceneData.demo_fkind[0], gSCManagerSceneData.demo_fkind[1]);
+    s32 fkind;
+
+    do
+    {
+        fkind = scRemixVsDemoPickEligibleFighter(gSCManagerSceneData.demo_fkind[0], gSCManagerSceneData.demo_fkind[1]);
+    } while (scRemixVsDemoRepeatsPort3Fighter(player, fkind, gSCManagerBattleState->players[2].fkind));
+
+    return fkind;
 }
 
 /**
@@ -122,8 +131,8 @@ s32 scRemixVsDemoPickStage(s32 fallback_stage_id)
 
 /**
  * Reads the 1P name texture offset of a Remix fighter from the Remix name table, plus the asm fix of 0x10
- * (VsDemo.asm, RAM 0x8018DBD4 and 0x8018DC08). The offset points into Remix texture data, which the port
- * does not load into llCharacterNamesFileID.
+ * (VsDemo.asm, RAM 0x8018DBD4 and 0x8018DC08). The offset points into the names file llCharacterNamesFileID, the
+ * file the 1P title card (sc1pintro.c) already reads with the same table.
  *
  * @param fkind Remix fighter kind, an index into the name table.
  * @return Texture offset, or SC_REMIX_VS_DEMO_NO_FKIND when fkind is out of range or the Remix RAM image is not loaded.

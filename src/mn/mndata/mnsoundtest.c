@@ -14,6 +14,7 @@
 #define MNSOUNDTEST_REMIX_BROWSE_STEP 50
 extern u32 mnRemixSoundTestMusicID(s32 select);
 extern u32 mnRemixSoundTestVoiceID(s32 select);
+#include "sc/sc1pmode/sc1premixenemyafk.h"
 #endif
 extern void func_800266A0_272A0(void);
 
@@ -810,12 +811,18 @@ void mnSoundTestUpdateOptionColors(void)
 #define MNSOUNDTEST_MUSIC_ID(select) mnRemixSoundTestMusicID(select)
 #define MNSOUNDTEST_VOICE_ID(select) mnRemixSoundTestVoiceID(select)
 #define MNSOUNDTEST_NUMBER_DIGITS 4
+/* FGM.asm afk_soundTest._right_away: the "afk" tag presses right by itself before it presses A for the next song */
+#define MNSOUNDTEST_AFK_RIGHT_PRESS(is_button) (((is_button) = sc1PRemixAfkSoundTestTapRight()) != FALSE) ||
+/* FGM.asm afk_soundTest._A_away: the "afk" tag presses A by itself every 7 minutes */
+#define MNSOUNDTEST_TAP_A() sc1PRemixAfkSoundTestTapA()
 #else
 #define MNSOUNDTEST_MUSIC_COUNT ARRAY_COUNT(dMNSoundTestMusicIDs)
 #define MNSOUNDTEST_VOICE_COUNT ARRAY_COUNT(dMNSoundTestVoiceIDs)
 #define MNSOUNDTEST_MUSIC_ID(select) dMNSoundTestMusicIDs[select]
 #define MNSOUNDTEST_VOICE_ID(select) dMNSoundTestVoiceIDs[select]
 #define MNSOUNDTEST_NUMBER_DIGITS nMNSoundTestOptionEnumCount
+#define MNSOUNDTEST_AFK_RIGHT_PRESS(is_button)
+#define MNSOUNDTEST_TAP_A() scSubsysControllerGetPlayerTapButtons(A_BUTTON)
 #endif
 
 // 0x80131B80
@@ -940,6 +947,7 @@ void mnSoundTestUpdateControllerInputs(void)
     }
     if
     (
+        MNSOUNDTEST_AFK_RIGHT_PRESS(is_button)
         mnSoundTestCheckGetOptionButtonInput(is_button, R_JPAD | R_TRIG | R_CBUTTONS) ||
         mnSoundTestCheckGetOptionStickInputLR(stick_range, 32, 1)
     )
@@ -1012,7 +1020,7 @@ void mnSoundTestUpdateFunctions(void)
     }
     else syAudioSetBGMVolume(0, 0x7000);
 
-    if (scSubsysControllerGetPlayerTapButtons(A_BUTTON) != FALSE)
+    if (MNSOUNDTEST_TAP_A() != FALSE)
     {
         switch (sMNSoundTestOption)
         {

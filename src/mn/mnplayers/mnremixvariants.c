@@ -13,6 +13,7 @@
 #include <ft/ftdef.h>
 #include <sys/utils.h>
 #include "gm/gmremixtoggle.h"
+#include "remix/remix_player_panel.h"
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
 #include "mn/mnplayers/mnremixcssrules.h"
@@ -22,6 +23,7 @@
 #define MNREMIX_VARIANT_PLAYERS_MAX 4
 #define MNREMIX_VARIANT_SLOTS MNREMIX_VARIANT_SLOT_COUNT
 #define MNREMIX_VARIANT_NONE 0
+#define MNREMIX_VARIANT_MASTER_HAND_TAG 20
 #define MNREMIX_RANDOM_ALL_VARIANTS 2
 #define MNREMIX_RANDOM_VANILLA 3
 
@@ -101,7 +103,7 @@ s32 mnRemixVariantLookup(s32 fkind, s32 slot)
     {
         return fkind;
     }
-    if ((variant == nFTKindNull) || (variant == nFTKindBoss))
+    if (mnRemixCssVariantIsPickable(variant, nFTKindNull, nFTKindBoss, (remix_panel_tag_name(MNREMIX_VARIANT_MASTER_HAND_TAG)[0] != '\0') ? 1 : 0) == 0)
     {
         return fkind;
     }

@@ -119,6 +119,53 @@ extern int mnRemixBonusModesToggleArrowHit(int pos_x, int pos_y, int arrow_x, in
  */
 extern int mnRemixBonusModesHeaderOffset(int mode);
 
+/* header_graphic_remix_1p: offsets of the title of the 1P game character select in the 1P mode file (0 keeps the 1P Game title). */
+#define MNREMIX_BONUSMODES_GAME_HEADER_REMIX_1P 0x3758
+#define MNREMIX_BONUSMODES_GAME_HEADER_ALLSTAR 0x39C8
+
+/* _1P_FGM_alter and _BTP_FGM_alter: announcer voice ids of the character selects (0 keeps the vanilla voice). */
+#define MNREMIX_BONUSMODES_FGM_ALLSTAR 1014
+#define MNREMIX_BONUSMODES_FGM_BONUS3 0x1EF
+#define MNREMIX_BONUSMODES_FGM_MULTIMAN 0x3C7
+#define MNREMIX_BONUSMODES_FGM_CRUEL 0x3C8
+#define MNREMIX_BONUSMODES_FGM_HRC 1015
+
+/**
+ * Title offset of the 1P game character select (header_graphic_remix_1p).
+ *
+ * @param mode SC1PREMIX_MODE_* id.
+ * @return Offset in the 1P mode file, 0 for a mode that keeps the 1P Game title.
+ */
+extern int mnRemixBonusModesGameHeaderOffset(int mode);
+
+/**
+ * Announcer voice of the 1P game character select (_1P_FGM_alter).
+ *
+ * @param mode SC1PREMIX_MODE_* id.
+ * @return FGM id, 0 for a mode that keeps the "choose your character" voice.
+ */
+extern int mnRemixBonusModesGameAnnounceFgm(int mode);
+
+/**
+ * Announcer voice of the Bonus 2 character select (_BTP_FGM_alter).
+ *
+ * @param mode SC1PREMIX_MODE_* id.
+ * @return FGM id, 0 for a mode that keeps the "board the platforms" voice.
+ */
+extern int mnRemixBonusModesBonusAnnounceFgm(int mode);
+
+/**
+ * Screen and mode after a press of the header of the Bonus 2 character select (set_original_flag_swap): Bonus 1 goes to Bonus 2,
+ * Bonus 2 to Bonus 3, Bonus 3 back to Bonus 1, Multi-Man to Cruel Man and back, and the Home-Run Contest stays.
+ *
+ * @param mode SC1PREMIX_MODE_* id now.
+ * @param kind 0 on the Break the Targets screen, 1 on the Board the Platforms screen.
+ * @param next_mode Receives the mode after the press.
+ * @param next_kind Receives the screen after the press.
+ * @return Non-zero when the press changes the screen, zero when it does nothing.
+ */
+extern int mnRemixBonusModesCycleHeader(int mode, int kind, int *next_mode, int *next_kind);
+
 /**
  * Offset of the label beside the record number in the 1P mode file.
  *

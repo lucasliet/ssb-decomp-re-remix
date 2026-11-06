@@ -68,6 +68,23 @@ void ftRemixVisibilityInitFighter(FTStruct *fp)
 }
 
 /**
+ * Applies a Visibility panel value to the env colour override of a port right away (css/Visibility.asm onchange_handler),
+ * so the fighter shown on the CSS changes while the panel menu is open.
+ *
+ * @param port Port whose option changed.
+ * @param value New Visibility panel value.
+ */
+void ftRemixVisibilityApplyPanelValue(s32 port, s32 value)
+{
+    if ((port < 0) || (port >= FTREMIX_ENVCOLOR_PORTS))
+    {
+        return;
+    }
+    ftRemixEnvColorSetState(port, ftRemixVisibilityStateOfValue(value));
+    ftRemixEnvColorRestoreState(port);
+}
+
+/**
  * Sets the alpha of the player tag sprite to the alpha of the env colour override of the port, or opaque when the
  * port has none. Called from ifCommonPlayerTagProcDisplay before the tag is drawn (asm update_player_indicator_alpha_).
  */

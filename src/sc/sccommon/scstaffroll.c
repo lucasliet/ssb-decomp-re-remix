@@ -936,6 +936,12 @@ void scStaffrollMakeHighlightGObj(GObj *gobj)
 	s32 unused;
 	SObj *sobj = SObjGetStruct(sSCStaffrollCrosshairGObj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PRemixAfkCreditsShotIsSilent() != FALSE)
+	{
+		return;
+	}
+#endif
 	if (highlight_gobj == NULL)
 	{
 		highlight_gobj = gcMakeGObjSPAfter(9, NULL, 9, GOBJ_PRIORITY_DEFAULT);
@@ -1375,8 +1381,12 @@ sb32 scStaffrollCheckCursorHighlightPrompt(GObj *gobj, SCStaffrollProjection *pr
 		(scStaffrollCheckCursorNameOverlap(&sp28) == FALSE)
 	)
 	{
-		func_800269C0_275C0(nSYAudioFGMTrainingSel);
-
+#if defined(PORT) && defined(REGION_REMIX)
+		if (sc1PRemixAfkCreditsShotIsSilent() == FALSE)
+#endif
+		{
+			func_800269C0_275C0(nSYAudioFGMTrainingSel);
+		}
 		b = FALSE;
 
 		func_ovl59_8013202C(gobj);
@@ -1426,7 +1436,11 @@ sb32 scStaffrollGetPauseStatusHighlight(void)
 	u16 button_tap = gSYControllerDevices[sSCStaffrollPlayer].button_tap;
 	sb32 is_paused = FALSE;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (sc1PRemixAfkCreditsTapShoot(button_tap) != FALSE)
+#else
 	if (button_tap & (A_BUTTON | B_BUTTON))
+#endif
 	{
 		func_ovl59_8013330C();
 

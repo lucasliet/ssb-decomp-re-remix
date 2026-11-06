@@ -20,11 +20,20 @@ extern s32 mnRemixVSStaminaGetRule(sb32 is_team);
 /** Sets gGMRemixStaminaRule from the menu rule: TRUE for Stamina and Stamina Team, FALSE for the other rules. */
 extern void mnRemixVSStaminaSaveRule(s32 rule);
 
-/** HP after one scroll step of the Stamina value (1..999). Steps: 1 below 10, 10 up to 990, 1 above 990. */
+/**
+ * HP after one scroll step of the VS menu picker (1..999, wrapping). A held L/C-left/D-left or R/C-right/D-right button steps 1, the stick
+ * steps 10 with snaps (Stamina.asm vs_menu _scroll_left and _scroll_right); the buttons are read from every controller.
+ */
 extern s32 mnRemixVSStaminaStepHP(s32 hp, sb32 is_increase);
 
-/** Scrolls gGMRemixStaminaHP one step; returns TRUE when the value reached its limit. */
+/** Scrolls gGMRemixStaminaHP one step of the VS menu; returns TRUE when the value reached its limit. */
 extern sb32 mnRemixVSStaminaScrollHP(sb32 is_increase);
+
+/** Scrolls gGMRemixStaminaHP one arrow press of the CSS picker (10 up or down, wrapping) and lowers the Initial Damage of every port to it (stamina_scrolling_). */
+extern void mnRemixVSStaminaScrollHPCSS(sb32 is_increase);
+
+/** Lowers the Initial Damage of the panel of every port to the total HP of the Stamina rule (restrict_damage_for_stamina_). */
+extern void mnRemixVSStaminaRestrictDamage(void);
 
 /** Draws the Rule button text of a Stamina rule (Stamina image, or Stamina and Team images for Stamina Team). */
 extern void mnRemixVSStaminaMakeRuleValue(GObj* rule_value_gobj, void *file, s32 rule);

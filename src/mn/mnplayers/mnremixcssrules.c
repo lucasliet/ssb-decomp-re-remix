@@ -422,4 +422,17 @@ int mnRemixCssHasVariants(const int *variant_ids, int none_id)
     return 0;
 }
 
+int mnRemixCssVariantIsPickable(int variant, int none_id, int boss_id, int is_boss_tag_named)
+{
+    if (variant == none_id)
+    {
+        return 0;
+    }
+    if (variant == boss_id)
+    {
+        return (is_boss_tag_named != 0) ? 1 : 0;
+    }
+    return 1;
+}
+
 #endif

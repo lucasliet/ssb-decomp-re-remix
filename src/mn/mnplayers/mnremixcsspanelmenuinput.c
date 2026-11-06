@@ -12,6 +12,7 @@
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixtoggle.h"
 #include "mn/mnplayers/mnremixcssrules.h"
+#include "mn/mnplayers/mnremixcsspanelmenureload.h"
 #include "mn/mnplayers/mnremixcsspanelmenustate.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_player_panel.h"
@@ -106,6 +107,7 @@ static void mnRemixPanelMenuChangeItem(MNRemixPanelMenuState *state, const MNRem
 
     value = mnRemixPanelMenuApplyChangeRules(state, item, value, direction);
     mnRemixPanelMenuSetValue(item, panel->info.port, value);
+    mnRemixPanelMenuApplyFighterChange(item, panel->info.port, value);
     port_log("css panel menu: port %d item %d = %d\n", (int)panel->info.port, (int)item, (int)value);
     mnRemixPanelMenuPlayRepeatSound(state);
 }
@@ -242,6 +244,7 @@ static void mnRemixPanelMenuResetPanel(MNRemixPanelMenuState *state, const MNRem
     for (index = 0; index < count; index++)
     {
         mnRemixPanelMenuSetValue(items[index], panel->info.port, mnRemixPanelMenuRulesItemDefault(items[index]));
+        mnRemixPanelMenuApplyFighterChange(items[index], panel->info.port, mnRemixPanelMenuRulesItemDefault(items[index]));
     }
     syAudioPlayFGM(MNREMIX_PANELMENU_FGM_TOGGLE);
 }

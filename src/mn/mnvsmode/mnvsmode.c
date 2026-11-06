@@ -14,6 +14,7 @@
 #include "gm/gmremixmode.h"
 #include "gm/gmremixstamina.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
+#include "mn/mnvsmode/mnremixvsmodereturnrules.h"
 #endif
 
 extern void* func_800269C0_275C0(u16);
@@ -1147,6 +1148,29 @@ static void mnVSModeClearRemixButtons(void)
         sMNVSModeRemixButtonGObjs[index] = NULL;
     }
 }
+
+/**
+ * Reopens the Remix Modes page with the cursor on the mode that was played when the menu is entered from the VS CSS
+ * (VsRemixMenu.asm set_cursor_index_); any other entry drops the stored mode, as the main menu does in the asm.
+ */
+static void mnVSModeRestoreRemixReturn(void)
+{
+    s32 cursor_index = mnRemixVSModeReturnCursor(gSCManagerSceneData.scene_prev == nSCKindPlayersVS, gMNVSModeRemixMode);
+
+    if (cursor_index == MNREMIX_VSMODE_RETURN_NO_MODE_CURSOR)
+    {
+        gMNVSModeRemixMode = MNREMIX_VSMODE_DEFAULT;
+        return;
+    }
+    sMNVSModePage = MNREMIX_VSMODE_PAGE_2;
+    sMNVSModeCursorIndex = cursor_index;
+    sMNVSModeButtonGObjVSStart = NULL;
+    sMNVSModeButtonGObjRule = NULL;
+    sMNVSModeRuleValueGObj = NULL;
+    sMNVSModeButtonGObjTimeStock = NULL;
+    sMNVSModeTimeStockValueGObj = NULL;
+    sMNVSModeButtonGObjVSOptions = NULL;
+}
 #endif
 
 // 0x801336AC
@@ -1198,8 +1222,8 @@ void mnVSModeFuncStartVars()
     sMNVSModeRuleArrowBlinkTimer = 0;
 #if defined(PORT) && defined(REGION_REMIX)
     sMNVSModePage = MNREMIX_VSMODE_PAGE_1;
-    gMNVSModeRemixMode = MNREMIX_VSMODE_DEFAULT;
     mnVSModeClearRemixButtons();
+    mnVSModeRestoreRemixReturn();
 #endif
 }
 
@@ -1462,6 +1486,7 @@ static void mnVSModeSetPage(s32 page)
 
     if (page == MNREMIX_VSMODE_PAGE_1)
     {
+        gMNVSModeRemixMode = MNREMIX_VSMODE_DEFAULT;
         mnVSModeMakePage1Buttons();
     }
     mnVSModeMakeRemixButtons();
@@ -1904,9 +1929,14 @@ void mnVSModeFuncStart(void)
     mnVSModeMakeButtonValuegSYRdpViewport();
     mnVSModeMakeBackground();
     mnVSModeMakeMenuName();
-    mnVSModeMakePage1Buttons();
 #if defined(PORT) && defined(REGION_REMIX)
+    if (sMNVSModePage == MNREMIX_VSMODE_PAGE_1)
+    {
+        mnVSModeMakePage1Buttons();
+    }
     mnVSModeMakeRemixButtons();
+#else
+    mnVSModeMakePage1Buttons();
 #endif
     mnVSModeMakeSubtitle();
 

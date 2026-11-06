@@ -9,6 +9,7 @@
 #include <lb/library.h>
 #include <sys/obj.h>
 #include <sys/objman.h>
+#include "ft/ftremix/ftremixdpadmenu.h"
 #include "if/ifremixspriterules.h"
 #include "mn/mnplayers/mnremixcssindicators.h"
 #include "mn/mnplayers/mnremixcpulevelrules.h"
@@ -34,15 +35,30 @@
 #define MNREMIX_CSS_HANDICAP_BAR_ROWS 3
 #define MNREMIX_CSS_HANDICAP_BAR_OFFSET 0x330
 
+static s32 sMNRemixCssIndicatorFirstX = MNREMIX_CSS_DPAD_X;
+static s32 sMNRemixCssIndicatorStride = MNREMIX_CSS_DPAD_PANEL_STRIDE;
 static GObj *sMNRemixCssDpadGObjs[MNREMIX_CSS_INDICATOR_PANELS];
 static GObj *sMNRemixCssIconGObjs[MNREMIX_CSS_INDICATOR_PANELS];
 static GObj *sMNRemixCssFlagGObjs[MNREMIX_CSS_INDICATOR_PANELS];
 static s32 sMNRemixCssIconBase[MNREMIX_CSS_INDICATOR_PANELS];
 static s32 sMNRemixCssFlagFkind[MNREMIX_CSS_INDICATOR_PANELS];
 
+void mnRemixCssIndicatorsSetLayout(s32 first_panel_x, s32 panel_stride)
+{
+    sMNRemixCssIndicatorFirstX = first_panel_x;
+    sMNRemixCssIndicatorStride = panel_stride;
+}
+
+static s32 mnRemixCssIndicatorPanelX(s32 panel)
+{
+    return sMNRemixCssIndicatorFirstX + (sMNRemixCssIndicatorStride * panel);
+}
+
 void mnRemixCssIndicatorsReset(void)
 {
     s32 panel;
+
+    mnRemixCssIndicatorsSetLayout(MNREMIX_CSS_DPAD_X, MNREMIX_CSS_DPAD_PANEL_STRIDE);
 
     for (panel = 0; panel < MNREMIX_CSS_INDICATOR_PANELS; panel++)
     {
@@ -169,7 +185,7 @@ static void mnRemixCssMakeDpad(s32 panel, void *css_images_file)
     GObj *gobj = mnRemixCssMakeIndicatorGObj();
 
     mnRemixCssAddSprite(gobj, lbRelocGetFileData(Sprite*, css_images_file, ifRemixSpriteRulesGetEntry(IFREMIX_SPRITE_DPAD)->sprite_offset),
-                        mnRemixCssDpadPanelX(panel), MNREMIX_CSS_DPAD_Y, 1.0F);
+                        mnRemixCssIndicatorPanelX(panel), MNREMIX_CSS_DPAD_Y, 1.0F);
     sMNRemixCssDpadGObjs[panel] = gobj;
     sMNRemixCssIconGObjs[panel] = mnRemixCssMakeIndicatorGObj();
     sMNRemixCssFlagGObjs[panel] = mnRemixCssMakeIndicatorGObj();
@@ -200,7 +216,7 @@ static void mnRemixCssMakeVariantIcons(s32 panel, s32 original, void *css_images
         }
         icon = mnRemixCssVariantIconKind(kRemixRoster[variant].variant_type, variant);
         mnRemixCssDpadIconOffset(direction, &offset_x, &offset_y);
-        mnRemixCssAddSprite(gobj, mnRemixCssGetIconSprite(css_images_file, icon), mnRemixCssDpadPanelX(panel) + offset_x,
+        mnRemixCssAddSprite(gobj, mnRemixCssGetIconSprite(css_images_file, icon), mnRemixCssIndicatorPanelX(panel) + offset_x,
                             MNREMIX_CSS_DPAD_Y + offset_y, mnRemixCssVariantIconScale(icon));
     }
 }
@@ -212,7 +228,7 @@ static void mnRemixCssMakeFlag(s32 panel, s32 fkind, void *css_images_file)
 
     gcRemoveSObjAll(sMNRemixCssFlagGObjs[panel]);
     mnRemixCssAddSprite(sMNRemixCssFlagGObjs[panel], mnRemixCssGetIconSprite(css_images_file, flag),
-                        mnRemixCssDpadPanelX(panel) + MNREMIX_CSS_FLAG_X_OFFSET, MNREMIX_CSS_FLAG_Y, 1.0F);
+                        mnRemixCssIndicatorPanelX(panel) + MNREMIX_CSS_FLAG_X_OFFSET, MNREMIX_CSS_FLAG_Y, 1.0F);
 }
 
 static sb32 mnRemixCssIsRegionalFlag(s32 fkind)
@@ -222,9 +238,9 @@ static sb32 mnRemixCssIsRegionalFlag(s32 fkind)
     return ((flag == MNREMIX_CSS_ICON_FLAG_J) || (flag == MNREMIX_CSS_ICON_FLAG_E)) ? TRUE : FALSE;
 }
 
-static void mnRemixCssUpdateMark(s32 panel, sb32 is_dpad_shown, sb32 is_token_held)
+static void mnRemixCssUpdateMark(s32 panel, s32 token, sb32 is_dpad_shown, sb32 is_token_held)
 {
-    s32 slot = mnRemixVariantGetOffset(panel);
+    s32 slot = mnRemixVariantGetOffset(token);
     s32 offset_x;
     s32 offset_y;
 
@@ -233,7 +249,7 @@ static void mnRemixCssUpdateMark(s32 panel, sb32 is_dpad_shown, sb32 is_token_he
         return;
     }
     mnRemixCssDpadMarkOffset(slot - 1, &offset_x, &offset_y);
-    remix_hud_rect_put(MNREMIX_CSS_MARK_RECT_SLOT_FIRST + panel, mnRemixCssDpadPanelX(panel) + offset_x, MNREMIX_CSS_DPAD_Y + offset_y,
+    remix_hud_rect_put(MNREMIX_CSS_MARK_RECT_SLOT_FIRST + panel, mnRemixCssIndicatorPanelX(panel) + offset_x, MNREMIX_CSS_DPAD_Y + offset_y,
                        MNREMIX_CSS_MARK_SIZE, MNREMIX_CSS_MARK_SIZE, MNREMIX_CSS_MARK_RGBA);
 }
 
@@ -274,7 +290,7 @@ static void mnRemixCssUpdatePanel(s32 panel, const MNRemixCssPanelState *state, 
     sMNRemixCssIconGObjs[panel]->flags = (is_dpad_shown != FALSE) ? GOBJ_FLAG_NONE : GOBJ_FLAG_HIDDEN;
 
     mnRemixCssUpdateFlag(panel, state, css_images_file);
-    mnRemixCssUpdateMark(panel, is_dpad_shown, state->is_token_held);
+    mnRemixCssUpdateMark(panel, state->token, is_dpad_shown, state->is_token_held);
 }
 
 void mnRemixCssIndicatorsUpdate(void *css_images_file, const MNRemixCssPanelState *panels, s32 panel_count)
@@ -288,6 +304,7 @@ void mnRemixCssIndicatorsUpdate(void *css_images_file, const MNRemixCssPanelStat
     for (panel = 0; panel < panel_count; panel++)
     {
         mnRemixCssUpdatePanel(panel, &panels[panel], css_images_file);
+        ftRemixDpadMenuSetTokenOverFighter(panels[panel].token, ((panels[panel].is_token_held != FALSE) && (panels[panel].fkind != nFTKindNull)) ? TRUE : FALSE);
     }
 }
 

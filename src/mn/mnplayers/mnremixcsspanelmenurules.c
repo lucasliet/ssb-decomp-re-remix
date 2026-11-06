@@ -4,7 +4,9 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include "ft/ftremix/ftremixkirbyspawnrules.h"
 #include "mn/mnplayers/mnremixcsspanelmenurules.h"
+#include "remix/remix_roster_data.h"
 
 #define APPLIES_VS 0x20
 #define APPLIES_1P 0x10
@@ -371,6 +373,38 @@ int mnRemixPanelMenuRulesHighScoresEnabled(int mode, const int *values, const MN
         return 0;
     }
     return (globals->enemy_port == 0) ? 1 : 0;
+}
+
+int mnRemixPanelMenuRulesChangeAction(int item)
+{
+    switch (item)
+    {
+    case MNREMIX_PANELMENU_ITEM_MODEL:
+        return MNREMIX_PANELMENU_CHANGE_MODEL;
+
+    case MNREMIX_PANELMENU_ITEM_KIRBY_HAT:
+        return MNREMIX_PANELMENU_CHANGE_KIRBY_HAT;
+
+    case MNREMIX_PANELMENU_ITEM_VISIBILITY:
+        return MNREMIX_PANELMENU_CHANGE_VISIBILITY;
+
+    default:
+        return MNREMIX_PANELMENU_CHANGE_NONE;
+    }
+}
+
+int mnRemixPanelMenuRulesModelDetail(int panel_value)
+{
+    return (panel_value == 0) ? MNREMIX_PANELMENU_DETAIL_HIGH : panel_value;
+}
+
+int mnRemixPanelMenuRulesCssHatFighter(int panel_value)
+{
+    if (panel_value == FTREMIX_KIRBYSPAWN_PANEL_RANDOM)
+    {
+        return REMIX_ID_KIRBY;
+    }
+    return ftRemixKirbySpawnPanelFighter(panel_value, 0);
 }
 
 #endif

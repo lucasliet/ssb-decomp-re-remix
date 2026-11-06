@@ -10,6 +10,9 @@
 #ifdef PORT
 #include "port_input_script.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "ft/ftremix/ftremixdpadmenu.h"
+#endif
 
 // 0x800450F0
 OSMesgQueue sSYControllerInitMesgQueue; // Queue for OS controller Init, Status, and Read
@@ -186,6 +189,9 @@ void syControllerUpdateGlobalData(void)
     {
         if (sSYControllerDescs[i].unk1C == FALSE)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            u16 prev_hold = gSYControllerDevices[i].button_hold;
+#endif
             gSYControllerDevices[i].button_hold = sSYControllerDescs[i].unk00;
             gSYControllerDevices[i].button_tap = sSYControllerDescs[i].unk04;
             gSYControllerDevices[i].button_release = sSYControllerDescs[i].unk0C;
@@ -247,6 +253,9 @@ void syControllerUpdateGlobalData(void)
                     sSYControllerDescs[i].unk04);
             }
 
+#if defined(PORT) && defined(REGION_REMIX)
+            ftRemixDpadMenuTransform(i, &gSYControllerDevices[i], prev_hold);
+#endif
             sSYControllerDescs[i].unk04 = sSYControllerDescs[i].unk08 = sSYControllerDescs[i].unk0C = 0;
         }
     }

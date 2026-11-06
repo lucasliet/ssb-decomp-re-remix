@@ -1188,7 +1188,14 @@ void scManagerRunLoop(sb32 arg)
 #if defined(REGION_US)
 		if (gSCManagerSceneData.scene_curr == nSCKindStartup)
 		{
+#ifdef REGION_REMIX
+			/* Boot.asm splash_: the N64 logo hands over to the Remix splash image (Congratulations scene with Character.id
+			 * NONE), which reads scene_prev == nSCKindStartup to tell it from the 1P ending. */
+			gSCManagerSceneData.scene_prev = nSCKindStartup;
+			gSCManagerSceneData.scene_curr = nSCKindCongra;
+#else
 			gSCManagerSceneData.scene_curr = nSCKindOpeningRoom;
+#endif
 		}
 #endif
 
@@ -2099,12 +2106,12 @@ void scManagerRunPrintGObjStatus(void)
 static ub32 sPortResetPending = FALSE;
 static s32 sPortResetTarget = nSCKindOpeningRoom;
 
-void portSCManagerRequestReset(void)
+/* Ends the current scene at the frame boundary and enters `scene` (prev == curr == scene), the way a reset does. */
+void portSCManagerRequestScene(s32 scene)
 {
 	extern void func_800266A0_272A0(void); /* audio wind-down used by every scene exit */
-	extern int port_enhancement_boot_to_vs_css(void);
 
-	sPortResetTarget = port_enhancement_boot_to_vs_css() ? nSCKindPlayersVS : nSCKindOpeningRoom;
+	sPortResetTarget = scene;
 	sPortResetPending = TRUE;
 
 	/* Speak the game's native match-abort language: is_reset is what the
@@ -2123,6 +2130,13 @@ void portSCManagerRequestReset(void)
 	gSCManagerSceneData.scene_curr = sPortResetTarget;
 
 	syTaskmanSetLoadScene();
+}
+
+void portSCManagerRequestReset(void)
+{
+	extern int port_enhancement_boot_to_vs_css(void);
+
+	portSCManagerRequestScene(port_enhancement_boot_to_vs_css() ? nSCKindPlayersVS : nSCKindOpeningRoom);
 }
 
 /* If a reset is pending: re-apply the target scene (undoing any scene_curr

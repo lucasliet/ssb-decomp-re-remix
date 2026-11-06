@@ -76,6 +76,9 @@ extern s32 mnRemix1PModeGetStartOption(s32 prev_scene, s32 vanilla_option);
  */
 extern void mnRemix1PModeSelect(s32 option, s32 player);
 
+/** Clears the chosen 1P mode and goes back to the first page; called when a Mode Select button is picked. */
+extern void mnRemix1PModeReset(void);
+
 /** B on the menu: from the second page it goes back to the first one, from the first one to the main menu. */
 extern void mnRemix1PModeBack(void);
 

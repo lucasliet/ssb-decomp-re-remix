@@ -28,6 +28,9 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
+#include "ft/ftremix/ftremixhooks.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
+#include "mn/mnvsmode/mnremixresults.h"
 #include "mn/mnplayers/mnremixcssmode.h"
 #include "mn/mnplayers/mnremixteams.h"
 #include "mn/mnplayers/mnremixteamsrules.h"
@@ -42,6 +45,15 @@ extern void port_log(const char *fmt, ...);
 #define MNVSRESULTS_TEAM_ANNOUNCER(table, team) ((table)[team])
 #define MNVSRESULTS_TEAM_COLOR(table, team) ((table)[team])
 #define MNVSRESULTS_TEAM_LAST nSCBattleTeamIDBattleEnd
+#endif
+
+#if defined(PORT) && defined(REGION_REMIX)
+/* resultsscreen.asm: Master Hand, Metal Mario, the polygons, Giant DK and every Remix fighter take their winner data from the Remix tables. */
+#define MNVSRESULTS_IS_EXTENDED_FKIND(fkind) (mnRemixResultsRulesIsExtendedFkind(fkind) != 0)
+#define MNVSRESULTS_GET_EXTENDED_EMBLEM(fkind, p_dobj, p_mobj, p_matanim) mnVSResultsGetRemixEmblem(fkind, p_dobj, p_mobj, p_matanim)
+#elif defined(PORT)
+#define MNVSRESULTS_IS_EXTENDED_FKIND(fkind) ((fkind) >= (s32)nFTKindEnumCount)
+#define MNVSRESULTS_GET_EXTENDED_EMBLEM(fkind, p_dobj, p_mobj, p_matanim) port_fighter_results_emblem(fkind, p_dobj, p_mobj, p_matanim)
 #endif
 
 // // // // // // // // // // // //
@@ -327,6 +339,13 @@ sb32 mnVSResultsCheckExit(void)
 
 	if (sMNVSResultsTotalTimeTics >= sMNVSResultsAllowExitWait)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		/* CharacterSelect.asm awayMode _handle_results: the "afk" player tag presses START by itself */
+		if (sc1PRemixAfkIsActive() != FALSE)
+		{
+			return TRUE;
+		}
+#endif
 		for (i = 0; i < ARRAY_COUNT(gSYControllerDevices); i++)
 		{
 			if (gSYControllerDevices[i].button_tap & START_BUTTON)
@@ -390,6 +409,13 @@ void mnVSResultsAnnounceWinner(void)
 #ifdef PORT
 		{
 			s32 wk = mnVSResultsGetFighterKind(mnVSResultsGetWinPlayer());
+#if defined(PORT) && defined(REGION_REMIX)
+			if (mnRemixResultsRulesIsExtendedFkind(wk) != 0)
+			{
+				func_800269C0_275C0(mnRemixResultsGetWinnerFgm(wk));
+				break;
+			}
+#endif
 			func_800269C0_275C0((wk >= (s32)nFTKindEnumCount)
 			                    ? (u32)port_fighter_results_announce_fgm(wk)
 			                    : announce_names[wk]);
@@ -679,6 +705,33 @@ void mnVSResultsEmblemProcUpdate(GObj *gobj)
 	}
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Resolves the emblem models of an extended winner from the Remix tables (winner_logo_fix_, winner_logo_zoom_fix_,
+ * winner_logo_color_fix_) in the emblem models file the scene loaded.
+ *
+ * @param fkind Fighter kind of the winner.
+ * @param p_dobj Receives the DObjDesc array.
+ * @param p_mobj Receives the MObjSub array.
+ * @param p_matanim Receives the MatAnimJoint array.
+ * @return Non-zero when the fighter has an emblem.
+ */
+static s32 mnVSResultsGetRemixEmblem(s32 fkind, void **p_dobj, void **p_mobj, void **p_matanim)
+{
+	intptr_t dobjdesc, mobjsub, matanim;
+
+	if (mnRemixResultsGetEmblem(fkind, &dobjdesc, &mobjsub, &matanim) == FALSE)
+	{
+		return 0;
+	}
+	*p_dobj = lbRelocGetFileData(void*, sMNVSResultsFiles[4], dobjdesc);
+	*p_mobj = lbRelocGetFileData(void*, sMNVSResultsFiles[4], mobjsub);
+	*p_matanim = lbRelocGetFileData(void*, sMNVSResultsFiles[4], matanim);
+
+	return 1;
+}
+#endif
+
 // 0x80132B20
 void mnVSResultsMakeEmblem(void)
 {
@@ -735,10 +788,10 @@ void mnVSResultsMakeEmblem(void)
 	 * those (never a parent's, never an OOB read). Same construction as the
 	 * vanilla path below, just with registry pointers instead of
 	 * lbRelocGetFileData. A synth that registered no emblem draws none. */
-	if (win_fkind >= (s32)nFTKindEnumCount)
+	if (MNVSRESULTS_IS_EXTENDED_FKIND(win_fkind))
 	{
 		void *p_dobj = NULL, *p_mobj = NULL, *p_matanim = NULL;
-		if (port_fighter_results_emblem(win_fkind, &p_dobj, &p_mobj, &p_matanim))
+		if (MNVSRESULTS_GET_EXTENDED_EMBLEM(win_fkind, &p_dobj, &p_mobj, &p_matanim))
 		{
 			gobj = gcMakeGObjSPAfter(0, NULL, 23, GOBJ_PRIORITY_DEFAULT);
 			gcSetupCommonDObjs(gobj, (DObjDesc *)p_dobj, NULL);
@@ -963,7 +1016,7 @@ void mnVSResultsFaceWinner(GObj *fighter_gobj, s32 player, s32 place)
 }
 
 // 0x8013345C
-s32 mnVSResultsGetStatusWin(s32 fkind)
+s32 mnVSResultsGetStatusWin(s32 fkind, s32 player)
 {
 	s32 status_ids[/* */] =
 	{
@@ -971,12 +1024,19 @@ s32 mnVSResultsGetStatusWin(s32 fkind)
 		nFTDemoStatusWin2,
 		nFTDemoStatusWin3
 	};
+	s32 status_index;
 
 	if (fkind == nFTKindKirby)
 	{
-		return status_ids[syUtilsRandIntRange(2)];
+		status_index = syUtilsRandIntRange(2);
 	}
-	else return status_ids[syUtilsRandIntRange(3)];
+	else status_index = syUtilsRandIntRange(3);
+
+#if defined(PORT) && defined(REGION_REMIX)
+	/* resultsscreen.asm victory_animations_: a C button held on the winner's controller picks the animation */
+	status_index = mnRemixResultsRulesPickVictoryIndex(status_index, gSYControllerDevices[player].button_hold);
+#endif
+	return status_ids[status_index];
 }
 
 // 0x801334CC - bruh
@@ -998,7 +1058,7 @@ void mnVSResultsSetFighterStatus(GObj *fighter_gobj, s32 player)
 		switch (sMNVSResultsPlaces[player])
 		{
 		case 0:
-			scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusWin(mnVSResultsGetFighterKind(player)));
+			scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusWin(mnVSResultsGetFighterKind(player), player));
 			break;
 			
 		case 1:
@@ -1010,7 +1070,7 @@ void mnVSResultsSetFighterStatus(GObj *fighter_gobj, s32 player)
 	case 3:
 		if (sMNVSResultsPlaces[player] == 0)
 		{
-			scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusWin(mnVSResultsGetFighterKind(player)));
+			scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusWin(mnVSResultsGetFighterKind(player), player));
 		}
 		else scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusLose(mnVSResultsGetFighterKind(player)));
 		break;
@@ -1019,7 +1079,7 @@ void mnVSResultsSetFighterStatus(GObj *fighter_gobj, s32 player)
 	default:
 		if (sMNVSResultsPlaces[player] == 0)
 		{
-			scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusWin(mnVSResultsGetFighterKind(player)));
+			scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusWin(mnVSResultsGetFighterKind(player), player));
 		}
 		else scSubsysFighterSetStatus(fighter_gobj, mnVSResultsGetStatusLose(mnVSResultsGetFighterKind(player)));
 		break;
@@ -1147,18 +1207,18 @@ void mnVSResultsSetPlayerTagPosition(GObj *gobj, s32 player)
 	{
 	case 2:
 		SObjGetStruct(gobj)->pos.x = pos_xy_2p[dist][spot].x;
-		SObjGetStruct(gobj)->pos.y = pos_xy_2p[dist][spot].y + (mnVSResultsGetFighterKind(player) >= (s32)nFTKindEnumCount ? 0.0F : pos_y_kinds[mnVSResultsGetFighterKind(player)][dist]);
+		SObjGetStruct(gobj)->pos.y = pos_xy_2p[dist][spot].y + (mnVSResultsGetFighterKind(player) >= (s32)ARRAY_COUNT(pos_y_kinds) ? 0.0F : pos_y_kinds[mnVSResultsGetFighterKind(player)][dist]);
 		break;
 		
 	case 3:
 		SObjGetStruct(gobj)->pos.x = pos_xy_3p[dist][spot].x;
-		SObjGetStruct(gobj)->pos.y = pos_xy_3p[dist][spot].y + (mnVSResultsGetFighterKind(player) >= (s32)nFTKindEnumCount ? 0.0F : pos_y_kinds[mnVSResultsGetFighterKind(player)][dist]);
+		SObjGetStruct(gobj)->pos.y = pos_xy_3p[dist][spot].y + (mnVSResultsGetFighterKind(player) >= (s32)ARRAY_COUNT(pos_y_kinds) ? 0.0F : pos_y_kinds[mnVSResultsGetFighterKind(player)][dist]);
 		break;
 		
 	case 4:
 	default:
 		SObjGetStruct(gobj)->pos.x = pos_xy_4p[dist][spot].x;
-		SObjGetStruct(gobj)->pos.y = pos_xy_4p[dist][spot].y + (mnVSResultsGetFighterKind(player) >= (s32)nFTKindEnumCount ? 0.0F : pos_y_kinds[mnVSResultsGetFighterKind(player)][dist]);
+		SObjGetStruct(gobj)->pos.y = pos_xy_4p[dist][spot].y + (mnVSResultsGetFighterKind(player) >= (s32)ARRAY_COUNT(pos_y_kinds) ? 0.0F : pos_y_kinds[mnVSResultsGetFighterKind(player)][dist]);
 		break;
 	}
 
@@ -1184,6 +1244,23 @@ void mnVSResultsSetPlayerTagPosition(GObj *gobj, s32 player)
 #endif
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Draws the tag sprite of a results player tag and, over it, the custom tag name of its port (PlayerTag.asm create_custom_tag_
+ * for the results screen).
+ *
+ * @param gobj Tag object; its user data holds the port.
+ */
+static void mnVSResultsPlayerTagProcDisplay(GObj *gobj)
+{
+	SObj *sobj = SObjGetStruct(gobj);
+
+	ifRemixPlayerTagDrawName(gobj->user_data.s, sobj->pos.x + (sobj->sprite.width * 0.5F), sobj->pos.y,
+	                         ((u32)sobj->sprite.red << 24) | ((u32)sobj->sprite.green << 16) | ((u32)sobj->sprite.blue << 8) | 0xFF);
+	lbCommonDrawSObjAttr(gobj);
+}
+#endif
+
 // 0x80133C58
 void mnVSResultsMakePlayerTag(s32 player, s32 color_id)
 {
@@ -1204,11 +1281,20 @@ void mnVSResultsMakePlayerTag(s32 player, s32 color_id)
 	};
 
 	gobj = gcMakeGObjSPAfter(0, NULL, 18, GOBJ_PRIORITY_DEFAULT);
+#if defined(PORT) && defined(REGION_REMIX)
+	gcAddGObjDisplay(gobj, mnVSResultsPlayerTagProcDisplay, 27, GOBJ_PRIORITY_DEFAULT, ~0);
+	gobj->user_data.s = player;
+#else
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
+#endif
 
 	if (gSCManagerTransferBattleState.players[player].pkind == nFTPlayerKindMan)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSResultsFiles[1], ifRemixPlayerTagSpriteOffset(player, offsets[player])));
+#else
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSResultsFiles[1], offsets[player]));
+#endif
 		sobj->sprite.attr &= ~SP_FASTCOPY;
 		sobj->sprite.attr |= SP_TRANSPARENT;
 		sobj->envcolor.r = dIFCommonPlayerTagEnvColorsR[color_id];
@@ -1220,7 +1306,11 @@ void mnVSResultsMakePlayerTag(s32 player, s32 color_id)
 	}
 	else
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSResultsFiles[1], ifRemixPlayerTagSpriteOffset(player, llIFCommonPlayerTagsCPSprite)));
+#else
 		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSResultsFiles[1], llIFCommonPlayerTagsCPSprite));
+#endif
 		sobj->sprite.attr &= ~SP_FASTCOPY;
 		sobj->sprite.attr |= SP_TRANSPARENT;
 		sobj->envcolor.r = dIFCommonPlayerTagEnvColorsR[color_id];
@@ -1273,6 +1363,11 @@ s32 mnVSResultsGetCharacterID(char c)
 	case ' ':
 		return 0x1C;
 		
+#if defined(PORT) && defined(REGION_REMIX)
+	case '&':
+		return MNREMIX_RESULTS_AMPERSAND_INDEX;
+		
+#endif
 	default:
 		return c - 'A';
 	}
@@ -1291,6 +1386,10 @@ void mnVSResultsMakeString(const char *str, f32 x, f32 y, s32 color_id, f32 scal
 	{
 		35.0F, 24.0F, 24.0F, 28.0F, 22.0F, 20.0F, 31.0F, 27.0F, 9.0F, 20.0F, 27.0F, 20.0F, 37.0F, 29.0F,
 		34.0F, 24.0F, 37.0F, 27.0F, 24.0F, 24.0F, 26.0F, 28.0F, 39.0F, 31.0F, 29.0F, 30.0F, 10.0F, 8.0F
+#if defined(PORT) && defined(REGION_REMIX)
+		,
+		0.0F, MNREMIX_RESULTS_AMPERSAND_WIDTH
+#endif
 	};
 	intptr_t offsets[/* */] =
 	{
@@ -1310,6 +1409,11 @@ void mnVSResultsMakeString(const char *str, f32 x, f32 y, s32 color_id, f32 scal
 
 		llIFCommonAnnounceCommonSymbolExclaimSprite,
 		llIFCommonAnnounceCommonSymbolPeriodSprite
+#if defined(PORT) && defined(REGION_REMIX)
+		,
+		0,
+		MNREMIX_RESULTS_AMPERSAND_SPRITE_OFFSET
+#endif
 	};
 	SYColorRGBPair colors[/* */] =
 	{
@@ -1345,6 +1449,13 @@ void mnVSResultsMakeString(const char *str, f32 x, f32 y, s32 color_id, f32 scal
 		{
 			char_id = mnVSResultsGetCharacterID(str[i]);
 
+#if defined(PORT) && defined(REGION_REMIX)
+			/* A character without a glyph would index past the sprite tables */
+			if ((char_id < 0) || (char_id >= ARRAY_COUNT(offsets)))
+			{
+				continue;
+			}
+#endif
 			if (char_id == 0x1C) // space
 			{
 				current_x += 10.0F * scale;
@@ -1429,6 +1540,13 @@ void mnVSResultsMakeWinnerText(s32 winner)
 	}
 	if (sMNVSResultsIsTeamBattle == FALSE)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		if (MNVSRESULTS_IS_EXTENDED_FKIND(winner))
+		{
+			mnVSResultsMakeString((mnRemixResultsIsSingularWin(winner) != FALSE) ? win : wins, mnRemixResultsGetWinsX(winner), 180.0F, 3, 1.0F);
+			return;
+		}
+#endif
 #ifdef PORT
 		f32 wlx = (winner >= (s32)nFTKindEnumCount)
 		          ? port_fighter_results_wins_lx(winner)
@@ -1453,6 +1571,26 @@ s32 mnVSResultGetWinFighterKind(void)
 {
 	return mnVSResultsGetFighterKind(mnVSResultsGetWinPlayer());
 }
+
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Draws the winner name of an extended fighter from the Remix tables (get_str_winner_info_). A fighter with no name entry draws
+ * no name.
+ *
+ * @param fkind Fighter kind of the winner.
+ */
+static void mnVSResultsMakeRemixFighterName(s32 fkind)
+{
+	char name[MNREMIX_RESULTS_NAME_BUFFER_SIZE];
+	f32 x, scale;
+
+	if (mnRemixResultsGetWinnerName(fkind, name, &x, &scale) == FALSE)
+	{
+		return;
+	}
+	mnVSResultsMakeString(name, x, 180.0F, 0, scale);
+}
+#endif
 
 // 0x8013438C
 void mnVSResultMakeFighterName(void)
@@ -1534,6 +1672,14 @@ void mnVSResultMakeFighterName(void)
 	
 	fkind = mnVSResultGetWinFighterKind();
 
+#if defined(PORT) && defined(REGION_REMIX)
+	if (MNVSRESULTS_IS_EXTENDED_FKIND(fkind))
+	{
+		mnVSResultsMakeRemixFighterName(fkind);
+		mnVSResultsMakeWinnerText(fkind);
+		return;
+	}
+#endif
 #ifdef PORT
 	if (fkind >= (s32)nFTKindEnumCount) {
 		const char *nm = port_fighter_results_name(fkind);

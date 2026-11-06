@@ -56,6 +56,15 @@ sb32 mnRemixCssModeIsSmashketball(void)
     return gmRemixModeIs(MNREMIX_VSMODE_SMASHKETBALL);
 }
 
+s32 mnRemixCssModeGetTitleColorIndex(sb32 is_team_battle)
+{
+    if (mnRemixCssModeIsSmashketball() == FALSE)
+    {
+        return (is_team_battle != FALSE) ? 1 : 0;
+    }
+    return (gmRemixSmashketballIsSoccer() != FALSE) ? 1 : 0;
+}
+
 void mnRemixCssModeToggleSmashketballType(void)
 {
     remix_modes_smashketball_set_type((remix_modes_smashketball_type() == GMREMIX_SMASHKETBALL_TYPE_SOCCER) ? GMREMIX_SMASHKETBALL_TYPE_BASKETBALL : GMREMIX_SMASHKETBALL_TYPE_SOCCER);

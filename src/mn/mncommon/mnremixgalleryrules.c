@@ -61,6 +61,7 @@ static const int sMNRemixGalleryCharacterIds[MN_REMIX_GALLERY_ENTRY_COUNT] =
 static const MNRemixVictoryImage sMNRemixVictoryImages[] =
 {
     { REMIX_ID_BOSS, MN_REMIX_VICTORY_IMAGE_DEFAULT_FILE },
+    { REMIX_ID_NONE, MN_REMIX_SPLASH_IMAGE_FILE },
     { REMIX_ID_METAL, 0xBA },
     { REMIX_ID_NMARIO, MN_REMIX_VICTORY_IMAGE_DEFAULT_FILE },
     { REMIX_ID_NFOX, MN_REMIX_VICTORY_IMAGE_DEFAULT_FILE },
@@ -150,6 +151,39 @@ int mnRemixGalleryRulesGetCharacterId(int index)
 int mnRemixGalleryRulesStepIndex(int index, int step)
 {
     return (((index + step) % MN_REMIX_GALLERY_ENTRY_COUNT) + MN_REMIX_GALLERY_ENTRY_COUNT) % MN_REMIX_GALLERY_ENTRY_COUNT;
+}
+
+int mnRemixGalleryRulesNextIdleMode(int idle_mode)
+{
+    return (idle_mode == MN_REMIX_GALLERY_IDLE_SHUFFLE) ? MN_REMIX_GALLERY_IDLE_RANDOM_SONG : MN_REMIX_GALLERY_IDLE_SHUFFLE;
+}
+
+int mnRemixGalleryRulesNextIdleIndex(int idle_index)
+{
+    if ((idle_index + 1) >= MN_REMIX_GALLERY_ENTRY_COUNT)
+    {
+        return 0;
+    }
+    return idle_index + 1;
+}
+
+void mnRemixGalleryRulesBuildIdleOrder(int *order, int (*random_range)(int range))
+{
+    int page;
+    int position;
+
+    for (position = 0; position < MN_REMIX_GALLERY_ENTRY_COUNT; position++)
+    {
+        order[position] = -1;
+    }
+    for (page = 0; page < MN_REMIX_GALLERY_ENTRY_COUNT; page++)
+    {
+        do
+        {
+            position = random_range(MN_REMIX_GALLERY_ENTRY_COUNT);
+        } while ((position < 0) || (position >= MN_REMIX_GALLERY_ENTRY_COUNT) || (order[position] >= 0));
+        order[position] = page;
+    }
 }
 
 /**

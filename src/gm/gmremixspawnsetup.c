@@ -270,31 +270,58 @@ void gmRemixTrainingSpawnApply(s32 spawn_id, Vec3f *pos)
     gmRemixSpawnApplyTableSlot(REMIX_SYM_Spawn__original_table, stage_id, slot, pos);
 }
 
+/* AI.is_default_cpu_lvl_set */
+static sb32 sGMRemixIsDefaultCPULevelSet = FALSE;
+
+/**
+ * Writes a CPU level into the four player slots and marks the default as set.
+ * @param level CPU level, 1 to 9.
+ */
+static void gmRemixDefaultCPULevelWrite(s32 level)
+{
+    s32 player;
+
+    sGMRemixIsDefaultCPULevelSet = TRUE;
+    for (player = 0; player < GMREMIX_SPAWN_PLAYERS_NUM; player++)
+    {
+        gSCManagerTransferBattleState.players[player].level = level;
+    }
+}
+
 /**
  * Applies the Default CPU LVL (V.S.) toggle to the four player slots, once per boot, as AI.asm does on the first VS
- * setup. A toggle of 0 (default) uses level 3. The A-press refresh of the Remix menu is not ported.
+ * setup. A toggle of 0 (default) uses level 3. The refresh the A press runs is gmRemixDefaultCPULevelRefresh.
  */
 void gmRemixDefaultCPULevelSetup(void)
 {
-    static sb32 sIsDefaultCPULevelSet = FALSE;   /* AI.is_default_cpu_lvl_set */
     s32 level;
-    s32 player;
 
-    if (sIsDefaultCPULevelSet)
+    if (sGMRemixIsDefaultCPULevelSet)
     {
         return;
     }
-    sIsDefaultCPULevelSet = TRUE;
-
     level = gmRemixToggle(default_cpu_level);
     if (level == 0)
     {
         level = GMREMIX_DEFAULT_CPU_LEVEL;
     }
-    for (player = 0; player < GMREMIX_SPAWN_PLAYERS_NUM; player++)
+    gmRemixDefaultCPULevelWrite(level);
+}
+
+/**
+ * A press on Default CPU LVL (V.S.) (Toggles.asm set_cpu_level): writes the toggle as the CPU level of the four slots
+ * and marks the default as set, so a level already applied this boot is refreshed without a restart. A toggle of 0
+ * (DEFAULT) does nothing.
+ */
+void gmRemixDefaultCPULevelRefresh(void)
+{
+    s32 level = gmRemixToggle(default_cpu_level);
+
+    if (level == 0)
     {
-        gSCManagerTransferBattleState.players[player].level = level;
+        return;
     }
+    gmRemixDefaultCPULevelWrite(level);
 }
 
 #endif

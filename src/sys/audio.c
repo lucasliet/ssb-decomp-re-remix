@@ -266,6 +266,11 @@ u8 *sSYAudioCSPlayerStatuses;
 #ifdef PORT
 static s32 sSYAudioBGMPlayingIDsBuf[SYAUDIO_BGMPLAYERS_NUM];
 s32 *sSYAudioBGMPlayingIDs = sSYAudioBGMPlayingIDsBuf;
+#ifdef REGION_REMIX
+/* BGM.asm safe_id: set by syAudioPlayBGM and cleared only by syAudioStopBGM (set_safe_id_on_play_, set_safe_id_on_stop_). The
+ * vanilla id above is also cleared by the audio thread when a sequence without a loop ends, which safe_id is not. */
+static s32 sSYAudioRemixSafeBGMIDs[SYAUDIO_BGMPLAYERS_NUM] = { -1 };
+#endif
 #else
 s32 *sSYAudioBGMPlayingIDs;
 #endif
@@ -1688,6 +1693,7 @@ s32 syAudioPlayBGM(s32 sngplayer, u32 bgm)
         sSYAudioCSPlayerStatuses[sngplayer] = AL_PLAYING;
         sSYAudioBGMPlayingIDs[sngplayer] = bgm;
 #if defined(PORT) && defined(REGION_REMIX)
+        sSYAudioRemixSafeBGMIDs[sngplayer] = bgm;
         gmRemixBgmLogPlay(sngplayer, bgm);
 #endif
 
@@ -1702,20 +1708,22 @@ void syAudioStopBGM(s32 sngplayer)
     sSYAudioCSPlayerStatuses[sngplayer] = AL_PLAYING;
     sSYAudioBGMPlayingIDs[sngplayer] = -1;
 #if defined(PORT) && defined(REGION_REMIX)
+    sSYAudioRemixSafeBGMIDs[sngplayer] = -1;
     gmRemixBgmLogStop(sngplayer);
 #endif
 }
 
 #if defined(PORT) && defined(REGION_REMIX)
 /**
- * Returns the BGM id last started on a BGM player, the port equivalent of BGM.safe_id.
+ * Returns the BGM id last started on a BGM player and not stopped since, the port equivalent of BGM.safe_id. A track without
+ * a loop that has ended still counts, as in the asm.
  *
  * @param sngplayer BGM player index.
- * @return The BGM id, or -1 when the player has no track.
+ * @return The BGM id, or -1 when no track was started or the last one was stopped.
  */
 s32 syAudioGetBGMPlaying(s32 sngplayer)
 {
-    return sSYAudioBGMPlayingIDs[sngplayer];
+    return sSYAudioRemixSafeBGMIDs[sngplayer];
 }
 #endif
 

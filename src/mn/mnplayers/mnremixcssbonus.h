@@ -24,6 +24,17 @@ extern void mnRemixCssBonusReset(void);
  */
 extern void mnRemixCssBonusMakeBookend(void *css_images_file, s32 gobj_link, s32 dl_link);
 
+/** Offset of the white flash image of the bonus bookend from the bookend image (set_white_flash_texture: 0xC60). */
+#define MNREMIX_CSS_BONUS_FLASH_DELTA 0xC60
+
+/**
+ * Makes the white flash sprite shown over the bonus bookend when a token is dropped on it.
+ *
+ * @param gobj Flash GObj, which the caller already linked to the flash display list.
+ * @param css_images_file Loaded Remix CSS images file.
+ */
+extern void mnRemixCssBonusMakeFlash(GObj *gobj, void *css_images_file);
+
 /** Fighter the bonus bookend shows for the token of a player (bonus_chars[bonus_char_index_vs[token]]). */
 extern s32 mnRemixCssBonusGetFighterKind(s32 token);
 
@@ -47,6 +58,9 @@ extern sb32 mnRemixCssBonusScroll(s32 token, s32 cursor_player, u16 held_buttons
  * @param panel_x Left edge of the card of panel 0.
  */
 extern void mnRemixCssBonusSetHintPanelX(f32 panel_x);
+
+/** Distance between the hint of two panels (69 on the VS CSS, 132 on the Training CSS); the default comes back with every mnRemixCssBonusReset. */
+extern void mnRemixCssBonusSetHintPanelStride(f32 panel_stride);
 
 /**
  * Shows or hides the scroll hint of a panel (draw_bonus_scroll_indicators_): blinking arrows at both sides and the Z and R

@@ -15,6 +15,9 @@ void gmRemixTrainingSpawnApply(s32 spawn_id, Vec3f *pos);
 /* Default CPU LVL (V.S.) toggle: sets the CPU level of the four slots once per boot. */
 void gmRemixDefaultCPULevelSetup(void);
 
+/* A press on Default CPU LVL (V.S.) (Toggles.asm set_cpu_level): writes a non-zero toggle as the CPU level of the four slots. */
+void gmRemixDefaultCPULevelRefresh(void);
+
 #endif
 
 #endif

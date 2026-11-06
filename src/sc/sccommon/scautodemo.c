@@ -541,7 +541,7 @@ s32 scAutoDemoGetFighterKind(s32 player)
 		return gSCManagerSceneData.demo_fkind[player];
 	}
 #if defined(PORT) && defined(REGION_REMIX)
-	return scRemixVsDemoPickNonFocusedFighter();
+	return scRemixVsDemoPickNonFocusedFighter(player);
 #endif
 	fighter_mask = (gSCManagerBackupData.fighter_mask | LBBACKUP_CHARACTER_MASK_STARTER);
 
@@ -663,11 +663,21 @@ void scAutoDemoInitSObjs(void)
 		 * fighters show their parent's name, anything else Mario's. */
 		s32 name_fkind = port_fighter_parent_fkind(gSCManagerBattleState->players[player].fkind);
 		SObj *sobj;
+#ifdef REGION_REMIX
+		s32 remix_name_offset = scRemixVsDemoGetNameTextureOffset(gSCManagerBattleState->players[player].fkind);
+#endif
 
 		if (name_fkind >= ARRAY_COUNT(dSCAutoDemoFighterNameSpriteOffsets))
 		{
 			name_fkind = nFTKindMario;
 		}
+#ifdef REGION_REMIX
+		if (remix_name_offset >= 0)
+		{
+			sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, remix_name_offset));
+		}
+		else
+#endif
 		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, dSCAutoDemoFighterNameSpriteOffsets[name_fkind]));
 #else
 		SObj *sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, dSCAutoDemoFighterNameSpriteOffsets[gSCManagerBattleState->players[player].fkind]));

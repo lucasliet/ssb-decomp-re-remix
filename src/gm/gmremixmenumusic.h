@@ -21,6 +21,12 @@ void gmRemixMenuMusicPlay(u32 default_bgm, sb32 from_title_screen);
  */
 void gmRemixMenuMusicStop(void);
 
+/**
+ * A press on Menu Music (Toggles.asm play_menu_music_): plays the chosen menu track now and always restarts it; OFF stops the
+ * music. The port menu calls it after the value changes.
+ */
+void gmRemixMenuMusicAudition(void);
+
 #endif
 
 #endif

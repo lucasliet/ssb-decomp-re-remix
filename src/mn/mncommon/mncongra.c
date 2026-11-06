@@ -8,6 +8,8 @@
 #ifdef REGION_REMIX
 #include <mn/mncommon/mnremixgallery.h>
 #include <mn/mncommon/mnremixgalleryrules.h>
+#include <mn/mncommon/mnremixsplash.h>
+#include "remix/remix_roster_data.h"
 #endif
 
 extern void* func_800269C0_275C0(u16);
@@ -243,33 +245,61 @@ s32 mnCongraGetPlayerTapButtons(u32 buttons)
 	return 0;
 }
 
+#define MNCONGRA_SCENE_FADE_LENGTH 90
+
+/**
+ * Fade length that starts when the player taps A, B or START, or 0 while the scene stays up.
+ */
+static s32 mnCongraGetTapFadeLength(void)
+{
+	return (mnCongraGetPlayerTapButtons(A_BUTTON | B_BUTTON | START_BUTTON) != FALSE) ? MNCONGRA_SCENE_FADE_LENGTH : 0;
+}
+
+#ifdef REGION_REMIX
+/**
+ * Fade length that starts this frame, or 0 while the scene stays up: the Gallery asks for its own lengths (Gallery.asm
+ * get_fade_length_) and the Remix splash also ends when its timer runs out (Boot.asm splash_._countdown).
+ */
+static s32 mnCongraGetRemixFadeLength(void)
+{
+	if (mnRemixGalleryIsActive())
+	{
+		return mnRemixGalleryUpdateInput();
+	}
+	if ((mnRemixSplashIsActive() != FALSE) && (mnRemixSplashTickCountdown() != FALSE))
+	{
+		return MNCONGRA_SCENE_FADE_LENGTH;
+	}
+	return mnCongraGetTapFadeLength();
+}
+#endif
+
 // 0x80131C04
 void mnCongraActorFuncRun(GObj *gobj)
 {
 	SYColorRGBA color;
+	s32 fade_length;
 
-#ifdef REGION_REMIX
-	if (mnRemixGalleryIsActive())
-	{
-		mnRemixGalleryUpdateInput();
-		return;
-	}
-#endif
 	if (sMNCongraSkipWait != 0)
 	{
 		sMNCongraSkipWait--;
 	}
-	if
-	(
-		(sMNCongraSkipWait == 0) 		&& 
-		(sMNCongraIsProceed == FALSE) 	&& 
-		(mnCongraGetPlayerTapButtons(A_BUTTON | B_BUTTON | START_BUTTON) != FALSE)
-	)
+	if ((sMNCongraSkipWait != 0) || (sMNCongraIsProceed != FALSE))
 	{
-		sMNCongraIsProceed = TRUE;
-		color = dMNCongraFadeColor;
-		lbFadeMakeActor(nGCCommonKindTransition, nGCCommonLinkIDTransition, 10, &color, 90, FALSE, &sMNCongraIsProceedScene);
+		return;
 	}
+#ifdef REGION_REMIX
+	fade_length = mnCongraGetRemixFadeLength();
+#else
+	fade_length = mnCongraGetTapFadeLength();
+#endif
+	if (fade_length == 0)
+	{
+		return;
+	}
+	sMNCongraIsProceed = TRUE;
+	color = dMNCongraFadeColor;
+	lbFadeMakeActor(nGCCommonKindTransition, nGCCommonLinkIDTransition, 10, &color, fade_length, FALSE, &sMNCongraIsProceedScene);
 }
 
 // 0x80131CA4
@@ -416,6 +446,18 @@ void mnCongraFuncStart(void)
 	sobj->pos.x = 10.0F;
 	sobj->pos.y = 10.0F;
 
+#ifdef REGION_REMIX
+	if (mnRemixSplashIsActive())
+	{
+		mnRemixSplashPlayJingle();
+		return;
+	}
+	/* Gallery.asm prevent_fgm_: no announcer call on a Gallery picture */
+	if (mnRemixGalleryIsActive())
+	{
+		return;
+	}
+#endif
 	func_800269C0_275C0
 	(
 		(gSCManagerSceneData.spgame_score >= 1000000) ? nSYAudioVoiceAnnounceIncredible : nSYAudioVoiceAnnounceCongra
@@ -441,6 +483,13 @@ void mnCongraFuncDraw(void)
 
 		if (sMNCongraSceneChangeWait == 0)
 		{
+#ifdef REGION_REMIX
+			if (mnRemixGalleryIsActive())
+			{
+				mnRemixGalleryOnFadeEnd();
+				return;
+			}
+#endif
 			gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
 			gSCManagerSceneData.scene_curr = nSCKindTitle;
 
@@ -482,8 +531,15 @@ void mnCongraStartScene(void)
 		break;
 	}
 #ifdef REGION_REMIX
+	mnRemixSplashStartScene(gSCManagerSceneData.scene_prev);
+
+	if (mnRemixSplashIsActive())
+	{
+		sMNCongraFighterKind = REMIX_ID_TO_PORT_FKIND(REMIX_ID_NONE);
+	}
 	if (mnRemixGalleryIsActive())
 	{
+		mnRemixGalleryPrepareScene();
 		sMNCongraFighterKind = mnRemixGalleryGetFighterKind();
 	}
 #endif

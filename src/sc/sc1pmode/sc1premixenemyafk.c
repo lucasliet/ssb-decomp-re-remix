@@ -13,6 +13,11 @@
 #include "sc/sc1pmode/sc1premixenemyafkrules.h"
 #include "sc/sc1pmode/sc1premixmode.h"
 #include "sc/scsubsys/scsubsys.h"
+#include <sys/audio.h>
+#include <sys/controller.h>
+
+static u32 sSC1PRemixAfkSoundTestTimer;
+static sb32 sSC1PRemixAfkCreditsIsManualTap;
 
 sb32 sc1PRemixAfkIsActive(void)
 {
@@ -60,6 +65,41 @@ sb32 sc1PRemixAfkIsSpeedAssistActive(s32 name_id, f32 speed, f32 normal_speed)
         port_log("remix afk: credits speed assist at name %d\n", (int)name_id);
     }
     return is_active;
+}
+
+sb32 sc1PRemixAfkSoundTestTapA(void)
+{
+    sb32 is_a_tapped = scSubsysControllerGetPlayerTapButtons(A_BUTTON);
+    sb32 has_song;
+    sb32 fires_a;
+
+    if (sc1PRemixAfkIsActive() == FALSE)
+    {
+        return is_a_tapped;
+    }
+    has_song = (syAudioGetBGMPlaying(0) >= 0) ? TRUE : FALSE;
+    fires_a = (sc1PRemixAfkSoundTestFiresA(sSC1PRemixAfkSoundTestTimer, is_a_tapped, has_song) != 0) ? TRUE : FALSE;
+    sSC1PRemixAfkSoundTestTimer = sc1PRemixAfkSoundTestNextTimer(sSC1PRemixAfkSoundTestTimer, is_a_tapped, has_song);
+
+    return (is_a_tapped != FALSE) || (fires_a != FALSE);
+}
+
+sb32 sc1PRemixAfkSoundTestTapRight(void)
+{
+    return (sc1PRemixAfkSoundTestRightIsDue(sc1PRemixAfkIsActive(), sSC1PRemixAfkSoundTestTimer) != 0) ? TRUE : FALSE;
+}
+
+sb32 sc1PRemixAfkCreditsTapShoot(u16 button_tap)
+{
+    sb32 is_manual_tap = ((button_tap & (A_BUTTON | B_BUTTON)) != 0) ? TRUE : FALSE;
+
+    sSC1PRemixAfkCreditsIsManualTap = is_manual_tap;
+    return (sc1PRemixAfkCreditsShootPressed(sc1PRemixAfkIsActive(), is_manual_tap) != 0) ? TRUE : FALSE;
+}
+
+sb32 sc1PRemixAfkCreditsShotIsSilent(void)
+{
+    return (sc1PRemixAfkCreditsShootIsSilent(sc1PRemixAfkIsActive(), sSC1PRemixAfkCreditsIsManualTap) != 0) ? TRUE : FALSE;
 }
 
 #endif

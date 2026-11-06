@@ -237,6 +237,17 @@ extern int mnRemixCssHandicapIconLevel(int index);
 /** Colour 0xRRGGBBAA of the bar under a handicap icon for a level from 1 to 5; 0 for level 0, which draws no bar. */
 extern unsigned int mnRemixCssHandicapLevelColor(int level);
 
+/**
+ * TRUE when a variant of the variants table can be picked (CharacterSelect.asm:1130-1138): any fighter but NONE, and the Master Hand
+ * only while the 20th custom player tag has a name.
+ *
+ * @param variant Remix id from the variants table.
+ * @param none_id Remix id of NONE.
+ * @param boss_id Remix id of the Master Hand.
+ * @param is_boss_tag_named Non-zero when the 20th player tag is not blank.
+ */
+extern int mnRemixCssVariantIsPickable(int variant, int none_id, int boss_id, int is_boss_tag_named);
+
 /** TRUE when a D-pad is shown for a hovered fighter: when at least one of its four variants exists. */
 extern int mnRemixCssHasVariants(const int *variant_ids, int none_id);
 

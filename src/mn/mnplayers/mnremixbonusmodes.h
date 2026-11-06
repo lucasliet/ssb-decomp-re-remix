@@ -21,6 +21,23 @@
 /** Offset of the title sprite of the mode in the game modes file (header_graphic), 0 to keep the vanilla title. */
 extern intptr_t mnRemixBonusModesGetHeaderOffset(void);
 
+/** Title offset of the 1P game character select for the current Remix 1P mode (0 keeps the 1P Game title). */
+extern intptr_t mnRemixBonusModesGetGameHeaderOffset(void);
+
+/** Announcer voice of the 1P game character select for the current Remix 1P mode (0 keeps the vanilla voice). */
+extern s32 mnRemixBonusModesGetGameAnnounceFgm(void);
+
+/**
+ * Moves the Bonus character select to the next screen or mode on a press of its header (set_original_flag_swap).
+ *
+ * @param kind Screen, 0 Break the Targets and 1 Board the Platforms; updated.
+ * @return TRUE when the screen changed, FALSE when the press does nothing (Home-Run Contest).
+ */
+extern sb32 mnRemixBonusModesCycleHeaderScreen(s32 *kind);
+
+/** Announcer voice of the Bonus 2 character select for the current Remix 1P mode (0 keeps the vanilla voice). */
+extern s32 mnRemixBonusModesGetBonusAnnounceFgm(void);
+
 /**
  * Makes the record of a Multi-Man, Cruel Multi-Man or Home-Run Contest fighter: the KO or feet label and the number, with the
  * decimal point of the feet (counter_graphic, _ko_amount_or_feet, draw_hrc_high_score_decimal_).

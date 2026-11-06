@@ -9,17 +9,18 @@
 
 #include <mn/menu.h>
 #include <reloc_data.h>
+#include <sys/controller.h>
+#include "gm/gmremixpanel.h"
 #include "gm/gmremixstamina.h"
 #include "mn/mnplayers/mnplayersvs.h"
 #include "mn/mnvsmode/mnvsmode.h"
 #include "mn/mnvsmode/mnremixvsstamina.h"
+#include "mn/mnvsmode/mnremixvsstaminarules.h"
 
 #define MNREMIX_VSSTAMINA_RULE_OFFSET 0x00006D28
 #define MNREMIX_VSSTAMINA_LABEL_OFFSET 0x00006B28
 #define MNREMIX_VSSTAMINA_HP_LABEL_OFFSET 0x00006E28
 #define MNREMIX_VSSTAMINA_TEAM_SCALE 0.875F
-#define MNREMIX_VSSTAMINA_STEP_SMALL_MAX 10
-#define MNREMIX_VSSTAMINA_STEP_LARGE_MIN 990
 
 static SObj* mnRemixVSStaminaMakeSObj(GObj *gobj, Sprite *sprite, f32 x, f32 y, SYColorRGB color)
 {
@@ -65,42 +66,58 @@ void mnRemixVSStaminaSaveRule(s32 rule)
     gGMRemixStaminaRule = mnRemixVSStaminaIsRule(rule);
 }
 
+/** TRUE when any controller holds a button of the given mask (Joypad.check_buttons_all_ with Joypad.HELD). */
+static sb32 mnRemixVSStaminaIsButtonHeld(u16 button_mask)
+{
+    s32 port;
+
+    for (port = 0; port < MAXCONTROLLERS; port++)
+    {
+        if (gSYControllerDevices[port].button_hold & button_mask)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 s32 mnRemixVSStaminaStepHP(s32 hp, sb32 is_increase)
 {
-    if (is_increase != FALSE)
-    {
-        if (hp >= GMREMIX_STAMINA_HP_MAX)
-        {
-            return GMREMIX_STAMINA_HP_MAX;
-        }
-        if ((hp < MNREMIX_VSSTAMINA_STEP_SMALL_MAX) || (hp >= MNREMIX_VSSTAMINA_STEP_LARGE_MIN))
-        {
-            return hp + 1;
-        }
-        return hp + 10;
-    }
-    if (hp <= GMREMIX_STAMINA_HP_MIN)
-    {
-        return GMREMIX_STAMINA_HP_MIN;
-    }
-    if ((hp <= MNREMIX_VSSTAMINA_STEP_SMALL_MAX) || (hp > MNREMIX_VSSTAMINA_STEP_LARGE_MIN))
-    {
-        return hp - 1;
-    }
-    return hp - 10;
+    u16 button_mask = (is_increase != FALSE) ? (R_JPAD | R_TRIG | R_CBUTTONS) : (L_JPAD | L_TRIG | L_CBUTTONS);
+    sb32 is_stick = (mnRemixVSStaminaIsButtonHeld(button_mask) == FALSE) ? TRUE : FALSE;
+
+    return mnRemixVSStaminaRulesMenuStep(hp, is_increase, is_stick);
 }
 
 sb32 mnRemixVSStaminaScrollHP(sb32 is_increase)
 {
     s32 hp = mnRemixVSStaminaStepHP(gGMRemixStaminaHP, is_increase);
+    sb32 is_limit = (hp == ((is_increase != FALSE) ? GMREMIX_STAMINA_HP_MAX : GMREMIX_STAMINA_HP_MIN)) ? TRUE : FALSE;
 
     gGMRemixStaminaHP = hp;
 
-    if (is_increase != FALSE)
+    return is_limit;
+}
+
+void mnRemixVSStaminaRestrictDamage(void)
+{
+    s32 total_hp = gmRemixStaminaGetTotalHP();
+    s32 port;
+
+    for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
     {
-        return (hp == GMREMIX_STAMINA_HP_MAX) ? TRUE : FALSE;
+        if (gmRemixPanel(DAMAGE, port) > total_hp)
+        {
+            remix_panel_set(REMIX_PANEL_DAMAGE, port, total_hp);
+        }
     }
-    return (hp == GMREMIX_STAMINA_HP_MIN) ? TRUE : FALSE;
+}
+
+void mnRemixVSStaminaScrollHPCSS(sb32 is_increase)
+{
+    gGMRemixStaminaHP = mnRemixVSStaminaRulesCssStep(gGMRemixStaminaHP, is_increase);
+
+    mnRemixVSStaminaRestrictDamage();
 }
 
 void mnRemixVSStaminaMakeRuleValue(GObj *rule_value_gobj, void *file, s32 rule)

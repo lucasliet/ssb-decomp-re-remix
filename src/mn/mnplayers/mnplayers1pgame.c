@@ -22,6 +22,15 @@ extern float port_widescreen_clip_x_scale(void);
 #include "remix/remix_css_data.h"
 #include "gm/gmremixmenumusic.h"
 #include "mn/mnplayers/mnremixcss.h"
+#include "mn/mnplayers/mnremixcsstoken.h"
+#include "mn/mnplayers/mnremixcssunplug.h"
+#include "mn/mnplayers/mnremixbonusmodes.h"
+#include "mn/mnplayers/mnremixcssbonus.h"
+#include "mn/mnplayers/mnremixcssindicators.h"
+#include "mn/mnplayers/mnremixcssrandom.h"
+#include "mn/mnplayers/mnremixcssrandomtoken.h"
+#include "mn/mnplayers/mnremixcssslide.h"
+#include "mn/mnplayers/mnremixcsstokenrules.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixsonicclassic.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
@@ -81,6 +90,9 @@ u32 dMNPlayers1PGameFileIDs[/* */] =
 #ifdef REGION_REMIX
 #define MN_PLAYERS_1PGAME_REMIX_PORTRAITS_FILE 11
 #define MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE 12
+/* css_settings, 1P row: X padding 38, panel offset 69 */
+#define MN_PLAYERS_1PGAME_INDICATOR_X 38
+#define MN_PLAYERS_1PGAME_INDICATOR_STRIDE 69
 #endif
 
 // 0x80138660
@@ -634,7 +646,7 @@ s32 mnPlayers1PGameGetFighterKind(s32 portrait)
 s32 mnPlayers1PGameGetPortrait(s32 fkind)
 {
 #ifdef REGION_REMIX
-	return mnRemixCssGetPortrait(fkind);
+	return mnRemixCssTokenGetSlot(fkind);
 #else
 	s32 portraits[/* */] =
 	{
@@ -787,6 +799,7 @@ void mnPlayers1PGameMakeRemixPortrait(s32 slot)
 	sobj->sprite.scaley = REMIX_CSS_PORTRAIT_SCALE;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
+	mnRemixCssSlideAttach(gobj, slot);
 }
 #endif
 
@@ -800,6 +813,11 @@ void mnPlayers1PGameMakePortraitAll(void)
 	{
 		mnPlayers1PGameMakeRemixPortrait(slot);
 	}
+	mnRemixCssBonusReset();
+	mnRemixCssIndicatorsReset();
+	mnRemixCssIndicatorsSetLayout(MN_PLAYERS_1PGAME_INDICATOR_X, MN_PLAYERS_1PGAME_INDICATOR_STRIDE);
+	mnRemixCssBonusMakeBookend(sMNPlayers1PGameFiles[MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE], 18, 27);
+	mnRemixCssRandomMakeBookend(sMNPlayers1PGameFiles[MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE], 18, 27);
 #else
 	s32 i;
 
@@ -1499,6 +1517,14 @@ void mnPlayers1PGameMakeLabels(void)
 {
 	GObj *gobj;
 	SObj *sobj;
+	intptr_t header_offset = llMNPlayers1PMode1PlayerGameTextSprite;
+
+#ifdef REGION_REMIX
+	if (mnRemixBonusModesGetGameHeaderOffset() != 0)
+	{
+		header_offset = mnRemixBonusModesGetGameHeaderOffset();
+	}
+#endif
 
 	gobj = lbCommonMakeSpriteGObj
 	(
@@ -1514,7 +1540,7 @@ void mnPlayers1PGameMakeLabels(void)
 		(
 			Sprite*,
 			sMNPlayers1PGameFiles[5],
-			llMNPlayers1PMode1PlayerGameTextSprite
+			header_offset
 		),
 		nGCProcessKindFunc,
 		NULL,
@@ -1739,7 +1765,12 @@ u32 mnPlayers1PGameGetTotalHiScore(void)
 	s32 i;
 	u32 sum = 0;
 
+#ifdef REGION_REMIX
+	/* extend_1p_tally_: the totals sum every Remix id up to the last one */
+	for (i = nFTKindPlayableStart; i < GMCOMMON_FIGHTERS_SAVE_NUM; i++)
+#else
 	for (i = nFTKindPlayableStart; i <= nFTKindPlayableEnd; i++)
+#endif
 	{
 		sum += mnPlayers1PGameGetHiScore(i);
 	}
@@ -1766,7 +1797,12 @@ u32 mnPlayers1PGameGetTotalBonusCount(void)
 	s32 i;
 	u32 sum = 0;
 
+#ifdef REGION_REMIX
+	/* extend_1p_tally_: the totals sum every Remix id up to the last one */
+	for (i = nFTKindPlayableStart; i < GMCOMMON_FIGHTERS_SAVE_NUM; i++)
+#else
 	for (i = nFTKindPlayableStart; i <= nFTKindPlayableEnd; i++)
+#endif
 	{
 		sum += mnPlayers1PGameGetBonusCount(i);
 	}
@@ -2309,7 +2345,9 @@ void mnPlayers1PGamePortraitFlashThreadUpdate(GObj *gobj)
 void mnPlayers1PGameMakePortraitFlash(s32 player)
 {
 	GObj *gobj;
+#ifndef REGION_REMIX
 	SObj *sobj;
+#endif
 	s32 portrait = mnPlayers1PGameGetPortrait(sMNPlayers1PGameSlot.fkind);
 
 	mnPlayers1PGameDestroyPortraitFlash(player);
@@ -2319,11 +2357,10 @@ void mnPlayers1PGameMakePortraitFlash(s32 player)
 	gobj->user_data.s = player;
 	gcAddGObjProcess(gobj, mnPlayers1PGamePortraitFlashThreadUpdate, nGCProcessKindThread, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PGameFiles[4], llMNPlayersPortraitsWhiteSquareSprite));
 #ifdef REGION_REMIX
-	sobj->pos.x = mnRemixCssCellX(portrait) + 1.0F;
-	sobj->pos.y = mnRemixCssCellY(portrait) + 1.0F;
+	mnRemixCssTokenMakeSlotFlash(gobj, sMNPlayers1PGameFiles[MN_PLAYERS_1PGAME_REMIX_PORTRAITS_FILE], sMNPlayers1PGameFiles[MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE], portrait);
 #else
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PGameFiles[4], llMNPlayersPortraitsWhiteSquareSprite));
 	sobj->pos.x = (((portrait >= 6) ? portrait - 6 : portrait) * 45) + 26;
 	sobj->pos.y = (((portrait >= 6) ? 1 : 0) * 43) + 37;
 #endif
@@ -2499,8 +2536,14 @@ sb32 mnPlayers1PGameCheckCursorPuckGrab(GObj *gobj, s32 player)
 s32 mnPlayers1PGameGetRemixForcePuckFighterKind(void)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayers1PGameSlot.puck);
+	s32 slot = mnRemixCssSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	s32 fkind;
 
-	return mnRemixCssGetFighterKind(mnRemixCssSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12));
+	if ((slot < 0) && (mnRemixCssTokenGetBookendFighter((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12, sMNPlayers1PGameManPlayer, &fkind) != FALSE))
+	{
+		return fkind;
+	}
+	return mnRemixCssGetFighterKind(slot);
 }
 #endif
 
@@ -2550,7 +2593,15 @@ s32 mnPlayers1PGameGetRemixPuckFighterKind(s32 player)
 
 	if (slot < 0)
 	{
-		return nFTKindNull;
+		if (mnRemixCssTokenGetBookendFighter((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12, player, &fkind) == FALSE)
+		{
+			return nFTKindNull;
+		}
+		if (fkind == REMIX_ID_RANDOM)
+		{
+			return fkind;
+		}
+		return (mnPlayers1PGameCheckFighterLocked(fkind) != FALSE) ? nFTKindNull : mnRemixVariantGetFighterKind(player, fkind);
 	}
 	fkind = mnRemixCssGetFighterKind(slot);
 
@@ -2674,7 +2725,11 @@ void mnPlayers1PGameAdjustCursor(GObj *gobj, s32 player)
 		if (is_in_range != FALSE)
 		{
 			delta = (gSYControllerDevices[player].stick_range.y / -20.0F) + SObjGetStruct(gobj)->pos.y;
+#ifdef REGION_REMIX
+			is_in_range = ((delta >= 10.0F) && (delta <= MNREMIX_CSS_CURSOR_MAX_Y)) ? TRUE : FALSE;
+#else
 			is_in_range = ((delta >= 10.0F) && (delta <= 205.0F)) ? TRUE : FALSE;
+#endif
 
 			if (is_in_range != FALSE)
 			{
@@ -2987,7 +3042,11 @@ void mnPlayers1PGameDetectBack(s32 player)
 		sc1PRemixEnemyOnSelectB(player);
 	}
 #endif
+#ifdef REGION_REMIX
+	if ((sMNPlayers1PGameTotalTimeTics >= 10) && (mnRemixCssUnplugIsBackTapped(player) != FALSE))
+#else
 	if ((sMNPlayers1PGameTotalTimeTics >= 10) && (gSYControllerDevices[player].button_tap & B_BUTTON))
+#endif
 	{
 		mnPlayers1PGameBackTo1PMode();
 	}
@@ -3038,6 +3097,10 @@ void mnPlayers1PGameCursorProcUpdate(GObj *gobj)
 	}
 #ifdef REGION_REMIX
 	mnRemixVariantHandleInput(sMNPlayers1PGameSlot.held_player, gSYControllerDevices[player].button_tap);
+	if (mnRemixBonusModesUpdateScroll(player, sMNPlayers1PGameSlot.held_player, sMNPlayers1PGameSlot.fkind, gSYControllerDevices[player].button_hold) != FALSE)
+	{
+		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+	}
 #endif
 	if
 	(
@@ -3111,8 +3174,7 @@ void mnPlayers1PGameCenterPuckInPortrait(GObj *gobj, s32 fkind)
 	s32 portrait = mnPlayers1PGameGetPortrait(fkind);
 
 #ifdef REGION_REMIX
-	SObjGetStruct(gobj)->pos.x = mnRemixCssCellX(portrait) + ((REMIX_CSS_PORTRAIT_WIDTH / 2) - 13);
-	SObjGetStruct(gobj)->pos.y = mnRemixCssCellY(portrait) + ((REMIX_CSS_PORTRAIT_HEIGHT / 2) - 12);
+	mnRemixCssTokenPlace(gobj, fkind);
 #else
 	if (portrait >= 6)
 	{
@@ -3165,8 +3227,12 @@ void mnPlayers1PGamePuckProcUpdate(GObj *gobj)
 	{
 		if (sMNPlayers1PGameSlot.is_cursor_adjusting == FALSE)
 		{
+#ifdef REGION_REMIX
+			mnRemixCssTokenFollow(gobj, sMNPlayers1PGameSlot.cursor);
+#else
 			SObjGetStruct(gobj)->pos.x = SObjGetStruct(sMNPlayers1PGameSlot.cursor)->pos.x + 11.0F;
 			SObjGetStruct(gobj)->pos.y = SObjGetStruct(sMNPlayers1PGameSlot.cursor)->pos.y + -14.0F;
+#endif
 		}
 	}
 	else mnPlayers1PGameMovePuck(player);
@@ -3363,6 +3429,9 @@ void mnPlayers1PGameMakePuck(s32 player)
 
 	SObjGetStruct(gobj)->sprite.attr &= ~SP_FASTCOPY;
 	SObjGetStruct(gobj)->sprite.attr |= SP_TRANSPARENT;
+#ifdef REGION_REMIX
+	mnRemixCssTokenScale(gobj);
+#endif
 }
 
 // 0x801376F0 - Unused?
@@ -3374,18 +3443,15 @@ void func_ovl27_801376F0(void)
 // 0x801376F8
 void mnPlayers1PGamePuckAdjustPortraitEdge(s32 player)
 {
-	s32 portrait = mnPlayers1PGameGetPortrait(sMNPlayers1PGameSlot.fkind);
 #ifdef REGION_REMIX
-	f32 portrait_edge_x = mnRemixCssCellX(portrait);
-	f32 portrait_edge_y = mnRemixCssCellY(portrait);
-	f32 portrait_width = REMIX_CSS_PORTRAIT_WIDTH;
-	f32 portrait_height = REMIX_CSS_PORTRAIT_HEIGHT;
+	/* CharacterSelect.asm:1826: the token stays where it was dropped */
+	return;
 #else
+	s32 portrait = mnPlayers1PGameGetPortrait(sMNPlayers1PGameSlot.fkind);
 	f32 portrait_edge_x = ((portrait >= 6) ? portrait - 6 : portrait) * 45 + 25;
 	f32 portrait_edge_y = ((portrait >= 6) ? 1 : 0) * 43 + 36;
 	f32 portrait_width = 45.0F;
 	f32 portrait_height = 43.0F;
-#endif
 	f32 new_pos_x = SObjGetStruct(sMNPlayers1PGameSlot.puck)->pos.x + sMNPlayers1PGameSlot.puck_vel_x + 13.0F;
 	f32 new_pos_y = SObjGetStruct(sMNPlayers1PGameSlot.puck)->pos.y + sMNPlayers1PGameSlot.puck_vel_y + 12.0F;
 
@@ -3405,6 +3471,7 @@ void mnPlayers1PGamePuckAdjustPortraitEdge(s32 player)
 	{
 		sMNPlayers1PGameSlot.puck_vel_y = ((new_pos_y - ((portrait_edge_y + portrait_height) - 5.0F)) * -1.0F) / 10.0F;
 	}
+#endif
 }
 
 // 0x801378A8
@@ -3663,6 +3730,26 @@ sb32 mnPlayers1PGameCheckReady(void)
 	return is_ready;
 }
 
+#ifdef REGION_REMIX
+static sb32 mnPlayers1PGameIsRollUnavailable(s32 fkind)
+{
+	return ((mnPlayers1PGameCheckFighterCrossed(fkind) != FALSE) || (mnPlayers1PGameCheckFighterLocked(fkind) != FALSE)) ? TRUE : FALSE;
+}
+
+/** Replaces the RANDOM token by a rolled fighter and a random costume when the screen is left (CharacterSelect.asm save_random_char_._1p). */
+static void mnPlayers1PGameResolveRandom(void)
+{
+	if (gSCManagerSceneData.fkind != REMIX_ID_RANDOM)
+	{
+		return;
+	}
+	gSCManagerSceneData.fkind = mnRemixCssRandomTokenRoll(sMNPlayers1PGameManPlayer, mnPlayers1PGameIsRollUnavailable);
+	gSCManagerSceneData.costume = mnRemixCostumeGetRandomLegal(gSCManagerSceneData.fkind);
+
+	mnRemixCssRandomTokenMarkResolved(MNREMIX_CSS_RANDOM_TOKEN_SCREEN_1P, sMNPlayers1PGameManPlayer);
+}
+#endif
+
 // 0x80137F10
 void mnPlayers1PGameSetSceneData(void)
 {
@@ -3697,6 +3784,9 @@ void mnPlayers1PGameSetSceneData(void)
 	else gSCManagerSceneData.fkind = nFTKindNull;
 
 	gSCManagerSceneData.costume = sMNPlayers1PGameSlot.costume;
+#ifdef REGION_REMIX
+	mnPlayers1PGameResolveRandom();
+#endif
 #ifdef PORT
 	{
 		const char *fkind_env = getenv("SSB64_SPGAME_FKIND");
@@ -3754,12 +3844,43 @@ static void mnPlayers1PGameRemixPanelMenuFrameUpdate(void)
 }
 #endif
 
+#ifdef REGION_REMIX
+/**
+ * Brings the variant indicators (D-pad, variant images, flag), the bonus scroll hint and the D-pad cursor hold of the panel up to date
+ * (CharacterSelect.asm update_variant_indicators_ and draw_bonus_scroll_indicators_, which run every frame).
+ */
+static void mnPlayers1PGameRemixIndicatorsFrameUpdate(void)
+{
+	MNRemixCssPanelState state;
+	sb32 is_token_held = ((sMNPlayers1PGameSlot.holder_player != GMCOMMON_PLAYERS_MAX) && (sMNPlayers1PGameSlot.is_selected == FALSE)) ? TRUE : FALSE;
+	s32 fkind = sMNPlayers1PGameSlot.fkind;
+
+	if (mnRemixPanelMenuIsOpen(0) != FALSE)
+	{
+		fkind = nFTKindNull;
+		is_token_held = FALSE;
+	}
+	state.fkind = fkind;
+	state.is_selected = sMNPlayers1PGameSlot.is_selected;
+	state.is_token_held = is_token_held;
+	state.token = sMNPlayers1PGameManPlayer;
+
+	if (sMNPlayers1PGameSlot.panel != NULL)
+	{
+		mnRemixCssBonusSetHintPanelX(SObjGetStruct(sMNPlayers1PGameSlot.panel)->pos.x - (MN_PLAYERS_1PGAME_INDICATOR_STRIDE * sMNPlayers1PGameManPlayer));
+	}
+	mnRemixBonusModesUpdateHint(sMNPlayers1PGameManPlayer, is_token_held, fkind, sMNPlayers1PGameFiles);
+	mnRemixCssIndicatorsUpdate(sMNPlayers1PGameFiles[MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE], &state, 1);
+}
+#endif
+
 // 0x80137FCC
 void mnPlayers1PGameFuncRun(GObj *gobj)
 {
 	sMNPlayers1PGameTotalTimeTics++;
 #ifdef REGION_REMIX
 	mnPlayers1PGameRemixPanelMenuFrameUpdate();
+	mnPlayers1PGameRemixIndicatorsFrameUpdate();
 #endif
 
 	if (mnRemixTimeoutsCSSReturns(sMNPlayers1PGameTotalTimeTics, sMNPlayers1PGameReturnTic))
@@ -3855,6 +3976,14 @@ void mnPlayers1PGameInitPlayer(s32 player)
 #endif
 	sMNPlayers1PGameSlot.fkind = gSCManagerSceneData.fkind;
 	sMNPlayers1PGameSlot.costume = gSCManagerSceneData.costume;
+#ifdef REGION_REMIX
+	/* load_random_1p_: the rolled fighter goes back to the "?" token, with the default costume */
+	if ((mnRemixCssRandomTokenTakeResolved(MNREMIX_CSS_RANDOM_TOKEN_SCREEN_1P, player) != FALSE) && (sMNPlayers1PGameSlot.fkind != nFTKindNull))
+	{
+		sMNPlayers1PGameSlot.fkind = REMIX_ID_RANDOM;
+		sMNPlayers1PGameSlot.costume = 0;
+	}
+#endif
 
 	if (sMNPlayers1PGameSlot.fkind == nFTKindNull)
 	{
@@ -4006,6 +4135,13 @@ void mnPlayers1PGameFuncStart(void)
 		syAudioPlayBGM(0, nSYAudioBGMBattleSelect);
 #endif
 	}
+#ifdef REGION_REMIX
+	if (mnRemixBonusModesGetGameAnnounceFgm() != 0)
+	{
+		func_800269C0_275C0(mnRemixBonusModesGetGameAnnounceFgm());
+		return;
+	}
+#endif
 	func_800269C0_275C0(nSYAudioVoiceAnnounceSelectPlayer);
 }
 

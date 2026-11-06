@@ -245,6 +245,37 @@ extern int mnRemixPanelMenuRulesTogglesKeepHighScores(const MNRemixPanelMenuHigh
  */
 extern int mnRemixPanelMenuRulesHighScoresEnabled(int mode, const int *values, const MNRemixPanelMenuHighScoreGlobals *globals);
 
+/* What the asm onchange_handler of an item does to the fighter shown on the CSS (css/ModelDisplay.asm:13, css/KirbyHat.asm:76,
+ * css/Visibility.asm:37). Model and Kirby Hat reload the model of the fighter, Visibility sets the env colour override of the port. */
+typedef enum MNRemixPanelMenuChangeAction
+{
+    MNREMIX_PANELMENU_CHANGE_NONE,
+    MNREMIX_PANELMENU_CHANGE_MODEL,
+    MNREMIX_PANELMENU_CHANGE_KIRBY_HAT,
+    MNREMIX_PANELMENU_CHANGE_VISIBILITY
+} MNRemixPanelMenuChangeAction;
+
+#define MNREMIX_PANELMENU_DETAIL_HIGH 1
+#define MNREMIX_PANELMENU_DETAIL_LOW 2
+
+/** MNRemixPanelMenuChangeAction of an item; MNREMIX_PANELMENU_CHANGE_NONE for an item with no CSS fighter change handler. */
+extern int mnRemixPanelMenuRulesChangeAction(int item);
+
+/**
+ * Poly detail the Model handler asks for (ModelDisplay.asm onchange_handler): Default asks for high poly, 1 and 2 are high and low.
+ *
+ * @param panel_value Model panel value, 0 (Default) to 2 (Lo Poly).
+ */
+extern int mnRemixPanelMenuRulesModelDetail(int panel_value);
+
+/**
+ * Remix fighter id whose hat Kirby wears on the CSS for a Kirby Hat panel value (KirbyHat.asm onchange_handler reads
+ * KirbyHats.spawn_with_table_): None and Random give plain Kirby on the CSS, '???' gives the magic hat.
+ *
+ * @param panel_value Kirby Hat panel value, 0 (None) to 42 (Random).
+ */
+extern int mnRemixPanelMenuRulesCssHatFighter(int panel_value);
+
 #endif
 
 #endif

@@ -64,6 +64,36 @@ intptr_t mnRemixBonusModesGetHeaderOffset(void)
     return mnRemixBonusModesHeaderOffset(sc1PRemixModeGet());
 }
 
+intptr_t mnRemixBonusModesGetGameHeaderOffset(void)
+{
+    return mnRemixBonusModesGameHeaderOffset(sc1PRemixModeGet());
+}
+
+s32 mnRemixBonusModesGetGameAnnounceFgm(void)
+{
+    return mnRemixBonusModesGameAnnounceFgm(sc1PRemixModeGet());
+}
+
+s32 mnRemixBonusModesGetBonusAnnounceFgm(void)
+{
+    return mnRemixBonusModesBonusAnnounceFgm(sc1PRemixModeGet());
+}
+
+sb32 mnRemixBonusModesCycleHeaderScreen(s32 *kind)
+{
+    int next_mode;
+    int next_kind;
+
+    if (mnRemixBonusModesCycleHeader(sc1PRemixModeGet(), *kind, &next_mode, &next_kind) == 0)
+    {
+        return FALSE;
+    }
+    gSC1PRemixMode = next_mode;
+    *kind = next_kind;
+
+    return TRUE;
+}
+
 static u32 mnRemixBonusModesGetRecord(s32 mode, s32 fkind)
 {
     if (mode == SC1PREMIX_MODE_HRC)

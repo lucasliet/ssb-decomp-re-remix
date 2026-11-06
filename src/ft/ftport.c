@@ -464,4 +464,58 @@ int port_fighter_set_attributes_offset(int fkind, uint32_t o_attributes)
     return 1;
 }
 
+/* Row counts of the menu motion arrays rebuilt by port_fighter_copy_menu_motions, one per vanilla fkind. */
+static s32 sFTPortMenuMotionCounts[nFTKindEnumCount];
+
+int port_fighter_copy_menu_motions(int target_fkind, int base_fkind, uint32_t begin, uint32_t count)
+{
+    FTData *target = port_fighter_data(target_fkind);
+    const FTData *base = port_fighter_data(base_fkind);
+    uint32_t end = begin + count;
+    uint32_t target_count;
+    uint32_t size;
+    FTMotionDesc *rows;
+
+    if ((target_fkind < 0) || (target_fkind >= nFTKindEnumCount) || (target == NULL) || (base == NULL) ||
+        (target->submotion == NULL) || (base->submotion == NULL) || (base->submotion_array_count == NULL) ||
+        ((uint32_t)*base->submotion_array_count < end))
+    {
+        port_log("SSB64: port_fighter_copy_menu_motions - fkind %d cannot take rows %u..%u of fkind %d\n", target_fkind,
+                 begin, end, base_fkind);
+        return 0;
+    }
+    target_count = (target->submotion_array_count != NULL) ? (uint32_t)*target->submotion_array_count : 0;
+    size = (target_count > end) ? target_count : end;
+    rows = malloc(size * sizeof(FTMotionDesc));
+
+    if (rows == NULL)
+    {
+        return 0;
+    }
+    memset(rows, 0, size * sizeof(FTMotionDesc));
+    memcpy(rows, target->submotion->motion_desc, target_count * sizeof(FTMotionDesc));
+    memcpy(&rows[begin], &base->submotion->motion_desc[begin], count * sizeof(FTMotionDesc));
+
+    sFTPortMenuMotionCounts[target_fkind] = (s32)size;
+    target->submotion = (FTMotionDescArray *)rows;
+    target->submotion_array_count = &sFTPortMenuMotionCounts[target_fkind];
+    return 1;
+}
+
+int port_fighter_share_menu_motions(int target_fkind, int base_fkind)
+{
+    FTData *target = port_fighter_data(target_fkind);
+    const FTData *base = port_fighter_data(base_fkind);
+
+    if ((target == NULL) || (base == NULL) || (base->submotion == NULL) || (base->submotion_array_count == NULL))
+    {
+        port_log("SSB64: port_fighter_share_menu_motions - fkind %d cannot share the menu motions of fkind %d\n",
+                 target_fkind, base_fkind);
+        return 0;
+    }
+    target->submotion = base->submotion;
+    target->submotion_array_count = base->submotion_array_count;
+    return 1;
+}
+
 #endif /* PORT */

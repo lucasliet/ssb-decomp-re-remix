@@ -8,6 +8,10 @@
 #include <sys/controller.h>
 #include <reloc_data.h>
 #include <mn/mncommon/mnremixtimeouts.h>
+#ifdef REGION_REMIX
+#include <mn/mncommon/mnremixgallery.h>
+#include <mn/mndata/mnremixdatagallery.h>
+#endif
 #ifdef PORT
 #include <sys/audio.h>
 #endif
@@ -74,6 +78,11 @@ GObj *sMNDataOptionVSRecordGObj;
 
 // 0x80133068
 GObj *sMNDataOptionSoundTestGObj;
+
+#ifdef REGION_REMIX
+// Remix Gallery button (Gallery.asm data_menu.add_button_)
+GObj *sMNDataOptionGalleryGObj;
+#endif
 
 // 0x80133070
 s32 sMNDataPad0x80133070[2];
@@ -660,6 +669,12 @@ void mnDataInitVars(void)
         sMNDataOption = nMNDataOptionSoundTest;
         break;
 
+#ifdef REGION_REMIX
+    case nSCKindCongra:
+        sMNDataOption = (mnDataCheckSoundTestUnlocked() != FALSE) ? MNREMIX_DATA_OPTION_GALLERY : nMNDataOptionCharacters;
+        break;
+#endif
+
     default:
         sMNDataOption = nMNDataOptionCharacters;
         break;
@@ -668,7 +683,11 @@ void mnDataInitVars(void)
 
     if (mnDataCheckSoundTestUnlocked() != FALSE)
     {
+#ifdef REGION_REMIX
+        sMNDataLastAvailableOption = MNREMIX_DATA_OPTION_GALLERY;
+#else
         sMNDataLastAvailableOption = nMNDataOptionSoundTest;
+#endif
         sMNDataIsHaveSoundTest = TRUE;
     }
     else
@@ -689,7 +708,11 @@ void mnDataFuncRun(GObj *gobj)
     s32 stick_range;
 
     // 0x8013F2A4
+#ifdef REGION_REMIX
+    GObj **option_gobjs[/* */] = { &sMNDataOptionCharactersGObj, &sMNDataOptionVSRecordGObj, &sMNDataOptionSoundTestGObj, &sMNDataOptionGalleryGObj };
+#else
     GObj **option_gobjs[/* */] = { &sMNDataOptionCharactersGObj, &sMNDataOptionVSRecordGObj, &sMNDataOptionSoundTestGObj };
+#endif
 
     sb32 is_button;
 
@@ -764,6 +787,19 @@ void mnDataFuncRun(GObj *gobj)
                 gSCManagerSceneData.scene_curr = nSCKindSoundTest;
                 sMNDataIsProceedScene = TRUE;
                 return;
+
+#ifdef REGION_REMIX
+            case MNREMIX_DATA_OPTION_GALLERY:
+                func_800269C0_275C0(nSYAudioFGMMenuSelect);
+                mnDataSetOptionSpriteColors(*option_gobjs[sMNDataOption], nMNOptionTabStatusSelected);
+                syAudioStopBGMAll();
+                mnRemixGalleryActivate(nSCKindData);
+
+                gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
+                gSCManagerSceneData.scene_curr = nSCKindCongra;
+                sMNDataIsProceedScene = TRUE;
+                return;
+#endif
             }
         }
         if (scSubsysControllerGetPlayerTapButtons(B_BUTTON) != FALSE)
@@ -871,13 +907,19 @@ void mnDataFuncStart(void)
     if (sMNDataIsHaveSoundTest != FALSE)
     {
         mnDataMakeSoundTest();
+#ifdef REGION_REMIX
+        sMNDataOptionGalleryGObj = mnRemixDataGalleryMakeButton(sMNDataFiles[1], sMNDataOption == MNREMIX_DATA_OPTION_GALLERY);
+#endif
     }
     mnDataMakeMenuGObj();
 
     if
     (
-        (gSCManagerSceneData.scene_prev == nSCKindVSRecord)  || 
+        (gSCManagerSceneData.scene_prev == nSCKindVSRecord)  ||
         (gSCManagerSceneData.scene_prev == nSCKindCharacters)||
+#ifdef REGION_REMIX
+        (gSCManagerSceneData.scene_prev == nSCKindCongra)    ||
+#endif
         (gSCManagerSceneData.scene_prev == nSCKindSoundTest)
     )
     {

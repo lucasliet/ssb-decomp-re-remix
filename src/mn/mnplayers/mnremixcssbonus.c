@@ -40,6 +40,7 @@ static const f32 sMNRemixCssHintX[MNREMIX_CSS_HINT_SPRITE_COUNT] = { 4.0F, 56.0F
 static const f32 sMNRemixCssHintY[MNREMIX_CSS_HINT_SPRITE_COUNT] = { 172.0F, 172.0F, 154.0F, 156.0F };
 
 static f32 sMNRemixCssBonusHintPanelX = MNREMIX_CSS_HINT_PANEL_X;
+static f32 sMNRemixCssBonusHintPanelStride = MNREMIX_CSS_HINT_PANEL_STRIDE;
 static s32 sMNRemixCssBonusIndex[MNREMIX_CSS_BONUS_PLAYERS];
 static s32 sMNRemixCssBonusTimer[MNREMIX_CSS_BONUS_PLAYERS] = { -1, -1, -1, -1 };
 static GObj *sMNRemixCssBonusHintGObjs[MNREMIX_CSS_BONUS_PLAYERS][MNREMIX_CSS_HINT_SPRITE_COUNT];
@@ -51,6 +52,7 @@ void mnRemixCssBonusReset(void)
     s32 sprite;
 
     sMNRemixCssBonusHintPanelX = MNREMIX_CSS_HINT_PANEL_X;
+    sMNRemixCssBonusHintPanelStride = MNREMIX_CSS_HINT_PANEL_STRIDE;
 
     for (player = 0; player < MNREMIX_CSS_BONUS_PLAYERS; player++)
     {
@@ -80,6 +82,18 @@ void mnRemixCssBonusMakeBookend(void *css_images_file, s32 gobj_link, s32 dl_lin
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
     mnRemixCssSlideAttach(gobj, MNREMIX_CSS_BONUS_BOOKEND_SLOT);
+}
+
+void mnRemixCssBonusMakeFlash(GObj *gobj, void *css_images_file)
+{
+    SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, css_images_file, REMIX_CSS_BONUS_BOOKEND_OFFSET + MNREMIX_CSS_BONUS_FLASH_DELTA));
+
+    sobj->pos.x = MNREMIX_CSS_BOOKEND_X;
+    sobj->pos.y = MNREMIX_CSS_BOOKEND_Y;
+    sobj->sprite.scalex = MNREMIX_CSS_BONUS_BOOKEND_SCALE_X;
+    sobj->sprite.scaley = MNREMIX_CSS_BONUS_BOOKEND_SCALE_Y;
+    sobj->sprite.attr &= ~SP_FASTCOPY;
+    sobj->sprite.attr |= SP_TRANSPARENT;
 }
 
 s32 mnRemixCssBonusGetFighterKind(s32 token)
@@ -112,7 +126,7 @@ sb32 mnRemixCssBonusScroll(s32 token, s32 cursor_player, u16 held_buttons, sb32 
 
 static void mnRemixCssBonusMakeHint(s32 panel, void *arrows_file)
 {
-    f32 panel_x = sMNRemixCssBonusHintPanelX + (MNREMIX_CSS_HINT_PANEL_STRIDE * panel);
+    f32 panel_x = sMNRemixCssBonusHintPanelX + (sMNRemixCssBonusHintPanelStride * panel);
     GObj **gobjs = sMNRemixCssBonusHintGObjs[panel];
 
     gobjs[MNREMIX_CSS_HINT_ARROW_LEFT] = ifRemixSpriteMakeFromFile(arrows_file, llMNPlayersCommonArrowLSprite, MNREMIX_CSS_HINT_GOBJ_LINK,
@@ -146,6 +160,11 @@ static void mnRemixCssBonusSetHintFlags(s32 panel, u32 arrow_flags, u32 button_f
 void mnRemixCssBonusSetHintPanelX(f32 panel_x)
 {
     sMNRemixCssBonusHintPanelX = panel_x;
+}
+
+void mnRemixCssBonusSetHintPanelStride(f32 panel_stride)
+{
+    sMNRemixCssBonusHintPanelStride = panel_stride;
 }
 
 void mnRemixCssBonusUpdateHint(s32 panel, sb32 is_visible, void *arrows_file)

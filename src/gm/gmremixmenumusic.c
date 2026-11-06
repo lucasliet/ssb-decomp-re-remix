@@ -11,6 +11,7 @@
 
 #include "gm/gmremixmenumusic.h"
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixtoggleactionrules.h"
 #include "gr/grremix/grremixrandommusic.h"
 #include <gm/gmsound.h>
 #include <sys/audio.h>
@@ -312,6 +313,50 @@ void gmRemixMenuMusicStop(void)
         return;
     }
     syAudioStopBGMAll();
+}
+
+/**
+ * Picks the track an A press on Menu Music plays (Toggles.asm play_menu_music_). DEFAULT rolls the Smash menu tracks with
+ * the A press odds (GMREMIX_AUDITION_DEFAULT_ROLL_RANGE), RANDOM and RANDOM CLASSICS pick from the menu list, RANDOM ALL
+ * from the Random Music list; any other value is its own track.
+ *
+ * @param value Menu Music value, not OFF.
+ * @return The BGM id to play.
+ */
+static u32 gmRemixMenuMusicAuditionTrack(s32 value)
+{
+    if (value == GMREMIX_MENU_MUSIC_DEFAULT)
+    {
+        value = gmRemixToggleActionGetAuditionDefaultValue(syUtilsRandIntRange(GMREMIX_AUDITION_DEFAULT_ROLL_RANGE));
+    }
+    if ((value == GMREMIX_MENU_MUSIC_RANDOM) || (value == GMREMIX_MENU_MUSIC_RANDOM_CLASSICS))
+    {
+        return gmRemixMenuMusicRandomTrack(value, nSYAudioBGMModeSelect);
+    }
+    if (value == GMREMIX_MENU_MUSIC_RANDOM_ALL)
+    {
+        return gmRemixMenuMusicRandomAllTrack();
+    }
+    return gmRemixMenuMusicTrackOf(value, nSYAudioBGMModeSelect);
+}
+
+/**
+ * A press on Menu Music (Toggles.asm play_menu_music_): plays the chosen track now, always restarting it, or stops the
+ * music for OFF. Unlike gmRemixMenuMusicPlay it never keeps the track already playing.
+ *
+ * This is the one place the FILESELECT_SM64 press counter of Toggles.asm itsatrap (_sm64_trap_check, ledger MS-4)
+ * belongs: it counts presses that land on FILESELECT_SM64 and is cleared by a press on any other track.
+ */
+void gmRemixMenuMusicAudition(void)
+{
+    s32 value = gmRemixToggle(menu_music);
+
+    if (value == GMREMIX_MENU_MUSIC_OFF)
+    {
+        syAudioStopBGMAll();
+        return;
+    }
+    syAudioPlayBGM(0, gmRemixMenuMusicAuditionTrack(value));
 }
 
 #endif

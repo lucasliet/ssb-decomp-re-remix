@@ -32,6 +32,14 @@ extern sb32 mnRemixCssModeKeepsToggleVoice(void);
 /** TRUE when the picked mode is Smashketball. */
 extern sb32 mnRemixCssModeIsSmashketball(void);
 
+/**
+ * Index of the colour of the mode title after the game mode button toggled: the Smashketball type in Smashketball (the button flips the
+ * type, Smashketball.asm enable_toggling_mode_), the team battle flag otherwise.
+ *
+ * @param is_team_battle TRUE in a team battle.
+ */
+extern s32 mnRemixCssModeGetTitleColorIndex(sb32 is_team_battle);
+
 /** Flips the Smashketball type between basketball and soccer (the game mode button of the character select). */
 extern void mnRemixCssModeToggleSmashketballType(void);
 

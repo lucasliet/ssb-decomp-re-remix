@@ -628,6 +628,7 @@ s32 ftRemixPanelGetInitialDamage(FTStruct *fp, s32 desc_damage);
  * update_player_indicator_alpha_): the env colour state of a fighter at creation, and the alpha of its player tag */
 void ftRemixVisibilityInitFighter(FTStruct *fp);
 void ftRemixVisibilityPlayerTagSetAlpha(SObj *sobj, s32 player);
+void ftRemixVisibilityApplyPanelValue(s32 port, s32 value);
 
 /* Remix CSS panel InputDelay, ftremix/ftremixinputdelay.c (InputDelay.asm apply_input_delay_): the delayed controller
  * sample of a human fighter (ftMainProcUpdateInterrupt) and the buffer clear at fighter creation (ftManagerInitFighter) */

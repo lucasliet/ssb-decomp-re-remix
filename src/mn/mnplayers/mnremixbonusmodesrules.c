@@ -28,6 +28,82 @@ int mnRemixBonusModesHeaderOffset(int mode)
     }
 }
 
+int mnRemixBonusModesGameHeaderOffset(int mode)
+{
+    switch (mode)
+    {
+    case SC1PREMIX_MODE_REMIX_1P:
+        return MNREMIX_BONUSMODES_GAME_HEADER_REMIX_1P;
+
+    case SC1PREMIX_MODE_ALLSTAR:
+        return MNREMIX_BONUSMODES_GAME_HEADER_ALLSTAR;
+
+    default:
+        return 0;
+    }
+}
+
+int mnRemixBonusModesGameAnnounceFgm(int mode)
+{
+    return (mode == SC1PREMIX_MODE_ALLSTAR) ? MNREMIX_BONUSMODES_FGM_ALLSTAR : 0;
+}
+
+int mnRemixBonusModesBonusAnnounceFgm(int mode)
+{
+    switch (mode)
+    {
+    case SC1PREMIX_MODE_BONUS3:
+        return MNREMIX_BONUSMODES_FGM_BONUS3;
+
+    case SC1PREMIX_MODE_MULTIMAN:
+        return MNREMIX_BONUSMODES_FGM_MULTIMAN;
+
+    case SC1PREMIX_MODE_CRUEL:
+        return MNREMIX_BONUSMODES_FGM_CRUEL;
+
+    case SC1PREMIX_MODE_HRC:
+        return MNREMIX_BONUSMODES_FGM_HRC;
+
+    default:
+        return 0;
+    }
+}
+
+int mnRemixBonusModesCycleHeader(int mode, int kind, int *next_mode, int *next_kind)
+{
+    *next_mode = mode;
+    *next_kind = kind;
+
+    switch (mode)
+    {
+    case SC1PREMIX_MODE_HRC:
+        return 0;
+
+    case SC1PREMIX_MODE_MULTIMAN:
+        *next_mode = SC1PREMIX_MODE_CRUEL;
+        return 1;
+
+    case SC1PREMIX_MODE_CRUEL:
+        *next_mode = SC1PREMIX_MODE_MULTIMAN;
+        return 1;
+
+    case SC1PREMIX_MODE_BONUS3:
+        *next_mode = SC1PREMIX_MODE_STANDARD;
+        *next_kind = 0;
+        return 1;
+
+    default:
+        break;
+    }
+    if (kind == 0)
+    {
+        *next_kind = 1;
+        return 1;
+    }
+    *next_mode = SC1PREMIX_MODE_BONUS3;
+    return 1;
+}
+
 int mnRemixBonusModesCounterOffset(int mode)
 {
     switch (mode)
