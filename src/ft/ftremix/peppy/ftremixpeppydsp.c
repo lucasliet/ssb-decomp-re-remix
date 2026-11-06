@@ -53,7 +53,7 @@ static s32 *ftRemixPeppyDSPHeldFrames(FTStruct *fp)
 /* Returns the grenade object in flight, or NULL. The Flashbang item stores it at spawn and clears it at detonation (Flashbang.asm:158, :508). */
 static GObj *ftRemixPeppyDSPActiveGrenade(FTStruct *fp)
 {
-    return *(GObj **)&fp->passive_vars;
+    return itRemixFlashbangGetActive(fp);
 }
 
 /* PeppyDSP.initial_ and air_initial_: shared body, the status id differs by

@@ -13,6 +13,9 @@
  */
 GObj* itRemixFlashbangMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags);
 
+/* The owner's flashbang in flight (asm word 0x0ADC), or NULL when none is live. */
+GObj* itRemixFlashbangGetActive(FTStruct *fp);
+
 #endif
 
 #endif

@@ -37,6 +37,7 @@ extern void *func_800269C0_275C0(u16 id);
 #define ITREMIX_FLASHBANG_ATTACK_EVENTS_OFFSET 0x88
 #define ITREMIX_FLASHBANG_RENDER_KIND 0x2E
 #define ITREMIX_FLASHBANG_OWNER_POWER_N64 0x0B20
+#define ITREMIX_FLASHBANG_OWNER_SLOT_N64 0x0ADC
 #define ITREMIX_FLASHBANG_FGM 0x33
 #define ITREMIX_FLASHBANG_EXPLOSION_FGM 0x2B7
 #define ITREMIX_FLASHBANG_EXPLOSION_SETUP_FGM 1
@@ -579,10 +580,56 @@ static void itRemixFlashbangSetExplosion(GObj *item_gobj)
     ip->attack_coll.damage = ITREMIX_FLASHBANG_EXPLODE_DAMAGE;
 }
 
-/* The owner's passive slot (N64 0x0ADC) holds the flashbang in flight. Peppy's DSP reads it, and it is NULL when none is in flight. */
+/*
+ * The asm keeps the flashbang in flight in the owner's word 0x0ADC. A 64-bit GObj pointer there also covers 0x0AE0,
+ * Peppy's revolver ammo, which split the pointer and crashed the DSP detonate check (CPU Peppy, `p6q_chase` and
+ * `p6q_charge`, 2026-11-06). The word stays the asm's in-flight flag and the pointer lives in a table per port.
+ */
+static GObj *sITRemixFlashbangActive[MAXCONTROLLERS];
+
 static void itRemixFlashbangSetActive(FTStruct *fp, GObj *item_gobj)
 {
-    *(GObj**)&fp->passive_vars = item_gobj;
+    *ftRemixFighterWord(fp, ITREMIX_FLASHBANG_OWNER_SLOT_N64) = (item_gobj != NULL) ? 1 : 0;
+
+    if (fp->player < MAXCONTROLLERS)
+    {
+        sITRemixFlashbangActive[fp->player] = item_gobj;
+    }
+}
+
+static sb32 itRemixFlashbangIsLiveFor(GObj *slot_gobj, FTStruct *fp)
+{
+    GObj *item_gobj;
+
+    for (item_gobj = gGCCommonLinks[nGCCommonLinkIDItem]; item_gobj != NULL; item_gobj = item_gobj->link_next)
+    {
+        if (item_gobj == slot_gobj)
+        {
+            ITStruct *ip = itGetStruct(item_gobj);
+
+            return (ip->kind == ITREMIX_FLASHBANG_KIND) && (itRemixFlashbangGetVars(ip)->fp == fp);
+        }
+    }
+    return FALSE;
+}
+
+GObj *itRemixFlashbangGetActive(FTStruct *fp)
+{
+    GObj *slot_gobj;
+
+    if ((*ftRemixFighterWord(fp, ITREMIX_FLASHBANG_OWNER_SLOT_N64) == 0) || (fp->player >= MAXCONTROLLERS))
+    {
+        return NULL;
+    }
+    slot_gobj = sITRemixFlashbangActive[fp->player];
+
+    /* The asm also keeps the word when the item leaves by another path; the GObj may be reused, so check it. */
+    if ((slot_gobj == NULL) || (itRemixFlashbangIsLiveFor(slot_gobj, fp) == FALSE))
+    {
+        itRemixFlashbangSetActive(fp, NULL);
+        return NULL;
+    }
+    return slot_gobj;
 }
 
 /* Sets the joints' render routines, as the vanilla item does for its DObjs. */
