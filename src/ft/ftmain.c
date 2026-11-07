@@ -14,6 +14,7 @@ extern void port_dump_backtrace(void);
 #endif
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixcommand.h"
+#include "ft/ftremix/ftremix.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixstaminaaction.h"
 #include "ft/ftremix/ftremixtwelvecbdefeated.h"
@@ -5022,6 +5023,29 @@ void ftMainEjectHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
     gcEjectDObj(root_joint);
 }
 
+#ifdef REGION_REMIX
+/* TRUE when `proc` is absent or a port of a Remix routine, so it never reads a parent's hidden joint. */
+static sb32 ftMainIsRemixOwnedProc(void (*proc)(GObj*))
+{
+    return (proc == NULL) || ftRemixIsPortedProc(proc);
+}
+
+/* Synth motion rows carry their parent's hidden-joint flags (ftPortParentHiddenJointFlags), so parent routines that
+ * read joints[TransN] keep working. A status whose update, interrupt and map routines are all Remix's own does not
+ * need them, and building a hidden joint the Remix row does not ask for strips that joint's animation track from the
+ * pose: Marth's and Roy's Dancing Blade (NSPG_1/NSPG_2 rows flag 0, Captain's rows 0x40000000) put the body height on
+ * TransN and sank into the floor (docs/bugs/remix_inherited_hidden_joint_sink_2026-11-06.md). */
+static void ftMainDropInheritedHiddenJoints(FTStruct *fp, FTStatusDesc *status_desc, s32 motion_id)
+{
+    if ((status_desc == NULL) || !ftMainIsRemixOwnedProc(status_desc->proc_update)
+        || !ftMainIsRemixOwnedProc(status_desc->proc_interrupt) || !ftMainIsRemixOwnedProc(status_desc->proc_map))
+    {
+        return;
+    }
+    fp->anim_desc.word &= ~ftPortSynthParentHiddenJointFlags(fp, motion_id);
+}
+#endif
+
 // 0x800E6F24
 void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 anim_speed, u32 flags)
 {
@@ -5438,6 +5462,10 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
                 fp->anim_desc.flags.is_use_xrotn_joint = FALSE;
                 fp->anim_desc.flags.is_use_transn_joint = FALSE;
                 fp->anim_desc.flags.is_use_yrotn_joint = FALSE;
+            }
+            if (script_array == fp->data->mainmotion)
+            {
+                ftMainDropInheritedHiddenJoints(fp, status_desc, motion_id);
             }
 #endif
 

@@ -748,6 +748,10 @@ u16 ftRemixSFXReplaceDownBounceSound(u16 fgm_id);
 /* Practice.asm overlay_colour_ (Color Overlays), ftremix/ftremixoverlay.c: called from ftMainProcPhysicsMapDefault */
 void ftRemixOverlayColour(GObj *fighter_gobj);
 
+/* ftport.c: the hidden-joint flags (XRotN/TransN/YRotN) that motion row `motion_id` of a synth fighter inherited from
+ * its parent's row and that the Remix row itself does not set; 0 for vanilla fighters. */
+u32 ftPortSynthParentHiddenJointFlags(const FTStruct *fp, s32 motion_id);
+
 #endif
 
 #endif

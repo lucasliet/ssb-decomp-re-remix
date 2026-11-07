@@ -71,6 +71,9 @@ struct FTData *ftRemixPowerData(struct FTStruct *fp);
 /** Port implementation for Remix routine `addr`, or NULL when it has none. */
 FTRemixProcFn ftRemixFindProc(u32 addr);
 
+/** TRUE when `proc` is one of the port implementations of a Remix routine (ftRemixFindProc's results). */
+sb32 ftRemixIsPortedProc(FTRemixProcFn proc);
+
 /** Decomp array for vanilla overlay motion script `addr`, or NULL. */
 s32 *ftRemixFindDemoScript(u32 addr);
 

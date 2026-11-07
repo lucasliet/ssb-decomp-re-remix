@@ -106,6 +106,25 @@ FTRemixProcFn ftRemixFindProc(u32 addr)
     return NULL;
 }
 
+sb32 ftRemixIsPortedProc(FTRemixProcFn proc)
+{
+    s32 i, j;
+
+    for (i = 0; i < dFTRemixPortedProcTablesNum; i++)
+    {
+        const FTRemixProcTable *table = &dFTRemixPortedProcTables[i];
+
+        for (j = 0; j < *table->procs_num; j++)
+        {
+            if (table->procs[j].proc == proc)
+            {
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
 /* Resolves `addr` to a port routine. Returns FALSE when it is a Remix routine
  * with no port yet, so the caller picks a fallback. */
 static sb32 ftRemixResolveProc(u32 addr, FTRemixProcFn *out, FTRemixBindStats *stats)

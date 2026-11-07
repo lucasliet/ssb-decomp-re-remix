@@ -264,6 +264,8 @@ typedef struct PortSynthFtOwned
     s32 submotion_count_slot;
     FTMotionDesc *mainmotion;
     FTMotionDesc *submotion;
+    u32 *parent_hidden_flags;
+    u32 mainmotion_count;
 } PortSynthFtOwned;
 
 /* Remix stores scripts it adds as raw RAM addresses into its image. Those
@@ -342,6 +344,31 @@ static FTMotionDesc *ftPortCopyMotionArray(const PortSynthMotion *src, u32 count
     return dst;
 }
 
+/* For each of the `count` rows, the hidden-joint flags ftPortCopyMotionArray merges in from
+ * `parent` that the Remix row itself does not carry. Returns NULL for count 0 or on
+ * allocation failure. */
+static u32 *ftPortCollectParentHiddenJointFlags(const PortSynthMotion *src, u32 count, const FTData *parent)
+{
+    u32 *merged;
+    u32 i;
+
+    if (count == 0)
+    {
+        return NULL;
+    }
+    merged = malloc(count * sizeof(u32));
+
+    if (merged == NULL)
+    {
+        return NULL;
+    }
+    for (i = 0; i < count; i++)
+    {
+        merged[i] = ftPortParentHiddenJointFlags(parent, i) & ~src[i].flags;
+    }
+    return merged;
+}
+
 /* Overwrites the Remix-supplied fields and points the runtime slots at storage
  * owned by the block, so the synth never writes into vanilla arrays. */
 static void ftPortSetSynthFields(PortSynthFtOwned *owned, const PortSynthFtSpec *spec)
@@ -396,7 +423,9 @@ struct FTData *port_fighter_synth_ft_create(int parent_fkind, const PortSynthFtS
     owned->data = *parent;
     owned->mainmotion = ftPortCopyMotionArray(spec->mainmotion, spec->mainmotion_count, parent);
     owned->submotion = ftPortCopyMotionArray(spec->submotion, spec->submotion_count, NULL);
-    if ((spec->mainmotion_count != 0 && owned->mainmotion == NULL)
+    owned->parent_hidden_flags = ftPortCollectParentHiddenJointFlags(spec->mainmotion, spec->mainmotion_count, parent);
+    owned->mainmotion_count = spec->mainmotion_count;
+    if ((spec->mainmotion_count != 0 && (owned->mainmotion == NULL || owned->parent_hidden_flags == NULL))
         || (spec->submotion_count != 0 && owned->submotion == NULL))
     {
         port_fighter_synth_ft_destroy(&owned->data);
@@ -417,7 +446,25 @@ void port_fighter_synth_ft_destroy(struct FTData *ft)
     owned = (PortSynthFtOwned *)ft;
     free(owned->mainmotion);
     free(owned->submotion);
+    free(owned->parent_hidden_flags);
     free(owned);
+}
+
+u32 ftPortSynthParentHiddenJointFlags(const FTStruct *fp, s32 motion_id)
+{
+    const PortSynthFtOwned *owned;
+
+    if ((port_fighter_parent_fkind(fp->fkind) == fp->fkind) || (port_fighter_data(fp->fkind) != fp->data))
+    {
+        return 0;
+    }
+    owned = (const PortSynthFtOwned *)fp->data;
+
+    if ((owned->parent_hidden_flags == NULL) || (motion_id < 0) || ((u32)motion_id >= owned->mainmotion_count))
+    {
+        return 0;
+    }
+    return owned->parent_hidden_flags[motion_id];
 }
 
 int port_fighter_extend_mainmotion(int fkind, uint32_t vanilla_count, const PortSynthMotion *rows, uint32_t count)
