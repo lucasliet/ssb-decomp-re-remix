@@ -1201,8 +1201,8 @@ void scManagerRunLoop(sb32 arg)
 		}
 #endif
 
-		port_log("SSB64: scManagerRunLoop — entering scene %d\n",
-		         (int)gSCManagerSceneData.scene_curr);
+		port_log("SSB64: scManagerRunLoop — entering scene %d (t=%.0f ms)\n",
+		         (int)gSCManagerSceneData.scene_curr, port_log_uptime_ms());
 
 		/* Issue #103 defence: clear cross-scene GObj pointers in the three
 		 * persistent battle-state structs before dispatching the next scene.

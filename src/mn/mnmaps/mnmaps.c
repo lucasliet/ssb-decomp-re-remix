@@ -3243,12 +3243,28 @@ void mnMapsFuncRun(GObj *gobj)
 	}
 }
 
+#ifdef PORT
+/* The stage select took over a second to start on the Switch; each step of mnMapsFuncStart logs
+ * its own duration so a console log says which one. */
+#define MNMAPS_START_STEP(name)                                                                     \
+	do {                                                                                            \
+		double step_now_ms = port_log_uptime_ms();                                                  \
+		port_log("[mnmaps] start: %s took %.0f ms\n", name, step_now_ms - step_start_ms);           \
+		step_start_ms = step_now_ms;                                                                \
+	} while (0)
+#else
+#define MNMAPS_START_STEP(name) ((void)0)
+#endif
+
 // 0x80134304
 void mnMapsFuncStart(void)
 {
 	s32 unused1[2];
 	LBRelocSetup rl_setup;
 	s32 unused2;
+#ifdef PORT
+	double step_start_ms = port_log_uptime_ms();
+#endif
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
 #ifdef PORT
@@ -3265,6 +3281,7 @@ void mnMapsFuncStart(void)
 
 	lbRelocInitSetup(&rl_setup);
 	lbRelocLoadFilesListed(dMNMapsFileIDs, sMNMapsFiles);
+	MNMAPS_START_STEP("reloc files");
 	mnMapsAllocModelHeaps();
 
 	gcMakeGObjSPAfter(0, mnMapsFuncRun, 0, GOBJ_PRIORITY_DEFAULT);
@@ -3278,20 +3295,26 @@ void mnMapsFuncStart(void)
 	mnMapsMakePreviewCamera();
 	mnMapsMakePlaqueCamera();
 	mnMapsMakePreviewWallpaperCamera();
+	MNMAPS_START_STEP("vars and cameras");
 	mnMapsMakeWallpaper();
 	mnMapsMakePlaque();
 	mnMapsMakeLabels();
+	MNMAPS_START_STEP("wallpaper, plaque, labels");
 	mnMapsMakeIcons();
+	MNMAPS_START_STEP("icons");
 #if defined(PORT) && !defined(REGION_REMIX)
 	mnMapsMakeArrows();
 #endif
 	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 	mnMapsMakeCursor();
+	MNMAPS_START_STEP("name, emblem, cursor");
 #ifdef REGION_REMIX
 	mnRemixStagePanelMake();
 	mnRemixStagePagerMake(sMNMapsFiles[nMNMapsFileRemixArrows]);
+	MNMAPS_START_STEP("remix panel and pager");
 #endif
 	mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
+	MNMAPS_START_STEP("preview");
 }
 
 // 0x8013490C

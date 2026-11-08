@@ -3,6 +3,7 @@
 #ifdef PORT
 #include "port.h"
 extern void port_log(const char *fmt, ...);
+extern double port_log_uptime_ms(void);
 #endif
 
 // #include "scenemgr/scene_manager.h"
@@ -241,13 +242,13 @@ void syMainThread5(void *arg)
 #endif
     osRecvMesg(&gSYMainThreadingMesgQueue, NULL, OS_MESG_BLOCK);
 #ifdef PORT
-    port_log("SSB64: Thread5 — all threads ready, loading overlays\n");
+    port_log("SSB64: Thread5 — all threads ready, loading overlays (t=%.0f ms)\n", port_log_uptime_ms());
 #endif
 
     func_80006B80();
     syDmaLoadOverlay(&dSYMainSceneManagerOverlay);
 #ifdef PORT
-    port_log("SSB64: Thread5 — entering scManagerRunLoop\n");
+    port_log("SSB64: Thread5 — entering scManagerRunLoop (t=%.0f ms)\n", port_log_uptime_ms());
 #endif
     scManagerRunLoop(0);
 }
