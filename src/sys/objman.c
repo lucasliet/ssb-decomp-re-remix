@@ -13,6 +13,7 @@
 #endif
 
 extern void port_log(const char *fmt, ...);
+extern void port_trace(const char *fmt, ...);
 
 #ifdef PORT
 /* PORT diag: log GObj allocations for the kinds known to leak stale
@@ -1900,7 +1901,7 @@ void gcEjectGObj(GObj *gobj)
 	}
 
 	/* PORT crash-diag: log eject so we can correlate with a later crash. */
-	port_log("SSB64: gcEjectGObj ENTER gobj=%p id=%u kind=%u link_id=%u dl_link_id=%u "
+	port_trace("SSB64: gcEjectGObj ENTER gobj=%p id=%u kind=%u link_id=%u dl_link_id=%u "
 	         "gpr_head=%p obj=%p link_next=%p link_prev=%p\n",
 	         (void*)gobj, gobj->id, (unsigned)gobj->obj_kind,
 	         (unsigned)gobj->link_id, (unsigned)gobj->dl_link_id,
@@ -1937,7 +1938,7 @@ void gcEjectGObj(GObj *gobj)
 	 * any subsequent eject attempt is detected above. */
 	gobj->obj_kind = GOBJ_PORT_EJECTED_SENTINEL;
 
-	port_log("SSB64: gcEjectGObj EXIT gobj=%p\n", (void*)gobj);
+	port_trace("SSB64: gcEjectGObj EXIT gobj=%p\n", (void*)gobj);
 }
 
 // 0x80009B48

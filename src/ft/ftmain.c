@@ -8,6 +8,7 @@
 #endif
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
+extern void port_trace(const char *fmt, ...);
 extern void port_dump_backtrace(void);
 #include "fighter_registry.h"
 #include "hooks/Events.h"
@@ -5034,11 +5035,17 @@ static sb32 ftMainIsRemixOwnedProc(void (*proc)(GObj*))
  * read joints[TransN] keep working. A status whose update, interrupt and map routines are all Remix's own does not
  * need them, and building a hidden joint the Remix row does not ask for strips that joint's animation track from the
  * pose: Marth's and Roy's Dancing Blade (NSPG_1/NSPG_2 rows flag 0, Captain's rows 0x40000000) put the body height on
- * TransN and sank into the floor (docs/bugs/remix_inherited_hidden_joint_sink_2026-11-06.md). */
-static void ftMainDropInheritedHiddenJoints(FTStruct *fp, FTStatusDesc *status_desc, s32 motion_id)
+ * TransN and sank into the floor (docs/bugs/remix_inherited_hidden_joint_sink_2026-11-06.md). The same holds for every
+ * status served by the common action table: those routines are shared by all fighters and the ones that read TransN
+ * test the flag first, so the Remix row's own flags are the ROM's rule there too. Marth's up smash (AttackHi4, Remix
+ * row flag 0, Captain's row 0x40000000) sank the fighter to the hair before this
+ * (docs/bugs/remix_inherited_hidden_joint_common_moves_2026-11-08.md). */
+static void ftMainDropInheritedHiddenJoints(FTStruct *fp, FTStatusDesc *status_desc, s32 motion_id,
+                                            sb32 is_common_action_status)
 {
-    if ((status_desc == NULL) || !ftMainIsRemixOwnedProc(status_desc->proc_update)
-        || !ftMainIsRemixOwnedProc(status_desc->proc_interrupt) || !ftMainIsRemixOwnedProc(status_desc->proc_map))
+    if (!is_common_action_status
+        && ((status_desc == NULL) || !ftMainIsRemixOwnedProc(status_desc->proc_update)
+            || !ftMainIsRemixOwnedProc(status_desc->proc_interrupt) || !ftMainIsRemixOwnedProc(status_desc->proc_map)))
     {
         return;
     }
@@ -5437,7 +5444,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         }
         else fp->figatree = NULL;
 #ifdef PORT
-        port_log("SSB64: ftMainSetStatus - status=0x%x motion=%d figatree=%p anim_flags=0x%08x\n",
+        port_trace("SSB64: ftMainSetStatus - status=0x%x motion=%d figatree=%p anim_flags=0x%08x\n",
             status_id, motion_id, fp->figatree, motion_desc->anim_desc.word);
 #endif
         
@@ -5465,7 +5472,8 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             }
             if (script_array == fp->data->mainmotion)
             {
-                ftMainDropInheritedHiddenJoints(fp, status_desc, motion_id);
+                ftMainDropInheritedHiddenJoints(fp, status_desc, motion_id,
+                                                status_struct == dFTCommonActionStatusDescs);
             }
 #endif
 
@@ -5574,11 +5582,11 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 #endif
             }
 #ifdef PORT
-            port_log("SSB64: ftMainSetStatus - before figatree attach status=0x%x motion=%d\n", status_id, motion_id);
+            port_trace("SSB64: ftMainSetStatus - before figatree attach status=0x%x motion=%d\n", status_id, motion_id);
 #endif
             lbCommonAddFighterPartsFigatree(fp->joints[nFTPartsJointTopN]->child, fp->figatree, frame_begin);
 #ifdef PORT
-            port_log("SSB64: ftMainSetStatus - after figatree attach status=0x%x motion=%d\n", status_id, motion_id);
+            port_trace("SSB64: ftMainSetStatus - after figatree attach status=0x%x motion=%d\n", status_id, motion_id);
 #endif
 
             if (anim_speed != DObjGetStruct(fighter_gobj)->anim_speed)
@@ -5718,7 +5726,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         if (frame_begin != 0.0F)
         {
 #ifdef PORT
-            port_log("SSB64: ftMainSetStatus - before play forward events status=0x%x motion=%d frame_begin=%f\n",
+            port_trace("SSB64: ftMainSetStatus - before play forward events status=0x%x motion=%d frame_begin=%f\n",
                 status_id, motion_id, frame_begin);
 #endif
             ftMainPlayAnimEventsForward(fighter_gobj);
@@ -5726,11 +5734,11 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         else
         {
 #ifdef PORT
-            port_log("SSB64: ftMainSetStatus - before play all events status=0x%x motion=%d\n", status_id, motion_id);
+            port_trace("SSB64: ftMainSetStatus - before play all events status=0x%x motion=%d\n", status_id, motion_id);
 #endif
             ftMainPlayAnimEventsAll(fighter_gobj);
 #ifdef PORT
-            port_log("SSB64: ftMainSetStatus - after play all events status=0x%x motion=%d\n", status_id, motion_id);
+            port_trace("SSB64: ftMainSetStatus - after play all events status=0x%x motion=%d\n", status_id, motion_id);
 #endif
             ftMainRunUpdateColAnim(fighter_gobj);
         }

@@ -14,6 +14,7 @@ extern void func_800267F4_273F4(void *arg0);
 
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
+extern void port_trace(const char *fmt, ...);
 extern void portFixupSprite(void *sprite);
 extern void portFixupBitmap(void *bitmap);
 extern void portFixupBitmapArray(void *bitmaps, unsigned int count);
@@ -936,7 +937,7 @@ void lbCommonAddFighterPartsFigatree(DObj *root_dobj, void **figatree, f32 anim_
      * dumps the first 8 figatree words for byte-order sanity. */
     {
         u32 *fw = (u32 *)figatree_start;
-        port_log("SSB64: figatree-bind fkind=%d walked=%d bound=%d root=%p"
+        port_trace("SSB64: figatree-bind fkind=%d walked=%d bound=%d root=%p"
                  " frame=%.2f bytes[0..7]=%08X %08X %08X %08X %08X %08X %08X %08X\n",
                  (int)figatree_fkind, (int)joints_walked, (int)joints_bound,
                  (void *)root_dobj, (double)anim_frame,
