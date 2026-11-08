@@ -17,6 +17,7 @@
 #ifdef PORT
 #include <stdlib.h>
 extern void port_log(const char *fmt, ...);
+extern double port_log_uptime_ms(void);
 extern char *getenv(const char *name); /* decomp include/stdlib.h shadows the host header */
 #endif
 
@@ -1301,14 +1302,16 @@ void syTaskmanLoadScene(SYTaskmanSceneSetup *tscene, void (*func_start)(void))
 	dSYTaskmanUpdateCount = dSYTaskmanFrameCount = 0;
 
 #ifdef PORT
-	port_log("SSB64: syTaskmanLoadScene — about to call func_start=%p\n", (void *)func_start);
+	double load_start_ms = port_log_uptime_ms();
+	port_log("SSB64: syTaskmanLoadScene — about to call func_start=%p (t=%.0f ms)\n", (void *)func_start, load_start_ms);
 #endif
 	if (func_start != NULL)
 	{
 		func_start();
 	}
 #ifdef PORT
-	port_log("SSB64: syTaskmanLoadScene — func_start returned, entering syTaskmanRunTask\n");
+	port_log("SSB64: syTaskmanLoadScene — func_start returned after %.0f ms, entering syTaskmanRunTask\n",
+	         port_log_uptime_ms() - load_start_ms);
 #endif
 	syTaskmanRunTask(&sSYTaskmanDefaultFunction);
 }
