@@ -509,6 +509,11 @@ LBBackupData dSCManagerDefaultBackupData =
 		}
 	},
 
+#if defined(PORT) && defined(REGION_REMIX)
+	/* remix_bonus starts empty, as lbBackupClearBonusStageTime leaves it. Without this entry the values below shifted
+	 * into it and the signature stayed 0, so every boot rejected the save (docs/bugs/remix_save_signature_reset_2026-11-13.md). */
+	{ { { { 0 } } } },								// Remix Bonus 1 and 2 records
+#endif
 	0,												// Mask of unique stages played in VS Mode (for Mushroom Kingdom)
 	0,												// Number of games played in VS Mode to unlock Item Switch
 	0,												// Total number of games played in VS Mode
