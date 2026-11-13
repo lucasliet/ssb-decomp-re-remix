@@ -5025,30 +5025,18 @@ void ftMainEjectHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
 }
 
 #ifdef REGION_REMIX
-/* TRUE when `proc` is absent or a port of a Remix routine, so it never reads a parent's hidden joint. */
-static sb32 ftMainIsRemixOwnedProc(void (*proc)(GObj*))
+/* Synth motion rows carry their parent's hidden-joint flags (ftPortParentHiddenJointFlags) so that code reading
+ * joints[TransN] outside a status change never finds the joint missing. The Remix ROM builds only the hidden joints
+ * its own row asks for, and building one it does not ask for strips that joint's animation track from the pose:
+ * Marth's Dancing Blade and up smash sank into the floor (docs/bugs/remix_inherited_hidden_joint_sink_2026-11-06.md,
+ * docs/bugs/remix_inherited_hidden_joint_common_moves_2026-11-08.md), Conker's up special descent drew the tail
+ * detached (docs/bugs/remix_conker_usp_tail_hidden_joint_2026-11-12.md), and Marina, Dedede, Peach, Banjo and
+ * Dragon King specials broke the same way while a parent routine was still wired to the status. The status change
+ * always drops the inherited bits; the vanilla routines that read a hidden joint without testing the flag
+ * (ftMarioSpecialHiProcInterrupt, ftCaptainSpecialLwAirSetStatus) skip it when it is missing, as the N64 wrote
+ * to RDRAM page zero there. */
+static void ftMainDropInheritedHiddenJoints(FTStruct *fp, s32 motion_id)
 {
-    return (proc == NULL) || ftRemixIsPortedProc(proc);
-}
-
-/* Synth motion rows carry their parent's hidden-joint flags (ftPortParentHiddenJointFlags), so parent routines that
- * read joints[TransN] keep working. A status whose update, interrupt and map routines are all Remix's own does not
- * need them, and building a hidden joint the Remix row does not ask for strips that joint's animation track from the
- * pose: Marth's and Roy's Dancing Blade (NSPG_1/NSPG_2 rows flag 0, Captain's rows 0x40000000) put the body height on
- * TransN and sank into the floor (docs/bugs/remix_inherited_hidden_joint_sink_2026-11-06.md). The same holds for every
- * status served by the common action table: those routines are shared by all fighters and the ones that read TransN
- * test the flag first, so the Remix row's own flags are the ROM's rule there too. Marth's up smash (AttackHi4, Remix
- * row flag 0, Captain's row 0x40000000) sank the fighter to the hair before this
- * (docs/bugs/remix_inherited_hidden_joint_common_moves_2026-11-08.md). */
-static void ftMainDropInheritedHiddenJoints(FTStruct *fp, FTStatusDesc *status_desc, s32 motion_id,
-                                            sb32 is_common_action_status)
-{
-    if (!is_common_action_status
-        && ((status_desc == NULL) || !ftMainIsRemixOwnedProc(status_desc->proc_update)
-            || !ftMainIsRemixOwnedProc(status_desc->proc_interrupt) || !ftMainIsRemixOwnedProc(status_desc->proc_map)))
-    {
-        return;
-    }
     fp->anim_desc.word &= ~ftPortSynthParentHiddenJointFlags(fp, motion_id);
 }
 #endif
@@ -5472,8 +5460,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             }
             if (script_array == fp->data->mainmotion)
             {
-                ftMainDropInheritedHiddenJoints(fp, status_desc, motion_id,
-                                                status_struct == dFTCommonActionStatusDescs);
+                ftMainDropInheritedHiddenJoints(fp, motion_id);
             }
 #endif
 

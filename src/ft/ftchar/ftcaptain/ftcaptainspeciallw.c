@@ -216,6 +216,11 @@ void ftCaptainSpecialLwAirSetStatus(GObj *fighter_gobj)
     ftMainSetStatus(fighter_gobj, nFTCaptainStatusSpecialLwAir, 0.0F, 1.0F, FTSTATUS_PRESERVE_EFFECT);
 
     fp->joints[nFTPartsJointTopN]->rotate.vec.f.z = rot_z;
+#ifdef PORT
+    /* A Remix fighter on this routine has no TransN unless its own row asks for it; the N64 wrote to RDRAM page zero
+     * (docs/bugs/remix_conker_usp_tail_hidden_joint_2026-11-12.md). */
+    if (fp->joints[nFTPartsJointTransN] != NULL)
+#endif
     fp->joints[nFTPartsJointTransN]->rotate.vec.f.z = fp->joints[nFTPartsJointTopN]->rotate.vec.f.z;
 
     fp->proc_lagstart = ftParamProcPauseEffect;

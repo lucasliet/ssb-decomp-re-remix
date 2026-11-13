@@ -38,11 +38,18 @@ void ftMarioSpecialHiProcInterrupt(GObj *fighter_gobj)
 
             stick_rot = ABSF(rot_z);
 
-            joint_rot = ABSF(fp->joints[nFTPartsJointTransN]->rotate.vec.f.z);
-
-            if (joint_rot < stick_rot)
+#ifdef PORT
+            /* A Remix fighter on this routine has no TransN unless its own row asks for it; the N64 wrote to RDRAM
+             * page zero (docs/bugs/remix_conker_usp_tail_hidden_joint_2026-11-12.md). */
+            if (fp->joints[nFTPartsJointTransN] != NULL)
+#endif
             {
-                fp->joints[nFTPartsJointTransN]->rotate.vec.f.z = rot_z;
+                joint_rot = ABSF(fp->joints[nFTPartsJointTransN]->rotate.vec.f.z);
+
+                if (joint_rot < stick_rot)
+                {
+                    fp->joints[nFTPartsJointTransN]->rotate.vec.f.z = rot_z;
+                }
             }
         }
     }
