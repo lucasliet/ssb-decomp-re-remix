@@ -31,7 +31,9 @@
 #define FTREMIX_SPECIAL_ZOOM_WALLPAPER_CAMERA_DIST 2000.0F
 #define FTREMIX_SPECIAL_ZOOM_WALLPAPER_DOBJDESC_OFFSET 0x35F8
 #define FTREMIX_SPECIAL_ZOOM_WALLPAPER_MOBJ_OFFSET 0x2AA8
-#define FTREMIX_SPECIAL_ZOOM_WALLPAPER_ANIM_OFFSET 0x3700
+#define FTREMIX_SPECIAL_ZOOM_WALLPAPER_MATANIM_OFFSET 0x3700
+
+extern float port_widescreen_clip_x_scale(void);
 
 /* Background file loaded by ftRemixSpecialZoomWallpaperLoad, and the background object shown during a KO zoom */
 static void *sFTRemixSpecialZoomBackgroundFile;
@@ -129,9 +131,19 @@ void ftRemixSpecialZoomWallpaperShow(void)
     dobj->scale.vec.f.x = FTREMIX_SPECIAL_ZOOM_BACKGROUND_SCALE;
     dobj->scale.vec.f.y = FTREMIX_SPECIAL_ZOOM_BACKGROUND_SCALE;
     dobj->scale.vec.f.z = FTREMIX_SPECIAL_ZOOM_BACKGROUND_SCALE;
+    {
+        /* The port's widescreen compresses clip-space X, so the plane authored for 4:3 leaves the stage visible at
+         * both sides. Widen it by the same factor (as the magnifier arrow in ifcommon.c). */
+        f32 ws_scale = port_widescreen_clip_x_scale();
+
+        if ((ws_scale > 0.0F) && (ws_scale < 1.0F))
+        {
+            dobj->scale.vec.f.x = FTREMIX_SPECIAL_ZOOM_BACKGROUND_SCALE / ws_scale;
+        }
+    }
 
     gcAddMObjAll(background_gobj, (MObjSub ***) ((uintptr_t) sFTRemixSpecialZoomBackgroundFile + FTREMIX_SPECIAL_ZOOM_WALLPAPER_MOBJ_OFFSET));
-    gcAddAnimJointAll(background_gobj, (AObjEvent32 **) ((uintptr_t) sFTRemixSpecialZoomBackgroundFile + FTREMIX_SPECIAL_ZOOM_WALLPAPER_ANIM_OFFSET), 0.0F);
+    gcAddMatAnimJointAll(background_gobj, (AObjEvent32 ***) ((uintptr_t) sFTRemixSpecialZoomBackgroundFile + FTREMIX_SPECIAL_ZOOM_WALLPAPER_MATANIM_OFFSET), 0.0F);
     gcAddGObjProcess(background_gobj, gcPlayAnimAll, nGCProcessKindFunc, 1);
     gcPlayAnimAll(background_gobj);
 }

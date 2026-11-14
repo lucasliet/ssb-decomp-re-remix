@@ -493,7 +493,7 @@ u16 ftRemixJapaneseProjectileSoundFgm(GObj *owner_gobj, u16 fgm_id);
 u16 ftRemixJapaneseItemSoundFgm(GObj *parent_gobj, u32 flags, u16 fgm_id);
 
 /* Charge Smashes setting (Toggles.asm entry_charged_smashes), ftremix/ftremixchargesmash.c (ChargeSmashAttacks.asm): the
- * logic run on action change (ftMainSetStatus), the wait hold of ftAnimEndSetWait, and the shake offset of ftDisplayMainProcDisplay
+ * logic run on action change (ftMainSetStatus) and on every frame of ftAnimEndSetWait, its wait hold, and the shake offset of ftDisplayMainProcDisplay
  * and func_ovl0_800C9F70 */
 void ftRemixChargeSmashLogic(GObj *fighter_gobj);
 sb32 ftRemixChargeSmashHoldsAnimEnd(GObj *fighter_gobj);

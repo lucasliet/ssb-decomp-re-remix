@@ -111,7 +111,7 @@ static void ftRemixSpecialZoomCameraZoomIn(GObj *fighter_gobj)
     sFTRemixSpecialZoomCameraModeSave = gGMCameraStruct.status_curr;
 
     gmCameraSetStatusPlayerZoom(fighter_gobj, 0.0F, 0.0F, FTREMIX_SPECIAL_ZOOM_CAMERA_DIST, FTREMIX_SPECIAL_ZOOM_CAMERA_PAN_SCALE, FTREMIX_SPECIAL_ZOOM_CAMERA_FOV);
-    gIFCommonPlayerInterface.magnify_mode = 0;
+    gIFCommonPlayerInterface.is_magnify_display = FALSE;
 }
 
 /** TRUE while a Special Zoom is on (Zoom.zoom_type is not zero). */
@@ -132,7 +132,7 @@ static void ftRemixSpecialZoomEnd(void)
     }
     gmCameraSetStatus(sFTRemixSpecialZoomCameraModeSave);
     gGMCameraStruct.pzoom_fighter_gobj = sFTRemixSpecialZoomZoomedInGObjSave;
-    gIFCommonPlayerInterface.magnify_mode = sFTRemixSpecialZoomMagnifyDisplaySave;
+    gIFCommonPlayerInterface.is_magnify_display = sFTRemixSpecialZoomMagnifyDisplaySave;
 
     if (sFTRemixSpecialZoomType == FTREMIX_SPECIAL_ZOOM_KO)
     {
@@ -160,7 +160,7 @@ static void ftRemixSpecialZoomApply(GObj *fighter_gobj, s32 zoom_flag)
         ftRemixSpecialZoomEnd();
     }
     sFTRemixSpecialZoomType = zoom_flag;
-    sFTRemixSpecialZoomMagnifyDisplaySave = gIFCommonPlayerInterface.magnify_mode;
+    sFTRemixSpecialZoomMagnifyDisplaySave = gIFCommonPlayerInterface.is_magnify_display;
 
     if ((zoom_flag != FTREMIX_SPECIAL_ZOOM_SPECIAL_MOVE) || (ftRemixSpecialZoomCountPlayersInMatch() == 2))
     {
@@ -183,7 +183,8 @@ static void ftRemixSpecialZoomApply(GObj *fighter_gobj, s32 zoom_flag)
 
 /**
  * Runs the zoom's camera step on a slow-motion frame: the camera keeps moving unless a camera mode or the time twister
- * blocks it, and the timer counts down (and ends the zoom at zero). Nothing runs while the game is paused.
+ * blocks it, and the timer counts down (and ends the zoom at zero). Nothing runs while the game is paused. Training
+ * always moves the camera (SpecialZoom.asm objects_update branches straight to _update_camera there).
  */
 static void ftRemixSpecialZoomSlowMoCameraStep(void)
 {
@@ -193,8 +194,9 @@ static void ftRemixSpecialZoomSlowMoCameraStep(void)
     {
         return;
     }
-    is_camera_blocked = (gmRemixToggle(camera_mode) != FTREMIX_SPECIAL_ZOOM_CAMERA_NORMAL)
-        || (gGMCameraStruct.func_camera == gmCameraMapZoomFuncCamera);
+    is_camera_blocked = (gSCManagerSceneData.scene_curr != FTREMIX_SPECIAL_ZOOM_SCREEN_TRAINING)
+        && ((gmRemixToggle(camera_mode) != FTREMIX_SPECIAL_ZOOM_CAMERA_NORMAL)
+            || (gGMCameraStruct.func_camera == gmCameraMapZoomFuncCamera));
 
     if (!is_camera_blocked)
     {

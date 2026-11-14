@@ -278,7 +278,13 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
             }
             attack_coll->joint_id = ftParamGetJointID(fp, ftMotionEventCast(ms, FTMotionEventMakeAttack1)->joint_id);
             attack_coll->joint = fp->joints[attack_coll->joint_id];
+#ifdef REGION_REMIX
+            /* Size.asm fix_damage_ patches 0x800DF34C, the damage store of this event (the word is read as
+             * (w << 19) >> 24, the MakeAttack1 damage field); staling is applied to the scaled value below. */
+            attack_coll->damage = ftRemixSizeScaleDamage(fp, ftRemixChargeSmashScaleDamage(fp, ftMotionEventCast(ms, FTMotionEventMakeAttack1)->damage));
+#else
             attack_coll->damage = ftMotionEventCast(ms, FTMotionEventMakeAttack1)->damage;
+#endif
             attack_coll->can_rebound = ftMotionEventCast(ms, FTMotionEventMakeAttack1)->can_rebound;
             attack_coll->element = ftMotionEventCast(ms, FTMotionEventMakeAttack1)->element;
 
@@ -351,11 +357,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         {
             attack_id = ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->attack_id;
 
-#ifdef REGION_REMIX
-            fp->attack_colls[attack_id].damage = ftRemixSizeScaleDamage(fp, ftRemixChargeSmashScaleDamage(fp, ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->damage));
-#else
             fp->attack_colls[attack_id].damage = ftMotionEventCast(ms, FTMotionEventSetAttackCollDamage)->damage;
-#endif
 
             ftMotionEventAdvance(ms, FTMotionEventSetAttackCollDamage);
 

@@ -23,8 +23,16 @@ void ftAnimEndSetWait(GObj *fighter_gobj)
     {
         return;
     }
-#endif
+    if (ftAnimEndCheckSetStatus(fighter_gobj, ftCommonWaitSetStatus))
+    {
+        return;
+    }
+    /* ChargeSmashAttacks.asm smash_attack_main falls from _normal into _charging when the wait transition is not taken:
+     * the charge logic runs on every frame of the attack, which is how it reaches the charge start frame. */
+    ftRemixChargeSmashLogic(fighter_gobj);
+#else
     ftAnimEndCheckSetStatus(fighter_gobj, ftCommonWaitSetStatus);
+#endif
 }
 
 // 0x800D94E8

@@ -8,15 +8,19 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ft/fighter.h>
+#include <ft/ftcommondata.h>
 #include <ft/ftdisplaymain.h>
 #include <ef/efmanager.h>
 #include <gm/gmdef.h>
-#include <sys/audio.h>
 #include <sys/obj.h>
 #include <sys/objanim.h>
 #include "ft/ftremix/ftremixhooks.h"
+#include "gm/gmremixcolscripts.h"
 #include "gm/gmremixtoggle.h"
 #include "remix/remix_roster_data.h"
+
+/* FGM.play calls the sound routine directly, without a tracked sound slot */
+extern void *func_800269C0_275C0(u16 id);
 
 #define FTREMIX_CHARGE_SMASH_GFX_ROUTINE 0x78       /* GFXRoutine.CHARGE_SMASH, build/remixasm/bass.log: ID is 0x78 */
 #define FTREMIX_CHARGE_SMASH_MAX_TIME 60            /* ChargeSmashAttacks.asm MAX_CHARGE_TIME (1 second) */
@@ -261,13 +265,22 @@ static void ftRemixChargeSmashReset(FTRemixChargeState *state)
     state->saved_speed = 0.0F;
 }
 
-/** Sets the charge GFX routine unless the fighter already has a colour animation. */
+/**
+ * Starts the charge GFX routine unless a colour script is already running. The asm tests and writes the script pointer
+ * of the fighter (0xA28, colanim.cs[0].p_script) with the address of GFXRoutine.CHARGE_SMASH; it leaves the colour
+ * animation id, length and priority alone, so the routine restarts each time it ends while the charge is held.
+ */
 static void ftRemixChargeSmashSetGfx(FTStruct *fp)
 {
-    if (fp->colanim.colanim_id == 0)
+    if (fp->colanim.cs[0].p_script != NULL)
     {
-        fp->colanim.colanim_id = FTREMIX_CHARGE_SMASH_GFX_ROUTINE;
+        return;
     }
+    if ((gmRemixColScriptsEnsureLoaded() == FALSE) || (FTREMIX_CHARGE_SMASH_GFX_ROUTINE >= dGMColScriptsDescsNum))
+    {
+        return;
+    }
+    fp->colanim.cs[0].p_script = dGMColScriptsDescs[FTREMIX_CHARGE_SMASH_GFX_ROUTINE].p_script;
 }
 
 /** Starts the fighter shake of a held charge (ChargeSmashAttacks.asm _shuffle). */
@@ -314,7 +327,7 @@ static void ftRemixChargeSmashBegin(GObj *fighter_gobj, FTStruct *fp, FTRemixCha
     ftRemixChargeSmashSetGfx(fp);
     gcSetAnimSpeed(fighter_gobj, 0.0F);
     state->time += 1;
-    syAudioPlayFGM(FTREMIX_CHARGE_SMASH_SFX);
+    func_800269C0_275C0(FTREMIX_CHARGE_SMASH_SFX);
     ftRemixChargeSmashShake(fp);
 }
 
@@ -345,7 +358,8 @@ static void ftRemixChargeSmashIncrement(GObj *fighter_gobj, FTStruct *fp, FTRemi
 
 /**
  * Runs one frame of the charge logic for the fighter (ChargeSmashAttacks.asm smash_attack_logic). Called when the
- * action changes (smash_attack_start, from ftMainSetStatus) and on every frame the animation end would transition.
+ * action changes (smash_attack_start, from ftMainSetStatus) and on every frame of ftAnimEndSetWait that does not go to
+ * Wait (smash_attack_main).
  */
 void ftRemixChargeSmashLogic(GObj *fighter_gobj)
 {
@@ -390,8 +404,9 @@ void ftRemixChargeSmashLogic(GObj *fighter_gobj)
 
 /**
  * Holds the wait transition at the end of an animation while a charge freezes the fighter (ChargeSmashAttacks.asm
- * smash_attack_main, hooked into ftAnimEndSetWait). Returns TRUE when the charge holds the fighter. The hold is never
- * taken while the toggle is off, so vanilla fighters keep the vanilla transition.
+ * smash_attack_main, the _charging branch taken with animation speed 0, hooked into ftAnimEndSetWait). Returns TRUE when
+ * the charge holds the fighter. The hold is never taken while the toggle is off, so vanilla fighters keep the vanilla
+ * transition. With the animation running, ftAnimEndSetWait runs the logic itself after the wait check.
  */
 sb32 ftRemixChargeSmashHoldsAnimEnd(GObj *fighter_gobj)
 {
@@ -421,7 +436,8 @@ Vec2f ftRemixChargeSmashShufflePosition(FTStruct *fp)
 }
 
 /**
- * Damage of a charged smash hit (Size.asm fix_damage_, charged smash block, asm lines 477-527). While the player is charging,
+ * Damage of a charged smash hit (Size.asm fix_damage_, charged smash block, asm lines 477-527), applied where the hitbox
+ * is made (ftMainParseMotionEvent, MakeAttackColl). While the player is charging,
  * the damage is multiplied by 1 + charge time * 0.4 / 60 and rounded to the nearest integer. The Size factor is applied
  * afterwards by ftRemixSizeScaleDamage, as in the asm.
  */
