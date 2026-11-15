@@ -553,8 +553,8 @@ void itRemixPokemonResetPicker(void);
  * ten Pokemon voice sites (Item.asm 0x8017E2D4 .. 0x8017C66C) */
 u16 itRemixPokemonVoiceFgm(u16 fgm_id);
 
-/* Camera Mode setting (Camera.asm entry_camera_mode), gm/gmremixcameramode.c: gmRemixCameraSetupDefault runs in the default
- * branch of gmCameraMakeDefaultCamera (set_initial_coordinates_), gmRemixCameraApplyFixedRun after the status routine is
+/* Camera Mode setting (Camera.asm entry_camera_mode), gm/gmremixcameramode.c: gmRemixCameraSetupDefault runs before the stage
+ * switch of gmCameraMakeDefaultCamera (set_initial_coordinates_), gmRemixCameraApplyFixedRun after the status routine is
  * chosen (get_custom_camera_), gmRemixCameraSetStatusIsFrozen in gmCameraSetStatus (fixed_camera_always_),
  * gmRemixCameraFreezeUpdate replaces the vector add of the four camera updates (frozen_camera_), gmRemixCameraIsFixed skips
  * gcPlayCamAnim (fixed_camera_boss_), gmRemixCameraCinematicFocus is the countdown focus (cinematic_entry_), and the pause

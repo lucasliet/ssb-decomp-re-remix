@@ -11,8 +11,9 @@
 #include <stdint.h>
 #include <sys/objtypes.h>
 
-/* Hazards.asm: Toggles.entry_hazard_mode only applies on the VS and Training screens; bit 0 turns the hazards off,
- * bit 1 the movement. */
+/* Toggles.entry_hazard_mode: bit 0 turns the hazards off, bit 1 the movement. Only the vanilla hazard_toggle macro
+ * (Hazards.asm:34-70) and the surface knockback (Surface.asm:262-270) test the VS and Training screens; the Remix stage
+ * setups read the toggle on every screen. The port applies the screen gate to all of them (deviations.md). */
 static s32 grRemixHazardsMode(void)
 {
     s32 scene = gSCManagerSceneData.scene_curr;

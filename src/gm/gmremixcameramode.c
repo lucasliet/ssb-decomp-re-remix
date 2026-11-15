@@ -41,6 +41,18 @@ typedef struct GMRemixCameraStageParams
 
 extern void (*dGMCameraFuncList[])(GObj *camera_gobj);
 
+/* The vanilla dGMCameraFuncList (0x8012EBB4), which the N64 reloads with ovl2 at every scene start */
+static void (*const sGMRemixCameraVanillaFuncList[])(GObj *camera_gobj) =
+{
+    gmCameraDefaultFuncCamera,
+    gmCameraPlayerZoomFuncCamera,
+    gmCameraAnimFuncCamera,
+    gmCameraInishieFuncCamera,
+    gmCameraMapZoomFuncCamera,
+    gmCameraPlayerFollowFuncCamera,
+    gmCameraZebesFuncCamera
+};
+
 /* Camera.asm frozen_camera_ and fixed_camera_always_ (frozen views, the stages that always use them) */
 static const GMRemixCameraParams sGMRemixCameraFrozenWorld1 = { { 0.0F, -100.0F, 6600.0F }, { 0.0F, -100.0F, 0.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
 static const GMRemixCameraParams sGMRemixCameraFrozenFlatZone = { { 0.0F, -100.0F, 6600.0F }, { 0.0F, -100.0F, 0.0F }, GM_REMIX_CAMERA_FOV_DEFAULT };
@@ -258,6 +270,20 @@ static void gmRemixCameraSetupFixedView(CObj *cobj, s32 stage)
 }
 
 /**
+ * Puts the vanilla routines back in dGMCameraFuncList. The N64 gets this from the ovl2 reload of every scene
+ * (scmanager.c), which the port does not do, so a BONUS or SCENE match would otherwise leak into the next one.
+ */
+static void gmRemixCameraRestoreFuncList(void)
+{
+    s32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sGMRemixCameraVanillaFuncList); i++)
+    {
+        dGMCameraFuncList[i] = sGMRemixCameraVanillaFuncList[i];
+    }
+}
+
+/**
  * Bonus mode routines (Camera.asm _bonus_cam): the default and Planet Zebes routines become the Mushroom Kingdom one.
  */
 static void gmRemixCameraUseInishieRoutines(void)
@@ -290,13 +316,16 @@ sb32 gmRemixCameraIsScene(void)
 }
 
 /**
- * Sets the battle camera view and routines of a default-branch camera (Camera.asm set_initial_coordinates_). Runs before
- * the Remix status of the stage is chosen, because the routine table it edits is read there.
+ * Sets the battle camera view and routines of every stage (Camera.asm set_initial_coordinates_, hooked at 0x8010DA8C
+ * before the Zebes / Mushroom Kingdom switch). Runs before the status of the stage is chosen, because the routine table
+ * it edits is read there.
  */
 void gmRemixCameraSetupDefault(CObj *cobj)
 {
     s32 mode = gmRemixCameraModeToggle();
     s32 stage = gSCManagerBattleState->gkind;
+
+    gmRemixCameraRestoreFuncList();
 
     if (mode == nGMRemixCameraModeNormal)
     {
@@ -322,7 +351,7 @@ void gmRemixCameraSetupDefault(CObj *cobj)
 /**
  * Makes the Fixed mode battle camera run the anim routine (Camera.asm get_custom_camera_, which replaces the routine read
  * of gmCameraRunFuncCamera). Status changes are blocked in Fixed mode (gmRemixCameraSetStatusIsFrozen), so the routine
- * stays the anim one. Zebes, Mushroom Kingdom and HRC never get it (their setup does not run in Camera.asm).
+ * stays the anim one. HRC never gets it (Camera.asm _fixed_cam skips HRC).
  */
 void gmRemixCameraApplyFixedRun(s32 gkind)
 {
@@ -330,7 +359,7 @@ void gmRemixCameraApplyFixedRun(s32 gkind)
     {
         return;
     }
-    if ((gkind == nGRKindZebes) || (gkind == nGRKindInishie) || (gkind == nGRRemixStage_HRC))
+    if (gkind == nGRRemixStage_HRC)
     {
         return;
     }

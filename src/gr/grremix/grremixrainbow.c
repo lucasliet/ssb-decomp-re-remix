@@ -221,15 +221,16 @@ static void grRemixRainbowChompProcUpdate(GObj *chomp_gobj)
 }
 
 /**
- * Entry point of the Rainbow Road setup: stage file pointers, the Chain Chomp (when hazards are on) and the stage sound
- * (when movement is on). State is cleared on every setup.
+ * Entry point of the Rainbow Road setup: stage file pointers, the Chain Chomp (when both hazards and movement are on) and
+ * the stage sound (when movement is on). State is cleared on every setup.
  */
 void grRemixRainbowSetup(void)
 {
     sRainbow = (GRRemixRainbowState) { 0 };
     sRainbow.chomp_file = grRemixRainbowReadStageFile(GRREMIX_RAINBOW_STAGE_OFFSET_CHOMP_FILE);
     sRainbow.hitbox_file = grRemixRainbowReadStageFile(GRREMIX_RAINBOW_STAGE_OFFSET_HITBOX_FILE);
-    if (grRemixHazardsAreOn())
+    /* Hazards.asm:5661 rainbow_road_setup tests the whole hazard_mode with bnez, so MOVEMENT OFF also drops the chomp */
+    if ((grRemixHazardsAreOn() != FALSE) && (grRemixMovementIsOn() != FALSE))
     {
         grRemixRainbowChompCreate();
     }

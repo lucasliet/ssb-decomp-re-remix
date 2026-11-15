@@ -1275,6 +1275,9 @@ GObj* gmCameraMakeDefaultCamera(u8 tk1, u8 tk2, void (*proc)(GObj*))
 
     gGMCameraStruct.vel_at.x = gGMCameraStruct.vel_at.y = gGMCameraStruct.vel_at.z = 0;
 
+#ifdef REGION_REMIX
+    gmRemixCameraSetupDefault(cobj);
+#endif
     switch (gSCManagerBattleState->gkind)
     {
     case nGRKindZebes:
@@ -1287,7 +1290,6 @@ GObj* gmCameraMakeDefaultCamera(u8 tk1, u8 tk2, void (*proc)(GObj*))
 
     default:
 #ifdef REGION_REMIX
-        gmRemixCameraSetupDefault(cobj);
         gGMCameraStruct.status_curr = grRemixCameraDefaultStatus(gSCManagerBattleState->gkind);
 #else
         gGMCameraStruct.status_curr = nGMCameraStatusDefault;

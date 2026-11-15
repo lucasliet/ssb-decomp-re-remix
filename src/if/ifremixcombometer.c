@@ -9,6 +9,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "if/ifremixcombometer.h"
+#include "if/ifremixdragonkinghud.h"
 #include "if/interface.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixtoggle.h"
@@ -37,8 +38,6 @@ extern void portFixupSpriteBitmapData(void *sprite, void *bitmaps);
 #define IFREMIX_COMBO_TEXT_SPRITE_OFFSET 0x0818
 #define IFREMIX_COMBO_NUMBER_SPRITE_OFFSET 0x2BF8
 #define IFREMIX_COMBO_PLAYER_MAX_PKIND 2
-#define IFREMIX_COMBO_DK_HUD_ALWAYS 1
-#define IFREMIX_COMBO_DK_HUD_OFF 2
 #define IFREMIX_COMBO_X_OFFSET (-45.0F)
 #define IFREMIX_COMBO_NUMBERS_X_OFFSET 64.0F
 #define IFREMIX_COMBO_NUMBER_X_STEP 9.0F
@@ -94,24 +93,13 @@ static sb32 ifRemixComboIsSetupScene(void)
     return (scene == nSCKindVSBattle) || (scene == nSCKind1PGame);
 }
 
-/** Y coordinate of the meter: the Dragon King HUD setting, and on the default setting the Dragon King stages. */
+/**
+ * Y coordinate of the meter: the low one when the Dragon King HUD applies to the current battle stage
+ * (ComboMeter.asm reads the stage of Global.match_info, gSCManagerBattleState, in VS and in 1P).
+ */
 static f32 ifRemixComboGetYCoord(void)
 {
-    s32 setting = gmRemixToggle(dragon_king_hud);
-
-    if (setting == IFREMIX_COMBO_DK_HUD_OFF)
-    {
-        return IFREMIX_COMBO_Y_COORD;
-    }
-    if (setting == IFREMIX_COMBO_DK_HUD_ALWAYS)
-    {
-        return IFREMIX_COMBO_DK_Y_COORD;
-    }
-    if ((gSCManagerSceneData.gkind == nGRRemixStage_DRAGONKING) || (gSCManagerSceneData.gkind == nGRRemixStage_DRAGONKING_REMIX))
-    {
-        return IFREMIX_COMBO_DK_Y_COORD;
-    }
-    return IFREMIX_COMBO_Y_COORD;
+    return (ifRemixDragonKingHudIsOn() != FALSE) ? IFREMIX_COMBO_DK_Y_COORD : IFREMIX_COMBO_Y_COORD;
 }
 
 /**
