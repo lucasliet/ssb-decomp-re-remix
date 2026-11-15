@@ -45,6 +45,36 @@ static sb32 sSC1PTrainingRemixIsAdvancing;
 static s32 sSC1PTrainingRemixResetCount;
 static u32 sSC1PTrainingRemixPlayedBGM;
 
+/* Training.asm special_model_display: the Special Model Display value on entry from the stage select, -1 once restored */
+static s32 sSC1PTrainingRemixSavedModelDisplay = -1;
+static sb32 sSC1PTrainingRemixSavedModelIsRuntime;
+
+/** Remembers the Special Model Display value on entry from the stage select (Training.asm load_from_sss_). */
+static void sc1PTrainingRemixSaveModelDisplay(void)
+{
+    s32 runtime_value;
+
+    sSC1PTrainingRemixSavedModelDisplay = gmRemixToggle(special_model);
+    sSC1PTrainingRemixSavedModelIsRuntime = remix_toggle_get_runtime(REMIX_SYM_Toggles__entry_special_model, &runtime_value);
+}
+
+void sc1PTrainingRemixRestoreModelDisplay(void)
+{
+    if (sSC1PTrainingRemixSavedModelDisplay < 0)
+    {
+        return;
+    }
+    if (sSC1PTrainingRemixSavedModelIsRuntime != FALSE)
+    {
+        remix_toggle_set_runtime(REMIX_SYM_Toggles__entry_special_model, sSC1PTrainingRemixSavedModelDisplay);
+    }
+    else
+    {
+        remix_toggle_clear_runtime(REMIX_SYM_Toggles__entry_special_model);
+    }
+    sSC1PTrainingRemixSavedModelDisplay = -1;
+}
+
 void sc1PTrainingRemixStartScene(sb32 is_reset)
 {
     sSC1PTrainingRemixIsFrozen = FALSE;
@@ -57,6 +87,7 @@ void sc1PTrainingRemixStartScene(sb32 is_reset)
     if (is_reset == FALSE)
     {
         sSC1PTrainingRemixResetCount = 0;
+        sc1PTrainingRemixSaveModelDisplay();
     }
 }
 
@@ -90,11 +121,12 @@ static sb32 sc1PTrainingRemixIsDpadRightRepeated(void)
     return ((repeats & R_JPAD) != 0) ? TRUE : FALSE;
 }
 
+/** D-pad down: next Special Model Display value, for this run only (Training.asm _check_dd writes the RAM entry). */
 static void sc1PTrainingRemixCycleModelDisplay(void)
 {
     s32 value = (gmRemixToggle(special_model) + 1) % SC1PTRAININGREMIX_MODEL_DISPLAY_COUNT;
 
-    remix_toggle_set(REMIX_SYM_Toggles__entry_special_model, value);
+    remix_toggle_set_runtime(REMIX_SYM_Toggles__entry_special_model, value);
 }
 
 sb32 sc1PTrainingRemixPollDpad(void)

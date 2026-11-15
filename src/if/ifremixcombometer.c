@@ -12,6 +12,7 @@
 #include "if/interface.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixsmashketball.h"
 #include <ft/fighter.h>
 #include <gr/grremix/grremixids.h>
 #include <lb/lbcommon.h>
@@ -128,12 +129,29 @@ static f32 ifRemixComboGetXCoord(s32 port)
     return (f32)positions[port] + IFREMIX_COMBO_X_OFFSET;
 }
 
-/** Resets every meter for a new match. The colour and attribution fields are kept, as the asm keeps them. */
+/** Clears the combo records of a meter: max hits, max damage taken and the highest combo dealt to each port. */
+static void ifRemixComboResetRecords(IFRemixComboMeter *meter)
+{
+    s32 k;
+
+    meter->max_combo_hits = 0;
+    meter->max_combo_damage = 0;
+    for (k = 0; k < GMCOMMON_PLAYERS_MAX; k++)
+    {
+        meter->highest_combo_vs[k] = 0;
+    }
+}
+
+/**
+ * Resets every meter for a new match or a sudden death. The colour and attribution fields are kept, as the asm keeps
+ * them. The combo records are kept in a Smashketball overtime (ComboMeter.asm initialize_combo_structs_, the
+ * vs_mode_flag SMASHKETBALL and is_suddendeath check before _reset_combo_stats).
+ */
 static void ifRemixComboInitMeters(void)
 {
     s32 port;
-    s32 k;
     f32 y_coord = ifRemixComboGetYCoord();
+    sb32 is_keep_records = gmRemixSmashketballKeepsMatchStats();
 
     for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
     {
@@ -145,11 +163,9 @@ static void ifRemixComboInitMeters(void)
         meter->frame_buffer = 0;
         meter->x_coord = ifRemixComboGetXCoord(port);
         meter->y_coord = y_coord;
-        meter->max_combo_hits = 0;
-        meter->max_combo_damage = 0;
-        for (k = 0; k < GMCOMMON_PLAYERS_MAX; k++)
+        if (is_keep_records == FALSE)
         {
-            meter->highest_combo_vs[k] = 0;
+            ifRemixComboResetRecords(meter);
         }
     }
 }
@@ -420,8 +436,9 @@ static void ifRemixComboDrawMeter(IFRemixComboMeter *meter, s32 victim)
 }
 
 /**
- * Setup of the combo meters for a match (asm ComboMeter.setup_, called from the scene load). Does nothing when the
- * setting is off or the scene is not a VS or 1P battle.
+ * Setup of the combo meters for a match or a sudden death (asm ComboMeter.setup_, called by Render.asm setup_ after the
+ * scene's func_start, so the fighters and the HUD positions exist). Does nothing when the setting is off or the scene is
+ * not a VS or 1P battle.
  */
 void ifRemixComboMeterSetup(void)
 {

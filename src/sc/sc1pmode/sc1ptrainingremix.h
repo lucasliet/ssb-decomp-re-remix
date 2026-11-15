@@ -13,6 +13,13 @@
 /** Starts a training scene: the match is not frozen, and the reset count restarts unless the scene was loaded by a reset. */
 extern void sc1PTrainingRemixStartScene(sb32 is_reset);
 
+/**
+ * Puts back the Special Model Display value Training started with, after the D-pad down changed it for the run
+ * (CharacterSelect.asm setup_ _begin restores Training.special_model_display on every character select). Does nothing
+ * when no Training ran since the last restore.
+ */
+extern void sc1PTrainingRemixRestoreModelDisplay(void);
+
 /** Counts a reset of the match (the D-pad shortcut and the pause menu option). */
 extern void sc1PTrainingRemixOnReset(void);
 

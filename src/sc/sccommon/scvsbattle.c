@@ -295,7 +295,6 @@ void scVSBattleStartBattle(void)
 
 	scVSBattleSetupFiles();
 #ifdef REGION_REMIX
-	ifRemixComboMeterSetup();
 	ifRemixAnnouncerSetup();
 #endif
 
@@ -407,6 +406,10 @@ void scVSBattleStartBattle(void)
 	color = dSCVSBattleCommonFadeColor;
 
 	lbFadeMakeActor(nGCCommonKindTransition, nGCCommonLinkIDTransition, 10, &color, 12, TRUE, NULL);
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Render.asm setup_ runs ComboMeter.setup_ after func_start returns, once the fighters and the HUD exist */
+	ifRemixComboMeterSetup();
+#endif
 }
 
 // 0x8018D5E0 - Sort time battle winners and check for sudden death
@@ -705,6 +708,10 @@ void scVSBattleStartSuddenDeath(void)
 	color = dSCVSBattleSuddenDeathFadeColor;
 
 	lbFadeMakeActor(nGCCommonKindTransition, nGCCommonLinkIDTransition, 10, &color, 12, TRUE, NULL);
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Render.asm setup_ runs at every scene load, the sudden death one included */
+	ifRemixComboMeterSetup();
+#endif
 }
 
 // 0x8018E144

@@ -2713,7 +2713,6 @@ void sc1PGameFuncStart(void)
     sc1PGameSetupStageAll();
     sc1PGameSetupFiles();
 #ifdef REGION_REMIX
-    ifRemixComboMeterSetup();
     ifRemixAnnouncerSetup();
     sc1PRemixMultimanSetupHud();
 #endif
@@ -2983,6 +2982,10 @@ void sc1PGameFuncStart(void)
 
     color = dSC1PGameFadeColor;
     lbFadeMakeActor(nGCCommonKindTransition, nGCCommonLinkIDTransition, 10, &color, 12, TRUE, NULL);
+#if defined(PORT) && defined(REGION_REMIX)
+    /* Render.asm setup_ runs ComboMeter.setup_ after func_start returns, once the fighters and the HUD exist */
+    ifRemixComboMeterSetup();
+#endif
 }
 
 // 0x8018FD5C

@@ -28,6 +28,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixbonusmodes.h"
 #include "mn/mnplayers/mnremixcssbonus.h"
 #include "mn/mnplayers/mnremixcssindicators.h"
+#include "sc/sc1pmode/sc1ptrainingremix.h"
 #include "mn/mnplayers/mnremixcssrandom.h"
 #include "mn/mnplayers/mnremixcssrandomtoken.h"
 #include "mn/mnplayers/mnremixcssslide.h"
@@ -3795,6 +3796,10 @@ void mnPlayers1PTrainingFuncStart(void)
 	s32 unused2;
 	s32 i, j;
 
+#if defined(PORT) && defined(REGION_REMIX)
+	/* CharacterSelect.asm setup_ _begin: every character select puts back the Special Model Display Training started with */
+	sc1PTrainingRemixRestoreModelDisplay();
+#endif
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
 	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
