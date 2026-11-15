@@ -5742,9 +5742,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         fp->proc_interrupt = status_struct[status_struct_id].proc_interrupt;
         fp->proc_physics = status_struct[status_struct_id].proc_physics;
 #if defined(PORT) && defined(REGION_REMIX)
-        if (status_struct == dFTCommonNullStatusDescs)
+        if (status_struct == dFTCommonActionStatusDescs)
         {
-            ftRemixAerialFastFallSetPhysics(fp, status_struct_id);
+            ftRemixAerialFastFallSetPhysics(fp, status_id);
         }
 #endif
         fp->proc_map = status_struct[status_struct_id].proc_map;

@@ -541,7 +541,7 @@ void efRemixBlastZoneScaleParticle(LBTransform *xf);
  * in, TRUE when it is kept) and the crate sound of itBoxCommonCheckSpawnItems */
 void itRemixContainersApplyToggle(void);
 sb32 itRemixContainerKeeps(sb32 is_spawned);
-s32 itRemixContainerSmashFgm(void);
+s32 itRemixContainerOpenFgm(void);
 
 /* Pokemon item picker (Toggles.asm entry_pokemon_*), it/itremix/itremixpokemonpicker.c: whos_that_pokemon replaces the Mew
  * check and roll of itMainMakeMonster (the caller keeps the vanilla vel setup and tail), whos_that_pokemon_setup replaces

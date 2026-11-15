@@ -105,15 +105,16 @@ sb32 itRemixContainerKeeps(sb32 is_spawned)
     }
 }
 
-/* Item.asm item_containers_explosions crate_throw_sfx (0x801795F8, itBoxCommonCheckSpawnItems): the sound of a crate
- * that is hit. ALL_EXPLODE plays the explosion (fgm 1, nSYAudioFGMExplodeL), otherwise the vanilla crate open. */
-s32 itRemixContainerSmashFgm(void)
+/* Item.asm item_containers_explosions crate_throw_sfx (0x801795F8, itBoxCommonCheckSpawnItems): the second sound of a
+ * crate, played on the success path once its items are made. ALL_EXPLODE plays the explosion (fgm 1,
+ * nSYAudioFGMExplodeL), otherwise the vanilla crate open 2 (fgm 0x3C). The first crate sound (0x3B) is not patched. */
+s32 itRemixContainerOpenFgm(void)
 {
     if (gmRemixToggle(item_containers) == ITREMIX_CONTAINERS_ALL_EXPLODE)
     {
         return nSYAudioFGMExplodeL;
     }
-    return nSYAudioFGMContainerSmash;
+    return nSYAudioFGMFireFlowerShoot;
 }
 
 #endif

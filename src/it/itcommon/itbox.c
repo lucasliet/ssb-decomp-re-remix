@@ -259,11 +259,7 @@ sb32 itBoxCommonCheckSpawnItems(GObj *item_gobj)
     s32 item_count;
     Vec3f vel_different;
 
-#ifdef REGION_REMIX
-    func_800269C0_275C0(itRemixContainerSmashFgm());
-#else
     func_800269C0_275C0(nSYAudioFGMContainerSmash);
-#endif
 
     itBoxContainerSmashMakeEffect(&DObjGetStruct(item_gobj)->translate.vec.f);
 
@@ -334,7 +330,11 @@ sb32 itBoxCommonCheckSpawnItems(GObj *item_gobj)
                 gITManagerRandomWeights.valids_num++;
                 gITManagerRandomWeights.weights_sum = weights_sum;
             }
+#ifdef REGION_REMIX
+            func_800269C0_275C0(itRemixContainerOpenFgm());
+#else
             func_800269C0_275C0(nSYAudioFGMFireFlowerShoot);
+#endif
 
             return TRUE;
         }
