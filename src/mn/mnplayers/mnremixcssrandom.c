@@ -14,6 +14,7 @@
 #include "mn/mnplayers/mnremixcssrandom.h"
 #include "mn/mnplayers/mnremixcssrules.h"
 #include "mn/mnplayers/mnremixcssslide.h"
+#include "mn/mnplayers/mnremixvariants.h"
 
 /* The recent randoms live as long as the session, like the asm table in Remix RAM. */
 static MNRemixCssRecentRandoms sMNRemixCssRecentRandoms[MNREMIX_CSS_RANDOM_PLAYERS];
@@ -77,7 +78,7 @@ sb32 mnRemixCssRandomKeepRoll(s32 port, s32 fkind)
     recent = &sMNRemixCssRecentRandoms[port];
     dice_range = mnRemixCssRecentRandomsDiceRange(mnRemixCssRecentRandomsStore(recent, fkind));
 
-    if ((dice_range != 0) && (syUtilsRandIntRange(dice_range) != 0))
+    if ((dice_range != 0) && (mnRemixRandomIntSafe(dice_range) != 0))
     {
         return FALSE;
     }

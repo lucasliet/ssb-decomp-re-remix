@@ -6,8 +6,12 @@
 
 #include "mn/mnplayers/mnremixtwelvecbcustom.h"
 #include "mn/mnplayers/mnremixtwelvecblayout.h"
+#include "remix/remix_roster_data.h"
 
 #define CUSTOM_PLAYERS 2
+#define RANDOM_SELECT_DEFAULT 0
+#define RANDOM_SELECT_ALL_VARIANTS 2
+#define RANDOM_SELECT_VANILLA 3
 
 static int sCustomFkinds[CUSTOM_PLAYERS][MNREMIX_TCB_CUSTOM_ENTRIES];
 static int sCustomPresetIndex[CUSTOM_PLAYERS];
@@ -164,6 +168,43 @@ void mnRemixTwelveCBCustomCopyOpponent(int player)
     {
         sCustomFkinds[player][index] = sCustomFkinds[player ^ 1][index];
     }
+}
+
+static int randomIsNeverRolled(int id)
+{
+    /* The asm skips its PLACEHOLDER (0x1B) test (commented out); the port never rolls the Random "?" fighter. */
+    return (id == REMIX_ID_BOSS) || (id == REMIX_ID_SANDBAG) || (id == REMIX_ID_NONE) || (id == REMIX_ID_RANDOM);
+}
+
+static int randomIsBonusFighter(int id, int variant_type)
+{
+    if (variant_type != REMIX_VARIANT_SPECIAL)
+    {
+        return 0;
+    }
+    return (id != REMIX_ID_METAL) && (id != REMIX_ID_GDONKEY) && (id != REMIX_ID_GBOWSER) && (id != REMIX_ID_SSONIC) &&
+           (id != REMIX_ID_MLUIGI);
+}
+
+int mnRemixTwelveCBCustomRandomIsKept(int id, int random_select, int variant_type)
+{
+    if (randomIsNeverRolled(id) != 0)
+    {
+        return 0;
+    }
+    if (random_select == RANDOM_SELECT_ALL_VARIANTS)
+    {
+        return 1;
+    }
+    if (random_select == RANDOM_SELECT_VANILLA)
+    {
+        return id <= REMIX_ID_NESS;
+    }
+    if (variant_type == REMIX_VARIANT_NA)
+    {
+        return 1;
+    }
+    return (random_select != RANDOM_SELECT_DEFAULT) && (randomIsBonusFighter(id, variant_type) != 0);
 }
 
 void mnRemixTwelveCBCustomRandomize(int player, int (*pick)(void))

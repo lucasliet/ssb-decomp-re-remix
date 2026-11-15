@@ -58,19 +58,6 @@ extern int gmRemixTagTeamRulesIconSlot(int base_slot, int icon_count, int positi
  */
 extern int gmRemixTagTeamRulesNeedsSwap(int queue_fkind, int queue_costume, int queue_shade, int queue_is_classic, int current_fkind, int current_costume, int current_shade, int current_is_classic);
 
-/** Number of fighters a Random slot can pick. */
-extern int gmRemixTagTeamRulesRandomCount(void);
-
-/**
- * Fighter of a Random slot for a random index, the index is clamped to the Random list (below 0 gives the first fighter,
- * past the end gives the last one).
- *
- * random_index: index from 0 to gmRemixTagTeamRulesRandomCount() - 1, usually from syUtilsRandIntRange.
- *
- * Returns the fkind of the fighter.
- */
-extern int gmRemixTagTeamRulesRandomFighter(int random_index);
-
 #endif
 
 #endif

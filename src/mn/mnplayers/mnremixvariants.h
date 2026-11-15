@@ -7,6 +7,7 @@
 
 #define MNREMIX_VARIANT_SLOT_COUNT 4
 
+extern s32 mnRemixRandomIntSafe(s32 range);
 extern void mnRemixVariantHandleInput(s32 held_player, u16 button_tap);
 extern s32 mnRemixRandomResolveFighterKind(s32 fkind);
 extern s32 mnRemixRandomPickFighterKind(void);

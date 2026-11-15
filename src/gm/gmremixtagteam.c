@@ -12,7 +12,6 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include <sys/objman.h>
-#include <sys/utils.h>
 #include <wp/weapon.h>
 #include "fighter_registry.h"
 #include "gm/gmremixmode.h"
@@ -23,6 +22,7 @@
 #include "gm/gmremixtagteamrules.h"
 #include "if/ifremixtagteamhud.h"
 #include "mn/mnplayers/mnremixcostumes.h"
+#include "mn/mnplayers/mnremixcssrandomtoken.h"
 #include "mn/mnplayers/mnremixtagteamcss.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_modes.h"
@@ -68,9 +68,16 @@ sb32 gmRemixTagTeamIsActive(void)
     return gmRemixModeIs(MNREMIX_VSMODE_TAG_TEAM);
 }
 
-static s32 gmRemixTagTeamPickRandomFighter(void)
+/** TagTeam.asm start_match_setup_ calls get_random_char_id_ with no lock check: every fighter of the pool is allowed. */
+static sb32 gmRemixTagTeamIsFighterUnavailable(s32 fkind)
 {
-    return gmRemixTagTeamRulesRandomFighter(syUtilsRandIntRange(gmRemixTagTeamRulesRandomCount()));
+    return FALSE;
+}
+
+/** Rolls a Random queue slot of a port like the CSS Random (get_random_char_id_ with placeholder_port set). */
+static s32 gmRemixTagTeamPickRandomFighter(s32 port)
+{
+    return mnRemixCssRandomTokenRoll(port, gmRemixTagTeamIsFighterUnavailable);
 }
 
 /* Team battle: the team costume of the fighter. FFA: a Random slot gets a random legal costume (Costumes.get_random_legal_costume_), a menu slot the default one. */
@@ -151,7 +158,7 @@ static void gmRemixTagTeamFillMenuSlot(s32 port, s32 slot)
 
     if (is_random != FALSE)
     {
-        fkind = gmRemixTagTeamPickRandomFighter();
+        fkind = gmRemixTagTeamPickRandomFighter(port);
     }
     queue_slot->fkind = fkind;
     queue_slot->costume = ((is_css_pick != FALSE) && (gSCManagerBattleState->is_team_battle == FALSE)) ? css_costume : gmRemixTagTeamGetCostume(port, fkind, is_random);

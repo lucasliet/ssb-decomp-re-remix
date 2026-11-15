@@ -61,6 +61,18 @@ extern void mnRemixTwelveCBCustomPreset(int player);
 extern void mnRemixTwelveCBCustomCopyOpponent(int player);
 
 /**
+ * TRUE when a roll of the Custom set randomize keeps the Remix id (TwelveCharBattle.asm get_random_char_id_): never the Master
+ * Hand, the Sandbag, NONE or the Random placeholder; then by the Random Select setting, 2 (all variants) keeps any id, 3 (vanilla)
+ * the ids up to Ness, 0 (default) only fighters that are not variants and 1 (include bonus) also the Special variants but
+ * Metal Mario, Giant DK, Giant Bowser, Super Sonic and Metal Luigi.
+ *
+ * @param id Remix id rolled over every character id.
+ * @param random_select Value of the Random Select toggle (Toggles.entry_variant_random).
+ * @param variant_type Variant type of the id (Character.variant_type.table, REMIX_VARIANT_*).
+ */
+extern int mnRemixTwelveCBCustomRandomIsKept(int id, int random_select, int variant_type);
+
+/**
  * D-pad down: every portrait of the player takes a random character.
  *
  * @param pick Returns a fighter kind each call.

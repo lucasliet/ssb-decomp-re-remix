@@ -8,6 +8,7 @@
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixids.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "sc/sc1pmode/sc1premixhrc.h"
 #include <sc/sctypes.h>
 #endif
 extern void func_800267F4_273F4(void *arg0);
@@ -773,11 +774,12 @@ alSoundEffect* lbCommonMakePositionFGM(u16 fgm, f32 pos)
          * bug), we deviate from ROM-matching here. */
         balance = 64 + balance;
 #ifdef REGION_REMIX
-        /* Stereo.asm fix_sfx_pan_: the Sector Z Remix platform sits at the far right, so its hit sounds are centered
-         * (the Home-Run Contest case belongs to the 1P modes, ROADMAP T6.2). */
-        if (gSCManagerBattleState->gkind == nGRRemixStage_SECTOR_Z_REMIX)
+        /* Stereo.asm fix_sfx_pan_: the Sector Z Remix platform sits at the far right and the Home-Run Contest one at
+         * the far left, so their sounds drop the positional pan. 0x80 is the siz34 0x2F "no pan override" value
+         * (n_env.c reads 0x23, the sound's own pan, instead), as the asm stores. */
+        if ((gSCManagerBattleState->gkind == nGRRemixStage_SECTOR_Z_REMIX) || (sc1PRemixHrcIsActive() != FALSE))
         {
-            balance = 64;
+            balance = 0x80;
         }
 #endif
 #else

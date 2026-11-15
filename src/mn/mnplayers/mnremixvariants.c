@@ -26,6 +26,10 @@
 #define MNREMIX_VARIANT_MASTER_HAND_TAG 20
 #define MNREMIX_RANDOM_ALL_VARIANTS 2
 #define MNREMIX_RANDOM_VANILLA 3
+#define MNREMIX_RANDOM_SAFE_FRAME_MASK 0x3F
+
+/* Global.frame_counter (0x8003CB30) is the audio tic counter dSYAudioCurrentTic of sys/audio.c. */
+extern s32 dSYAudioCurrentTic;
 
 static u8 sMNRemixVariantOffsets[MNREMIX_VARIANT_PLAYERS_MAX];
 
@@ -90,6 +94,21 @@ s32 mnRemixVariantGetOffset(s32 held_player)
     return sMNRemixVariantOffsets[held_player];
 }
 
+/**
+ * Random int from 0 to range - 1 like Global.get_random_int_safe_ (Global.asm:248-277): the game RNG is advanced 1 to 64
+ * times by the frame counter first, so menu rolls depend on when the player presses.
+ */
+s32 mnRemixRandomIntSafe(s32 range)
+{
+    s32 advances = (dSYAudioCurrentTic & MNREMIX_RANDOM_SAFE_FRAME_MASK) + 1;
+
+    while (advances-- > 0)
+    {
+        syUtilsRandUShort();
+    }
+    return syUtilsRandIntRange(range);
+}
+
 /** Variant of `fkind` in D-pad slot `slot` (1 up, 2 down, 3 left, 4 right), or `fkind` when it has none. */
 s32 mnRemixVariantLookup(s32 fkind, s32 slot)
 {
@@ -126,7 +145,7 @@ s32 mnRemixRandomResolveFighterKind(s32 fkind)
     switch (gmRemixToggle(variant_random))
     {
     case MNREMIX_RANDOM_ALL_VARIANTS:
-        return mnRemixVariantLookup(fkind, syUtilsRandTimeUCharRange(MNREMIX_VARIANT_SLOTS + 1));
+        return mnRemixVariantLookup(fkind, mnRemixRandomIntSafe(MNREMIX_VARIANT_SLOTS + 1));
 
     case MNREMIX_RANDOM_VANILLA:
         return (fkind <= nFTKindNess) ? fkind : nFTKindNull;
@@ -143,7 +162,8 @@ s32 mnRemixRandomResolveFighterKind(s32 fkind)
  */
 s32 mnRemixRandomPickFighterKind(void)
 {
-    s32 index = syUtilsRandTimeUCharRange(mnRemixCssRandomPoolSize(gmRemixToggle(variant_random), REMIX_CSS_NUM_SLOTS));
+    /* CharacterSelect.asm:1167 draws with Global.get_random_int_safe_ (game RNG), not the clock: Tag Team rolls 20 slots in one frame. */
+    s32 index = mnRemixRandomIntSafe(mnRemixCssRandomPoolSize(gmRemixToggle(variant_random), REMIX_CSS_NUM_SLOTS));
     s32 base = (mnRemixCssRandomPoolIsBonus(index, REMIX_CSS_NUM_SLOTS) != 0) ? kRemixCssBonusIds[index - REMIX_CSS_NUM_SLOTS] : kRemixCssSlotIds[index];
 
     return mnRemixRandomResolveFighterKind(base);

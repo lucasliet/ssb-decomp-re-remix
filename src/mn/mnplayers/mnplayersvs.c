@@ -989,15 +989,19 @@ static s32 mnPlayersVSTwelveCBGetRosterCount(void)
 	return sMNPlayersVSTwelveCBRosterCount;
 }
 
+/**
+ * One portrait of the Custom set randomize (TwelveCharBattle.asm get_random_char_id_): a roll over every character id with
+ * Global.get_random_int_safe_ (game RNG mixed with the frame counter); the clock-based roll gives twelve near-equal ids within one frame.
+ */
 static int mnPlayersVSTwelveCBPickRandomFkind(void)
 {
 	s32 fkind;
 
 	do
 	{
-		fkind = mnRemixRandomResolveFighterKind(kRemixCssSlotIds[syUtilsRandTimeUCharRange(REMIX_CSS_NUM_SLOTS)]);
+		fkind = mnRemixRandomIntSafe(REMIX_CSS_NUM_CHARACTERS);
 	}
-	while ((fkind == nFTKindNull) || (fkind == MNPLAYERSVS_TWELVECB_SANDBAG));
+	while (mnRemixTwelveCBCustomRandomIsKept(fkind, gmRemixToggle(variant_random), kRemixRoster[fkind].variant_type) == 0);
 
 	return fkind;
 }

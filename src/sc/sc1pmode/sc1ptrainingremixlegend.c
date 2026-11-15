@@ -7,7 +7,6 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "gm/gmremixgroupdisplay.h"
-#include "gm/gmremixtoggle.h"
 #include "if/ifremixsprite.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_training.h"
@@ -78,14 +77,13 @@ void sc1PTrainingRemixLegendMake(void)
     sc1PTrainingRemixExitMakeLegend();
 }
 
-/* The prompt shows on the pause, with the HUD on, until the Z menu is opened (the normal menu group is hidden then). */
+/*
+ * The prompt shows on the pause until the Z menu is opened (the normal menu group is hidden then). Training.asm toggles
+ * its group 0xE only by menu state; Disable HUD hides the pause legends only on the VS pause (Pause.asm disable_hud_).
+ */
 static sb32 sc1PTrainingRemixLegendIsPromptShown(void)
 {
     if (gSCManagerBattleState->game_status != nSCBattleGameStatusPause)
-    {
-        return FALSE;
-    }
-    if (gmRemixToggle(disable_hud) != 0)
     {
         return FALSE;
     }
