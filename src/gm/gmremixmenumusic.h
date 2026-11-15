@@ -28,6 +28,19 @@ void gmRemixMenuMusicStop(void);
  */
 void gmRemixMenuMusicAudition(void);
 
+/**
+ * Leaving the Remix settings (Toggles.asm _exit_sub_menu, Play Music half): on a menu screen, Play Music OFF stops the menu
+ * track and Play Music ON with nothing playing restarts it, as play_menu_music_ with v0 = 0 does. The port menu calls it when
+ * it closes, after the Random Music preview is restored.
+ */
+void gmRemixMenuMusicSettingsClosed(void);
+
+/**
+ * An A press on BGM Volume (Toggles.asm update_bgm_volume): on a menu screen with Play Music ON and nothing playing, restarts
+ * the menu music.
+ */
+void gmRemixMenuMusicVolumeApplied(void);
+
 #endif
 
 #endif

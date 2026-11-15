@@ -10,6 +10,7 @@
 
 #include "gm/gmremixmusictitle.h"
 #include "gm/gmremixtoggle.h"
+#include <mp/map.h>
 #include <sys/audio.h>
 #include <sys/objman.h>
 #include "remix/remix_hud_text.h"
@@ -51,6 +52,23 @@ static void gmRemixMusicTitleProcUpdate(GObj *gobj)
                        REMIX_HUD_ALIGN_CENTER);
 }
 
+/**
+ * Looks up the banner title. BGM.asm show_music_title_ reads the stage bgm_id (gMPCollisionGroundData->bgm_id), which also
+ * covers the 1P stages whose song only starts at GO. The port first tries the track playing, so a track the Shuffle Music
+ * enhancement swapped in gets its own title, and falls back to bgm_id when that track has no title (nothing playing, or the
+ * 1P intro jingle still counted as playing).
+ *
+ * @return TRUE when sGMRemixMusicTitleTrack and sGMRemixMusicTitleGame were set.
+ */
+static sb32 gmRemixMusicTitleLookup(void)
+{
+    if (remix_music_title_get(syAudioGetBGMPlaying(0), &sGMRemixMusicTitleTrack, &sGMRemixMusicTitleGame) != 0)
+    {
+        return TRUE;
+    }
+    return remix_music_title_get((s32)gMPCollisionGroundData->bgm_id, &sGMRemixMusicTitleTrack, &sGMRemixMusicTitleGame) != 0;
+}
+
 void gmRemixMusicTitleShowAtCountdown(void)
 {
     GObj *gobj;
@@ -61,7 +79,7 @@ void gmRemixMusicTitleShowAtCountdown(void)
     {
         return;
     }
-    if (remix_music_title_get(syAudioGetBGMPlaying(0), &sGMRemixMusicTitleTrack, &sGMRemixMusicTitleGame) == 0)
+    if (gmRemixMusicTitleLookup() == FALSE)
     {
         return;
     }
