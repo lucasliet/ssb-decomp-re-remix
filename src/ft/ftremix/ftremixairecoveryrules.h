@@ -37,6 +37,9 @@ extern int ftRemixAiRecoveryBanjoNeedsPressB(int floor_line_id);
 /** TRUE when the vanilla Pikachu recovery branch runs: vanilla 1P/RTTF (classic mode) or the improved AI is off. */
 extern int ftRemixAiRecoveryKeepsPikachuVanilla(int is_classic_mode, int improved_ai);
 
+/** TRUE for Pikachu, J Pikachu and E Pikachu, the ids fix_remix_recovery sends to its _pikachu branch. */
+extern int ftRemixAiRecoveryIsPikachuFamily(int fkind);
+
 #endif
 
 #endif

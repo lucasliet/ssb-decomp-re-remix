@@ -5320,6 +5320,10 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
     ftComputerCheckTargetItemOrTwister(fp);
     ftComputerSetCommandImmediate(fp, nFTComputerInputMoveAuto);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    /* AI.asm fix_target_pos_x hooks 0x8013537C, before the ground/air split. */
+    ftRemixAiRecoveryClampWalkTargetX(fp);
+#endif
     if (fp->ga != nMPKineticsGround)
     {
         switch (com->behavior)
@@ -5525,9 +5529,6 @@ void ftComputerFollowObjectiveWalk(FTStruct *fp)
                     }
                 }
             }
-#if defined(PORT) && defined(REGION_REMIX)
-            ftRemixAiRecoveryClampWalkTargetX(fp);
-#endif
             ftComputerSetCommandImmediate(fp, nFTComputerInputMoveAuto);
             return;
         }
@@ -6937,7 +6938,7 @@ void ftComputerFollowObjectiveRecover(FTStruct *fp)
 
 #if defined(REGION_US)
 #if defined(PORT) && defined(REGION_REMIX)
-        if ((fp->fkind == nFTKindPikachu) && ftRemixAiRecoveryVanillaPikachuApplies(fp))
+        if (ftRemixAiRecoveryVanillaPikachuApplies(fp))
 #else
         if (fp->fkind == nFTKindPikachu)
 #endif

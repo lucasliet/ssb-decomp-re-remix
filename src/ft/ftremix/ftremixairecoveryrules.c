@@ -1,6 +1,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixairecoveryrules.h"
+#include "remix/remix_roster_data.h"
 
 #define FTREMIX_AI_RECOVERY_BANJO_FLIGHT 0xEF
 #define FTREMIX_AI_RECOVERY_BANJO_FLAP_FRAME 21
@@ -75,6 +76,12 @@ int ftRemixAiRecoveryBanjoNeedsPressB(int floor_line_id)
 int ftRemixAiRecoveryKeepsPikachuVanilla(int is_classic_mode, int improved_ai)
 {
     return (is_classic_mode != 0) || (improved_ai == 0);
+}
+
+/** fix_remix_recovery compares PIKACHU, JPIKA and EPIKA before branching to _pikachu (AI.asm). */
+int ftRemixAiRecoveryIsPikachuFamily(int fkind)
+{
+    return (fkind == REMIX_ID_PIKACHU) || (fkind == REMIX_ID_JPIKA) || (fkind == REMIX_ID_EPIKA);
 }
 
 #endif

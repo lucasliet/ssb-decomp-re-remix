@@ -41,11 +41,13 @@ sb32 ftRemixAiRecoveryAllowsUpBRepeat(FTStruct *fp)
 }
 
 /**
- * fix_remix_recovery (AI.asm, _pikachu): TRUE when the vanilla Pikachu recovery block runs instead of the Remix dispatch.
+ * fix_remix_recovery (AI.asm, _pikachu): TRUE when a Pikachu, J Pikachu or E Pikachu CPU runs the vanilla Pikachu recovery
+ * block instead of the Remix dispatch.
  */
 sb32 ftRemixAiRecoveryVanillaPikachuApplies(FTStruct *fp)
 {
-    return ftRemixAiRecoveryKeepsPikachuVanilla(ftRemixAiRecoveryIsClassicMode(), gmRemixToggle(improved_ai));
+    return ftRemixAiRecoveryIsPikachuFamily(fp->fkind) &&
+           ftRemixAiRecoveryKeepsPikachuVanilla(ftRemixAiRecoveryIsClassicMode(), gmRemixToggle(improved_ai));
 }
 
 /**
