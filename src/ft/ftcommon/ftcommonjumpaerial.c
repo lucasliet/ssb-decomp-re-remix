@@ -443,11 +443,15 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
     {
         input_source = ftCommonKneeBendGetInputTypeCommon(fp);
 
+#ifdef REGION_REMIX
+        /* FootStool.asm aerial_jump_check (0x80140308) runs foot_stool_check_ before the jumps_used < jumps_max test */
+        if ((input_source != FTCOMMON_JUMPAERIAL_INPUT_TYPE_NONE) && ftRemixFootStoolTryAerialJump(fighter_gobj, input_source))
+        {
+            return TRUE;
+        }
+#endif
         if ((input_source != FTCOMMON_JUMPAERIAL_INPUT_TYPE_NONE) && (fp->jumps_used < fp->attr->jumps_max))
         {
-#ifdef REGION_REMIX
-            if (!ftRemixFootStoolTryAerialJump(fighter_gobj, input_source))
-#endif
             ftCommonJumpAerialSetStatus(fighter_gobj, input_source);
 
             return TRUE;

@@ -214,19 +214,21 @@ static sb32 ftRemixZCancelPunish(GObj *fighter_gobj)
     return ftRemixZCancelPunishMode(fighter_gobj, mode);
 }
 
-/* ZCancel.asm _z_cancel_opts for a player (the CPU branch needs AI). */
+/* ZCancel.asm _z_cancel_opts: the CPU roll of AI.asm z_cancel_ runs first, then Disabled fails for CPUs and players
+ * alike (_cpu_z_cancel sends Disabled to _return). */
 static s32 ftRemixZCancelResult(FTStruct *fp)
 {
     s32 option = gmRemixToggle(z_cancel_opts);
+    sb32 is_cpu_z_cancel = ftRemixAiShouldZCancel(fp);
     s32 window;
 
-    if (ftRemixAiShouldZCancel(fp))
-    {
-        return (option == FTREMIX_ZCANCEL_OPT_GLIDE) ? FTREMIX_ZCANCEL_RESULT_GLIDE : FTREMIX_ZCANCEL_RESULT_SUCCESS;
-    }
     if (option == FTREMIX_ZCANCEL_OPT_DISABLED)
     {
         return FTREMIX_ZCANCEL_RESULT_FAIL;
+    }
+    if (is_cpu_z_cancel)
+    {
+        return (option == FTREMIX_ZCANCEL_OPT_GLIDE) ? FTREMIX_ZCANCEL_RESULT_GLIDE : FTREMIX_ZCANCEL_RESULT_SUCCESS;
     }
     if (option == FTREMIX_ZCANCEL_OPT_AUTO)
     {
