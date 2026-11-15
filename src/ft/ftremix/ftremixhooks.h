@@ -482,13 +482,14 @@ sb32 ftRemixPerfectShieldItem(GObj *item_gobj);
 /* Japanese.asm settings, ftremix/ftremixhitlag.c, ftremixshieldstun.c, ftremixjstunsleep.c and ftremixjapanesesounds.c:
  * the Hitlag formula of ftParamGetHitLag (vanilla_add is the vanilla constant of the formula), the Shield Stun frames of
  * ftCommonGuardSetOffSetStatus, the Fura Fura and Fura Sleep breakout waits, and the fgm ids of PlayFGM motion events
- * (ftMainParseMotionEvent), projectile hits (ftMainUpdateDamageStatWeapon), and the hit sound a weapon (wpManagerMakeWeapon,
- * japanese_sfx_link_boomerang_collide_) or an item (itManagerMakeItem, japanese_sfx_link_bomb_collide_) gets at spawn */
+ * (ftMainParseMotionEvent), fighter hitbox hits (ftMainPlayHitSFX, Character.asm apply_sound_type_), projectile hits
+ * (ftMainUpdateDamageStatWeapon), and the hit sound a weapon (wpManagerMakeWeapon, japanese_sfx_link_boomerang_collide_) or an item (itManagerMakeItem, japanese_sfx_link_bomb_collide_) gets at spawn */
 s32 ftRemixHitlagTics(s32 damage, f32 hitlag_mul, f32 vanilla_add);
 f32 ftRemixShieldStunFrames(FTStruct *fp, f32 vanilla_frames);
 s32 ftRemixFuraFuraBreakoutWait(s32 breakout_wait);
 s32 ftRemixFuraSleepBreakoutWait(s32 breakout_wait);
 u16 ftRemixJapaneseMotionSoundFgm(FTStruct *fp, u32 value);
+u16 ftRemixJapaneseHitCollisionFgm(FTStruct *fp, s32 fgm_kind, s32 fgm_level, u16 fgm_id);
 u16 ftRemixJapaneseProjectileSoundFgm(GObj *owner_gobj, u16 fgm_id);
 u16 ftRemixJapaneseItemSoundFgm(GObj *parent_gobj, u32 flags, u16 fgm_id);
 

@@ -2499,8 +2499,8 @@ void ftMainPlayHitSFX(FTStruct *fp, FTAttackColl *attack_coll)
     }
     fp->p_sfx = NULL, fp->sfx_id = 0;
 #ifdef REGION_REMIX
-    /* Remix apply_fgm_ (0x800E2CA8): command 0xD8 per-hitbox FGM override. */
-    ftRemixCommandPlayHitFGM(fp, attack_coll, dFTMainHitCollisionFGMs[attack_coll->fgm_kind][attack_coll->fgm_level], fp->joints[nFTPartsJointTopN]->translate.vec.f.x);
+    /* Remix apply_sound_type_ (0x800E2CA0, Character.asm) picks the J table, then apply_fgm_ (0x800E2CA8): command 0xD8 per-hitbox FGM override. */
+    ftRemixCommandPlayHitFGM(fp, attack_coll, ftRemixJapaneseHitCollisionFgm(fp, attack_coll->fgm_kind, attack_coll->fgm_level, dFTMainHitCollisionFGMs[attack_coll->fgm_kind][attack_coll->fgm_level]), fp->joints[nFTPartsJointTopN]->translate.vec.f.x);
 #else
     lbCommonMakePositionFGM(dFTMainHitCollisionFGMs[attack_coll->fgm_kind][attack_coll->fgm_level], fp->joints[nFTPartsJointTopN]->translate.vec.f.x);
 #endif

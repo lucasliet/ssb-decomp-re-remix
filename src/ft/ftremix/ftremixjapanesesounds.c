@@ -9,14 +9,12 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixjapanesesoundsrules.h"
 #include <ft/fighter.h>
 #include <sys/objdef.h>
 #include <it/itdef.h>
 #include "gm/gmremixtoggle.h"
 #include "remix/remix_roster_data.h"
-
-#define FTREMIX_JSFX_ALWAYS 1
-#define FTREMIX_JSFX_NEVER 2
 
 /* FGM.item.BEAM_SWORD_HEAVY: the beam sword ids are the range [HEAVY, LIGHT] */
 #define FTREMIX_JSFX_BEAM_SWORD_HEAVY 0x43
@@ -49,22 +47,13 @@ static const FTRemixJSfxDiff sFTRemixJSfxHitDiffs[] =
  */
 static sb32 ftRemixJSfxIsJ(FTStruct *fp)
 {
-    switch (gmRemixToggle(japanese_sounds))
-    {
-        case FTREMIX_JSFX_ALWAYS:
-            return TRUE;
+    sb32 is_j_fighter = FALSE;
 
-        case FTREMIX_JSFX_NEVER:
-            return FALSE;
-
-        default:
-            break;
-    }
-    if ((fp == NULL) || (fp->fkind < 0) || (fp->fkind >= ARRAY_COUNT(kRemixRoster)))
+    if ((fp != NULL) && (fp->fkind >= 0) && (fp->fkind < ARRAY_COUNT(kRemixRoster)))
     {
-        return FALSE;
+        is_j_fighter = (kRemixRoster[fp->fkind].sound_type == REMIX_SOUND_J);
     }
-    return kRemixRoster[fp->fkind].sound_type == REMIX_SOUND_J;
+    return ftRemixJapaneseSoundsUseJ(gmRemixToggle(japanese_sounds), is_j_fighter);
 }
 
 /** Returns the J minus U difference of a hit sound id, 0 when the id is not one of the six hit sounds. */
@@ -112,6 +101,20 @@ u16 ftRemixJapaneseMotionSoundFgm(FTStruct *fp, u32 value)
         return fgm_id + diff;
     }
     return fgm_id;
+}
+
+/**
+ * Returns the hit sound id of a fighter hitbox of fp (Character.asm apply_sound_type_, 0x800E2CA0 in
+ * ftMainPlayHitSFX): the Punch and Kick rows of the J table when fp uses the J sounds, fgm_id otherwise.
+ *
+ * @param fp Attacker.
+ * @param fgm_kind Row of dFTMainHitCollisionFGMs (attack_coll->fgm_kind).
+ * @param fgm_level Column of dFTMainHitCollisionFGMs (attack_coll->fgm_level).
+ * @param fgm_id Vanilla id dFTMainHitCollisionFGMs[fgm_kind][fgm_level].
+ */
+u16 ftRemixJapaneseHitCollisionFgm(FTStruct *fp, s32 fgm_kind, s32 fgm_level, u16 fgm_id)
+{
+    return (u16) ftRemixJapaneseHitCollisionFgmRule(ftRemixJSfxIsJ(fp), fgm_kind, fgm_level, fgm_id);
 }
 
 /**
