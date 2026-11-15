@@ -1089,6 +1089,18 @@ void itProcessProcHitCollisions(GObj *item_gobj)
     {
         if ((ip->attack_coll.can_hop) && (ip->ga == nMPKineticsAir))
         {
+#ifdef REGION_REMIX
+            /* PerfectShield.asm shield_reflect_items patches the hop angle test (0x801711BC), past the can_hop and air filters */
+            if (ftRemixPerfectShieldItem(item_gobj) != FALSE)
+            {
+                if ((ip->proc_reflector != NULL) && (ip->proc_reflector(item_gobj) != FALSE))
+                {
+                    itMainDestroyItem(item_gobj);
+                    return;
+                }
+                goto next_check;
+            }
+#endif
             if (ip->shield_collide_angle < ITEM_HOP_ANGLE_DEFAULT)
             {
                 ip->shield_collide_angle -= F_CST_DTOR32(90.0F);
@@ -1108,17 +1120,6 @@ void itProcessProcHitCollisions(GObj *item_gobj)
                 goto next_check;
             }
         }
-#ifdef REGION_REMIX
-        if (ftRemixPerfectShieldItem(item_gobj) != FALSE)
-        {
-            if ((ip->proc_reflector != NULL) && (ip->proc_reflector(item_gobj) != FALSE))
-            {
-                itMainDestroyItem(item_gobj);
-                return;
-            }
-            goto next_check;
-        }
-#endif
         if (ip->proc_shield != NULL)
         {
             if (ip->proc_shield(item_gobj) != FALSE)

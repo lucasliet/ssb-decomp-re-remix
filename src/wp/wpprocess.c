@@ -484,6 +484,18 @@ void wpProcessProcHitCollisions(GObj *weapon_gobj)
     {
         if ((wp->attack_coll.can_hop) && (wp->ga == nMPKineticsAir))
         {
+#ifdef REGION_REMIX
+            /* PerfectShield.asm shield_reflect_projectiles patches the hop angle test (0x80166C7C), past the can_hop and air filters */
+            if (ftRemixPerfectShieldWeapon(weapon_gobj) != FALSE)
+            {
+                if ((wp->proc_reflector != NULL) && (wp->proc_reflector(weapon_gobj) != FALSE))
+                {
+                    wpMainDestroyWeapon(weapon_gobj);
+                    return;
+                }
+                goto next_check;
+            }
+#endif
             if (wp->shield_collide_angle < WEAPON_HOP_ANGLE_DEFAULT)
             {
                 wp->shield_collide_angle -= F_CST_DTOR32(90.0F);
@@ -503,17 +515,6 @@ void wpProcessProcHitCollisions(GObj *weapon_gobj)
                 goto next_check;
             }
         }
-#ifdef REGION_REMIX
-        if (ftRemixPerfectShieldWeapon(weapon_gobj) != FALSE)
-        {
-            if ((wp->proc_reflector != NULL) && (wp->proc_reflector(weapon_gobj) != FALSE))
-            {
-                wpMainDestroyWeapon(weapon_gobj);
-                return;
-            }
-            goto next_check;
-        }
-#endif
         if (wp->proc_shield != NULL)
         {
             if (wp->proc_shield(weapon_gobj) != FALSE)
