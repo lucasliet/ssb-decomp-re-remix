@@ -35,6 +35,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "gm/gmremixpanel.h"
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixcssbonus.h"
+#include "ft/ftremix/ftremixdpadmenu.h"
 #include "mn/mnplayers/mnremixcssindicators.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
 #include "mn/mnplayers/mnremixcssmode.h"
@@ -5480,11 +5481,13 @@ classic_arrows_consumed:;
 	(
 		(gmRemixToggle(l_random_char) != 0) &&
 		(gSYControllerDevices[player].button_tap & L_TRIG) &&
-		(sMNPlayersVSSlots[player].held_player == player) &&
 		(sMNPlayersVSSlots[player].is_recalling == FALSE) &&
-		(sMNPlayersVSSlots[player].fkind == nFTKindNull)
+		(sMNPlayersVSSlots[player].pkind == nFTPlayerKindMan) &&
+		(mnRemixCssLRandomRolls(player, sMNPlayersVSSlots[player].held_player, sMNPlayersVSSlots[player].fkind != nFTKindNull) != FALSE)
 	)
 	{
+		/* select_random_char_ also rolls a placed token: mnPlayersVSSelectFighterPuck reads the token from the cursor's hand */
+		sMNPlayersVSSlots[player].held_player = player;
 		sMNPlayersVSSlots[player].fkind = mnPlayersVSRandFighterKind(sMNPlayersVSSlots[player].puck);
 
 		mnPlayersVSUpdateFighter(player);
@@ -6938,6 +6941,17 @@ void mnPlayersVSPauseSlotProcesses(void)
 }
 
 #if defined(PORT) && defined(REGION_REMIX)
+/** Tells the D-pad cursor of every port which token its cursor holds (css/DpadControl.asm _check_token_state_vs, every frame). */
+static void mnPlayersVSRemixDpadCursorFrameUpdate(void)
+{
+	s32 player;
+
+	for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)
+	{
+		ftRemixDpadMenuSetHeldToken(player, sMNPlayersVSSlots[player].held_player, sMNPlayersVSSlots[player].fkind);
+	}
+}
+
 /**
  * Brings the variant indicators (D-pad, variant images, flags) and the bonus scroll hint of the four panels up to date
  * (CharacterSelect.asm update_variant_indicators_ and draw_bonus_scroll_indicators_, which run every frame).
@@ -6946,6 +6960,8 @@ static void mnPlayersVSRemixIndicatorsFrameUpdate(void)
 {
 	MNRemixCssPanelState states[GMCOMMON_PLAYERS_MAX];
 	s32 player;
+
+	mnPlayersVSRemixDpadCursorFrameUpdate();
 
 	if (gmRemixTwelveCBIsActive() != FALSE)
 	{

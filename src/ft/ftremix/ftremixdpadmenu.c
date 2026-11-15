@@ -23,6 +23,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include <ft/ftdef.h>
 #include <gm/gmdef.h>
 #include <gm/gmremixpanel.h>
 #include <gm/gmremixtoggle.h>
@@ -60,13 +61,13 @@ static sb32 ftRemixDpadMenuIsPaused(void)
     return ((gSCManagerBattleState != NULL) && (gSCManagerBattleState->game_status == nSCBattleGameStatusPause)) ? TRUE : FALSE;
 }
 
-void ftRemixDpadMenuSetTokenOverFighter(s32 port, sb32 is_token_over_fighter)
+void ftRemixDpadMenuSetHeldToken(s32 port, s32 held_player, s32 own_fkind)
 {
     if ((port < 0) || (port >= GMCOMMON_PLAYERS_MAX))
     {
         return;
     }
-    sFTRemixDpadMenuTokenOverFighter[port] = is_token_over_fighter;
+    sFTRemixDpadMenuTokenOverFighter[port] = ftRemixDpadMenuIsTokenOverFighter(held_player, own_fkind, nFTKindNull);
 }
 
 static void ftRemixDpadMenuReadSample(const SYController *device, FTRemixDpadMenuSample *sample)

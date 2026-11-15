@@ -2,7 +2,7 @@
  * efremixpuffsing.c - Jigglypuff sing effect of Smash Remix (Size.asm `scope jigglypuff`, Toggles.asm entry_puff_sing_anim).
  *
  * Size.asm replaces the update routine of dEFManagerPurinSingEffectDesc (descriptor 0x8012E314 + 0x10) with a wrapper that
- * runs the vanilla update, forces the matrix kind of the 2nd joint to 0x2E (rotation and scale respected) and, unless the
+ * runs the vanilla update, forces the kind of the 2nd matrix of the 2nd joint (the 0x46 one) to 0x2E (rotation and scale respected) and, unless the
  * Jigglypuff Sing GFX Anims setting is on, resets the scale of that joint to 1.0. The Gameshark check of the asm (byte
  * 0x8010212B, the 0x46 kind written by efManagerPurinSingMakeEffect) has no equivalent in the port: it always holds 0x46.
  */
@@ -20,14 +20,17 @@
 /* asm: lli t8, 0x2E, the routine index that respects rotation and scale (nGCMatrixKind46) */
 #define EFREMIX_PURIN_SING_MATRIX_KIND 0x2E
 
-/** Sets the matrix kind of the first matrix of the joint, as the asm does with the byte at 0x0004 of the struct at 0x005C. */
+/**
+ * Sets the matrix kind of the second matrix of the joint (xobjs[1], the struct at 0x005C of the N64 DObj, the 0x46 matrix that
+ * efManagerPurinSingMakeEffect adds after the Tra of the descriptor), as the asm does with the byte at 0x0004 of that struct.
+ */
 static void efRemixPurinSingForceMatrixKind(DObj *joint)
 {
-    if (joint->xobjs_num == 0)
+    if (joint->xobjs_num < 2)
     {
         return;
     }
-    joint->xobjs[0]->kind = EFREMIX_PURIN_SING_MATRIX_KIND;
+    joint->xobjs[1]->kind = EFREMIX_PURIN_SING_MATRIX_KIND;
 }
 
 /** Resets the scale of the joint to 1.0 on the three axes (asm: 0x3F800000 stored at 0x40, 0x44 and 0x48). */

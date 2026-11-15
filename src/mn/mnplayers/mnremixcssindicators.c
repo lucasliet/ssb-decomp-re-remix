@@ -9,7 +9,6 @@
 #include <lb/library.h>
 #include <sys/obj.h>
 #include <sys/objman.h>
-#include "ft/ftremix/ftremixdpadmenu.h"
 #include "if/ifremixspriterules.h"
 #include "mn/mnplayers/mnremixcssindicators.h"
 #include "mn/mnplayers/mnremixcpulevelrules.h"
@@ -304,7 +303,6 @@ void mnRemixCssIndicatorsUpdate(void *css_images_file, const MNRemixCssPanelStat
     for (panel = 0; panel < panel_count; panel++)
     {
         mnRemixCssUpdatePanel(panel, &panels[panel], css_images_file);
-        ftRemixDpadMenuSetTokenOverFighter(panels[panel].token, ((panels[panel].is_token_held != FALSE) && (panels[panel].fkind != nFTKindNull)) ? TRUE : FALSE);
     }
 }
 

@@ -27,6 +27,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcssunplug.h"
 #include "mn/mnplayers/mnremixbonusmodes.h"
 #include "mn/mnplayers/mnremixcssbonus.h"
+#include "ft/ftremix/ftremixdpadmenu.h"
 #include "mn/mnplayers/mnremixcssindicators.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
 #include "mn/mnplayers/mnremixcssrandom.h"
@@ -3505,6 +3506,11 @@ static void mnPlayers1PTrainingRemixIndicatorsFrameUpdate(void)
 		mnRemixBonusModesUpdateHint(port, is_token_held, fkind, sMNPlayers1PTrainingFiles);
 	}
 	mnRemixCssIndicatorsUpdate(sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE], states, ARRAY_COUNT(states));
+
+	for (panel = 0; panel < ARRAY_COUNT(ports); panel++)
+	{
+		ftRemixDpadMenuSetHeldToken(ports[panel], sMNPlayers1PTrainingSlots[ports[panel]].held_player, sMNPlayers1PTrainingSlots[ports[panel]].fkind);
+	}
 }
 #endif
 

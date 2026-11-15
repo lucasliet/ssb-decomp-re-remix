@@ -22,6 +22,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcss.h"
 #include "mn/mnplayers/mnremixcsstoken.h"
 #include "mn/mnplayers/mnremixcssunplug.h"
+#include "ft/ftremix/ftremixdpadmenu.h"
 #include "mn/mnplayers/mnremixcssindicators.h"
 #include "sc/sc1pmode/sc1ptrainingremix.h"
 #include "mn/mnplayers/mnremixcsstokenrules.h"
@@ -3273,6 +3274,7 @@ static void mnPlayers1PBonusRemixIndicatorsFrameUpdate(void)
 	state.token = sMNPlayers1PBonusManPlayer;
 
 	mnRemixCssIndicatorsUpdate(sMNPlayers1PBonusFiles[MNPLAYERS1PBONUS_REMIX_IMAGES_FILE], &state, 1);
+	ftRemixDpadMenuSetHeldToken(sMNPlayers1PBonusManPlayer, sMNPlayers1PBonusSlot.held_player, sMNPlayers1PBonusSlot.fkind);
 }
 #endif
 

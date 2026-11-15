@@ -29,13 +29,15 @@ extern void ftRemixDpadMenuTransform(s32 port, SYController *device, u16 prev_ho
 extern sb32 ftRemixDpadMenuHasSwappedController(void);
 
 /**
- * Tells the D-pad cursor whether the token of a port is held over a fighter (the asm reads the held token index and the hovered
- * fighter of the CSS panel struct). The character select screens call it every frame; until then the D-pad moves the cursor at once.
+ * Tells the D-pad cursor of a port which token its cursor holds and the fighter of the port's own panel (the asm reads the held
+ * token index and the char_id of the CSS panel struct of the port). The character select screens call it every frame for every
+ * cursor; until then the D-pad moves the cursor at once.
  *
- * @param port Port of the panel.
- * @param is_token_over_fighter TRUE while the token is held over a fighter.
+ * @param port Port of the cursor.
+ * @param held_player Port of the token the cursor holds, -1 when it holds none.
+ * @param own_fkind Fighter of the port's own panel.
  */
-extern void ftRemixDpadMenuSetTokenOverFighter(s32 port, sb32 is_token_over_fighter);
+extern void ftRemixDpadMenuSetHeldToken(s32 port, s32 held_player, s32 own_fkind);
 
 #endif
 

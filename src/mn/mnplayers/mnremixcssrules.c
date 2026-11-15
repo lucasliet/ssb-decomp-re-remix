@@ -435,4 +435,17 @@ int mnRemixCssVariantIsPickable(int variant, int none_id, int boss_id, int is_bo
     return 1;
 }
 
+int mnRemixCssLRandomRolls(int port, int held_player, int is_over_fighter)
+{
+    if (held_player < 0)
+    {
+        return 1;
+    }
+    if (held_player != port)
+    {
+        return 0;
+    }
+    return (is_over_fighter == 0) ? 1 : 0;
+}
+
 #endif

@@ -126,10 +126,20 @@ extern void ftRemixDpadMenuDpadAsStick(FTRemixDpadMenuSample *sample);
  * @param prev_hold Buttons held on the previous frame.
  * @param has_mode TRUE when the D-pad Control panel value of the port is not Off.
  * @param timer Delay of the port, updated.
- * @param is_token_over_fighter TRUE when the token of the port is held over a fighter.
+ * @param is_token_over_fighter TRUE when the cursor of the port holds a token over a fighter (ftRemixDpadMenuIsTokenOverFighter).
  */
 extern void ftRemixDpadMenuCursor(FTRemixDpadMenuSample *sample, unsigned int prev_hold, int has_mode, int *timer,
                                   int is_token_over_fighter);
+
+/**
+ * TRUE when the D-pad cursor delay of a port counts down (_check_token_state_vs and _check_token_state_1p): the cursor of the
+ * port holds a token (any panel's) and the port's own panel has a char_id other than NONE.
+ *
+ * @param held_player Port of the token the cursor holds, -1 when it holds none.
+ * @param own_fkind Fighter of the port's own panel.
+ * @param null_fkind The fighter kind that means no fighter.
+ */
+extern int ftRemixDpadMenuIsTokenOverFighter(int held_player, int own_fkind, int null_fkind);
 
 #endif
 

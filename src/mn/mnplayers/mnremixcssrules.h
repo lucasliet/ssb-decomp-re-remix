@@ -251,6 +251,17 @@ extern int mnRemixCssVariantIsPickable(int variant, int none_id, int boss_id, in
 /** TRUE when a D-pad is shown for a hovered fighter: when at least one of its four variants exists. */
 extern int mnRemixCssHasVariants(const int *variant_ids, int none_id);
 
+/**
+ * TRUE when an L press of a human cursor picks a random fighter for its own panel (CharacterSelect.asm check_variant_input_._vs,
+ * 2407-2420): the cursor holds no token (its fighter is already chosen, so L rolls again), or it holds its own token over no
+ * fighter. A cursor holding another panel's token never rolls.
+ *
+ * @param port Port of the cursor, which is also its panel.
+ * @param held_player Port of the token the cursor holds, -1 when it holds none.
+ * @param is_over_fighter Non-zero when the panel shows a fighter (the token is over a portrait or placed on one).
+ */
+extern int mnRemixCssLRandomRolls(int port, int held_player, int is_over_fighter);
+
 #endif
 
 #endif

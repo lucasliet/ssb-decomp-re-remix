@@ -236,4 +236,13 @@ void ftRemixDpadMenuCursor(FTRemixDpadMenuSample *sample, unsigned int prev_hold
     ftRemixDpadMenuCursorStickFromDpad(sample, prev_hold);
 }
 
+int ftRemixDpadMenuIsTokenOverFighter(int held_player, int own_fkind, int null_fkind)
+{
+    if (held_player < 0)
+    {
+        return 0;
+    }
+    return (own_fkind != null_fkind) ? 1 : 0;
+}
+
 #endif
