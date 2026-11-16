@@ -28,6 +28,18 @@ typedef struct MNRemixStageRandomEntry
  */
 extern int mnRemixStageRandomRulesBuildList(const MNRemixStageRandomEntry *entries, int entry_count, int is_tournament, int *out_stage_ids);
 
+/**
+ * Drops the previous match's stage from the list, the result of the vanilla redraw loop around the patched call at 0x8013AA1C
+ * (it draws again while the stage equals the previous one; Stages.asm 5406-5413 only exists so a one stage list cannot hang it).
+ * When the list holds only that stage it stays untouched.
+ *
+ * @param stage_ids List to filter in place, order kept.
+ * @param count Number of stage ids in the list.
+ * @param excluded_stage_id Stage of the previous match.
+ * @return Number of stage ids left in the list.
+ */
+extern int mnRemixStageRandomRulesExcludeStage(int *stage_ids, int count, int excluded_stage_id);
+
 #endif
 
 #endif

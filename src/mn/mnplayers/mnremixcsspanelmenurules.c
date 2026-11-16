@@ -219,7 +219,7 @@ int mnRemixPanelMenuRulesBlinkNext(int timer)
 
 int mnRemixPanelMenuRulesBlinkIsVisible(int timer)
 {
-    return (timer < MNREMIX_PANELMENU_BLINK_ON_FRAMES) ? 1 : 0;
+    return ((timer >= 1) && (timer < MNREMIX_PANELMENU_BLINK_ON_FRAMES)) ? 1 : 0;
 }
 
 int mnRemixPanelMenuRulesHoldAdvance(MNRemixPanelMenuHold *hold, int is_held)

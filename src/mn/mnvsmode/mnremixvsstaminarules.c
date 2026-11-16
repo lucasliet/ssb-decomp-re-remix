@@ -49,7 +49,7 @@ static int mnRemixVSStaminaRulesMenuStepUp(int hp, int is_stick)
     }
     if (hp >= MNREMIX_VSSTAMINA_RULES_UP_WRAP_FROM)
     {
-        return MNREMIX_VSSTAMINA_RULES_HP_MIN;
+        return MNREMIX_VSSTAMINA_RULES_HP_MAX;
     }
     if (hp < MNREMIX_VSSTAMINA_RULES_SMALL_LIMIT)
     {

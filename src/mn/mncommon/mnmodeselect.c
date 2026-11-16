@@ -1007,7 +1007,7 @@ void mnModeSelectFuncStart(void)
     )
     {
 #ifdef REGION_REMIX
-        gmRemixMenuMusicPlay(nSYAudioBGMModeSelect, gSCManagerSceneData.scene_prev == nSCKindTitle);
+        gmRemixMenuMusicPlay(nSYAudioBGMModeSelect, TRUE); /* BGM.asm 751-752 tests the return address of this call, not the previous scene */
 #else
         syAudioPlayBGM(0, nSYAudioBGMModeSelect);
 #endif

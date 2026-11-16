@@ -45,4 +45,23 @@ int mnRemixStageRandomRulesBuildList(const MNRemixStageRandomEntry *entries, int
     return mnRemixStageRandomRulesCollect(entries, entry_count, is_tournament, 1, out_stage_ids);
 }
 
+int mnRemixStageRandomRulesExcludeStage(int *stage_ids, int count, int excluded_stage_id)
+{
+    int index;
+    int kept = 0;
+
+    for (index = 0; index < count; index++)
+    {
+        if (stage_ids[index] != excluded_stage_id)
+        {
+            stage_ids[kept++] = stage_ids[index];
+        }
+    }
+    if (kept == 0)
+    {
+        return count;
+    }
+    return kept;
+}
+
 #endif

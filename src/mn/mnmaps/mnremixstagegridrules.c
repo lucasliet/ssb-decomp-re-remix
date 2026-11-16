@@ -108,4 +108,13 @@ int mnRemixStageGridRulesGetPageNumber(int page)
     return page + 1;
 }
 
+int mnRemixStageGridRulesAfkSelects(int is_training, int total_tics, int is_afk_tag)
+{
+    if (is_training != 0)
+    {
+        return 0;
+    }
+    return ((total_tics >= MNREMIX_GRID_AFK_TICS) && (is_afk_tag != 0)) ? 1 : 0;
+}
+
 #endif

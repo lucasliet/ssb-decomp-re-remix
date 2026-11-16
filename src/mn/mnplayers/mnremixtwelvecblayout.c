@@ -30,6 +30,9 @@ static const float sLayoutSlideSpeed[MNREMIX_TCB_COLUMNS] = { 1.9F, 3.9F, 7.8F, 
 #define LAYOUT_HIT_BOTTOM 110
 #define LAYOUT_HIT_LEFT_X 19
 #define LAYOUT_HIT_RIGHT_X 155
+/* TwelveCharBattle.asm handle_custom_presses_: widths of the left and right set arrow zones. */
+#define LAYOUT_ARROW_LEFT_WIDTH 32.0F
+#define LAYOUT_ARROW_RIGHT_WIDTH 33.0F
 
 static int slotIsValid(int slot)
 {
@@ -141,6 +144,19 @@ int mnRemixTwelveCBLayoutStockPadding(int has_arrows, int stocks_shown)
         return -4;
     }
     return (stocks_shown > 9) ? -7 : -10;
+}
+
+int mnRemixTwelveCBLayoutSetArrowAt(float zone_x, float hot_x)
+{
+    if ((hot_x >= (zone_x + LAYOUT_ARROW_LEFT_WIDTH)) && (hot_x <= (zone_x + LAYOUT_ARROW_LEFT_WIDTH + LAYOUT_ARROW_RIGHT_WIDTH)))
+    {
+        return 1;
+    }
+    if ((hot_x >= zone_x) && (hot_x <= (zone_x + LAYOUT_ARROW_LEFT_WIDTH)))
+    {
+        return -1;
+    }
+    return 0;
 }
 
 #endif

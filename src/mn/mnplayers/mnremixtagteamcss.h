@@ -51,6 +51,16 @@ extern void mnRemixTagTeamCssSetup(MNRemixTagTeamCssPortInfoFunc info_func);
  */
 extern void mnRemixTagTeamCssWrite(s32 port, s32 fkind, s32 costume, s32 shade, sb32 is_team_costume);
 
+/**
+ * update_previous_icons_: after the mode or the team of a panel changed, rewrites the costumes and shades of the slots before its
+ * current one (default costumes in a free-for-all, team costumes in a team battle).
+ *
+ * @param port Port of the panel.
+ * @param is_teams TRUE in a team battle.
+ * @param teams Team of each of the four ports.
+ */
+extern void mnRemixTagTeamCssRewritePrevious(s32 port, sb32 is_teams, const s32 *teams);
+
 /** move_to_next_slot_on_pickup: the token of the port was taken (not recalled), so the next pick goes to the next slot. */
 extern void mnRemixTagTeamCssNextSlot(s32 port, s32 stock_count);
 

@@ -57,6 +57,17 @@ extern int mnRemixTwelveCBLayoutSlotOfFkind(int set, int player, int fkind);
 extern int mnRemixTwelveCBLayoutOwner(int slot);
 
 /**
+ * Set arrow a cursor hot spot presses (TwelveCharBattle.asm handle_custom_presses_ with CharacterSelect.asm check_press_, whose
+ * bounds are inclusive): the left zone starts at zone_x and is 32 wide, the right zone follows it and is 33 wide; the right one is
+ * tested first, so the shared edge belongs to it.
+ *
+ * @param zone_x Left edge of the player's arrow card (91.5 for player 1, 159 for player 2).
+ * @param hot_x X of the cursor hot spot (cursor x plus 20).
+ * @return -1 for the previous set, 1 for the next set, 0 when the x is on neither arrow.
+ */
+extern int mnRemixTwelveCBLayoutSetArrowAt(float zone_x, float hot_x);
+
+/**
  * Padding between the right edge of the panel card and the right edge of the stock number (update_stock_icon_and_count_indicators_):
  * -4 normally, and when the Manual stock arrows sit at the card edge -10 for a one digit number and -7 for two digits.
  *

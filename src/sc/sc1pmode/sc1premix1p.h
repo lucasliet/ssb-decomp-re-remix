@@ -67,7 +67,6 @@ extern sb32 sc1PRemix1PIsFinalBoss(s32 fkind, s32 team);
  * The player left the 1P game through the pause menu (pause_exit): in the Remix 1P mode the size the player had from the character
  * select panel does not carry over to the next run (CharacterSelectDebugMenu.Size.clear_settings_for_1p_). No-op in other modes.
  */
-extern void sc1PRemix1POnPauseExit(void);
 
 /** TRUE when a CPU of this kind may not start its grounded up special in Remix 1P (_giga_usp_prevent: Mad Piano, Fox and Falco). @param fkind Fighter kind. @param is_cpu TRUE for a CPU. */
 extern sb32 sc1PRemix1PBlocksCpuUpSpecial(s32 fkind, sb32 is_cpu);

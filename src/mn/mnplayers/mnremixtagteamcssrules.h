@@ -53,6 +53,23 @@ extern void mnRemixTagTeamCssRulesReset(MNRemixTagTeamCssQueue *queue);
  */
 extern void mnRemixTagTeamCssRulesWrite(MNRemixTagTeamCssQueue *queue, int fkind, int costume, int shade, int is_classic, int is_team_costume);
 
+/** Costume of a fighter: `value` is the number of earlier panels with the same fighter in a free-for-all, the team in a team battle. */
+typedef int (*MNRemixTagTeamCssCostumeFunc)(int fkind, int value);
+
+/**
+ * Rewrites the slots of a port before its current slot after a mode or team change (update_previous_icons_). In a free-for-all
+ * each gets the default costume of its fighter, one further for each earlier port holding the same fighter in the same slot; in a
+ * team battle it gets the team costume and a shade one higher for each earlier teammate with the same fighter in the same slot.
+ * Empty slots stay empty (the asm reads their NONE id as a fighter and writes a costume the match never reads).
+ *
+ * @param queues Queues of the four ports.
+ * @param port Port whose previous slots are rewritten.
+ * @param is_teams Nonzero in a team battle.
+ * @param teams Team of each of the four ports.
+ * @param get_costume Costume of a fighter, see MNRemixTagTeamCssCostumeFunc.
+ */
+extern void mnRemixTagTeamCssRulesRewritePrevious(MNRemixTagTeamCssQueue *queues, int port, int is_teams, const int *teams, MNRemixTagTeamCssCostumeFunc get_costume);
+
 /**
  * Moves to the next slot, stopping on the last one (move_to_next_slot_). A slot past the last one comes back to it.
  *

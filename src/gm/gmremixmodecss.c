@@ -12,7 +12,6 @@
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixstockmode.h"
-#include "gm/gmremixtwelvecb.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 
 typedef enum GMRemixModeTeams
@@ -182,6 +181,7 @@ void gmRemixModeBeforeCSS(void)
     }
 }
 
+/* TwelveCharBattle.asm leave_css_setup_ (394-424) only stores the stocks: the 12CB config survives until handle_reset_ (RESET button) */
 void gmRemixModeLeaveCSS(void)
 {
     s32 mode = gmRemixModeGet();
@@ -193,7 +193,6 @@ void gmRemixModeLeaveCSS(void)
     gmRemixModeInitSaved();
     gmRemixModeSaveFromCSS(mode);
     gmRemixModeRestoreVanilla();
-    gmRemixTwelveCBReset();
 }
 
 void gmRemixModeStartMatch(void)

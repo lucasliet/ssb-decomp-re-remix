@@ -10,13 +10,14 @@
 #include <gm/gmremixpanel.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
+#include <sc/sc1pmode/sc1premixallstar.h>
 #include "remix/remix_training.h"
 
 #define FTREMIX_PANEL_DAMAGE_MAX 999
 
 /**
  * Initial damage of a new fighter (asm Damage.char_init_): the panel value of its port for the VS, 1P and Bonus matches,
- * unless the fighter already starts with damage (Sudden Death). Training takes the menu percent (Reset Sets Percent) and the How to Play demo keeps the vanilla value.
+ * unless the fighter already starts with damage (Sudden Death) or the match is All-Star. Training takes the menu percent (Reset Sets Percent) and the How to Play demo keeps the vanilla value.
  * Called from ftManagerMakeFighter with the damage of the fighter description, never for a respawn (the asm tests the
  * return address of the creation call).
  */
@@ -37,6 +38,11 @@ s32 ftRemixPanelGetInitialDamage(FTStruct *fp, s32 desc_damage)
         return (remix_training_get(REMIX_TRAINING_RESET_SETS_PERCENT(fp->player)) != 0) ? remix_training_get(REMIX_TRAINING_PERCENT(fp->player)) : desc_damage;
     }
     if ((game_type != nSCBattleGameTypeRoyal) && (game_type != nSCBattleGameTypeBonus) && (game_type != nSCBattleGameType1PGame))
+    {
+        return desc_damage;
+    }
+    /* Damage.asm char_init_ 75-77: All-Star skips the panel value. */
+    if (sc1PRemixAllstarIsActive() != FALSE)
     {
         return desc_damage;
     }

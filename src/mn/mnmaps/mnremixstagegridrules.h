@@ -81,6 +81,20 @@ extern int mnRemixStageGridRulesGetCursorY(int row);
 /** Number shown after "Page" (draw_number_adjusted adds 1 to the 0 based page). */
 extern int mnRemixStageGridRulesGetPageNumber(int page);
 
+/** Frames on the stage select before the "afk" tag presses A by itself (Stages.asm a_ `sltiu t1, t0, 120`). */
+#define MNREMIX_GRID_AFK_TICS 120
+
+/**
+ * Whether the stage select simulates an A press (Stages.asm a_ "check awayMode"): the screen did not come from the Training
+ * CSS, at least MNREMIX_GRID_AFK_TICS frames passed on the stage select and the second player tag is "afk".
+ *
+ * @param is_training The stage select belongs to Training mode.
+ * @param total_tics Frames elapsed on the stage select.
+ * @param is_afk_tag The second player tag reads "afk".
+ * @return 1 when A is simulated.
+ */
+extern int mnRemixStageGridRulesAfkSelects(int is_training, int total_tics, int is_afk_tag);
+
 #endif
 
 #endif

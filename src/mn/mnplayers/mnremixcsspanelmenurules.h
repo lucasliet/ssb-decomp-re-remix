@@ -78,7 +78,10 @@ typedef enum MNRemixPanelMenuItem
 #define MNREMIX_PANELMENU_PAGE_ARROW_LEFT_PAD 3
 #define MNREMIX_PANELMENU_PAGE_ARROW_RIGHT_PAD 4
 
-/* Arrow blink: the timer counts 0 to 19 and the arrow shows while it is below 11 (arrow_state_routine_). */
+/*
+ * Arrow blink: the timer counts 1 to 20 and wraps to 0 on the 20th; the asm tests the value before the wrap, so the arrow shows for
+ * 1 to 10 and hides for 11 to 20 (arrow_state_routine_, page_arrow_routine_): 10 frames on, 10 off.
+ */
 #define MNREMIX_PANELMENU_BLINK_PERIOD 20
 #define MNREMIX_PANELMENU_BLINK_ON_FRAMES 11
 
@@ -143,7 +146,7 @@ extern int mnRemixPanelMenuRulesStepValue(int value, int direction, int min, int
 /** Blink timer after a frame (arrow_state_routine_, page_arrow_routine_). */
 extern int mnRemixPanelMenuRulesBlinkNext(int timer);
 
-/** Non-zero while an arrow is drawn for the blink timer. */
+/** Non-zero while an arrow is drawn for the blink timer (stored value 1 to 10; 0 is the hidden 20th frame). */
 extern int mnRemixPanelMenuRulesBlinkIsVisible(int timer);
 
 /**

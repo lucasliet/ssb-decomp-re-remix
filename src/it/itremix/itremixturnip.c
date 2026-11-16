@@ -89,9 +89,8 @@ static void itRemixTurnipDroppedProc(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
     ITRemixTurnipRulesGroundFields ground_fields;
 
-    /* DEVIATION(shared bit with times_thrown, no named flag): asm falling_initial_ (items/Turnip.asm 284-286) clears
-     * mask 0x02 of N64 0x2CE, the "don't randomly despawn" flag. The port maps N64 0x2CE to ITStruct 0x2CA, where the
-     * bit is the low bit of times_thrown (0x02CA:4-6). Clearing it would change the throw count, so it is not written. */
+    /* Turnip.asm falling_initial_ 284-286 "don't randomly despawn": mask 0x02 of N64 0x2CE is the low bit of times_thrown, so the throw or drop that led here does not count for itMapCheckDestroyDropped (same as MrSaturn.asm:535-539, M14 I2-6) */
+    ip->times_thrown = itRemixTurnipRulesClearDespawnGuard(ip->times_thrown);
     /* Turnip.asm falling_initial_ 288-289 sh GROUND_TIMER(0x030C), 0x02D2: the halfword covers pickup_wait (48, "disappears quickly") and three flags. */
     ground_fields = itRemixTurnipRulesSplitGroundTimer(ITREMIX_TURNIP_RULES_GROUND_TIMER);
     ip->pickup_wait = ground_fields.pickup_wait;

@@ -11,6 +11,7 @@ extern void *func_800269C0_275C0(u16 id);
 #endif
 #ifdef REGION_REMIX
 #include "it/itremix/itremixspawn.h"
+#include "it/itremix/itremixspawnrules.h"
 #endif
 #if defined(PORT) && defined(REGION_REMIX)
 #include <mn/mnvsmode/mnremixitemswitchlegend.h>
@@ -936,6 +937,15 @@ void mnVSItemSwitchSetItemToggles(void)
     {
         gSCManagerTransferBattleState.item_toggles = 0;
         gSCManagerTransferBattleState.item_appearance_rate = sMNVSItemSwitchOptionStatuses[0];
+        // Item.asm extend_item_switch_bitmask_.save_ runs on this path too: the
+        // extended bits of the custom rows that are off are cleared and stored
+        // as the live and the saved mask.
+        gITRemixExtendedToggles = itRemixSpawnRulesExtendedTogglesAllRowsOff
+        (
+            gITRemixExtendedToggles,
+            itRemixSpawnRulesExtendedRowsMask(ITREMIX_STANDARD_ITEMS_NUM, ITREMIX_VANILLA_TOGGLE_ITEMS_MAX)
+        );
+        itRemixSaveExtendedToggles();
     }
     else
     {
@@ -1283,21 +1293,22 @@ void mnVSItemSwitchFuncRun(GObj *gobj)
 #endif
             }
         }
+    }
 
 #ifdef REGION_REMIX
-        // Item.asm item_switch_cursor_.handle_r_l_: with L_TRIG/R_TRIG
-        // removed from the option masks above, the physical buttons handle
-        // toggle-all (L) and page flip (R).
-        if (scSubsysControllerGetPlayerTapButtons(L_TRIG) != FALSE)
-        {
-            mnVSItemSwitchToggleAllPageItems();
-        }
-        if (scSubsysControllerGetPlayerTapButtons(R_TRIG) != FALSE)
-        {
-            mnVSItemSwitchFlipPage();
-        }
-#endif
+    // Item.asm item_switch_cursor_.handle_r_l_ (hooked at the function epilogue,
+    // so it also polls L and R in the first 9 tics): with L_TRIG/R_TRIG
+    // removed from the option masks above, the physical buttons handle
+    // toggle-all (L) and page flip (R).
+    if (scSubsysControllerGetPlayerTapButtons(L_TRIG) != FALSE)
+    {
+        mnVSItemSwitchToggleAllPageItems();
     }
+    if (scSubsysControllerGetPlayerTapButtons(R_TRIG) != FALSE)
+    {
+        mnVSItemSwitchFlipPage();
+    }
+#endif
 }
 
 // 0x80133090

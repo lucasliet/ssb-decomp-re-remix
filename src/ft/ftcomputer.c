@@ -5173,7 +5173,11 @@ sb32 ftComputerCheckTargetItemOrTwister(FTStruct *fp)
         }
         item_gobj = item_gobj->link_next;
     }
+#if defined(PORT) && defined(REGION_REMIX)
+    if (ftRemixAiHyruleTornadoApplies())
+#else
     if (gSCManagerBattleState->gkind == nGRKindHyrule)
+#endif
     {
         if (grHyruleTwisterCheckGetPosition(&twister_pos) != FALSE)
         {
@@ -6536,10 +6540,14 @@ s32 ftComputerGetObjectiveStatus(GObj *this_gobj)
     if
     (
         (func_ovl2_800F8FFC(&this_fp->joints[nFTPartsJointTopN]->translate.vec.f) == FALSE) ||
+#if defined(PORT) && defined(REGION_REMIX)
+        ftRemixAiDroppingPlatformApplies(this_fp)
+#else
         (gSCManagerBattleState->gkind == nGRKindInishie) &&
         (this_fp->coll_data.floor_line_id >= 0) &&
         (mpCollisionCheckExistPlatformLineID(this_fp->coll_data.floor_line_id) != FALSE) &&
         (this_fp->joints[nFTPartsJointTopN]->translate.vec.f.y < -100.0F)
+#endif
     )
     {
         if (com->objective != nFTComputerObjectiveRecover)

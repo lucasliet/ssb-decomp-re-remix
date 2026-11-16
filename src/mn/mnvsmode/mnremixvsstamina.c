@@ -21,6 +21,7 @@
 #define MNREMIX_VSSTAMINA_LABEL_OFFSET 0x00006B28
 #define MNREMIX_VSSTAMINA_HP_LABEL_OFFSET 0x00006E28
 #define MNREMIX_VSSTAMINA_TEAM_SCALE 0.875F
+#define MNREMIX_VSSTAMINA_CSS_HP_PICKER_OFFSET 0x0001ADE0
 
 static SObj* mnRemixVSStaminaMakeSObj(GObj *gobj, Sprite *sprite, f32 x, f32 y, SYColorRGB color)
 {
@@ -37,10 +38,10 @@ static SObj* mnRemixVSStaminaMakeSObj(GObj *gobj, Sprite *sprite, f32 x, f32 y, 
     return sobj;
 }
 
-static void mnRemixVSStaminaSetScale(SObj *sobj, f32 scale)
+/** Shrinks the sprite horizontally only (_position_stamina_team writes sprite.scalex and leaves scaley at 1.0). */
+static void mnRemixVSStaminaSetScaleX(SObj *sobj, f32 scale)
 {
     sobj->sprite.scalex = scale;
-    sobj->sprite.scaley = scale;
 }
 
 sb32 mnRemixVSStaminaIsRule(s32 rule)
@@ -131,18 +132,18 @@ void mnRemixVSStaminaMakeRuleValue(GObj *rule_value_gobj, void *file, s32 rule)
         mnRemixVSStaminaMakeSObj(rule_value_gobj, rule_sprite, 176.0F, 78.0F, white);
         return;
     }
-    sobj = mnRemixVSStaminaMakeSObj(rule_value_gobj, rule_sprite, 165.0F, 78.0F, white);
-    mnRemixVSStaminaSetScale(sobj, MNREMIX_VSSTAMINA_TEAM_SCALE);
+    sobj = mnRemixVSStaminaMakeSObj(rule_value_gobj, rule_sprite, 166.0F, 78.0F, white);
+    mnRemixVSStaminaSetScaleX(sobj, MNREMIX_VSSTAMINA_TEAM_SCALE);
 
     sobj = mnRemixVSStaminaMakeSObj(rule_value_gobj, lbRelocGetFileData(Sprite*, file, llMNVSModeTeamTextSprite), 224.0F, 78.0F, white);
-    mnRemixVSStaminaSetScale(sobj, MNREMIX_VSSTAMINA_TEAM_SCALE);
+    mnRemixVSStaminaSetScaleX(sobj, MNREMIX_VSSTAMINA_TEAM_SCALE);
 }
 
 void mnRemixVSStaminaMakeTimeStockLabels(GObj *time_stock_button_gobj, void *file)
 {
     SYColorRGB black = { 0x00, 0x00, 0x00 };
 
-    mnRemixVSStaminaMakeSObj(time_stock_button_gobj, lbRelocGetFileData(Sprite*, file, MNREMIX_VSSTAMINA_LABEL_OFFSET), 106.0F, 114.0F, black);
+    mnRemixVSStaminaMakeSObj(time_stock_button_gobj, lbRelocGetFileData(Sprite*, file, MNREMIX_VSSTAMINA_LABEL_OFFSET), 84.5F, 113.0F, black);
     mnRemixVSStaminaMakeSObj(time_stock_button_gobj, lbRelocGetFileData(Sprite*, file, MNREMIX_VSSTAMINA_HP_LABEL_OFFSET), 212.0F, 120.0F, black);
 }
 
@@ -161,6 +162,15 @@ void mnRemixVSStaminaMakeHPValue(GObj *time_stock_value_gobj, s32 hp, u32 *color
     else x = 209;
 
     mnVSModeMakeNumber(time_stock_value_gobj, hp, (f32)x, 116.0F, colors, 3, FALSE);
+}
+
+intptr_t mnRemixVSStaminaCssPickerOffset(intptr_t stock_offset)
+{
+    if (gGMRemixStaminaRule == FALSE)
+    {
+        return stock_offset;
+    }
+    return MNREMIX_VSSTAMINA_CSS_HP_PICKER_OFFSET;
 }
 
 void mnRemixVSStaminaMakeCSSValue(GObj *rule_selector_gobj, s32 hp, u32 *colors)

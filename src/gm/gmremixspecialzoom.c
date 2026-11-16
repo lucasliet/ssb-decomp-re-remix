@@ -34,12 +34,6 @@
 #define FTREMIX_SPECIAL_ZOOM_CAMERA_NORMAL 0
 #define FTREMIX_SPECIAL_ZOOM_GAME_STATUS_PAUSED 2
 
-/* Global.asm screen ids where the zoom runs (VS, Training, Remix modes and the 1P battle) */
-#define FTREMIX_SPECIAL_ZOOM_SCREEN_TITLE_AND_1P 0x01
-#define FTREMIX_SPECIAL_ZOOM_SCREEN_VS_BATTLE 0x16
-#define FTREMIX_SPECIAL_ZOOM_SCREEN_TRAINING 0x36
-#define FTREMIX_SPECIAL_ZOOM_SCREEN_REMIX_MODES 0x77
-
 /* Sound effects played when the stage is hidden for a KO zoom (SpecialZoom.asm apply_zoom) */
 #define FTREMIX_SPECIAL_ZOOM_FGM_HIDE_STAGE 152
 #define FTREMIX_SPECIAL_ZOOM_FGM_HIDE_STAGE_2 187
@@ -58,14 +52,15 @@ static u8 sFTRemixSpecialZoomCameraModeSave;
 static Vec2f sFTRemixSpecialZoomOffset;
 
 /**
- * TRUE when the current screen is one where the Special Zoom runs.
+ * TRUE when the current scene is one where the Special Zoom runs: VS battle, Training and the 1P game (SpecialZoom.asm
+ * 124-133 allows the screens VS_BATTLE, TRAINING_MODE, REMIX_MODES and TITLE_AND_1P; the port runs the 1P battle and every
+ * Remix 1P mode on nSCKind1PGame, and the title has no fighters).
  */
 static sb32 ftRemixSpecialZoomIsBattleScreen(void)
 {
-    s32 screen = gSCManagerSceneData.scene_curr;
+    s32 scene = gSCManagerSceneData.scene_curr;
 
-    return (screen == FTREMIX_SPECIAL_ZOOM_SCREEN_VS_BATTLE) || (screen == FTREMIX_SPECIAL_ZOOM_SCREEN_TRAINING)
-        || (screen == FTREMIX_SPECIAL_ZOOM_SCREEN_REMIX_MODES) || (screen == FTREMIX_SPECIAL_ZOOM_SCREEN_TITLE_AND_1P);
+    return (scene == nSCKindVSBattle) || (scene == nSCKind1PTrainingMode) || (scene == nSCKind1PGame);
 }
 
 /**
@@ -73,7 +68,7 @@ static sb32 ftRemixSpecialZoomIsBattleScreen(void)
  */
 static sb32 ftRemixSpecialZoomIsPausedOutsideTraining(void)
 {
-    if (gSCManagerSceneData.scene_curr == FTREMIX_SPECIAL_ZOOM_SCREEN_TRAINING)
+    if (gSCManagerSceneData.scene_curr == nSCKind1PTrainingMode)
     {
         return FALSE;
     }
@@ -194,7 +189,7 @@ static void ftRemixSpecialZoomSlowMoCameraStep(void)
     {
         return;
     }
-    is_camera_blocked = (gSCManagerSceneData.scene_curr != FTREMIX_SPECIAL_ZOOM_SCREEN_TRAINING)
+    is_camera_blocked = (gSCManagerSceneData.scene_curr != nSCKind1PTrainingMode)
         && ((gmRemixToggle(camera_mode) != FTREMIX_SPECIAL_ZOOM_CAMERA_NORMAL)
             || (gGMCameraStruct.func_camera == gmCameraMapZoomFuncCamera));
 

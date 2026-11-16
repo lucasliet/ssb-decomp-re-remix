@@ -154,6 +154,7 @@ static s32 mnPlayersVSGetPanelIndex(s32 player)
 
 #if defined(PORT) && defined(REGION_REMIX)
 static void mnPlayersVSTagTeamWriteSlot(s32 player);
+static void mnPlayersVSTagTeamRefreshQueue(s32 player);
 static s32 mnPlayersVSGetTagTeamStockCount(s32 player);
 #endif
 
@@ -781,7 +782,6 @@ static void mnPlayersVSTwelveCBRebuildHalf(s32 player)
  * (TwelveCharBattle.asm check_image_press_ of the card, x 91.5 / 123.5 and 159 / 191, y 172, 14 high). */
 #define MNPLAYERSVS_TWELVECB_ZONE_Y 172.0F
 #define MNPLAYERSVS_TWELVECB_ZONE_HEIGHT 14.0F
-#define MNPLAYERSVS_TWELVECB_ZONE_WIDTH 32.0F
 #define MNPLAYERSVS_TWELVECB_SETS_SELECTABLE (MNREMIX_TCB_CUSTOM_SET + 1)
 
 static const f32 sMNPlayersVSTwelveCBZoneX[2] = { 91.5F, 159.0F };
@@ -879,6 +879,8 @@ static void mnPlayersVSTwelveCBStepManualStocks(s32 player, s32 slot, s32 delta)
 	func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 }
 
+static void mnPlayersVSTwelveCBRefreshFighterAfterSetChange(s32 player);
+
 /**
  * A press of the cursor on the 12-Character Battle controls: the set arrows of each player, and the stock arrows (the count
  * is locked once the battle started). Returns TRUE when the press was one of them.
@@ -910,23 +912,17 @@ static sb32 mnPlayersVSCheckTwelveCBPress(GObj *cursor_gobj)
 	{
 		for (player = 0; player < 2; player++)
 		{
-			f32 zone_x = sMNPlayersVSTwelveCBZoneX[player];
 			s32 set = gmRemixTwelveCBGetCssSet(player);
+			s32 arrow = mnRemixTwelveCBLayoutSetArrowAt(sMNPlayersVSTwelveCBZoneX[player], hot_x);
 
-			if ((hot_x >= zone_x) && (hot_x < zone_x + MNPLAYERSVS_TWELVECB_ZONE_WIDTH))
-			{
-				set = (set + MNPLAYERSVS_TWELVECB_SETS_SELECTABLE - 1) % MNPLAYERSVS_TWELVECB_SETS_SELECTABLE;
-			}
-			else if ((hot_x >= zone_x + MNPLAYERSVS_TWELVECB_ZONE_WIDTH) && (hot_x < zone_x + (2.0F * MNPLAYERSVS_TWELVECB_ZONE_WIDTH)))
-			{
-				set = (set + 1) % MNPLAYERSVS_TWELVECB_SETS_SELECTABLE;
-			}
-			else
+			if (arrow == 0)
 			{
 				continue;
 			}
+			set = (set + arrow + MNPLAYERSVS_TWELVECB_SETS_SELECTABLE) % MNPLAYERSVS_TWELVECB_SETS_SELECTABLE;
 			gmRemixTwelveCBSetCssSet(player, set);
 			mnPlayersVSTwelveCBRebuildHalf(player);
+			mnPlayersVSTwelveCBRefreshFighterAfterSetChange(player);
 			func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 			return TRUE;
 		}
@@ -1018,6 +1014,41 @@ static s32 mnPlayersVSTwelveCBGetHoveredSlot(s32 token_player)
 	SObj *sobj = SObjGetStruct(sMNPlayersVSSlots[token_player].puck);
 
 	return mnRemixTwelveCBLayoutSlotAtPoint(token_player, (s32)sobj->pos.x, (s32)sobj->pos.y);
+}
+
+/**
+ * TwelveCharBattle.asm update_character_set_ (2515-2549): after a set change the panel of a player that has a fighter takes the
+ * character now under his token (a random one when the token is over none or over a character he cannot take), is rebuilt, and
+ * announces it unless the player still holds the token.
+ *
+ * @param player Player (0 or 1) whose character set changed.
+ */
+static void mnPlayersVSTwelveCBRefreshFighterAfterSetChange(s32 player)
+{
+	s32 slot;
+	s32 fkind;
+
+	if (sMNPlayersVSSlots[player].fkind == nFTKindNull)
+	{
+		return;
+	}
+	slot = mnPlayersVSTwelveCBGetHoveredSlot(player);
+	fkind = (slot == MNREMIX_TCB_NO_SLOT) ? nFTKindNull : mnPlayersVSTwelveCBSlotFkind(slot);
+
+	if ((fkind == nFTKindNull) || (mnPlayersVSCheckFighterCrossed(fkind) != FALSE) || (mnPlayersVSCheckFighterLocked(fkind) != FALSE))
+	{
+		fkind = mnPlayersVSRandFighterKind(sMNPlayersVSSlots[player].puck);
+	}
+	else sMNPlayersVSTwelveCBPortrait[player] = slot;
+
+	sMNPlayersVSSlots[player].fkind = fkind;
+	mnPlayersVSUpdateFighter(player);
+	mnPlayersVSUpdateNameAndEmblem(player);
+
+	if (sMNPlayersVSSlots[player].holder_player == GMCOMMON_PLAYERS_MAX)
+	{
+		mnPlayersVSAnnounceFighter(player, player);
+	}
 }
 
 /** TRUE when the cursor edits the Custom set: it holds a token over a portrait of a Custom set before the battle started. */
@@ -1356,6 +1387,23 @@ static sb32 mnPlayersVSCheckStockModeArrowPress(GObj *cursor_gobj)
 	return FALSE;
 }
 
+/**
+ * The Stock option of a CSS panel changed (StockMode.asm onchange_handler). The Reset button also puts the Manual and Last counts of
+ * the port back to -1 (_check_reset, _tag_team); in Tag Team the count is read again, the queue past it is cut and the fighter display
+ * is synced (_icon_refresh, update_remaining_stocks_ with delta 0).
+ */
+void mnPlayersVSStockOptionChanged(s32 player, sb32 is_reset)
+{
+	if (is_reset != FALSE)
+	{
+		gmRemixStockModeResetPort(player);
+	}
+	if (mnRemixTagTeamCssPortStocksChanged(player, mnPlayersVSGetTagTeamStockCount(player)) != FALSE)
+	{
+		mnPlayersVSUpdateFighter(player);
+	}
+}
+
 /** Player (0 or 1) whose token is the GObj, 0 when it is none of them. */
 static s32 mnPlayersVSTwelveCBPlayerOfPuck(GObj *puck_gobj)
 {
@@ -1562,6 +1610,7 @@ void mnPlayersVSMakePortraitAll(void)
 		sMNPlayersVSTwelveCBLegendSide[0] = -1;
 		sMNPlayersVSTwelveCBLegendSide[1] = -1;
 		mnRemixTwelveCBCustomLegendReset();
+		mnRemixCssIndicatorsReset();
 
 		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
 		{
@@ -2477,6 +2526,7 @@ void mnPlayersVSMakeStockSelect(s32 number)
 {
 	GObj *gobj;
 #if defined(PORT) && defined(REGION_REMIX)
+	intptr_t selector_offset = mnRemixVSStaminaCssPickerOffset(llMNPlayersCommonStockSelectorSprite);
 	u32 went_down = mnRemixTagTeamCssStocksChanged(number);
 	s32 port;
 
@@ -2488,6 +2538,8 @@ void mnPlayersVSMakeStockSelect(s32 number)
 			mnPlayersVSUpdateFighter(port);
 		}
 	}
+#else
+	intptr_t selector_offset = llMNPlayersCommonStockSelectorSprite;
 #endif
 
 	if (sMNPlayersVSGameRuleGObj != NULL)
@@ -2509,7 +2561,7 @@ void mnPlayersVSMakeStockSelect(s32 number)
 		(
 			Sprite*,
 			sMNPlayersVSFiles[0],
-			llMNPlayersCommonStockSelectorSprite
+			selector_offset
 		),
 		nGCProcessKindFunc,
 		NULL,
@@ -3273,6 +3325,9 @@ void mnPlayersVSUpdateGateAll(void)
 				sMNPlayersVSSlots[i].shade = mnPlayersVSGetShade(i);
 				ftParamInitAllParts(sMNPlayersVSSlots[i].player, sMNPlayersVSSlots[i].costume, sMNPlayersVSSlots[i].shade);
 			}
+#if defined(PORT) && defined(REGION_REMIX)
+			mnPlayersVSTagTeamRefreshQueue(i);
+#endif
 		}
 	}
 	if (sMNPlayersVSIsTeamBattle == TRUE)
@@ -3291,6 +3346,9 @@ void mnPlayersVSUpdateGateAll(void)
 				sMNPlayersVSSlots[i].shade = mnPlayersVSGetShade(i);
 				ftParamInitAllParts(sMNPlayersVSSlots[i].player, sMNPlayersVSSlots[i].costume, sMNPlayersVSSlots[i].shade);
 			}
+#if defined(PORT) && defined(REGION_REMIX)
+			mnPlayersVSTagTeamRefreshQueue(i);
+#endif
 		}
 	}
 }
@@ -3495,6 +3553,9 @@ sb32 mnPlayersVSCheckTeamSelectInRangeAll(GObj *gobj, s32 cursor_player)
 				sMNPlayersVSSlots[player].shade = shade = mnPlayersVSGetShade(player);
 				ftParamInitAllParts(sMNPlayersVSSlots[player].player, sMNPlayersVSSlots[player].costume, shade);
 			}
+#if defined(PORT) && defined(REGION_REMIX)
+			mnPlayersVSTagTeamRefreshQueue(player);
+#endif
 			func_800269C0_275C0(nSYAudioFGMTitlePressStart);
 
 			return TRUE;
@@ -3889,6 +3950,20 @@ static void mnPlayersVSTagTeamWriteSlot(s32 player)
 	                       (sMNPlayersVSIsTeamBattle != FALSE) ? TRUE : FALSE);
 }
 
+/** TagTeam.asm css.update_queue_ (_toggle_to_ffa, _toggle_to_teams, _toggle_team): update_slot_ for the panel, then update_previous_icons_. */
+static void mnPlayersVSTagTeamRefreshQueue(s32 player)
+{
+	s32 teams[GMCOMMON_PLAYERS_MAX];
+	s32 i;
+
+	for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
+	{
+		teams[i] = sMNPlayersVSSlots[i].team;
+	}
+	mnPlayersVSTagTeamWriteSlot(player);
+	mnRemixTagTeamCssRewritePrevious(player, (sMNPlayersVSIsTeamBattle != FALSE) ? TRUE : FALSE, teams);
+}
+
 /** What the Tag Team icon row shows of a panel (TagTeam.asm css.slot_icon_update_routine_). */
 static void mnPlayersVSGetTagTeamPortInfo(s32 player, MNRemixTagTeamCssPortInfo *info)
 {
@@ -3917,18 +3992,28 @@ static sb32 mnPlayersVSCheckTagTeamQueues(void)
 #endif
 
 #if defined(PORT) && defined(REGION_REMIX)
-/** 12-Character Battle: tells the pose override whether the fighter shown for a port is a character with no stocks left (defeated_action_override_). */
-static void mnPlayersVSTwelveCBMarkDefeatedPose(s32 player)
+static sb32 sMNPlayersVSTwelveCBDefeatedShown[GMCOMMON_PLAYERS_MAX];
+
+/**
+ * 12-Character Battle: tells the pose override whether the fighter shown for a port is a character with no stocks left (defeated_action_override_).
+ * Returns TRUE when that differs from the last call: the asm builds the panel fighter again on every update, so its pose follows at once.
+ */
+static sb32 mnPlayersVSTwelveCBMarkDefeatedPose(s32 player)
 {
 	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
 	s32 fkind = sMNPlayersVSSlots[player].fkind;
 	sb32 is_defeated = FALSE;
+	sb32 is_changed;
 
 	if ((state != NULL) && (player < ARRAY_COUNT(sMNPlayersVSTwelveCBPortrait)) && (fkind != nFTKindNull))
 	{
 		is_defeated = (gmRemixTwelveCBGetPortraitStocks(state, mnPlayersVSTwelveCBGetPortrait(player, fkind)) == 0) ? TRUE : FALSE;
 	}
+	is_changed = (is_defeated != sMNPlayersVSTwelveCBDefeatedShown[player]) ? TRUE : FALSE;
+	sMNPlayersVSTwelveCBDefeatedShown[player] = is_defeated;
 	ftRemixTwelveCBDefeatedSetPose(player, is_defeated);
+
+	return is_changed;
 }
 #endif
 
@@ -3938,7 +4023,7 @@ void mnPlayersVSUpdateFighter(s32 player)
 	sb32 is_skip_fighter = FALSE;
 	GObj *fighter_gobj = sMNPlayersVSSlots[player].player;
 #if defined(PORT) && defined(REGION_REMIX)
-	mnPlayersVSTwelveCBMarkDefeatedPose(player);
+	sb32 is_pose_changed = mnPlayersVSTwelveCBMarkDefeatedPose(player);
 #endif
 
 	#ifdef PORT
@@ -3983,6 +4068,9 @@ void mnPlayersVSUpdateFighter(s32 player)
 		costume = mnPlayersVSGetFreeCostume(sMNPlayersVSSlots[player].fkind, player);
 
 		if (
+#if defined(PORT) && defined(REGION_REMIX)
+			(is_pose_changed == FALSE) &&
+#endif
 			(fighter_gobj != NULL) &&
 			(ftGetStruct(fighter_gobj)->fkind == sMNPlayersVSSlots[player].fkind))
 		{
@@ -5791,11 +5879,43 @@ void mnPlayersVSMovePuck(s32 player)
 	SObjGetStruct(sMNPlayersVSSlots[player].puck)->pos.y += sMNPlayersVSSlots[player].puck_vel_y;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+static s32 sMNPlayersVSTwelveCBPreviousHoverSlot[2] = { MNREMIX_TCB_NO_SLOT, MNREMIX_TCB_NO_SLOT };
+
+/**
+ * TwelveCharBattle.asm portrait_change_: whether the portrait under the token of a player differs from the one of the previous frame.
+ * Only the hover of the 12-Character Battle counts; a player whose token is placed keeps his portrait.
+ *
+ * @param player Player of the token.
+ * @param fkind Fighter under the token, nFTKindNull when it is over none.
+ * @return TRUE when the portrait changed.
+ */
+static sb32 mnPlayersVSTwelveCBCheckPortraitChanged(s32 player, s32 fkind)
+{
+	s32 slot;
+	sb32 is_changed;
+
+	if ((gmRemixTwelveCBIsActive() == FALSE) || (player >= ARRAY_COUNT(sMNPlayersVSTwelveCBPreviousHoverSlot)) ||
+	    (sMNPlayersVSSlots[player].is_selected != FALSE))
+	{
+		return FALSE;
+	}
+	slot = (fkind == nFTKindNull) ? MNREMIX_TCB_NO_SLOT : sMNPlayersVSTwelveCBPortrait[player];
+	is_changed = (slot != sMNPlayersVSTwelveCBPreviousHoverSlot[player]) ? TRUE : FALSE;
+	sMNPlayersVSTwelveCBPreviousHoverSlot[player] = slot;
+
+	return is_changed;
+}
+#endif
+
 // 0x801388F8
 void mnPlayersVSPuckProcUpdate(GObj *gobj)
 {
 	s32 fkind;
 	s32 player = gobj->user_data.s;
+#if defined(PORT) && defined(REGION_REMIX)
+	sb32 is_portrait_changed;
+#endif
 
 	if (sMNPlayersVSTotalTimeTics < 30)
 	{
@@ -5841,6 +5961,9 @@ void mnPlayersVSPuckProcUpdate(GObj *gobj)
 	else mnPlayersVSMovePuck(player);
 
 	fkind = mnPlayersVSGetPuckFighterKind(player);
+#if defined(PORT) && defined(REGION_REMIX)
+	is_portrait_changed = mnPlayersVSTwelveCBCheckPortraitChanged(player, fkind);
+#endif
 
 	switch (sMNPlayersVSSlots[player].pkind)
 	{
@@ -5863,7 +5986,12 @@ void mnPlayersVSPuckProcUpdate(GObj *gobj)
 				mnPlayersVSSelectFighterPuck(sMNPlayersVSSlots[player].holder_player, 4);
 			}
 		}
+#if defined(PORT) && defined(REGION_REMIX)
+		/* TwelveCharBattle.asm portrait_change_: a new portrait id updates the panel even when the character is the same */
+		if ((sMNPlayersVSSlots[player].is_selected == FALSE) && ((fkind != sMNPlayersVSSlots[player].fkind) || (is_portrait_changed != FALSE)))
+#else
 		if ((sMNPlayersVSSlots[player].is_selected == FALSE) && (fkind != sMNPlayersVSSlots[player].fkind))
+#endif
 		{
 			sMNPlayersVSSlots[player].fkind = fkind;
 
@@ -7079,6 +7207,31 @@ static void mnPlayersVSRemixDpadCursorFrameUpdate(void)
 }
 
 /**
+ * 12-Character Battle: the J or E flag of the character each panel holds (TwelveCharBattle.asm update_variant_indicators_, 3779-3862,
+ * drawn for the character id of the panel, selected or hovered). The D-pad variants and the bonus hint are not part of the mode, so
+ * the panels are reported as selected, which hides them.
+ */
+static void mnPlayersVSRemixTwelveCBFlagFrameUpdate(void)
+{
+	MNRemixCssPanelState states[GMCOMMON_PLAYERS_MAX];
+	s32 panel;
+	s32 player;
+
+	for (panel = 0; panel < GMCOMMON_PLAYERS_MAX; panel++)
+	{
+		states[panel].fkind = nFTKindNull;
+		states[panel].is_selected = TRUE;
+		states[panel].is_token_held = FALSE;
+		states[panel].token = panel;
+	}
+	for (player = 0; player < 2; player++)
+	{
+		states[mnPlayersVSGetPanelIndex(player)].fkind = (sMNPlayersVSSlots[player].pkind == nFTPlayerKindNot) ? nFTKindNull : sMNPlayersVSSlots[player].fkind;
+	}
+	mnRemixCssIndicatorsUpdate(sMNPlayersVSFiles[11], states, GMCOMMON_PLAYERS_MAX);
+}
+
+/**
  * Brings the variant indicators (D-pad, variant images, flags) and the bonus scroll hint of the four panels up to date
  * (CharacterSelect.asm update_variant_indicators_ and draw_bonus_scroll_indicators_, which run every frame).
  */
@@ -7091,6 +7244,7 @@ static void mnPlayersVSRemixIndicatorsFrameUpdate(void)
 
 	if (gmRemixTwelveCBIsActive() != FALSE)
 	{
+		mnPlayersVSRemixTwelveCBFlagFrameUpdate();
 		return;
 	}
 	for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)

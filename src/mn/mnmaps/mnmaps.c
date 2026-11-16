@@ -11,6 +11,7 @@
 #include <reloc_data.h>
 #include <mn/mncommon/mnremixtimeouts.h>
 #ifdef REGION_REMIX
+#include "gr/grremix/grremixids.h"
 #include "gr/grremix/grremixstage.h"
 #include "gr/grremix/grremixtrainingbackground.h"
 #include "mn/mnmaps/mnremixemblem.h"
@@ -21,6 +22,7 @@
 #include "mn/mnmaps/mnremixstagerandom.h"
 #include "mn/mnmaps/mnremixstageroulette.h"
 #include "mn/mnmaps/mnremixstagetournament.h"
+#include "sc/sc1pmode/sc1premixenemyafk.h"
 #include "mn/mnmaps/mnremixstagevariant.h"
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
@@ -1665,7 +1667,8 @@ void mnMapsMakeArrows(void)
 void mnMapsLoadMapFile(s32 gkind, void *heap)
 {
 #ifdef REGION_REMIX
-	GRFileInfo map_info = grRemixGetGroundFileInfo(gkind);
+	/* Time Twister previews an alternate model of the stage select (Stages.asm get_header_ 1149-1152) */
+	GRFileInfo map_info = grRemixGetGroundFileInfo((gkind == nGRRemixStage_TIME_TWISTER) ? nGRRemixStage_TIME_TWISTER_SSS : gkind);
 #else
 	GRFileInfo map_info = dMNMapsFileInfos[gkind];
 #endif
@@ -2926,6 +2929,10 @@ static sb32 mnMapsRemixUpdatePage(void)
 		return FALSE;
 	}
 	sMNMapsCursorPage = page;
+	if (mnRemixRouletteIsActive(&sMNMapsRemixRoulette) == FALSE)
+	{
+		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+	}
 	gcEjectGObj(sMNMapsIconsGObj);
 	mnMapsMakeIcons();
 	mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
@@ -2937,6 +2944,14 @@ static sb32 mnMapsRemixUpdatePage(void)
 	}
 	port_log("[mnmaps] page %d of %d\n", (int)(sMNMapsCursorPage + 1), (int)sMNMapsPageCount);
 	return TRUE;
+}
+
+/** TRUE when a D-pad, C or stick direction is held, the input the vanilla up, down, left and right branches accept. */
+static sb32 mnMapsRemixIsDirectionHeld(void)
+{
+	return (scSubsysControllerGetPlayerHoldButtons(nMNMapsButtonsUp | nMNMapsButtonsDown | nMNMapsButtonsLeft | nMNMapsButtonsRight) != 0) ||
+	       (scSubsysControllerGetPlayerStickUD(20, 1) != 0) || (scSubsysControllerGetPlayerStickUD(-20, 0) != 0) ||
+	       (scSubsysControllerGetPlayerStickLR(-20, 0) != 0) || (scSubsysControllerGetPlayerStickLR(20, 1) != 0);
 }
 
 /**
@@ -2955,7 +2970,17 @@ static void mnMapsRemixUpdateControls(sb32 *is_select_tapped, sb32 *is_back_tapp
 		*is_select_tapped = TRUE;
 		return;
 	}
-	if ((sMNMapsScrollWait == 0) && (mnMapsRemixUpdatePage() != FALSE))
+	if (sMNMapsScrollWait != 0)
+	{
+		return;
+	}
+	/* The asm hook sits in the right branch, so a direction accepted this frame wins (right_check_ 1841-1856); a running Roulette
+	   is not held back by a direction because the port does not move the cursor during it */
+	if ((mnRemixRouletteIsActive(&sMNMapsRemixRoulette) == FALSE) && (mnMapsRemixIsDirectionHeld() != FALSE))
+	{
+		return;
+	}
+	if (mnMapsRemixUpdatePage() != FALSE)
 	{
 		return;
 	}
@@ -2984,6 +3009,7 @@ static void mnMapsRemixUpdateControls(sb32 *is_select_tapped, sb32 *is_back_tapp
 	}
 	if (mnRemixMapsCycleVariant(gkind) != FALSE)
 	{
+		/* Stages.asm _loop/_update_preview (2061-2095) is silent; the port keeps the scroll sound as feedback (deviations.md) */
 		func_800269C0_275C0(nSYAudioFGMMenuScroll2);
 		mnMapsMakeNameAndEmblem(sMNMapsCursorSlot);
 		mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
@@ -3052,6 +3078,10 @@ void mnMapsFuncRun(GObj *gobj)
 #ifdef REGION_REMIX
 		is_select_tapped = scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON);
 		is_back_tapped = scSubsysControllerGetPlayerTapButtons(B_BUTTON);
+		if (mnRemixStageGridRulesAfkSelects((sMNMapsIsTrainingMode == TRUE) ? 1 : 0, sMNMapsTotalTimeTics, (sc1PRemixAfkIsActive() != FALSE) ? 1 : 0) != 0)
+		{
+			is_select_tapped = TRUE;
+		}
 		mnMapsRemixUpdateControls(&is_select_tapped, &is_back_tapped);
 
 		if (is_select_tapped != FALSE)

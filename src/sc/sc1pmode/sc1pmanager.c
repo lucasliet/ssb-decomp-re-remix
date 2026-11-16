@@ -533,8 +533,11 @@ void sc1PManagerUpdateScene(void)
                 {
                     gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].fkind = nFTKindDonkey;
                 }
-#endif
+                /* starfox_costume also leaves at = Fox: the vanilla test below then takes the alternate-costume branch for a Fox ally (Luigi never reaches it). */
+                if (gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].fkind == ((sc1PRemix1PIsActive() != FALSE) ? nFTKindFox : nFTKindLuigi))
+#else
                 if (gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].fkind == nFTKindLuigi)
+#endif
                 {
                     gSCManager1PGameBattleState.players[gSCManagerSceneData.ally_players[0]].costume = ftParamGetCostumeCommonID(nFTKindLuigi, 1);
                 }
@@ -667,9 +670,6 @@ void sc1PManagerUpdateScene(void)
 #endif
             if (gSCManagerSceneData.is_reset != FALSE)
             {
-#if defined(PORT) && defined(REGION_REMIX)
-                sc1PRemix1POnPauseExit();
-#endif
                 gSCManagerSceneData.scene_prev = nSCKind1PGame;
                 gSCManagerSceneData.scene_curr = nSCKind1PMode;
 

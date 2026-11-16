@@ -24,4 +24,13 @@ typedef struct ITRemixTurnipRulesGroundFields
  */
 ITRemixTurnipRulesGroundFields itRemixTurnipRulesSplitGroundTimer(uint16_t halfword);
 
+/**
+ * Turnip.asm falling_initial_ 284-286: clears mask 0x02 of N64 0x2CE ("don't randomly despawn"), the low bit of the
+ * port's times_thrown.
+ *
+ * @param times_thrown Current times_thrown of the item.
+ * @return times_thrown with its low bit cleared.
+ */
+uint8_t itRemixTurnipRulesClearDespawnGuard(uint8_t times_thrown);
+
 #endif

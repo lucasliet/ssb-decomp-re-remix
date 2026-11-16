@@ -11,3 +11,8 @@ ITRemixTurnipRulesGroundFields itRemixTurnipRulesSplitGroundTimer(uint16_t halfw
 
     return fields;
 }
+
+uint8_t itRemixTurnipRulesClearDespawnGuard(uint8_t times_thrown)
+{
+    return times_thrown & ~1;
+}

@@ -4,6 +4,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include <ft/fighter.h>
 #include <ft/ftdef.h>
 #include "ft/ftremix/sonic/ftremixsonicclassic.h"
 #include "gm/gmremixmode.h"
@@ -19,6 +20,7 @@
 /* TagTeam.character_queues and current_slot; they outlive the CSS like the asm tables, so a later visit shows the same queues. */
 static MNRemixTagTeamCssQueue sMNRemixTagTeamCssQueues[MNREMIX_TAGTEAM_CSS_PORTS];
 static sb32 sMNRemixTagTeamCssIsInit = FALSE;
+static sb32 sMNRemixTagTeamCssRewriteIsTeams = FALSE;
 
 static void mnRemixTagTeamCssInit(void)
 {
@@ -117,6 +119,31 @@ void mnRemixTagTeamCssWrite(s32 port, s32 fkind, s32 costume, s32 shade, sb32 is
     {
         mnRemixTagTeamCssMirrorSlot(port, queue->current_slot);
     }
+}
+
+/** Costume callback of the previous-slot rewrite: the default costume by index in a free-for-all, the team costume in a team battle. */
+static s32 mnRemixTagTeamCssGetRewriteCostume(s32 fkind, s32 value)
+{
+    return (sMNRemixTagTeamCssRewriteIsTeams != FALSE) ? ftParamGetCostumeTeamID(fkind, value) : ftParamGetCostumeCommonID(fkind, value);
+}
+
+void mnRemixTagTeamCssRewritePrevious(s32 port, sb32 is_teams, const s32 *teams)
+{
+    int port_teams[MNREMIX_TAGTEAM_CSS_PORTS];
+    s32 i;
+
+    if ((mnRemixTagTeamCssIsActive() == FALSE) || (port < 0) || (port >= MNREMIX_TAGTEAM_CSS_PORTS))
+    {
+        return;
+    }
+    mnRemixTagTeamCssInit();
+
+    for (i = 0; i < MNREMIX_TAGTEAM_CSS_PORTS; i++)
+    {
+        port_teams[i] = teams[i];
+    }
+    sMNRemixTagTeamCssRewriteIsTeams = is_teams;
+    mnRemixTagTeamCssRulesRewritePrevious(sMNRemixTagTeamCssQueues, port, is_teams, port_teams, mnRemixTagTeamCssGetRewriteCostume);
 }
 
 void mnRemixTagTeamCssNextSlot(s32 port, s32 stock_count)

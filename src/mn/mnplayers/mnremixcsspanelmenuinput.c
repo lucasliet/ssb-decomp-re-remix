@@ -11,6 +11,7 @@
 #include "gm/gmremixmode.h"
 #include "gm/gmremixstamina.h"
 #include "gm/gmremixtoggle.h"
+#include "mn/mnplayers/mnplayersvs.h"
 #include "mn/mnplayers/mnremixcssrules.h"
 #include "mn/mnplayers/mnremixcsspanelmenureload.h"
 #include "mn/mnplayers/mnremixcsspanelmenustate.h"
@@ -100,6 +101,16 @@ static s32 mnRemixPanelMenuStepItem(s32 item, s32 port, s32 direction)
     return 0;
 }
 
+/** Tells the VS character select that the Stock option of a panel changed, from an arrow or the Reset button. */
+static void mnRemixPanelMenuNotifyStockOption(s32 item, s32 port, sb32 is_reset)
+{
+    if (item != MNREMIX_PANELMENU_ITEM_STOCK)
+    {
+        return;
+    }
+    mnPlayersVSStockOptionChanged(port, is_reset);
+}
+
 static void mnRemixPanelMenuChangeItem(MNRemixPanelMenuState *state, const MNRemixPanelMenuPanel *panel, s32 row, s32 direction)
 {
     s32 item = panel->items[(panel->page * MNREMIX_PANELMENU_ROWS) + row];
@@ -108,6 +119,7 @@ static void mnRemixPanelMenuChangeItem(MNRemixPanelMenuState *state, const MNRem
     value = mnRemixPanelMenuApplyChangeRules(state, item, value, direction);
     mnRemixPanelMenuSetValue(item, panel->info.port, value);
     mnRemixPanelMenuApplyFighterChange(item, panel->info.port, value);
+    mnRemixPanelMenuNotifyStockOption(item, panel->info.port, FALSE);
     port_log("css panel menu: port %d item %d = %d\n", (int)panel->info.port, (int)item, (int)value);
     mnRemixPanelMenuPlayRepeatSound(state);
 }
@@ -245,6 +257,7 @@ static void mnRemixPanelMenuResetPanel(MNRemixPanelMenuState *state, const MNRem
     {
         mnRemixPanelMenuSetValue(items[index], panel->info.port, mnRemixPanelMenuRulesItemDefault(items[index]));
         mnRemixPanelMenuApplyFighterChange(items[index], panel->info.port, mnRemixPanelMenuRulesItemDefault(items[index]));
+        mnRemixPanelMenuNotifyStockOption(items[index], panel->info.port, TRUE);
     }
     syAudioPlayFGM(MNREMIX_PANELMENU_FGM_TOGGLE);
 }

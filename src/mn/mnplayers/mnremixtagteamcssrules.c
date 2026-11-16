@@ -53,6 +53,48 @@ void mnRemixTagTeamCssRulesWrite(MNRemixTagTeamCssQueue *queue, int fkind, int c
     slot->is_team_costume = is_team_costume;
 }
 
+/** Number of earlier ports holding `fkind` in `slot`, counting only the ports of `team` when it is not negative. */
+static int mnRemixTagTeamCssRulesCountEarlier(const MNRemixTagTeamCssQueue *queues, int port, int slot, int fkind, const int *teams, int team)
+{
+    int count = 0;
+    int earlier;
+
+    for (earlier = 0; earlier < port; earlier++)
+    {
+        if ((queues[earlier].slots[slot].fkind == fkind) && ((team < 0) || (teams[earlier] == team)))
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+void mnRemixTagTeamCssRulesRewritePrevious(MNRemixTagTeamCssQueue *queues, int port, int is_teams, const int *teams, MNRemixTagTeamCssCostumeFunc get_costume)
+{
+    MNRemixTagTeamCssSlot *slot;
+    int index;
+
+    for (index = 0; index < queues[port].current_slot; index++)
+    {
+        slot = &queues[port].slots[index];
+
+        if (slot->fkind == MNREMIX_TAGTEAM_CSS_NONE)
+        {
+            continue;
+        }
+        if (is_teams != 0)
+        {
+            slot->costume = get_costume(slot->fkind, teams[port]);
+            slot->shade = mnRemixTagTeamCssRulesCountEarlier(queues, port, index, slot->fkind, teams, teams[port]);
+            slot->is_team_costume = 1;
+            continue;
+        }
+        slot->costume = get_costume(slot->fkind, mnRemixTagTeamCssRulesCountEarlier(queues, port, index, slot->fkind, teams, -1));
+        slot->shade = 0;
+        slot->is_team_costume = 0;
+    }
+}
+
 void mnRemixTagTeamCssRulesNextSlot(MNRemixTagTeamCssQueue *queue, int stock_count)
 {
     stock_count = mnRemixTagTeamCssRulesLastSlot(stock_count);

@@ -16,16 +16,21 @@ void gmRemixCameraPanUpdate(u16 button_hold)
     gmRemixCameraPanRulesStep(&sGMRemixCameraPanOffsets, button_hold);
 }
 
+void gmRemixCameraPanReset(void)
+{
+    sGMRemixCameraPanOffsets.x = 0.0F;
+    sGMRemixCameraPanOffsets.y = 0.0F;
+    sGMRemixCameraPanOffsets.z = 0.0F;
+    sGMRemixCameraPanOffsets.fov = 0.0F;
+}
+
 void gmRemixCameraPanClear(void)
 {
     if (gmRemixCameraIsScene() != FALSE)
     {
         return;
     }
-    sGMRemixCameraPanOffsets.x = 0.0F;
-    sGMRemixCameraPanOffsets.y = 0.0F;
-    sGMRemixCameraPanOffsets.z = 0.0F;
-    sGMRemixCameraPanOffsets.fov = 0.0F;
+    gmRemixCameraPanReset();
 }
 
 sb32 gmRemixCameraPanCheckPauseOutBounds(Vec3f *pos)

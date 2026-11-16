@@ -46,6 +46,9 @@ extern void gmRemixStockModeClearModes(void);
 /* Forgets the stock count the Last mode stored (the CSS reset of css/StockMode.asm _check_reset). */
 extern void gmRemixStockModeResetLast(void);
 
+/* Puts the Manual and Last counts of one port back to unset (the Reset button of its CSS panel, css/StockMode.asm _check_reset). */
+extern void gmRemixStockModeResetPort(s32 player);
+
 /* Restores the stored count from before the last Last match (GameEnd.asm salty runback). */
 extern void gmRemixStockModeSaltyRunbackLast(void);
 

@@ -8,6 +8,7 @@
 
 #include "ft/ftremix/ftremixhooks.h"
 #include "gm/gmcamera.h"
+#include "gm/gmremixcamerapan.h"
 #include "gm/gmremixtoggle.h"
 #include "gr/grdef.h"
 #include "gr/grremix/grremixids.h"
@@ -325,6 +326,7 @@ void gmRemixCameraSetupDefault(CObj *cobj)
     s32 mode = gmRemixCameraModeToggle();
     s32 stage = gSCManagerBattleState->gkind;
 
+    gmRemixCameraPanReset();
     gmRemixCameraRestoreFuncList();
 
     if (mode == nGMRemixCameraModeNormal)

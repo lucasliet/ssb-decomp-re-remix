@@ -18,7 +18,7 @@
  *
  * Differences: the pause state of the title is not read (the asm reads the match info byte; the port treats the title as
  * unpaused); the 1P game scene stands for the "1p battle" part of Global.screen.TITLE_AND_1P (the same mapping as the 1P test of
- * the Dream Land wind); and the screen 0x77 (Remix modes) never occurs because the port runs those modes on the VS scene.
+ * the Dream Land wind); and the screen 0x77 (Remix modes) never occurs because the port runs those modes on the 1P game scene (nSCKind1PGame).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)

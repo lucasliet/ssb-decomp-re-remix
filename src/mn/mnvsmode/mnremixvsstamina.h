@@ -44,6 +44,9 @@ extern void mnRemixVSStaminaMakeTimeStockLabels(GObj* time_stock_button_gobj, vo
 /** Draws the HP value (3 digits at most) of the Time/Stock button. */
 extern void mnRemixVSStaminaMakeHPValue(GObj* time_stock_value_gobj, s32 hp, u32 *colors);
 
+/** Image offset of the yellow CSS picker: the "H.P." background in a Stamina rule, else `stock_offset` (stamina_hp_display_._bg). */
+extern intptr_t mnRemixVSStaminaCssPickerOffset(intptr_t stock_offset);
+
 /** Draws the HP value of the CSS rule selector (3 digits at most). */
 extern void mnRemixVSStaminaMakeCSSValue(GObj* rule_selector_gobj, s32 hp, u32 *colors);
 

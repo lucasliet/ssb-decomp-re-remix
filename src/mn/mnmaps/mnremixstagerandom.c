@@ -12,6 +12,7 @@
 #include <ssb_types.h>
 #include <macros.h>
 #include <sys/utils.h>
+#include <sc/scene.h>
 #include "gr/grremix/grremixids.h"
 #include "mn/mnmaps/mnremixstagerandom.h"
 #include "mn/mnmaps/mnremixstagerandomrules.h"
@@ -98,7 +99,11 @@ static s32 mnRemixStageRandomCollectEntries(MNRemixStageRandomEntry *entries)
     return count;
 }
 
-s32 mnRemixStageRandomPick(sb32 is_tournament)
+/**
+ * Draws one stage of the random list. With is_excluding_previous the previous match's stage is left out, as the vanilla redraw
+ * loop around the patched call at 0x8013AA1C does when Stage Select is off.
+ */
+static s32 mnRemixStageRandomDraw(sb32 is_tournament, sb32 is_excluding_previous)
 {
     MNRemixStageRandomEntry entries[MNREMIX_RANDOM_ENTRY_MAX];
     s32 stage_ids[MNREMIX_RANDOM_ENTRY_MAX];
@@ -111,16 +116,25 @@ s32 mnRemixStageRandomPick(sb32 is_tournament)
         port_log("[mnmaps] random stage list is empty (%d candidates)\n", (int)entry_count);
         return -1;
     }
+    if (is_excluding_previous != FALSE)
+    {
+        count = mnRemixStageRandomRulesExcludeStage(stage_ids, count, gSCManagerSceneData.gkind);
+    }
     stage_id = stage_ids[syUtilsRandTimeUCharRange(count)];
     port_log("[mnmaps] random stage 0x%02X drawn from %d stages\n", (unsigned int)stage_id, (int)count);
 
     return stage_id;
 }
 
+s32 mnRemixStageRandomPick(sb32 is_tournament)
+{
+    return mnRemixStageRandomDraw(is_tournament, FALSE);
+}
+
 s32 mnRemixStageRandomPickStageSelectOff(void)
 {
     sb32 is_tournament = mnRemixTournamentLatchLayout();
-    s32 gkind = mnRemixStageRandomPick(is_tournament);
+    s32 gkind = mnRemixStageRandomDraw(is_tournament, TRUE);
 
     if ((gkind >= 0) && (is_tournament != FALSE))
     {

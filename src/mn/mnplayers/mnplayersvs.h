@@ -79,6 +79,9 @@ extern sb32 mnPlayersVSCheckPuckInRange(GObj *gobj, s32 cursor_player, s32 playe
 extern void mnPlayersVSUpdatePlayerKind(s32 player);
 extern void mnPlayersVSUpdatePuckDisplay(GObj *gobj, s32 player);
 extern void mnPlayersVSUpdateFighter(s32 player);
+#if defined(PORT) && defined(REGION_REMIX)
+extern void mnPlayersVSStockOptionChanged(s32 player, sb32 is_reset);
+#endif
 extern void mnPlayersVSUpdateCursorDisplay(GObj *gobj, s32 player);
 extern void mnPlayersVSUpdateNameAndEmblem(s32 player);
 extern void mnPlayersVSDestroyPortraitFlash(s32 player);

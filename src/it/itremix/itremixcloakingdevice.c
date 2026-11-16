@@ -7,6 +7,7 @@
 #include <sys/objman.h>
 #include <sys/objdef.h>
 #include <ft/fighter.h>
+#include <if/ifcommon.h>
 #include "ft/ftremix/ftremixenvcolor.h"
 #include <math.h>
 
@@ -62,10 +63,31 @@ static ITRemixCloakingDeviceState* itRemixCloakingDeviceGetState(FTStruct *fp)
     return &sITRemixCloakingDeviceStates[fp->player];
 }
 
-/* CloakingDevice: stage_setting_. Remix SPAWN_ITEM (a0 parent, a1 pos, a2 vel, a3 flags) */
+/* CloakingDevice: stage_setting_. Remix SPAWN_ITEM (a0 parent, a1 pos, a2 vel, a3 flags) is
+ * Item.spawn_custom_item_based_on_tomato_ (Item.asm 374-388), a copy of itTomatoMakeItem: XObj 0x2E, the unused
+ * item bool and the item arrow. */
 GObj* itRemixCloakingDeviceMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 {
-    return itManagerMakeItem(parent_gobj, &sITRemixCloakingDeviceItemInfo, pos, vel, flags);
+    GObj *item_gobj = itManagerMakeItem(parent_gobj, &sITRemixCloakingDeviceItemInfo, pos, vel, flags);
+    DObj *joint;
+    Vec3f translate;
+    ITStruct *ip;
+
+    if (item_gobj == NULL)
+    {
+        return NULL;
+    }
+    joint = DObjGetStruct(item_gobj);
+    ip = itGetStruct(item_gobj);
+    translate = joint->translate.vec.f;
+
+    gcAddXObjForDObjFixed(joint, 0x2E, 0);
+
+    joint->translate.vec.f = translate;
+    ip->is_unused_item_bool = TRUE;
+    ip->arrow_gobj = ifCommonItemArrowMakeInterface(ip);
+
+    return item_gobj;
 }
 
 /* Opacity byte of the cloak at this frame (asm handle_active_cloaking_device_): it fades out over the transition,

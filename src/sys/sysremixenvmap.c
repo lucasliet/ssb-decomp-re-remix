@@ -30,9 +30,16 @@ static const Light_t sSYRemixEnvMapLookAtY =
     { 0x01, 0x75, 0x00 }, 0x00
 };
 
+static int sSYRemixEnvMapIsContinueScreen = 0;
+
+void sysRemixEnvMapSetContinueScreen(int is_active)
+{
+    sSYRemixEnvMapIsContinueScreen = is_active;
+}
+
 void sysRemixEnvMapAppendLookAt(Gfx **dl)
 {
-    if (sysRemixEnvMapIsLookAtScreen(gSCManagerSceneData.scene_curr) == 0)
+    if ((sSYRemixEnvMapIsContinueScreen == 0) && (sysRemixEnvMapIsLookAtScreen(gSCManagerSceneData.scene_curr) == 0))
     {
         return;
     }

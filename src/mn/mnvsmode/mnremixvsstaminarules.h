@@ -13,8 +13,8 @@
 
 /**
  * HP after one step of the VS menu picker. A d-pad, C or L/R button step is 1. A stick step is 10 with snaps: from 1 to 9 up to 10,
- * from 10 or less down to 1, from 991 or more down to 990, and from 990 or more up wraps to 1 (the asm sets the value to its maximum
- * before the vanilla wrap test, which then wraps it).
+ * from 10 or less down to 1, from 991 or more down to 990, and from 990 up to 998 up to 999 (_top_right sets the stored value to 0x3E5, the
+ * vanilla +1 makes it 999). Only 999 itself wraps to 1.
  *
  * @param hp Current HP, 1 to 999.
  * @param is_increase TRUE for the right arrow.

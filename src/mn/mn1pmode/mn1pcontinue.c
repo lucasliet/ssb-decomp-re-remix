@@ -8,7 +8,7 @@
 #include <sys/audio.h>
 #if defined(PORT) && defined(REGION_REMIX)
 #include "mn/mn1pmode/mnremix1pmode.h"
-#include "remix/remix_player_panel.h"
+#include "sys/sysremixenvmap.h"
 #include "sc/sc1pmode/sc1premixenemyafk.h"
 #endif
 extern void *func_800269C0_275C0(u16 id);
@@ -1041,10 +1041,8 @@ void mnPlayers1PGameContinueInitVars(void)
 void mnPlayers1PGameContinueUnused0x80133990(void)
 {
 #if defined(PORT) && defined(REGION_REMIX)
-    /* SinglePlayerModes.asm game_over_end: the next 1P menu opens on its first page and the human's size does not carry over. */
+    /* SinglePlayerModes.asm game_over_end: the next 1P menu opens on its first page. clear_settings_for_1p_ only re-syncs the match size and clears the CPU ports (gmRemixPanelGet), so the human's saved size stays. */
     gMNRemix1PModePage = MNREMIX_1PMODE_PAGE_1;
-
-    remix_panel_set(REMIX_PANEL_SIZE, gSCManagerSceneData.player, 0);
 #endif
     return;
 }
@@ -1346,7 +1344,13 @@ void mnPlayers1PGameContinueStartScene(void)
 
     dMN1PContinueTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl55_BSS_END);
 
+#if defined(PORT) && defined(REGION_REMIX)
+    sysRemixEnvMapSetContinueScreen(1);
+#endif
     scManagerFuncUpdate(&dMN1PContinueTaskmanSetup);
+#if defined(PORT) && defined(REGION_REMIX)
+    sysRemixEnvMapSetContinueScreen(0);
+#endif
 
     gSCManagerSceneData.is_continue = sMN1PContinueIsSelectContinue;
 }

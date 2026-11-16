@@ -25,6 +25,12 @@ extern void gmRemixCameraPanUpdate(u16 button_hold);
 extern void gmRemixCameraPanClear(void);
 
 /**
+ * Zeroes the offsets in every Camera Mode (Camera.asm set_initial_coordinates_, which clears them before the toggle test, at
+ * every battle camera creation), so a match never opens with the pan left by the previous one.
+ */
+extern void gmRemixCameraPanReset(void);
+
+/**
  * Pause start check (Camera.asm pause_initial_, RAM 0x801141B4): clears the offsets, then runs the vanilla bounds check.
  *
  * @param pos Position of the fighter who paused.

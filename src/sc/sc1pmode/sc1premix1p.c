@@ -369,15 +369,6 @@ s32 sc1PRemix1PPolygonKind(void)
     return SC1PREMIX_1P_POLYGON_FIRST + sc1PRemix1PRandom(SC1PREMIX_1P_POLYGON_LAST - SC1PREMIX_1P_POLYGON_FIRST + 1);
 }
 
-void sc1PRemix1POnPauseExit(void)
-{
-    if (sc1PRemixModeIs(SC1PREMIX_MODE_REMIX_1P) == FALSE)
-    {
-        return;
-    }
-    remix_panel_set(REMIX_PANEL_SIZE, gSCManagerSceneData.player, 0);
-}
-
 sb32 sc1PRemix1PIsFinalBoss(s32 fkind, s32 team)
 {
     if ((sc1PRemix1PIsActive() == FALSE) || (gSCManagerSceneData.spgame_stage != nSC1PGameStageBoss))
