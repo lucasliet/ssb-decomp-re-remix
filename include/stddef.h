@@ -28,3 +28,14 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 #endif
 
 #endif /* __STDDEF_H__ */
+
+#if defined(__need_wint_t)
+#ifndef _WINT_T
+#define _WINT_T
+#ifndef __WINT_TYPE__
+#define __WINT_TYPE__ unsigned int
+#endif
+typedef __WINT_TYPE__ wint_t;
+#endif
+#undef __need_wint_t
+#endif
