@@ -2,6 +2,7 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixturnip.h"
+#include "it/itremix/itremixturniprules.h"
 #include <ft/fighter.h>
 #include <it/item.h>
 #include <it/itcommon/ittomato.h>
@@ -18,7 +19,6 @@
 #define TURNIP_BASE_KNOCKBACK 25
 #define TURNIP_KB_ANGLE 361
 #define TURNIP_HIT_FGM 0x0038
-#define TURNIP_GROUND_TIMER 0x030C
 #define TURNIP_THROW_TIMER 50
 #define TURNIP_COLLIDE_FLAGS 0x0C21
 #define TURNIP_SPAWN_IMAGE_INDEX 5
@@ -87,11 +87,17 @@ static void itRemixTurnipReflectedSetStatus(GObj *item_gobj)
 static void itRemixTurnipDroppedProc(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
+    ITRemixTurnipRulesGroundFields ground_fields;
 
     /* DEVIATION(shared bit with times_thrown, no named flag): asm falling_initial_ (items/Turnip.asm 284-286) clears
      * mask 0x02 of N64 0x2CE, the "don't randomly despawn" flag. The port maps N64 0x2CE to ITStruct 0x2CA, where the
      * bit is the low bit of times_thrown (0x02CA:4-6). Clearing it would change the throw count, so it is not written. */
-    ip->pickup_wait = TURNIP_GROUND_TIMER;
+    /* Turnip.asm falling_initial_ 288-289 sh GROUND_TIMER(0x030C), 0x02D2: the halfword covers pickup_wait (48, "disappears quickly") and three flags. */
+    ground_fields = itRemixTurnipRulesSplitGroundTimer(ITREMIX_TURNIP_RULES_GROUND_TIMER);
+    ip->pickup_wait = ground_fields.pickup_wait;
+    ip->is_allow_knockback = ground_fields.is_allow_knockback;
+    ip->is_unused_item_bool = ground_fields.is_unused_item_bool;
+    ip->is_static_damage = ground_fields.is_static_damage;
     ip->damage_coll.hitstatus = nGMHitStatusNone;
     itMainSetStatus(item_gobj, sITRemixTurnipStatusDescs, nITRemixTurnipStatusFall);
 }

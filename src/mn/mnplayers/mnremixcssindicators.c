@@ -20,7 +20,6 @@
 
 #define MNREMIX_CSS_INDICATOR_GOBJ_LINK 22
 #define MNREMIX_CSS_INDICATOR_DL_LINK 28
-#define MNREMIX_CSS_FLAG_X_OFFSET (-8)
 #define MNREMIX_CSS_FLAG_Y 191
 #define MNREMIX_CSS_MARK_RECT_SLOT_FIRST 34
 #define MNREMIX_CSS_MARK_SIZE 2.0F
@@ -36,6 +35,7 @@
 
 static s32 sMNRemixCssIndicatorFirstX = MNREMIX_CSS_DPAD_X;
 static s32 sMNRemixCssIndicatorStride = MNREMIX_CSS_DPAD_PANEL_STRIDE;
+static sb32 sMNRemixCssIndicatorIsVS = TRUE;
 static GObj *sMNRemixCssDpadGObjs[MNREMIX_CSS_INDICATOR_PANELS];
 static GObj *sMNRemixCssIconGObjs[MNREMIX_CSS_INDICATOR_PANELS];
 static GObj *sMNRemixCssFlagGObjs[MNREMIX_CSS_INDICATOR_PANELS];
@@ -46,6 +46,7 @@ void mnRemixCssIndicatorsSetLayout(s32 first_panel_x, s32 panel_stride)
 {
     sMNRemixCssIndicatorFirstX = first_panel_x;
     sMNRemixCssIndicatorStride = panel_stride;
+    sMNRemixCssIndicatorIsVS = FALSE;
 }
 
 static s32 mnRemixCssIndicatorPanelX(s32 panel)
@@ -57,7 +58,9 @@ void mnRemixCssIndicatorsReset(void)
 {
     s32 panel;
 
-    mnRemixCssIndicatorsSetLayout(MNREMIX_CSS_DPAD_X, MNREMIX_CSS_DPAD_PANEL_STRIDE);
+    sMNRemixCssIndicatorFirstX = MNREMIX_CSS_DPAD_X;
+    sMNRemixCssIndicatorStride = MNREMIX_CSS_DPAD_PANEL_STRIDE;
+    sMNRemixCssIndicatorIsVS = TRUE;
 
     for (panel = 0; panel < MNREMIX_CSS_INDICATOR_PANELS; panel++)
     {
@@ -227,7 +230,7 @@ static void mnRemixCssMakeFlag(s32 panel, s32 fkind, void *css_images_file)
 
     gcRemoveSObjAll(sMNRemixCssFlagGObjs[panel]);
     mnRemixCssAddSprite(sMNRemixCssFlagGObjs[panel], mnRemixCssGetIconSprite(css_images_file, flag),
-                        mnRemixCssIndicatorPanelX(panel) + MNREMIX_CSS_FLAG_X_OFFSET, MNREMIX_CSS_FLAG_Y, 1.0F);
+                        mnRemixCssIndicatorPanelX(panel) + mnRemixCssFlagOffsetX(sMNRemixCssIndicatorIsVS), MNREMIX_CSS_FLAG_Y, 1.0F);
 }
 
 static sb32 mnRemixCssIsRegionalFlag(s32 fkind)

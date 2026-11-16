@@ -6,6 +6,7 @@
 
 #include "grremixstage.h"
 #include "grremixhazards.h"
+#include "grremixcrashbonus.h"
 #include "grremixstagerules.h"
 #include <gr/ground.h>
 #include <sc/scene.h>
@@ -214,14 +215,17 @@ void grRemixMakeGround(void)
     s32 gkind = gSCManagerBattleState->gkind;
     u32 function = grRemixGetGroundFunction(gkind);
 
-    /* bonus_fix_1_ (Stages.asm): Break the Targets and Board the Platforms stages use the bonus ground whatever their function says */
+    /* bonus_fix_1_ (Stages.asm): Break the Targets and Board the Platforms stages use the bonus ground. id_fix_2_ first runs
+     * a nonzero function (crash_btt_setup, crash_btp_setup), which then jumps to the bonus ground setup (0x80105700). */
     switch (grRemixGetStageClass(gkind))
     {
     case GRREMIX_CLASS_BTT:
+        grRemixCrashBonusMake(gkind);
         sc1PBonusStageMakeBonus1Ground();
         return;
 
     case GRREMIX_CLASS_BTP:
+        grRemixCrashBonusMake(gkind);
         sc1PBonusStageInitBonus2();
         return;
     }

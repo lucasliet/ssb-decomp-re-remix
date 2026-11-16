@@ -1,6 +1,5 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
-#include "if/ifremixannouncer.h"
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "sc/sc1pmode/sc1premixbonus3.h"
 #include "sc/sc1pmode/sc1pbonusstage.h"
@@ -1832,6 +1831,7 @@ void sc1PGameSpawnEnemyTeamNext(GObj *player_gobj)
         desc.pkind = gSCManagerBattleState->players[player].pkind;
 
 #if defined(PORT) && defined(REGION_REMIX)
+        desc.pkind = sc1PRemixHrcFighterKind(player, desc.pkind);
         desc.controller = sc1PRemixEnemyRespawnController(sSC1PGamePlayerSetups[player].mapobj_kind, &gSYControllerDevices[player]);
 #else
         desc.controller = &gSYControllerDevices[player];
@@ -2713,7 +2713,6 @@ void sc1PGameFuncStart(void)
     sc1PGameSetupStageAll();
     sc1PGameSetupFiles();
 #ifdef REGION_REMIX
-    ifRemixAnnouncerSetup();
     sc1PRemixMultimanSetupHud();
 #endif
 
@@ -2912,6 +2911,7 @@ void sc1PGameFuncStart(void)
         desc.pkind = gSCManagerBattleState->players[i].pkind;
 
 #if defined(PORT) && defined(REGION_REMIX)
+        desc.pkind = sc1PRemixHrcFighterKind(i, desc.pkind);
         desc.controller = sc1PRemixEnemySetupController(sSC1PGamePlayerSetups[i].mapobj_kind, &gSYControllerDevices[i]);
 #else
         desc.controller = &gSYControllerDevices[i];

@@ -69,7 +69,7 @@ WPDesc dWPRemixCacodemonThunderballWeaponDesc =
     0,                                      /* Attributes at the file base */
     {
         nGCMatrixKindTra,                   /* Main matrix transformations */
-        0,                                  /* Secondary matrix transformations */
+        0x47,                               /* Hazards.asm 9235 word 0x12470000: camera-facing billboard */
         0
     },
     grRemixThunderballProcUpdate,           /* Proc Update */
@@ -149,7 +149,10 @@ static void grRemixThunderballSetPalette(GObj *weapon_gobj)
     }
 }
 
-/** thunderball_stage_setting_: makes the projectile at (x, y, 0), sets its duration, target and velocity. */
+/**
+ * thunderball_stage_setting_: makes the projectile at (x, y, 0), sets its duration, target and velocity, then turns the
+ * model to the side of its x velocity (asm 0x80167FA0, Hazards.asm 9032-9039).
+ */
 GObj* grRemixThunderballShoot(GObj *cacodemon_gobj)
 {
     ITRemixCacodemonVars *vars = ITREMIX_CACODEMON_VARS(itGetStruct(cacodemon_gobj));
@@ -166,6 +169,7 @@ GObj* grRemixThunderballShoot(GObj *cacodemon_gobj)
     grRemixThunderballFindTarget(vars, &spawn_pos);
     grRemixThunderballAim(wpGetStruct(projectile_gobj), vars, &spawn_pos);
     grRemixThunderballSetPalette(projectile_gobj);
+    wpMainVelSetModelPitch(projectile_gobj);
 
     return projectile_gobj;
 }

@@ -9,13 +9,14 @@
  */
 
 /**
- * Whether the credits play the ending song of the fighter: the run was Remix 1P or All-Star. The credits opened from the debug
- * settings screen keep the standard song (the asm compares the previous screen with the settings screen id 0x39, which the port does
- * not have), and the standard 1P keeps it as well.
+ * Whether the credits play the ending song of the fighter: the run was Remix 1P or All-Star and the credits follow its ending.
+ * The credits opened from the settings screen keep the standard song whatever mode is stored (the asm compares the previous
+ * screen with the settings screen id 0x39; the port opens them from its menu, Other Screens), and the standard 1P keeps it as well.
  *
  * @param mode Mode id of the run (SC1PREMIX_MODE_*).
+ * @param is_opened_from_menu Non-zero when the credits were opened from the port menu and not by the end of a 1P run.
  */
-extern int sc1PRemixEndingUsesFighterSong(int mode);
+extern int sc1PRemixEndingUsesFighterSong(int mode, int is_opened_from_menu);
 
 /**
  * Song of the credits: the entry of the fighter in Character.remix_1p_end_bgm.table, or the standard song when the entry is zero

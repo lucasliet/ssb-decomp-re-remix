@@ -2,6 +2,9 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+#if defined(PORT) && defined(REGION_REMIX)
+#include <ef/efremixground.h>
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -1805,8 +1808,16 @@ void efGroundSetupRandomWeights(void)
 void efGroundMakeAppearActor(void)
 {
     GObj *effect_gobj;
+#if defined(PORT) && defined(REGION_REMIX)
+    /* Stages.asm bg_animation_ _id_check / _pointer_check: the stage's table entry replaces the vanilla id < 9 check. */
+    EFGroundData *ground_data = efRemixGroundGetData(gSCManagerBattleState->gkind);
+#endif
 
+#if defined(PORT) && defined(REGION_REMIX)
+    if ((ground_data != NULL) && (gSCManagerSceneData.scene_curr != nSCKind1PTrainingMode) && (ground_data->effect_params != NULL))
+#else
     if ((gSCManagerBattleState->gkind <= nGRKindBattleEnd) && (gSCManagerSceneData.scene_curr != nSCKind1PTrainingMode) && (dEFGroundDatas[gSCManagerBattleState->gkind].effect_params != NULL))
+#endif
     {
         effect_gobj = gcMakeGObjSPAfter(nGCCommonKindEffect, NULL, 7, GOBJ_PRIORITY_DEFAULT);
 
@@ -1818,9 +1829,15 @@ void efGroundMakeAppearActor(void)
 
             sEFGroundActor.make_wait = syUtilsRandIntRange(10000) + 6000;
             sEFGroundActor.effect_id = 0;
+#if defined(PORT) && defined(REGION_REMIX)
+            sEFGroundActor.effect_data = ground_data;
+#else
             sEFGroundActor.effect_data = &dEFGroundDatas[gSCManagerBattleState->gkind];
+#endif
 
-#ifdef PORT
+#if defined(PORT) && defined(REGION_REMIX)
+            sEFGroundActor.file_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->gr_desc[1].dobjdesc) - (intptr_t)ground_data->o_data);
+#elif defined(PORT)
             sEFGroundActor.file_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->gr_desc[1].dobjdesc) - (intptr_t)dEFGroundDatas[gSCManagerBattleState->gkind].o_data);
 #else
             sEFGroundActor.file_head = (void*) ((uintptr_t)gMPCollisionGroundData->gr_desc[1].dobjdesc - (intptr_t)dEFGroundDatas[gSCManagerBattleState->gkind].o_data);

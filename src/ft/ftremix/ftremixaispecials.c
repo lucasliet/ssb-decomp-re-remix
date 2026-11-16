@@ -71,22 +71,20 @@ void ftRemixAiSpecialsBowserUspStickReset(FTStruct *fp)
 
 /**
  * improve_remix_specials (AI.asm _check_needle and _check_revolver): the needle (Sheik) or revolver (Peppy) ammo is the N64
- * word 0x0AE0.
+ * word 0x0AE0. Returns TRUE only when B is pressed: the begin and ground charge actions leave through 0x80136BF8, which
+ * returns 0 like the vanilla Samus and Donkey Kong charge actions.
  */
 sb32 ftRemixAiSpecialsNeedleCharge(FTStruct *fp)
 {
     s32 ammo = *ftRemixFighterWord(fp, FTREMIX_N64_OFFSET_NEEDLE_AMMO);
+    s32 outcome = ftRemixAiSpecialsNeedleChargeOutcome((fp->fkind == REMIX_ID_SHEIK) ? 1 : 0, fp->status_id, ammo);
 
-    switch (ftRemixAiSpecialsNeedleChargeOutcome((fp->fkind == REMIX_ID_SHEIK) ? 1 : 0, fp->status_id, ammo))
+    if (ftRemixAiSpecialsNeedleChargeReturnsTrue(outcome) == 0)
     {
-    case FTREMIX_AI_SPECIALS_NEEDLE_KEEP:
-        return TRUE;
-
-    case FTREMIX_AI_SPECIALS_NEEDLE_PRESS:
-        ftComputerSetCommandWaitShort(fp, FTREMIX_AI_SPECIALS_PRESS_B_COMMAND);
-        return TRUE;
+        return FALSE;
     }
-    return FALSE;
+    ftComputerSetCommandWaitShort(fp, FTREMIX_AI_SPECIALS_PRESS_B_COMMAND);
+    return TRUE;
 }
 
 sb32 ftRemixAiSpecialsFarRangeIsCharging(FTStruct *fp, s32 fkind)

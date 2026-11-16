@@ -19,6 +19,12 @@ int ftRemixCrashDSPECBOverride(FTStruct *fp, int next_status_id, float *out_uppe
 #define FTREMIX_ACTION_THROWN_DK 0xB8 /* Action.ThrownDK, Action.asm line 189 */
 #define FTREMIX_SKELETON_COLANIM_METAL 0x10 /* electric_hit entry of the metal and polygon fighters: no skeleton */
 
+/* Hooks of the copy abilities, for the descriptors of Kirby and J Kirby. */
+void ftRemixBindKirbyCopyDescriptorHooks(struct FighterDescriptor *descriptor)
+{
+    descriptor->shield_hitlag_skip = ftRemixCrashNSPShieldHitlagSkip; /* CrashSpecial.asm shield_hitlag_patch_ `_kirby` */
+}
+
 void ftRemixBindDescriptorHooks(s32 remix_id, struct FighterDescriptor *descriptor)
 {
     descriptor->entry_make_effect = ftRemixEntryMakeEffect;
@@ -28,6 +34,10 @@ void ftRemixBindDescriptorHooks(s32 remix_id, struct FighterDescriptor *descript
     case REMIX_ID_CRASH:
         descriptor->shield_hitlag_skip = ftRemixCrashNSPShieldHitlagSkip; /* CrashSpecial.asm shield_hitlag_patch_ */
         descriptor->ecb_override = ftRemixCrashDSPECBOverride;            /* CrashSpecial.asm dig_ecb_patch_ */
+        break;
+
+    case REMIX_ID_JKIRBY:
+        ftRemixBindKirbyCopyDescriptorHooks(descriptor);
         break;
 
     case REMIX_ID_WARIO:

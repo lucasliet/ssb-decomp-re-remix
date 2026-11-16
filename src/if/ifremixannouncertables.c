@@ -18,8 +18,8 @@
 /* A table that owns the first "owned" entries of its array and draws over the first "picks" entries, the asm a1 of announcer_main_. */
 #define IFREMIX_ANNOUNCER_TABLE_PICKS(calls, owned, picks) { calls, owned, picks, 0 }
 
-/* A table of a call that plays at most once per match (clang_announcement_ tests the used byte first). */
-#define IFREMIX_ANNOUNCER_TABLE_ONCE(calls) { calls, IFREMIX_ANNOUNCER_LENGTH(calls), IFREMIX_ANNOUNCER_LENGTH(calls), 1 }
+/* A table of a call that stays silent once its first entry played in the match (team_ko_announcement_ tests its used halfword first). */
+#define IFREMIX_ANNOUNCER_TABLE_SPENT_BY_FIRST(calls) { calls, IFREMIX_ANNOUNCER_LENGTH(calls), IFREMIX_ANNOUNCER_LENGTH(calls), 1 }
 
 static IFRemixAnnouncement sPokemonCalls[] =
 {
@@ -295,9 +295,9 @@ static IFRemixAnnouncerTable sIFRemixAnnouncerTables[nIFRemixAnnouncerCallCount]
     [nIFRemixAnnouncerCallBurn] = IFREMIX_ANNOUNCER_TABLE_PICKS(sBurnCalls, 2, 1),
     [nIFRemixAnnouncerCallSeismicToss] = IFREMIX_ANNOUNCER_TABLE(sSeismicTossCall),
     [nIFRemixAnnouncerCallRecovery] = IFREMIX_ANNOUNCER_TABLE(sRecoveryCall),
-    [nIFRemixAnnouncerCallClang] = IFREMIX_ANNOUNCER_TABLE_ONCE(sClangCall),
+    [nIFRemixAnnouncerCallClang] = IFREMIX_ANNOUNCER_TABLE(sClangCall),
     [nIFRemixAnnouncerCallStun] = IFREMIX_ANNOUNCER_TABLE(sStunCalls),
-    [nIFRemixAnnouncerCallTeamKO] = IFREMIX_ANNOUNCER_TABLE(sTeamKOCalls),
+    [nIFRemixAnnouncerCallTeamKO] = IFREMIX_ANNOUNCER_TABLE_SPENT_BY_FIRST(sTeamKOCalls),
     [nIFRemixAnnouncerCallSlash] = IFREMIX_ANNOUNCER_TABLE(sSlashCall),
     [nIFRemixAnnouncerCallFlamethrower] = IFREMIX_ANNOUNCER_TABLE(sFlamethrowerCall),
     [nIFRemixAnnouncerCallGymLeader] = IFREMIX_ANNOUNCER_TABLE_PICKS(sGymOpeningCalls, 1, 2),
@@ -317,7 +317,10 @@ IFRemixAnnouncerTable *ifRemixAnnouncerTablesGet(IFRemixAnnouncerCall call)
     return &sIFRemixAnnouncerTables[call];
 }
 
-/** Resets the timer and the used flag of the entries a table owns, the asm refresh loop of announcer_setup_. */
+/**
+ * Resets the timer and the used flag of the entries a table owns, the asm refresh loop of announcer_setup_. The asm clears
+ * only the high byte of the used halfword, so its flags survive from match to match (docs/remix/deviations.md).
+ */
 static void ifRemixAnnouncerTablesResetOne(IFRemixAnnouncerTable *table)
 {
     int index;

@@ -16,7 +16,8 @@ sb32 ftRemixAiPredictionCandidateAllowed(FTStruct *fp, s32 input_kind);
 
 /**
  * fix_movement_prediction: writes the predicted X and Y offsets of the candidate (target minus CPU at hit_frame).
- * Only writes for level 10; other levels keep the vanilla values in the outputs.
+ * Only writes for level 10; other levels keep the vanilla values in the outputs. In Smashketball with a ball in play the
+ * target position, speed and fall numbers are the ball's (Smashketball.asm ai_ball_attack_range).
  */
 void ftRemixAiPredictAttackPosition(FTStruct *cpu, FTStruct *target, s32 hit_frame, f32 *predict_x, f32 *predict_y);
 

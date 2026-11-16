@@ -59,3 +59,19 @@ int32_t sc1PTrainingPortRulesSpawnPort(int32_t option, int32_t port)
     }
     return option - 1;
 }
+
+int32_t sc1PTrainingPortRulesFindPressingPort(const uint16_t *taps, int32_t first_port, uint16_t buttons)
+{
+    int32_t step;
+
+    for (step = 0; step < SC1PTRAININGPORTRULES_PORT_COUNT; step++)
+    {
+        int32_t port = (first_port + step) % SC1PTRAININGPORTRULES_PORT_COUNT;
+
+        if ((taps[port] & buttons) != 0)
+        {
+            return port;
+        }
+    }
+    return -1;
+}

@@ -16,6 +16,7 @@
 #include "gm/gmremixcamerapan.h"
 #include "gm/gmremixmusictitle.h"
 #include "gm/gmremixtagteam.h"
+#include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixmagnify.h"
 #include "if/ifremixstaminahud.h"
@@ -2249,7 +2250,7 @@ void ifCommonPlayerTagProcDisplay(GObj *interface_gobj)
                 ifRemixPlayerTagDrawName(player, SObjGetStruct(interface_gobj)->pos.x + (SObjGetStruct(interface_gobj)->sprite.width * 0.5F),
                                          SObjGetStruct(interface_gobj)->pos.y,
                                          ((u32)SObjGetStruct(interface_gobj)->sprite.red << 24) | ((u32)SObjGetStruct(interface_gobj)->sprite.green << 16) |
-                                         ((u32)SObjGetStruct(interface_gobj)->sprite.blue << 8) | 0xFF);
+                                         ((u32)SObjGetStruct(interface_gobj)->sprite.blue << 8) | SObjGetStruct(interface_gobj)->sprite.alpha);
 #endif
 
                 lbCommonDrawSObjAttr(interface_gobj);
@@ -3469,7 +3470,12 @@ void ifCommonBattleGoUpdateInterface(void)
     Vec3f sp68;
     Vec3f sp5C;
 
+#ifdef REGION_REMIX
+    /* TwelveCharBattle.asm gentlemens_reset_ _pause_press_check (0x8011407C): a 12-Character Battle only polls ports 1 and 2 */
+    for (player = 0; player < gmRemixTwelveCBGetPausePortCount(gmRemixTwelveCBIsActive(), (ARRAY_COUNT(gSCManagerBattleState->players) + ARRAY_COUNT(gSYControllerDevices)) / 2); player++)
+#else
     for (player = 0; player < (ARRAY_COUNT(gSCManagerBattleState->players) + ARRAY_COUNT(gSYControllerDevices)) / 2; player++) // WARNING: GMCOMMON_PLAYERS_MAX and MAX_CONTROLLERS should be identical
+#endif
     {
 #ifdef REGION_REMIX
         if (ftRemixPauseStartRequested(player, gSYControllerDevices[player].button_tap, gSYControllerDevices[player].button_hold))
@@ -3595,15 +3601,18 @@ void ifCommonBattlePauseUpdateInterface(void)
     u16 button_tap = gSYControllerDevices[sIFCommonBattlePausePlayer].button_tap;
     u16 button_hold = gSYControllerDevices[sIFCommonBattlePausePlayer].button_hold;
 
+#ifdef REGION_REMIX
+    /* Pause.asm extra_controls_ (0x80114320) runs before the pause kind test: the song change, the HUD toggle and the legends work in every pause */
+    gmRemixBgmPauseUpdate(button_hold);
+    ifRemixPauseLegendUpdate(button_tap, button_hold, sIFCommonBattlePauseKindInterface == nIFPauseKindDefault);
+    ifRemixGentlemensResetUpdate();
+#endif
     if (sIFCommonBattlePauseKindInterface == nIFPauseKindDefault)
     {
         s32 stick_x = gSYControllerDevices[sIFCommonBattlePausePlayer].stick_range.x;
         s32 stick_y = gSYControllerDevices[sIFCommonBattlePausePlayer].stick_range.y;
 
 #ifdef REGION_REMIX
-        gmRemixBgmPauseUpdate(button_hold);
-        ifRemixPauseLegendUpdate(button_tap, button_hold);
-        ifRemixGentlemensResetUpdate();
         gmRemixCameraPanUpdate(button_hold);
         if (ftRemixPauseKeepsSceneCamera())
         {
@@ -3762,9 +3771,9 @@ void ifCommonBattleEndUpdateInterface(void)
 void ifCommonBattleBossDefeatUpdateInterface(void)
 {
 #if defined(PORT) && defined(REGION_REMIX)
-    /* Practice_1P.asm hold_l_to_retry_: L held while GAME SET shows replays the stage of a practice run, a Bonus 1 or Bonus 2
-     * practice run, and a Bonus 3, Multi-Man, Cruel Multi-Man or Home-Run Contest run. */
-    if (((gSCManagerSceneData.scene_curr == nSCKind1PGame) && (gmRemixPracticeTryRetryByHold() != FALSE)) || (sc1PRemixRetryTryByGameSet() != FALSE))
+    /* Practice_1P.asm hold_l_to_retry_: L held alone while GAME SET shows replays the stage of a practice run (its Bonus stages
+     * too), a Bonus 1 or Bonus 2 practice run, and a Bonus 3, Multi-Man, Cruel Multi-Man or Home-Run Contest run. */
+    if ((gmRemixPracticeTryRetryByGameSet() != FALSE) || (sc1PRemixRetryTryByGameSet() != FALSE))
     {
         func_800266A0_272A0();
         gmRumbleInitPlayers();

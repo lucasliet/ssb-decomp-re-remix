@@ -21,6 +21,7 @@
 #include <ef/efmanager.h>
 #include "ft/ftremix/ftremixfields.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/ftremixvarianttunerules.h"
 
 extern void ftCaptainSpecialHiProcInterrupt(GObj *fighter_gobj);
 extern void *func_800269C0_275C0(u16 id);
@@ -441,12 +442,13 @@ f32 ftRemixYoungLinkUpSpecialAirVelY(FTStruct *fp, f32 vanilla_vel_y)
     return YLINK_USP_SPIN_AIR_VEL_Y;
 }
 
-/* H7, linkshared.asm/YoungLink.asm up_special_landing_: landing lag passed to ftCommonFallSpecialSetStatus. */
+/* H7, linkshared.asm/YoungLink.asm up_special_landing_: landing lag passed to ftCommonFallSpecialSetStatus
+ * (Young Link 0.33, J Link 0.75). */
 f32 ftRemixYoungLinkUpSpecialLandingLag(FTStruct *fp, f32 vanilla_lag)
 {
     if (fp->fkind != REMIX_ID_YLINK)
     {
-        return vanilla_lag;
+        return ftRemixVariantTuneRulesSpinAttackLandingLag(fp->fkind, vanilla_lag);
     }
     return YLINK_USP_SPIN_LANDING_LAG;
 }

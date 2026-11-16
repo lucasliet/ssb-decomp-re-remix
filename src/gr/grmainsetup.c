@@ -3,6 +3,9 @@
 #ifdef REGION_REMIX
 #include "gr/grremix/grremixstage.h"
 #endif
+#if defined(PORT) && defined(REGION_REMIX)
+#include "if/ifremixannouncer.h"
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -33,6 +36,10 @@ GObj* (*dGRMainSetupProcMakeList[/* */])(void) =
 // 0x801056C0
 void grMainSetupMakeGround(void)
 {
+#if defined(PORT) && defined(REGION_REMIX)
+    /* Stages.asm id_fix_2_ (0x801056D4): every scene that builds a ground sets the announcer up. */
+    ifRemixAnnouncerSetup();
+#endif
 #ifdef REGION_REMIX
     if (grRemixIsCustomKind(gSCManagerBattleState->gkind))
     {

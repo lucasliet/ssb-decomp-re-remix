@@ -154,6 +154,17 @@ static s32 *ftRemixDededeDSPWord(FTStruct *fp, u32 n64_offset)
     return ftRemixFighterWord(fp, n64_offset);
 }
 
+/* Dedede.asm:698-703 initial_script_, run at every spawn and respawn: forgets the two field minions (N64 0x0ADC and
+ * 0x0AE0, the port's field slots) and clears the charge level (0x0AE4). The minions themselves stay on the field. */
+void ftRemixDededeInitialScript(FTStruct *fp)
+{
+    GObj **slots = sFTRemixDededeDSPFieldMinions[fp->player];
+
+    slots[0] = NULL;
+    slots[1] = NULL;
+    *ftRemixDededeDSPWord(fp, DEDEDE_DSP_OFF_CHARGE_LEVEL) = 0;
+}
+
 /* DededeDSP.destroy_attached_minion_: clears the minion slot and destroys its item. */
 static void ftRemixDededeDSPDestroyMinion(FTStruct *fp)
 {

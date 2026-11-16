@@ -15,6 +15,7 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 
+#define GMREMIX_STOCK_MODE_DEFAULT 0
 #define GMREMIX_STOCK_MODE_LAST 1
 #define GMREMIX_STOCK_MODE_MANUAL 2
 #define GMREMIX_STOCK_MODE_PORTS 4
@@ -87,6 +88,16 @@ void gmRemixStockModeSaltyRunbackLast(void)
     for (player = 0; player < GMREMIX_STOCK_MODE_PORTS; player++)
     {
         sStockModeLastCount[player] = sStockModeInitialLastCount[player];
+    }
+}
+
+void gmRemixStockModeClearModes(void)
+{
+    s32 player;
+
+    for (player = 0; player < GMREMIX_STOCK_MODE_PORTS; player++)
+    {
+        remix_panel_set(REMIX_PANEL_STOCK_MODE, player, GMREMIX_STOCK_MODE_DEFAULT);
     }
 }
 

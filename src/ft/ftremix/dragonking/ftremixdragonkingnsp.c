@@ -52,6 +52,7 @@ enum
  * hand) joint's local space. The asm constant names are misleading: OFFSET_X (0x437A = 250.0F)
  * is stored in the z slot and OFFSET_Y (0xC1F0 = -30.0F) in the x slot; the port follows the
  * slots, not the names. Kirby and J Kirby use their own pair. */
+#define DRAGONKING_NSP_BALL_JOINT 16                 /* FTStruct.joints[16] at N64 0x0928 (part 0xC), DragonKingSpecial.asm:619,688 */
 #define DRAGONKING_NSP_BALL_GFX_TIMER 0x1D
 #define DRAGONKING_NSP_BALL_SCALE 0.75F              /* lui 0x3F40 */
 #define DRAGONKING_NSP_BALL_SCALE_KIRBY 0.5F         /* lui 0x3F00 */
@@ -100,7 +101,7 @@ static void ftRemixDragonKingNSPSetBallPosition(FTStruct *fp, GObj *ball_gobj)
         offset.y = DRAGONKING_NSP_BALL_OFF_Y;
         offset.z = DRAGONKING_NSP_BALL_OFF_Z;
     }
-    gmCollisionGetFighterPartsWorldPosition(fp->joints[0xC], &offset);
+    gmCollisionGetFighterPartsWorldPosition(fp->joints[DRAGONKING_NSP_BALL_JOINT], &offset);
 
     part0->translate.vec.f = offset;
 }

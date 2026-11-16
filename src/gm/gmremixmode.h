@@ -39,6 +39,15 @@ extern void gmRemixModeLeaveCSS(void);
 extern void gmRemixModeStartMatch(void);
 
 /**
+ * Teams setting the CSS of `mode` will open with (VsRemixMenu.asm global_teams, KingOfTheHill.teams, TugOfWar.teams): the
+ * VS rule for the default mode, the value each Remix mode keeps between visits for the others.
+ *
+ * @param mode MNREMIX_VSMODE_* value.
+ * @return TRUE when that mode is set to teams.
+ */
+extern sb32 gmRemixModeGetTeams(s32 mode);
+
+/**
  * Goal of the current mode, the CSS value the Remix shows in the time picker (King of the Hill: seconds on the hill,
  * Smashketball: winning score).
  */

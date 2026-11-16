@@ -232,6 +232,16 @@ int mnRemixBonusModesToggleArrowHit(int pos_x, int pos_y, int arrow_x, int arrow
     return ((pos_y >= arrow_y) && (pos_y <= (arrow_y + height))) ? 1 : 0;
 }
 
+int mnRemixBonusModesStageArrowHit(int pos_x, int pos_y, int arrow_x, int arrow_y, int width, int height)
+{
+    return mnRemixBonusModesToggleArrowHit(pos_x, pos_y, arrow_x, arrow_y, width, height, 1);
+}
+
+int mnRemixBonusModesStageRowIsShown(int mode, int is_remix_choice)
+{
+    return ((mode == SC1PREMIX_MODE_STANDARD) && (is_remix_choice != 0)) ? 1 : 0;
+}
+
 int mnRemixBonusModesHasDecimal(int mode)
 {
     return (mode == SC1PREMIX_MODE_HRC) ? 1 : 0;

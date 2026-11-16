@@ -12,11 +12,12 @@
 #include "gr/grremix/grremixids.h"
 #include "sc/scene.h"
 #include "sc/scmanager.h"
+#include "sc/sc1pmode/sc1premixmode.h"
+#include "sc/sc1pmode/sc1premixmoderules.h"
 
 /* Global.asm current_screen values, the same numbers as the Special Zoom screen checks */
 #define FTREMIX_SFX_SCREEN_VS_BATTLE 0x16
 #define FTREMIX_SFX_SCREEN_TRAINING_MODE 0x36
-#define FTREMIX_SFX_SCREEN_REMIX_MODES 0x77
 
 /* SFXReplace.asm snd_gaw_biip, snd_gaw_boop and snd_gaw_hardland, added to the bank by FGM.asm */
 #define FTREMIX_SFX_GAW_BIIP 0x602
@@ -44,13 +45,26 @@ static const u16 sFTRemixSFXHardLandSounds[] =
 };
 
 /**
+ * TRUE on the asm screen REMIX_MODES (0x77): the 1P game of a Remix 1P mode other than Remix 1P, which the port runs on the
+ * 1P game scene.
+ */
+static sb32 ftRemixSFXReplaceIsRemixModesScreen(void)
+{
+    if (gSCManagerSceneData.scene_curr != nSCKind1PGame)
+    {
+        return FALSE;
+    }
+    return (sc1PRemixModeRunsOnRemixModesScreen(sc1PRemixModeGet()) != 0) ? TRUE : FALSE;
+}
+
+/**
  * TRUE when the current screen is a match, where the asm replaces the motion event sounds (_check_if_in_match).
  */
 static sb32 ftRemixSFXReplaceIsMatchScreen(void)
 {
     s32 screen = gSCManagerSceneData.scene_curr;
 
-    return (screen == FTREMIX_SFX_SCREEN_VS_BATTLE) || (screen == FTREMIX_SFX_SCREEN_TRAINING_MODE) || (screen == FTREMIX_SFX_SCREEN_REMIX_MODES);
+    return (screen == FTREMIX_SFX_SCREEN_VS_BATTLE) || (screen == FTREMIX_SFX_SCREEN_TRAINING_MODE) || ftRemixSFXReplaceIsRemixModesScreen();
 }
 
 /**

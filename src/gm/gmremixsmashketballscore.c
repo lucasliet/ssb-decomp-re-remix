@@ -72,7 +72,8 @@ static s32 gmRemixSmashketballScoreOwner(FTStruct *owner_fp, s32 points)
 
     if (gmRemixSmashketballRulesIsChantStreak(gGMRemixSmashketball.consecutive_baskets[port]) != FALSE)
     {
-        ftPublicRemixForceCall(owner_fp->fighter_gobj, GMREMIX_SMASHKETBALL_CHANT_KNOCKBACK, port);
+        /* Smashketball.asm 897-899 passes FTStruct.player_num (0x18), the id ftPublicTryStartCall looks the fighter up by. */
+        ftPublicRemixForceCall(owner_fp->fighter_gobj, GMREMIX_SMASHKETBALL_CHANT_KNOCKBACK, owner_fp->player_num);
     }
     return GMREMIX_SMASHKETBALL_FGM_CHEER;
 }

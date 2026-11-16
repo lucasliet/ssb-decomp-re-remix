@@ -63,6 +63,15 @@ void sc1PRemixHrcSetupEnemy(s32 player)
     gSCManagerBattleState->players[player].fkind = REMIX_ID_SANDBAG;
 }
 
+s32 sc1PRemixHrcFighterKind(s32 player, s32 pkind)
+{
+    if ((sc1PRemixHrcIsActive() == FALSE) || (gSCManagerBattleState->players[player].fkind != REMIX_ID_SANDBAG))
+    {
+        return pkind;
+    }
+    return nFTPlayerKindGameKey;
+}
+
 sb32 sc1PRemixHrcKeepsItem(GObj *item_gobj)
 {
     if (sc1PRemixHrcIsActive() == FALSE)

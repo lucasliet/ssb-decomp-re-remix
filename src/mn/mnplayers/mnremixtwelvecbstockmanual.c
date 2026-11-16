@@ -1,5 +1,5 @@
 /**
- * mnremixtwelvecbstockmanual.c - Manual stock mode controls of the 12-Character Battle panels, see mnremixtwelvecbstockmanual.h.
+ * mnremixtwelvecbstockmanual.c - Manual stock mode controls of the character select panels, see mnremixtwelvecbstockmanual.h.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -11,7 +11,7 @@
 #include "mn/mnplayers/mnremixtwelvecbstockmanual.h"
 #include "remix/remix_hud_text.h"
 
-#define STOCK_MANUAL_PLAYERS 2
+#define STOCK_MANUAL_PLAYERS 4
 /* The links of the stock icon and the "x" next to them: the card of the panel is drawn over the links 25 and 26. */
 #define STOCK_MANUAL_GOBJ_LINK 22
 #define STOCK_MANUAL_DL_LINK 28
@@ -156,10 +156,11 @@ void mnRemixTwelveCBStockManualUpdate(s32 player, MNRemixTwelveCBStockControls c
     {
         setHidden(sprites->dpad, TRUE);
     }
-    if (player == (STOCK_MANUAL_PLAYERS - 1))
-    {
-        sBlinkTimer = (sBlinkTimer + 1) % STOCK_MANUAL_BLINK_PERIOD;
-    }
+}
+
+void mnRemixTwelveCBStockManualTick(void)
+{
+    sBlinkTimer = (sBlinkTimer + 1) % STOCK_MANUAL_BLINK_PERIOD;
 }
 
 static sb32 isPointInArrow(GObj *arrow, f32 hot_x, f32 hot_y, f32 left_margin, f32 right_margin)

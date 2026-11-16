@@ -18,6 +18,7 @@
 #define ITREMIX_MRSATURN_HIT_FGM 0x0038
 #define ITREMIX_MRSATURN_THROW_TIMER 50
 #define ITREMIX_MRSATURN_WAIT_TIME 120
+#define ITREMIX_MRSATURN_FALL_PICKUP_WAIT 0x567 /* top 12 bits of the 0x5674 that falling_initial_ stores at 0x02D2 */
 #define ITREMIX_MRSATURN_WALK_TIME (25 * 60)
 #define ITREMIX_MRSATURN_IMAGE_WALK_A 4
 #define ITREMIX_MRSATURN_IMAGE_WALK_B 5
@@ -230,6 +231,8 @@ static void itRemixMrSaturnSetupState(GObj *item_gobj)
 /* MrSaturn: stage_setting_ (after itManagerMakeItem) */
 static void itRemixMrSaturnSetup(GObj *item_gobj)
 {
+    /* MrSaturn.asm:200 jal 0x8017279C: no owner, default team, is_damage_all */
+    itMainClearOwnerStats(item_gobj);
     itRemixMrSaturnSetupImage(item_gobj);
     itRemixMrSaturnSetupAttack(item_gobj);
     itRemixMrSaturnSetupState(item_gobj);
@@ -480,6 +483,13 @@ static void itRemixMrSaturnFallSetStatus(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
 
     ip->attack_coll.attack_state = nGMAttackStateOff;
+    /* MrSaturn.asm:535-539 "don't randomly despawn": mask 0x02 of N64 0x2CE is the low bit of times_thrown, so the throw or drop that led here does not count for itMapCheckDestroyDropped */
+    ip->times_thrown &= ~1;
+    /* MrSaturn.asm:541-542 sh 0x5674, 0x02D2: pickup_wait 0x567, is_allow_knockback 0, is_unused_item_bool 1, is_static_damage 0 */
+    ip->pickup_wait = ITREMIX_MRSATURN_FALL_PICKUP_WAIT;
+    ip->is_allow_knockback = FALSE;
+    ip->is_unused_item_bool = TRUE;
+    ip->is_static_damage = FALSE;
     ip->damage_coll.hitstatus = nGMHitStatusNone;
     itMainSetStatus(item_gobj, sITRemixMrSaturnStatusDescs, nITRemixMrSaturnStatusFall);
 }

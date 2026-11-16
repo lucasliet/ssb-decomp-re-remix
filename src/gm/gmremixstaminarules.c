@@ -37,4 +37,13 @@ int gmRemixStaminaRulesHPLeft(int total_hp, int damage)
     return hitpoints_left;
 }
 
+float gmRemixStaminaRulesKnockbackAfterArmor(int is_lethal, float knockback_before_squat, float knockback, float resist)
+{
+    if (is_lethal)
+    {
+        return knockback_before_squat;
+    }
+    return knockback - resist;
+}
+
 #endif

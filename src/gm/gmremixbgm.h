@@ -30,8 +30,18 @@ extern void gmRemixBgmSetStageTracks(s32 gkind, u32 default_track, u32 current_t
 extern sb32 gmRemixBgmChange(u32 track);
 
 /**
+ * Changes the match song unless Hammer or Star music plays (Hazards.asm time_twister_bg_fade_ START_NEW_BGM): with item
+ * music the track only becomes the stage track, which plays when the item ends.
+ *
+ * @param track BGM id.
+ * @return TRUE when the song changed now.
+ */
+extern sb32 gmRemixBgmChangeUnlessItemMusic(u32 track);
+
+/**
  * Pause D-pad song change (Pause.asm set_alternate_music_): Right plays the next alternate of the stage, Down a random
- * track. The first press acts after 2 frames, a held direction repeats every 30. Call it every pause frame.
+ * track. The first press acts after 2 frames, a held direction repeats every 30. A pick also turns the Time Twister song
+ * swaps off for the rest of the match. Call it every pause frame, whatever the pause kind.
  *
  * @param button_hold Buttons of the player who paused.
  */

@@ -28,6 +28,7 @@
 #include <wp/wpmap.h>
 #include <sys/utils.h>
 #include <lb/lbremixgfx.h>
+#include "if/ifremixannouncer.h"
 
 #define MTWO_SHADOW_BALL_CHARGE_COLANIM 0x58 /* Mewtwo's charge gfx id (hard coded in MewtwoSpecial.asm) */
 #define MTWO_KIRBY_SHADOW_BALL_CHARGE_COLANIM 0x64 /* Kirby's copy charge gfx id (hard coded in kirby_charge_main_) */
@@ -319,6 +320,11 @@ static GObj *ftRemixMewtwoShadowBallMakeWeapon(GObj *fighter_gobj, Vec3f *pos, s
     MewtwoShadowBallVars *sb;
     f32 scale;
 
+    /* PokemonAnnouncer.asm charging_announcement_ (0x80168E08) runs on every call of the stage setting */
+    if (ifRemixAnnouncerIsActive())
+    {
+        ifRemixAnnouncerPlayCall(nIFRemixAnnouncerCallCharge);
+    }
     desc.p_weapon = ftRemixPowerData(fp)->p_file_special3;
 
     weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &desc, pos, WEAPON_FLAG_PARENT_FIGHTER);
@@ -504,8 +510,8 @@ static void ftRemixMewtwoSpecialAirNShootTransition(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+    /* MewtwoSpecial.asm air_shoot_transition_ copies 0x8015DA04 up to the status change: no 0x800D8EB8 clamp */
     mpCommonSetFighterAir(fp);
-    ftPhysicsClampAirVelXMax(fp);
     ftRemixMewtwoSpecialNChangeStatus(fighter_gobj, ftRemixMewtwoSpecialNPickStatus(fp, nFTRemixMewtwoStatusShadowBallShootAir, nFTRemixKirbyStatusMewtwoNSPAirShoot), fighter_gobj->anim_frame, FTSTATUS_PRESERVE_COLANIM);
 }
 

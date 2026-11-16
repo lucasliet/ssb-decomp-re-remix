@@ -10,6 +10,8 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/ftremixfields.h"
+#include "ft/ftremix/dedede/ftremixdededeinhalerules.h"
 #include "remix/remix_symbols.h"
 #include <ft/ftanimend.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
@@ -56,7 +58,6 @@ enum
 #define DEDEDE_NSP_SPAT_DECELERATION 10.0F              /* 0x41200000 */
 #define DEDEDE_NSP_SPIT_JOINT 16                        /* FTStruct.joints[16] at N64 0x0928 */
 #define DEDEDE_NSP_SPIT_CAPTURE_IMMUNE_MASK 0x3F        /* asm literal 0x3F */
-#define DEDEDE_NSP_ABSORB_FLAGS 0x0006                  /* asm absorb_initial_ argument 4 */
 #define DEDEDE_NSP_SPIT_FLAGS (FTSTATUS_PRESERVE_TEXTUREPART | FTSTATUS_PRESERVE_MODELPART | FTSTATUS_PRESERVE_EFFECT) /* 0xA4 */
 #define DEDEDE_NSP_LOOP_FLAGS (FTSTATUS_PRESERVE_LOOPSFX | FTSTATUS_PRESERVE_MODELPART | FTSTATUS_PRESERVE_EFFECT)     /* 0x824 */
 #define DEDEDE_NSP_INHALE_FLAGS (FTSTATUS_PRESERVE_HIT | FTSTATUS_PRESERVE_RUMBLE | FTSTATUS_PRESERVE_LOOPSFX | FTSTATUS_PRESERVE_MODELPART | FTSTATUS_PRESERVE_EFFECT) /* 0x4825 */
@@ -289,9 +290,9 @@ void ftRemixDededeNSPAbsorbInitial(GObj *fighter_gobj)
         ftRemixDededeNSPStatus(fp, nFTRemixDededeStatusNSPSpitAir, nFTRemixDededeKirbyStatusNSPSpitAir) :
         ftRemixDededeNSPStatus(fp, nFTRemixDededeStatusNSPSpitGround, nFTRemixDededeKirbyStatusNSPSpitGround);
 
-    ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, DEDEDE_NSP_ABSORB_FLAGS);
-    ftParamSetCaptureImmuneMask(fp, FTCATCHKIND_MASK_ALL);
-    ftMainPlayAnimEventsAll(fighter_gobj);
+    /* DededeSpecial.asm:758-763 jal 0x80163018: the Kirby routine takes only the action, so the 0x0006 the asm
+     * stores as argument 4 is never read. */
+    ftKirbySpecialNEatSetStatusParam(fighter_gobj, status_id);
 }
 
 /* DededeNSP.absorb_struct: custom reflect id 2 (index into Reflect.custom_reflect_table), reflect type CUSTOM (3). */
@@ -461,50 +462,23 @@ const s32 dFTRemixDededeNSPProcsNum = ARRAY_COUNT(dFTRemixDededeNSPProcs);
 
 /*
  * Dedede's inhale reuses Kirby's vanilla SpecialN routines. DededeSpecial.asm
- * patches the 27 status changes in them (inhale_*_, *_transition_, asm 862-2409)
- * so they set Dedede's action ids instead of Kirby's. The port remaps the
- * status id once in ftMainSetStatus, which covers every one of those sites.
- * Index: vanilla id - nFTKirbyStatusSpecialNStart. 0 means no Dedede action.
+ * patches the 27 status changes in them (inhale_*_, *_transition_, asm 862-2435)
+ * so they set Dedede's action ids instead of Kirby's, or Kirby's DEDEDE_NSP_*
+ * ids for a Kirby whose hat id is 0x20 or more (_kirby_hat_check). The port
+ * remaps the status id once in ftMainSetStatus, which covers every one of those
+ * sites. The ids are in ftremixdededeinhalerules.c.
  */
-static const u16 sFTRemixDededeKirbyInhaleStatus[] =
-{
-    0xE7, /* SpecialNStart     -> NSP_BEGIN_GROUND */
-    0xE8, /* SpecialNLoop      -> NSP_LOOP_GROUND */
-    0xEF, /* SpecialNEnd       -> NSP_END_GROUND */
-    0xEA, /* SpecialNCatch     -> NSP_PULL_GROUND */
-    0xEB, /* SpecialNEat       -> NSP_SWALLOW_GROUND */
-    0xED, /* SpecialNThrow     -> NSP_SPIT_GROUND */
-    0xEC, /* SpecialNWait      -> NSP_IDLE_GROUND */
-    0xEE, /* SpecialNTurn      -> NSP_TURN_GROUND */
-    0x00, /* SpecialNCopy */
-    0xF0, /* SpecialAirNStart  -> NSP_BEGIN_AIR */
-    0xF1, /* SpecialAirNLoop   -> NSP_LOOP_AIR */
-    0xF7, /* SpecialAirNEnd    -> NSP_END_AIR */
-    0xF2, /* SpecialAirNCatch  -> NSP_PULL_AIR */
-    0xF3, /* SpecialAirNEat    -> NSP_SWALLOW_AIR */
-    0xF5, /* SpecialAirNThrow  -> NSP_SPIT_AIR */
-    0xF4, /* SpecialAirNWait   -> NSP_FALL */
-    0xF6, /* SpecialAirNTurn   -> NSP_TURN_AIR */
-    0x00  /* SpecialAirNCopy */
-};
-
 s32 ftRemixDededeMapKirbyInhaleStatus(FTStruct *fp, s32 status_id)
 {
-    s32 index = status_id - nFTKirbyStatusSpecialNStart;
-
-    if (fp->fkind != REMIX_ID_DEDEDE)
+    if (fp->fkind == REMIX_ID_DEDEDE)
     {
-        return status_id;
+        return ftRemixDededeInhaleStatus(status_id);
     }
-    if ((index < 0) || (index >= (s32)ARRAY_COUNT(sFTRemixDededeKirbyInhaleStatus)))
+    if ((fp->fkind == nFTKindKirby) || (fp->fkind == REMIX_ID_JKIRBY))
     {
-        return status_id;
+        return ftRemixDededeInhaleKirbyStatus(*ftRemixFighterKirbyHat(fp), status_id);
     }
-    if (sFTRemixDededeKirbyInhaleStatus[index] == 0)
-    {
-        return status_id;
-    }
-    return sFTRemixDededeKirbyInhaleStatus[index];
+    return status_id;
 }
 
 #endif

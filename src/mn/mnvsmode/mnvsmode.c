@@ -1492,6 +1492,24 @@ static void mnVSModeSetPage(s32 page)
     mnVSModeMakeRemixButtons();
 }
 
+/**
+ * Gives the fighters already chosen the costume of their team when the menu leaves for a mode played in teams
+ * (VsRemixMenu.asm save_global_settings_ :438-467). Call it after mnVSModeSaveSettings.
+ */
+static void mnVSModeSyncTeamCostumes(void)
+{
+    s32 rule = sMNVSModeRule;
+
+    if (mnRemixVSModeExitSyncsTeamCostumes(gMNVSModeRemixMode, gmRemixModeGetTeams(gMNVSModeRemixMode)) == FALSE)
+    {
+        return;
+    }
+    /* VsRemixMenu.asm:455-458 writes Stock Team into the rule value so mnVSModeSetCostumesAndShades takes the team branch */
+    sMNVSModeRule = nMNVSModeRuleStockTeam;
+    mnVSModeSetCostumesAndShades();
+    sMNVSModeRule = rule;
+}
+
 /** Stores the Remix mode under the cursor on page 2 and leaves for the VS CSS, as VS Start does. */
 static void mnVSModeSelectRemixMode(void)
 {
@@ -1502,6 +1520,7 @@ static void mnVSModeSelectRemixMode(void)
 
     gMNVSModeRemixMode = MNREMIX_VSMODE_TWELVE_CB + index;
     mnVSModeSaveSettings();
+    mnVSModeSyncTeamCostumes();
 
     sMNVSModeExitInterrupt = TRUE;
 
@@ -1570,6 +1589,9 @@ void mnVSModeMain(GObj *gobj)
                     func_800269C0_275C0(nSYAudioFGMMenuSelect);
                     mnVSModeUpdateButton(sMNVSModeButtonGObjVSStart, nMNOptionTabStatusSelected);
                     mnVSModeSaveSettings();
+#if defined(PORT) && defined(REGION_REMIX)
+                    mnVSModeSyncTeamCostumes();
+#endif
 
                     sMNVSModeExitInterrupt = TRUE;
 
@@ -1581,6 +1603,9 @@ void mnVSModeMain(GObj *gobj)
                     func_800269C0_275C0(nSYAudioFGMMenuSelect);
                     mnVSModeUpdateButton(sMNVSModeButtonGObjVSOptions, nMNOptionTabStatusSelected);
                     mnVSModeSaveSettings();
+#if defined(PORT) && defined(REGION_REMIX)
+                    mnVSModeSyncTeamCostumes();
+#endif
 
                     sMNVSModeExitInterrupt = TRUE;
 

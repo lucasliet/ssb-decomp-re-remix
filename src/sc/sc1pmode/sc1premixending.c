@@ -19,9 +19,18 @@ static u32 sc1PRemixEndingReadSong(s32 fkind)
     return remix_ram_image_read_half(REMIX_SYM_Character__remix_1p_end_bgm__table + (fkind * SC1PREMIX_ENDING_SONG_ENTRY_SIZE));
 }
 
+/**
+ * TRUE when the credits were opened from the port menu (scRemixScreensOpen): portSCManagerRequestScene enters a scene with
+ * the previous scene equal to it, while the end of a 1P run leaves the 1P game as the previous scene.
+ */
+static sb32 sc1PRemixEndingIsOpenedFromMenu(void)
+{
+    return (gSCManagerSceneData.scene_prev == nSCKindStaffroll) ? TRUE : FALSE;
+}
+
 u32 sc1PRemixEndingGetCreditsSong(u32 standard_song)
 {
-    if (sc1PRemixEndingUsesFighterSong(sc1PRemixModeGet()) == 0)
+    if (sc1PRemixEndingUsesFighterSong(sc1PRemixModeGet(), sc1PRemixEndingIsOpenedFromMenu()) == 0)
     {
         return standard_song;
     }

@@ -9,7 +9,8 @@
  * Controls of the Manual stock mode in the 12-Character Battle panels (CharacterSelect.asm update_stock_icon_and_count_indicators_
  * 5640-5960, check_manual_stock_arrow_press_, arrow_state_routine_): with a character selected two blinking arrows at the edges
  * of the card step the stocks of the portrait, with the token still held a D-pad icon (and two yellow marks on its left and right)
- * tells that D-pad left and right do the same.
+ * tells that D-pad left and right do the same. The four panels of the VS screen use the arrows for the Manual count of their port
+ * (the VS branch of the same routines); they never show the D-pad icon.
  */
 
 typedef enum MNRemixTwelveCBStockControls
@@ -22,10 +23,13 @@ typedef enum MNRemixTwelveCBStockControls
 /** Forgets the sprites of the previous visit of the CSS (their scene is gone). */
 extern void mnRemixTwelveCBStockManualReset(void);
 
+/** Advances the blink of the arrows and marks of every panel; call once per frame, after the panels were updated. */
+extern void mnRemixTwelveCBStockManualTick(void);
+
 /**
- * Shows the controls of one panel for this frame, or hides them; call once per frame for each of the two panels.
+ * Shows the controls of one panel for this frame, or hides them; call once per frame for each panel of the screen.
  *
- * @param player Player (0 or 1) of the panel.
+ * @param player Player (0 to 3; 0 or 1 in the 12-Character Battle) of the panel.
  * @param controls Which controls to show.
  * @param panel_x Left edge of the panel card.
  * @param card_width Width of the panel card.
@@ -38,7 +42,7 @@ extern void mnRemixTwelveCBStockManualUpdate(s32 player, MNRemixTwelveCBStockCon
 /**
  * Arrow a cursor press hits (check_manual_stock_arrow_press_): the left arrow takes a margin of 8 on its right, the right one on its left.
  *
- * @param player Player (0 or 1) of the panel.
+ * @param player Player (0 to 3) of the panel.
  * @param hot_x Cursor hot spot X.
  * @param hot_y Cursor hot spot Y.
  * @return -1 for the left arrow, 1 for the right one, 0 for none (also when the arrows are not shown).

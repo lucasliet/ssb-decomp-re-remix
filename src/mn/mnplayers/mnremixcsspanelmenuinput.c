@@ -291,22 +291,23 @@ sb32 mnRemixPanelMenuPress(f32 cursor_x, f32 cursor_y)
     return mnRemixPanelMenuPressArrows(state, NULL, cursor_x, cursor_y);
 }
 
-void mnRemixPanelMenuHoldPress(s32 cursor_port, sb32 is_a_held, f32 cursor_x, f32 cursor_y)
+sb32 mnRemixPanelMenuHoldPress(s32 cursor_port, sb32 is_a_held, f32 cursor_x, f32 cursor_y)
 {
     MNRemixPanelMenuState *state = mnRemixPanelMenuGetState();
     MNRemixPanelMenuHold *hold;
 
     if ((cursor_port < 0) || (cursor_port >= MNREMIX_PANELMENU_PANELS))
     {
-        return;
+        return FALSE;
     }
     hold = &state->holds[cursor_port];
 
     if (mnRemixPanelMenuRulesHoldAdvance(hold, (is_a_held != FALSE) ? 1 : 0) == 0)
     {
-        return;
+        return FALSE;
     }
     mnRemixPanelMenuPressArrows(state, hold, cursor_x, cursor_y);
+    return TRUE;
 }
 
 #endif

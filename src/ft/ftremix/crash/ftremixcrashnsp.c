@@ -87,7 +87,7 @@ static void ftRemixCrashNSPChangeStatus(GObj *fighter_gobj, s32 crash_status, s3
     ftMainSetStatus(fighter_gobj, status_id, frame, 1.0F, flags);
 }
 
-#define CRASH_NSP_KIRBY_SPIN_FILE_OFFSET 0x0CC4 /* asm create_spin_gfx_: Kirby reads the spin file at Crash file 7 + 0xCC4 */
+#define CRASH_NSP_KIRBY_SPIN_FILE_OFFSET 0x0CC4 /* asm create_spin_gfx_: word 0xCC4 of Crash file 7 points to Kirby's spin file */
 #define CRASH_NSP_SPIN_COSTUME_COUNT 7
 
 /* Spin GFX descriptor (spin_gfx_struct), Link's Up Special layout as in the Dig GFX. The file pointer is set per call. */
@@ -130,14 +130,15 @@ static const u32 sFTRemixCrashNSPKirbySpinColours[CRASH_NSP_SPIN_COSTUME_COUNT][
     { 0x904080A0, 0x1828A880, 0x1828A8A0, 0xFF4E00C0 }
 };
 
-/* Kirby and J Kirby use the Crash spin file at offset 0xCC4, Crash uses the file itself. */
+/* Crash uses his second special file itself. For Kirby and J Kirby the asm stores file 7 + 0xCC4 as the
+ * descriptor's file_head (CrashSpecial.asm:876-880), so the effect file is the pointer held in that word. */
 static void **ftRemixCrashNSPSpinFileHead(FTStruct *fp)
 {
     FTData *crash_data = port_fighter_data(REMIX_ID_CRASH);
 
     if ((fp->fkind == nFTKindKirby) || (fp->fkind == REMIX_ID_JKIRBY))
     {
-        sFTRemixCrashNSPSpinKirbyFile = (u8 *)*crash_data->p_file_special2 + CRASH_NSP_KIRBY_SPIN_FILE_OFFSET;
+        sFTRemixCrashNSPSpinKirbyFile = PORT_RESOLVE(*(u32 *)((u8 *)*crash_data->p_file_special2 + CRASH_NSP_KIRBY_SPIN_FILE_OFFSET));
         return &sFTRemixCrashNSPSpinKirbyFile;
     }
     return crash_data->p_file_special2;
@@ -441,7 +442,8 @@ static void ftRemixCrashNSPShieldHit(GObj *fighter_gobj)
     ftRemixCrashNSPBlockedGroundInitial(fighter_gobj);
 }
 
-/* Shield hitlag hook for Crash and Kirby (the port_fighter_shield_hitlag_skip callback, see fighter_registry.h).
+/* Shield hitlag hook for Crash, Kirby and J Kirby (the port_fighter_shield_hitlag_skip callback, bound to the three
+ * descriptors in ftremixdeschooks.c).
  * Returns TRUE when the NSP is in its blocked form, so the hitlag freeze is skipped (asm `or t6, r0, r0`).
  * Kirby's hat check (asm 941-944) is not repeated: the Kirby blocked ids are only set by the Crash copy. */
 int ftRemixCrashNSPShieldHitlagSkip(GObj *fighter_gobj, int status_id)

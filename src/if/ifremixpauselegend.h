@@ -19,12 +19,14 @@ void ifRemixPauseLegendHideMusicAndCamera(void);
 
 /**
  * Runs the pause legend controls and draws the legends of the current frame (Pause.asm check_toggle_hud_press_ and
- * check_legend_toggle_press_). Call it once per frame from the default pause, where the camera controls are allowed.
+ * check_legend_toggle_press_). Call it once per frame of every pause: the asm hook runs before the pause kind test.
  *
  * @param button_tap Buttons pressed this frame of the pausing player.
  * @param button_hold Buttons held this frame of the pausing player.
+ * @param is_camera_control TRUE in the default pause, where the camera controls are allowed; the camera legend stays hidden
+ *        in the other pauses (_toggle_display_camera_controls).
  */
-void ifRemixPauseLegendUpdate(u16 button_tap, u16 button_hold);
+void ifRemixPauseLegendUpdate(u16 button_tap, u16 button_hold, sb32 is_camera_control);
 
 #endif
 

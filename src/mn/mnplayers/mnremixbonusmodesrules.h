@@ -217,6 +217,30 @@ extern int mnRemixBonusModesTotalDigits(int mode);
 extern unsigned int mnRemixBonusModesSumRecords(const unsigned int *records, int count);
 
 /**
+ * Whether a press hits an arrow of the STAGE row: both arrows take 8 px of padding on the left and none on the right
+ * (Bonus.asm handle_arrow_press_ _stage_check), the padding of the MODE right arrow.
+ *
+ * @param pos_x Press point, x.
+ * @param pos_y Press point, y.
+ * @param arrow_x Left edge of the arrow.
+ * @param arrow_y Top edge of the arrow.
+ * @param width Width of the arrow image.
+ * @param height Height of the arrow image.
+ * @return Non-zero when the press hits the arrow.
+ */
+extern int mnRemixBonusModesStageArrowHit(int pos_x, int pos_y, int arrow_x, int arrow_y, int width, int height);
+
+/**
+ * Whether the STAGE row (label, arrows, stock icons) shows: the header is on Bonus 1 or 2 and the choice is Remix
+ * (Bonus.asm handle_header_toggle_, arrow_routine_). Bonus 3 keeps the row hidden.
+ *
+ * @param mode SC1PREMIX_MODE_* of the header now.
+ * @param is_remix_choice Non-zero while the MODE choice is REMIX.
+ * @return Non-zero when the row shows.
+ */
+extern int mnRemixBonusModesStageRowIsShown(int mode, int is_remix_choice);
+
+/**
  * Whether the record is drawn with a decimal point: only the Home-Run Contest, whose feet are kept in tenths.
  *
  * @param mode SC1PREMIX_MODE_*.

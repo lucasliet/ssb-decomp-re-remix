@@ -22,6 +22,9 @@
 #include "sc/sc1pmode/sc1ptrainingremixexit.h"
 #include "sc/sc1pmode/sc1ptrainingremixlegend.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenu.h"
+#include "sc/sc1pmode/sc1ptrainingremixpause.h"
+#include "sc/sc1pmode/sc1ptrainingremixspawn.h"
+#include "sc/sc1pmode/sc1ptrainingframerules.h"
 #include "sc/sc1pmode/sc1ptrainingportrules.h"
 #include <if/ifdef.h>
 #include "ft/ftremix/ftremixtraining.h"
@@ -40,8 +43,8 @@
 #define SC1PTRAININGREMIX_HUD_SCALE 1.0F
 #define SC1PTRAININGREMIX_HUD_COLOR 0xFFFFFFFF
 
-static sb32 sSC1PTrainingRemixIsFrozen;
-static sb32 sSC1PTrainingRemixIsAdvancing;
+/* Training.asm advance_frame_ freeze, du_pressed and dr_pressed */
+static SC1PTrainingFrameState sSC1PTrainingRemixFrame;
 static s32 sSC1PTrainingRemixResetCount;
 static u32 sSC1PTrainingRemixPlayedBGM;
 
@@ -77,8 +80,7 @@ void sc1PTrainingRemixRestoreModelDisplay(void)
 
 void sc1PTrainingRemixStartScene(sb32 is_reset)
 {
-    sSC1PTrainingRemixIsFrozen = FALSE;
-    sSC1PTrainingRemixIsAdvancing = FALSE;
+    sc1PTrainingFrameRulesInit(&sSC1PTrainingRemixFrame);
     sc1PTrainingRemixMenuStartScene();
     sc1PTrainingRemixActionStartScene();
     sc1PTrainingRemixExitStartScene();
@@ -88,6 +90,7 @@ void sc1PTrainingRemixStartScene(sb32 is_reset)
     {
         sSC1PTrainingRemixResetCount = 0;
         sc1PTrainingRemixSaveModelDisplay();
+        sc1PTrainingRemixSpawnResetAll();
     }
 }
 
@@ -132,39 +135,14 @@ static void sc1PTrainingRemixCycleModelDisplay(void)
 sb32 sc1PTrainingRemixPollDpad(void)
 {
     u16 taps = sc1PTrainingRemixGetDpadTaps();
+    s32 actions = sc1PTrainingFrameRulesReadDpad(&sSC1PTrainingRemixFrame, remix_training_get(REMIX_TRAINING_DPAD), taps & L_JPAD,
+                                                 sc1PTrainingRemixIsDpadRightRepeated(), taps & U_JPAD, taps & D_JPAD);
 
-    if (gSCManagerBattleState->game_status != nSCBattleGameStatusGo)
-    {
-        return FALSE;
-    }
-    if (remix_training_get(REMIX_TRAINING_DPAD) == REMIX_TRAINING_DPAD_OFF)
-    {
-        return FALSE;
-    }
-    if (taps & L_JPAD)
-    {
-        return TRUE;
-    }
-    if (remix_training_get(REMIX_TRAINING_DPAD) == REMIX_TRAINING_DPAD_RESET_ONLY)
-    {
-        return FALSE;
-    }
-    if (sc1PTrainingRemixIsDpadRightRepeated() != FALSE)
-    {
-        /* Training.asm _check_dr: D-pad right wins over up and down pressed on the same frame */
-        sSC1PTrainingRemixIsFrozen = TRUE;
-        sSC1PTrainingRemixIsAdvancing = TRUE;
-        return FALSE;
-    }
-    if (taps & U_JPAD)
-    {
-        sSC1PTrainingRemixIsFrozen = (sSC1PTrainingRemixIsFrozen == FALSE) ? TRUE : FALSE;
-    }
-    if (taps & D_JPAD)
+    if (actions & SC1PTRAININGFRAMERULES_ACTION_MODEL_DISPLAY)
     {
         sc1PTrainingRemixCycleModelDisplay();
     }
-    return FALSE;
+    return (actions & SC1PTRAININGFRAMERULES_ACTION_RESET) ? TRUE : FALSE;
 }
 
 static u32 sc1PTrainingRemixGetBGM(void)
@@ -226,7 +204,7 @@ static s32 sc1PTrainingRemixGetPortFkind(s32 port, s32 menu_port)
 
 s32 sc1PTrainingRemixGetPortFighter(s32 port)
 {
-    return sc1PTrainingRemixGetPortFkind(port, gSCManagerSceneData.player);
+    return sc1PTrainingRemixGetPortFkind(port, sc1PTrainingRemixPauseGetOwner());
 }
 
 /**
@@ -299,18 +277,9 @@ s32 sc1PTrainingRemixSpawnPort(s32 port)
     return sc1PTrainingPortRulesSpawnPort(remix_training_get(REMIX_TRAINING_SPAWN(port)), port);
 }
 
-sb32 sc1PTrainingRemixIsFrameHeld(void)
+s32 sc1PTrainingRemixResolveFrame(sb32 is_lag_skip)
 {
-    if (sSC1PTrainingRemixIsFrozen == FALSE)
-    {
-        return FALSE;
-    }
-    if (sSC1PTrainingRemixIsAdvancing != FALSE)
-    {
-        sSC1PTrainingRemixIsAdvancing = FALSE;
-        return FALSE;
-    }
-    return TRUE;
+    return sc1PTrainingFrameRulesResolve(&sSC1PTrainingRemixFrame, is_lag_skip);
 }
 
 s32 sc1PTrainingRemixGetItemKind(s32 entry)

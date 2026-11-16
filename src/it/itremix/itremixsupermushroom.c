@@ -2,6 +2,7 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixsupermushroom.h"
+#include "it/itremix/itremixsupermushroomrules.h"
 #include "remix/remix_roster_data.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include <it/item.h>
@@ -12,6 +13,7 @@
 #include <ft/fighter.h>
 #include <ft/ftparam.h>
 #include <gm/gmdef.h>
+#include <gm/gmrumble.h>
 #include <mp/mpdef.h>
 #include <sc/scene.h>
 #include <sys/objman.h>
@@ -24,10 +26,6 @@
 #define ITREMIX_SUPERMUSHROOM_ACTIVE_DELAY 0x20 /* ITStruct.multi frames before the item is tangible; Star uses 16 */
 #define ITREMIX_SUPERMUSHROOM_PORTS 4
 #define ITREMIX_SUPERMUSHROOM_ROUTINE_POOL 16
-#define ITREMIX_SUPERMUSHROOM_REVERT_FRAMES 600
-#define ITREMIX_SUPERMUSHROOM_GROW_FRAMES 57
-#define ITREMIX_SUPERMUSHROOM_SHRINK_FRAMES 48
-#define ITREMIX_SUPERMUSHROOM_MAINTAIN_FRAMES (ITREMIX_SUPERMUSHROOM_REVERT_FRAMES - ITREMIX_SUPERMUSHROOM_GROW_FRAMES - ITREMIX_SUPERMUSHROOM_SHRINK_FRAMES)
 #define ITREMIX_SUPERMUSHROOM_TRANSITION_STEPS 12
 #define ITREMIX_SUPERMUSHROOM_RUMBLE_ID 7
 #define ITREMIX_SUPERMUSHROOM_RUMBLE_FRAMES 60
@@ -163,22 +161,22 @@ static const f32 sITRemixSuperMushroomShrinkPoisonSizes[ITREMIX_SUPERMUSHROOM_TR
 
 static const ITRemixSuperMushroomTransition sITRemixSuperMushroomGrow =
 {
-    sITRemixSuperMushroomGrowFrames, sITRemixSuperMushroomGrowSizes, ITREMIX_SUPERMUSHROOM_GROW_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_GROW
+    sITRemixSuperMushroomGrowFrames, sITRemixSuperMushroomGrowSizes, ITREMIX_SUPERMUSHROOM_RULES_GROW_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_GROW
 };
 
 static const ITRemixSuperMushroomTransition sITRemixSuperMushroomShrink =
 {
-    sITRemixSuperMushroomShrinkFrames, sITRemixSuperMushroomShrinkSizes, ITREMIX_SUPERMUSHROOM_SHRINK_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_SHRINK
+    sITRemixSuperMushroomShrinkFrames, sITRemixSuperMushroomShrinkSizes, ITREMIX_SUPERMUSHROOM_RULES_SHRINK_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_SHRINK
 };
 
 static const ITRemixSuperMushroomTransition sITRemixSuperMushroomGrowPoison =
 {
-    sITRemixSuperMushroomGrowFrames, sITRemixSuperMushroomGrowPoisonSizes, ITREMIX_SUPERMUSHROOM_GROW_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_GROW
+    sITRemixSuperMushroomGrowFrames, sITRemixSuperMushroomGrowPoisonSizes, ITREMIX_SUPERMUSHROOM_RULES_GROW_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_GROW
 };
 
 static const ITRemixSuperMushroomTransition sITRemixSuperMushroomShrinkPoison =
 {
-    sITRemixSuperMushroomShrinkFrames, sITRemixSuperMushroomShrinkPoisonSizes, ITREMIX_SUPERMUSHROOM_SHRINK_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_SHRINK
+    sITRemixSuperMushroomShrinkFrames, sITRemixSuperMushroomShrinkPoisonSizes, ITREMIX_SUPERMUSHROOM_RULES_SHRINK_FRAMES, ITREMIX_SUPERMUSHROOM_FGM_SHRINK
 };
 
 /* Super Mushroom on a normal player: grow, hold giant, then shrink. */
@@ -383,7 +381,10 @@ static void itRemixSuperMushroomStartTransition(ITRemixSuperMushroomRoutine *rou
     {
         func_800269C0_275C0(transition->fgm_id);
     }
-    ftParamMakeRumble(routine->fp, ITREMIX_SUPERMUSHROOM_RUMBLE_ID, ITREMIX_SUPERMUSHROOM_RUMBLE_FRAMES);
+    if (routine->fp->pkind == nFTPlayerKindMan)
+    {
+        gmRumbleRemixSetPlayerRumbleKeepOnStatus(routine->fp->player, ITREMIX_SUPERMUSHROOM_RUMBLE_ID, ITREMIX_SUPERMUSHROOM_RUMBLE_FRAMES);
+    }
 }
 
 /* SuperMushroom: writes the player's Size.multiplier_table entry. */
@@ -425,11 +426,11 @@ static void itRemixSuperMushroomUpdateSize(ITRemixSuperMushroomRoutine *routine)
     }
     if (routine->state == nITRemixSuperMushroomStateTransition2)
     {
-        step_timer -= setup->first->duration + ITREMIX_SUPERMUSHROOM_MAINTAIN_FRAMES;
+        step_timer -= setup->first->duration + ITREMIX_SUPERMUSHROOM_RULES_MAINTAIN_FRAMES;
         itRemixSuperMushroomApplyTransition(routine, setup->second, step_timer);
         return;
     }
-    if (step_timer == setup->first->duration + ITREMIX_SUPERMUSHROOM_MAINTAIN_FRAMES)
+    if (step_timer == setup->first->duration + ITREMIX_SUPERMUSHROOM_RULES_MAINTAIN_FRAMES)
     {
         routine->state = nITRemixSuperMushroomStateTransition2;
     }
@@ -462,7 +463,7 @@ static void itRemixSuperMushroomRevert(ITRemixSuperMushroomRoutine *routine)
 static void itRemixSuperMushroomAdvance(ITRemixSuperMushroomRoutine *routine)
 {
     routine->timer += 1;
-    if (routine->timer >= ITREMIX_SUPERMUSHROOM_REVERT_FRAMES)
+    if (routine->timer >= ITREMIX_SUPERMUSHROOM_RULES_REVERT_FRAMES)
     {
         itRemixSuperMushroomRevert(routine);
         return;
@@ -498,7 +499,7 @@ static void itRemixSuperMushroomCheckMatchSize(ITRemixSuperMushroomRoutine *rout
 {
     if (itRemixSuperMushroomIsSizeMismatch(routine))
     {
-        routine->timer = ITREMIX_SUPERMUSHROOM_REVERT_FRAMES;
+        routine->timer = ITREMIX_SUPERMUSHROOM_RULES_REVERT_FRAMES;
     }
     itRemixSuperMushroomFlash(routine);
 }
@@ -550,11 +551,7 @@ static sb32 itRemixSuperMushroomStartRoutine(ITRemixSuperMushroomRoutine *routin
     }
     else
     {
-        prev->timer = ITREMIX_SUPERMUSHROOM_GROW_FRAMES + ITREMIX_SUPERMUSHROOM_MAINTAIN_FRAMES - 1;
-        if (routine->kind == ITREMIX_SUPERMUSHROOM_POISON_KIND)
-        {
-            prev->timer += ITREMIX_SUPERMUSHROOM_SHRINK_FRAMES - ITREMIX_SUPERMUSHROOM_GROW_FRAMES;
-        }
+        prev->timer = itRemixSuperMushroomRulesGetSupersededTimer(routine->kind == ITREMIX_SUPERMUSHROOM_POISON_KIND);
         prev->transition_index = 0;
         prev->state = nITRemixSuperMushroomStateMaintain;
     }

@@ -4,7 +4,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 /* Pure rules of the Kirby Hat a player picks in the CSS panel and of the power flags a fighter spawn sets (src/KirbyHats.asm
- * spawn_with_table_ and kirby_hat_select_, Size.asm initialize_base_multiplier_table_ lines 358-381, use_extended_special_parts_pause_
+ * spawn_with_table_, kirby_hat_select_ and set_absorbed_hat_, Size.asm initialize_base_multiplier_table_ lines 358-381, use_extended_special_parts_pause_
  * gun branch), so the headless unit tests (tests/remix) can run them without game state. ftremixkirbyhats.c and
  * ftremixkirbypower.c read the game state and call these. */
 
@@ -39,6 +39,18 @@ extern int ftRemixKirbySpawnMagicHatStartsOn(int spawn_copy_kind, int panel_valu
  * @return 1 when the power can be lost.
  */
 extern int ftRemixKirbySpawnTauntLosesPower(int panel_value);
+
+/**
+ * Power a Kirby gets from the Kirby it inhales (KirbyHats.asm set_absorbed_hat_, lines 536-550): the magic power when the
+ * inhaled fighter is Kirby or J Kirby and its port holds the magic hat. Polygon Kirby is not in the asm check, so it
+ * always passes its own copy id on.
+ *
+ * @param victim_fkind Fighter id of the inhaled Kirby.
+ * @param magic_hat_on Whether the port of the inhaled Kirby holds the magic hat (magic_hat_on).
+ * @param copy_id Copy id the inhaled Kirby holds.
+ * @return REMIX_ID_NONE for a Kirby or J Kirby with the magic hat on, else copy_id.
+ */
+extern int ftRemixKirbySpawnStolenPower(int victim_fkind, int magic_hat_on, int copy_id);
 
 /**
  * File offset, in Kirby's model file, of the held-weapon part table of a hat (use_extended_special_parts_pause_ gun branch).

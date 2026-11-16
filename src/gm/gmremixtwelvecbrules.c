@@ -344,11 +344,16 @@ void gmRemixTwelveCBCalculateBest(GMRemixTwelveCBState *state)
     }
 }
 
+int32_t gmRemixTwelveCBGetPausePortCount(int32_t is_twelvecb, int32_t port_count)
+{
+    return (is_twelvecb != 0) ? GMREMIX_TWELVECB_PLAYERS : port_count;
+}
+
 int32_t gmRemixTwelveCBGetWinnerPortraitOf(const GMRemixTwelveCBState *state, int32_t port)
 {
     const GMRemixTwelveCBMatch *last;
 
-    if ((port < 0) || (port >= GMREMIX_TWELVECB_PLAYERS) || (state->status != GMREMIX_TWELVECB_STATUS_STARTED) ||
+    if ((port < 0) || (port >= GMREMIX_TWELVECB_PLAYERS) || (state->status == GMREMIX_TWELVECB_STATUS_NOT_STARTED) ||
         (state->current_game < 0) || (state->current_game >= GMREMIX_TWELVECB_GAMES))
     {
         return -1;

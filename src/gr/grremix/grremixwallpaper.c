@@ -37,6 +37,10 @@ void grRemixWallpaperMake(s32 gkind)
         grWallpaperMakeStatic();
         break;
 
+    case GRREMIX_WALLPAPER_KIND_SECTOR:
+        grWallpaperMakeSector();
+        break;
+
     default:
         grWallpaperMakeCommon();
         break;

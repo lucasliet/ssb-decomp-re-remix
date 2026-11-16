@@ -18,6 +18,8 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenudraw.h"
 #include "sc/sc1pmode/sc1ptrainingremixspawn.h"
+#include "sc/sc1pmode/sc1ptrainingremixpause.h"
+#include "sc/sc1pmode/sc1ptrainingframerules.h"
 #include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixtoggle.h"
 #include "gr/grremix/grremixtrainingbackground.h"
@@ -334,14 +336,37 @@ static void sc1PTrainingModeSetPortsLocked(sb32 is_locked)
 		else ftParamUnlockPlayerControl(fighter_gobj);
 	}
 }
+
+/** Training.asm enable_during_unpause_: the B that closed the menu counts as already held by every human fighter, so none starts a special with it. */
+static void sc1PTrainingModeHoldLeaveButtonAll(void)
+{
+	s32 port;
+
+	for (port = 0; port < ARRAY_COUNT(gSCManagerBattleState->players); port++)
+	{
+		GObj *fighter_gobj = gSCManagerBattleState->players[port].fighter_gobj;
+
+		if ((gSCManagerBattleState->players[port].pkind != nFTPlayerKindMan) || (fighter_gobj == NULL))
+		{
+			continue;
+		}
+		ftGetStruct(fighter_gobj)->input.pl.button_hold |= B_BUTTON;
+	}
+}
 #endif
 
 // 0x8018D0E8
 void sc1PTrainingModeCheckEnterMenu(void)
 {
 	s32 player = gSCManagerSceneData.player;
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Training.asm check_enter_menu_: START of any controller pauses, the owner's first */
+	s32 pause_port = sc1PTrainingRemixPauseFindPort(START_BUTTON);
 
+	if (pause_port >= 0)
+#else
 	if (gSYControllerDevices[player].button_tap & START_BUTTON)
+#endif
 	{
 		GObj *fighter_gobj = gSCManagerBattleState->players[player].fighter_gobj;
 		FTStruct *fp = ftGetStruct(fighter_gobj);
@@ -364,6 +389,9 @@ void sc1PTrainingModeCheckEnterMenu(void)
 			syAudioSetBGMVolume(0, 0x3C00);
 
 			sSC1PTrainingModeMenu.is_read_menu_inputs = FALSE;
+#if defined(PORT) && defined(REGION_REMIX)
+			sc1PTrainingRemixPauseTakeMenu(pause_port);
+#endif
 		}
 	}
 }
@@ -373,9 +401,18 @@ void sc1PTrainingModeCheckLeaveMenu(void)
 {
 	s32 player = gSCManagerSceneData.player;
 	GObj *fighter_gobj;
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Training.asm check_leave_menu_: START or B of any controller unpauses, and the menu goes back to the owner */
+	s32 leave_port = sc1PTrainingRemixPauseFindPort(B_BUTTON | START_BUTTON);
 
+	if (leave_port >= 0)
+#else
 	if (gSYControllerDevices[player].button_tap & (B_BUTTON | START_BUTTON))
+#endif
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		player = sc1PTrainingRemixPauseReturnMenu();
+#endif
 #ifdef REGION_REMIX
 		if (ifRemixHudDisabledAll() == FALSE)
 		{
@@ -396,12 +433,19 @@ void sc1PTrainingModeCheckLeaveMenu(void)
 		fighter_gobj = gSCManagerBattleState->players[player].fighter_gobj;
 		ftParamUnlockPlayerControl(fighter_gobj);
 
+#if defined(PORT) && defined(REGION_REMIX)
+		if (gSYControllerDevices[leave_port].button_tap & B_BUTTON)
+		{
+			sc1PTrainingModeHoldLeaveButtonAll();
+		}
+#else
 		if (gSYControllerDevices[player].button_tap & B_BUTTON)
 		{
 			FTStruct *fp = ftGetStruct(fighter_gobj);
 
 			fp->input.pl.button_hold |= B_BUTTON;
 		}
+#endif
 		syAudioSetBGMVolume(0, 0x7800);
 	}
 }
@@ -563,7 +607,12 @@ sb32 sc1PTrainingModeUpdateItemOption(void)
 				vel.x = vel.z = 0.0F;
 				vel.y = 30.0F;
 
+#if defined(PORT) && defined(REGION_REMIX)
+				/* Training.asm check_disabled_item_spawn_: a port with no fighter spawns the item over the owner */
+				pos = DObjGetStruct(sc1PTrainingRemixPauseGetFighter())->translate.vec.f;
+#else
 				pos = DObjGetStruct(gSCManagerBattleState->players[gSCManagerSceneData.player].fighter_gobj)->translate.vec.f;
+#endif
 
 				pos.y += 200.0F;
 				pos.z = 0.0F;
@@ -616,7 +665,11 @@ sb32 sc1PTrainingModeUpdateViewOption(void)
 		}
 		else
 		{
+#if defined(PORT) && defined(REGION_REMIX)
+			GObj *fighter_gobj = sc1PTrainingRemixPauseGetFighter();
+#else
 			GObj *fighter_gobj = gSCManagerBattleState->players[gSCManagerSceneData.player].fighter_gobj;
+#endif
 
 			gmCameraSetStatusPlayerZoom(fighter_gobj, 0.0F, 0.0F, ftGetStruct(fighter_gobj)->attr->closeup_camera_zoom, 0.1F, 28.0F);
 
@@ -753,6 +806,8 @@ static void sc1PTrainingModeQuickReset(void)
 	sc1PTrainingRemixOnReset();
 	func_800266A0_272A0();
 	func_800269C0_275C0(SC1PTRAINING_QUICK_RESET_FGM);
+	/* Training.asm 1776-1782: a quick reset while paused would leave the music at the pause volume */
+	syAudioSetBGMVolume(0, 0x7800);
 	syTaskmanSetLoadScene();
 }
 #endif
@@ -778,7 +833,7 @@ void sc1PTrainingModeUpdateAll(void)
 		break;
 	}
 #if defined(PORT) && defined(REGION_REMIX)
-	sb32 is_skip_advance;
+	s32 frame_kind;
 
 	sc1PTrainingRemixPollMusic();
 
@@ -786,15 +841,14 @@ void sc1PTrainingModeUpdateAll(void)
 	{
 		sc1PTrainingModeQuickReset();
 	}
-	is_skip_advance = sc1PTrainingModeCheckLagTic();
+	frame_kind = sc1PTrainingRemixResolveFrame(sc1PTrainingModeCheckLagTic());
 
-	if (sc1PTrainingRemixIsFrameHeld() != FALSE)
+	/* Training.asm advance_frame_ _check_freeze: only a frame that is neither frozen nor a D-pad right advance asks the Game Speed toggle */
+	if ((frame_kind == nSC1PTrainingFrameKindRun) && (ftRemixSpeedTrainingRunFrames(sSC1PTrainingModeMenu.speed_menu_option == nSC1PTrainingModeMenuSpeedFull, FALSE) != FALSE))
 	{
-		is_skip_advance = TRUE;
+		frame_kind = nSC1PTrainingFrameKindSkip;
 	}
-	else is_skip_advance = ftRemixSpeedTrainingRunFrames(sSC1PTrainingModeMenu.speed_menu_option == nSC1PTrainingModeMenuSpeedFull, is_skip_advance);
-
-	if (is_skip_advance == FALSE)
+	if ((frame_kind == nSC1PTrainingFrameKindRun) || (frame_kind == nSC1PTrainingFrameKindAdvance))
 #else
 	if (sc1PTrainingModeCheckLagTic() == FALSE)
 #endif
@@ -807,7 +861,15 @@ void sc1PTrainingModeUpdateAll(void)
 		sc1PTrainingRemixActionCountFrame();
 #endif
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	/* Training.asm _frozen returns to 0x8018DA50, past the camera call: a frozen frame does not move the camera */
+	else if (frame_kind == nSC1PTrainingFrameKindSkip)
+	{
+		gmCameraRunFuncCamera(gGMCameraGObj);
+	}
+#else
 	else gmCameraRunFuncCamera(gGMCameraGObj);
+#endif
 
 	ifCommonSetMaxNumGObj();
 }
@@ -2401,6 +2463,10 @@ void sc1PTrainingModeStartScene(void)
 	do
 	{
 		scManagerFuncUpdate(&dSC1PTrainingModeTaskmanSetup);
+#if defined(PORT) && defined(REGION_REMIX)
+		/* Training.asm load_from_reset_ 880-890: a reset or the exit from a pause another port opened gives the menu back to the owner */
+		sc1PTrainingRemixPauseReturnMenu();
+#endif
 		gmRumbleInitPlayers();
 	}
 	while (sSC1PTrainingModeMenu.exit_or_reset != 0);

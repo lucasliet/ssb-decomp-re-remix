@@ -120,6 +120,8 @@ static const IFRemixPauseLegendItem sIFRemixPauseLegendItems[] =
 /* Pause.asm groups 0xE (R legend) and 0xF and 0x10 (music and camera legends): their show state */
 static sb32 sIFRemixPauseLegendHudShown;
 static sb32 sIFRemixPauseLegendExtraShown;
+/* Pause.asm 0x80131828 == 1: the pause allows the camera controls, so their legend may show */
+static sb32 sIFRemixPauseLegendCameraAllowed;
 static GObj *sIFRemixPauseLegendSprites[IFREMIX_PAUSE_LEGEND_ITEMS_MAX];
 static s32 sIFRemixPauseLegendSpriteCount;
 
@@ -150,14 +152,17 @@ static void ifRemixPauseLegendApplyGroups(void)
     sb32 hud_visible = (gmRemixToggle(disable_hud) == 0) && sIFRemixPauseLegendHudShown;
 
     gmRemixGroupDisplaySet(IFREMIX_PAUSE_LEGEND_GROUP_R, hud_visible ? 0 : 1);
-    gmRemixGroupDisplaySet(IFREMIX_PAUSE_LEGEND_GROUP_MUSIC, (hud_visible && sIFRemixPauseLegendExtraShown) ? 0 : 1);
-    gmRemixGroupDisplaySet(IFREMIX_PAUSE_LEGEND_GROUP_CAMERA, (hud_visible && sIFRemixPauseLegendExtraShown) ? 0 : 1);
+    sb32 extra_visible = hud_visible && sIFRemixPauseLegendExtraShown;
+
+    gmRemixGroupDisplaySet(IFREMIX_PAUSE_LEGEND_GROUP_MUSIC, extra_visible ? 0 : 1);
+    gmRemixGroupDisplaySet(IFREMIX_PAUSE_LEGEND_GROUP_CAMERA, (extra_visible && sIFRemixPauseLegendCameraAllowed) ? 0 : 1);
 }
 
 void ifRemixPauseLegendReset(void)
 {
     sIFRemixPauseLegendHudShown = TRUE;
     sIFRemixPauseLegendExtraShown = FALSE;
+    sIFRemixPauseLegendCameraAllowed = FALSE;
     ifRemixPauseLegendMakeSprites();
     ifRemixPauseLegendApplyGroups();
 }
@@ -214,7 +219,15 @@ static sb32 ifRemixPauseLegendIsGroupShown(s32 group)
     {
         return FALSE;
     }
-    return (group == IFREMIX_PAUSE_LEGEND_GROUP_R) ? TRUE : sIFRemixPauseLegendExtraShown;
+    if (group == IFREMIX_PAUSE_LEGEND_GROUP_R)
+    {
+        return TRUE;
+    }
+    if ((group == IFREMIX_PAUSE_LEGEND_GROUP_CAMERA) && !sIFRemixPauseLegendCameraAllowed)
+    {
+        return FALSE;
+    }
+    return sIFRemixPauseLegendExtraShown;
 }
 
 /** Track title and game of the music block, read live from the stage song (Pause.asm render_live_music_string_). */
@@ -264,8 +277,9 @@ static void ifRemixPauseLegendDraw(void)
     }
 }
 
-void ifRemixPauseLegendUpdate(u16 button_tap, u16 button_hold)
+void ifRemixPauseLegendUpdate(u16 button_tap, u16 button_hold, sb32 is_camera_control)
 {
+    sIFRemixPauseLegendCameraAllowed = is_camera_control;
     ifRemixPauseLegendToggleHudOnDpadLeft(button_tap);
     ifRemixPauseLegendToggleOnRPress(button_tap, button_hold);
     ifRemixPauseLegendApplyGroups();

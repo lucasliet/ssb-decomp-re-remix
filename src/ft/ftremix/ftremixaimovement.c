@@ -87,7 +87,7 @@ s32 ftRemixAiMovementNeutralInput(FTStruct *fp)
     return input_kind;
 }
 
-/** detect_offstage_opponents: the on-stage test is skipped for level 10 only. */
+/** detect_offstage_opponents: the on-stage, ledge and Metal ground-target tests are skipped for level 10 only. */
 sb32 ftRemixAiMovementTargetsOffstage(FTStruct *fp)
 {
     return ftRemixAiMovementRulesOffstageTargetAllowed(fp->level);

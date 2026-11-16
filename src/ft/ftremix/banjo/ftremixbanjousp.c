@@ -97,8 +97,11 @@ static void ftRemixBanjoUSPClearTempVars(FTStruct *fp)
     fp->motion_vars.flags.flag2 = 0;
 }
 
-/* Gravity or fast fall, chosen by the is_fastfall bit. The asm then branches on v0, which
- * the void gravity calls never write (see notes), so the port always takes the run path. */
+/* Gravity or fast fall, chosen by the is_fastfall bit. The asm then runs `bnez v0, _check_begin`
+ * (BanjoSpecial.asm begin_physics_ and attack_physics_ `_branch_2`). Neither gravity routine writes
+ * v0, and the caller enters proc_physics with `jalr v0` (0x800E20B8), so v0 is the routine's own
+ * address and the branch is always taken: the air friction (0x800D9074) of both routines and the
+ * air-speed cap (0x800D8FA8) of the attack never run. */
 static void ftRemixBanjoUSPApplyGravity(FTStruct *fp)
 {
     if (fp->is_fastfall)
@@ -286,14 +289,13 @@ static void ftRemixBanjoUSPRecoilProcInterrupt(GObj *fighter_gobj)
     fp->physics.vel_air.y += BANJO_USP_RECOIL_Y_RISE;
 }
 
-/* BanjoUSP.begin_physics_: gravity, air friction, then the BEGIN and BEGIN_MOVE velocity setup. */
+/* BanjoUSP.begin_physics_: gravity, the BEGIN and BEGIN_MOVE velocity setup, then air control. */
 static void ftRemixBanjoUSPBeginProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     u32 state = fp->motion_vars.flags.flag2;
 
     ftRemixBanjoUSPApplyGravity(fp);
-    ftPhysicsApplyAirVelXFriction(fp, fp->attr);
     if (state == BANJO_USP_BEGIN_PHYS_BEGIN)
     {
         ftRemixBanjoUSPFreezeVel(fp);
@@ -307,15 +309,13 @@ static void ftRemixBanjoUSPBeginProcPhysics(GObj *fighter_gobj)
     ftPhysicsClampAirVelXStickDefault(fp, fp->attr);
 }
 
-/* BanjoUSP.attack_physics_: gravity, air control, friction, and the REAR_BACK, BEGIN_MOVE and MOVE velocities. */
+/* BanjoUSP.attack_physics_: gravity and the REAR_BACK, BEGIN_MOVE and MOVE velocities. */
 static void ftRemixBanjoUSPAttackProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     u32 state = fp->motion_vars.flags.flag2;
 
     ftRemixBanjoUSPApplyGravity(fp);
-    ftPhysicsCheckClampAirVelXDecMax(fp, fp->attr);
-    ftPhysicsApplyAirVelXFriction(fp, fp->attr);
     if (state == BANJO_USP_ATTACK_PHYS_BEGIN)
     {
         ftRemixBanjoUSPFreezeVel(fp);

@@ -180,7 +180,7 @@ static void gmRemixTagTeamApplyCssFirstSlot(s32 port)
         return;
     }
     first_slot->fkind = fkind;
-    first_slot->costume = (gSCManagerBattleState->is_team_battle != FALSE) ? ftParamGetCostumeTeamID(fkind, data->color) : costume;
+    first_slot->costume = (gSCManagerBattleState->is_team_battle != FALSE) ? ftParamGetCostumeTeamID(fkind, data->team) : costume;
     first_slot->is_classic = is_classic;
     first_slot->shade = gmRemixTagTeamGetShade(port, 0);
 
@@ -317,20 +317,27 @@ void gmRemixTagTeamSetup(void)
     }
 }
 
+/* The stock count the port started with, or the match setting when the match start did not store one. */
+static s32 gmRemixTagTeamGetInitialCount(s32 port)
+{
+    s32 initial_count = gmRemixStockModeGetInitialCount(port);
+
+    return (initial_count < 0) ? gSCManagerBattleState->stocks : initial_count;
+}
+
+/* The queue slots a Stock Mode Last port skips at match start. */
+static s32 gmRemixTagTeamGetSkippedStocks(s32 port, s32 initial_count)
+{
+    return gmRemixTagTeamRulesSkippedStocks(gmRemixStockModeIsLast(port), gSCManagerBattleState->stocks, initial_count);
+}
+
 /* The slot of the port's current stock (load_next_char_): the initial stock count minus the stocks left and the stolen ones, plus the Stock Mode Last skip. */
 static s32 gmRemixTagTeamGetSlotOfPort(s32 port, s32 stocks_left)
 {
-    s32 initial_count = gmRemixStockModeGetInitialCount(port);
-    s32 skipped_stocks;
+    s32 initial_count = gmRemixTagTeamGetInitialCount(port);
 
-    if (initial_count < 0)
-    {
-        initial_count = gSCManagerBattleState->stocks;
-    }
-    skipped_stocks = gmRemixTagTeamRulesSkippedStocks(gmRemixStockModeIsLast(port), gSCManagerBattleState->stocks, initial_count);
-
-    return gmRemixTagTeamRulesQueueIndex(initial_count, stocks_left, sGMRemixTagTeamStolenCount[port], skipped_stocks,
-                                         GMREMIX_TAGTEAM_QUEUE_MAX);
+    return gmRemixTagTeamRulesQueueIndex(initial_count, stocks_left, sGMRemixTagTeamStolenCount[port],
+                                         gmRemixTagTeamGetSkippedStocks(port, initial_count), GMREMIX_TAGTEAM_QUEUE_MAX);
 }
 
 /* load_next_char_: a port that took a stock from a teammate plays the character of that stock. */
@@ -365,14 +372,16 @@ sb32 gmRemixTagTeamApplyStockIcon(SObj *sobj, s32 port, s32 position, s32 icon_c
 
 sb32 gmRemixTagTeamStealStock(s32 thief, s32 stolen_port, SObj *sobj)
 {
+    s32 initial_count;
     s32 slot;
 
     if (gmRemixTagTeamIsActive() == FALSE)
     {
         return FALSE;
     }
-    slot = gmRemixTagTeamRulesGetSlot(gSCManagerBattleState->stocks, sGMRemixTagTeamStolenCount[stolen_port],
-                                      GMREMIX_TAGTEAM_QUEUE_MAX);
+    initial_count = gmRemixTagTeamGetInitialCount(stolen_port);
+    slot = gmRemixTagTeamRulesStealSlot(initial_count, gmRemixTagTeamGetSkippedStocks(stolen_port, initial_count),
+                                        sGMRemixTagTeamStolenCount[stolen_port], GMREMIX_TAGTEAM_QUEUE_MAX);
     sGMRemixTagTeamStolen[thief].port = stolen_port;
     sGMRemixTagTeamStolen[thief].slot = slot;
     sGMRemixTagTeamStolenCount[stolen_port]++;

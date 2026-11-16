@@ -149,33 +149,41 @@ sb32 mnRemixTagTeamCssStepBack(s32 port)
     return TRUE;
 }
 
+sb32 mnRemixTagTeamCssPortStocksChanged(s32 port, s32 stock_count)
+{
+    s32 slot;
+
+    if ((mnRemixTagTeamCssIsActive() == FALSE) || (port < 0) || (port >= MNREMIX_TAGTEAM_CSS_PORTS))
+    {
+        return FALSE;
+    }
+    mnRemixTagTeamCssInit();
+
+    if (mnRemixTagTeamCssRulesClampSlots(&sMNRemixTagTeamCssQueues[port], stock_count) == 0)
+    {
+        return FALSE;
+    }
+    for (slot = 1; slot < MNREMIX_TAGTEAM_CSS_SLOTS; slot++)
+    {
+        if ((sMNRemixTagTeamCssQueues[port].slots[slot].fkind == MNREMIX_TAGTEAM_CSS_NONE) &&
+            (sMNRemixTagTeamCssQueues[port].slots[slot].mirrored_fkind != MNREMIX_TAGTEAM_CSS_NONE))
+        {
+            mnRemixTagTeamCssMirrorSlot(port, slot);
+        }
+    }
+    return TRUE;
+}
+
 u32 mnRemixTagTeamCssStocksChanged(s32 stock_count)
 {
     u32 went_down = 0;
     s32 port;
-    s32 slot;
-
-    if (mnRemixTagTeamCssIsActive() == FALSE)
-    {
-        return 0;
-    }
-    mnRemixTagTeamCssInit();
 
     for (port = 0; port < MNREMIX_TAGTEAM_CSS_PORTS; port++)
     {
-        if (mnRemixTagTeamCssRulesClampSlots(&sMNRemixTagTeamCssQueues[port], stock_count) == 0)
+        if (mnRemixTagTeamCssPortStocksChanged(port, stock_count) != FALSE)
         {
-            continue;
-        }
-        went_down |= 1U << port;
-
-        for (slot = 1; slot < MNREMIX_TAGTEAM_CSS_SLOTS; slot++)
-        {
-            if ((sMNRemixTagTeamCssQueues[port].slots[slot].fkind == MNREMIX_TAGTEAM_CSS_NONE) &&
-                (sMNRemixTagTeamCssQueues[port].slots[slot].mirrored_fkind != MNREMIX_TAGTEAM_CSS_NONE))
-            {
-                mnRemixTagTeamCssMirrorSlot(port, slot);
-            }
+            went_down |= 1U << port;
         }
     }
     return went_down;

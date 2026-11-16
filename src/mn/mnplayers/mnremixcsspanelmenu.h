@@ -90,8 +90,10 @@ extern sb32 mnRemixPanelMenuPress(f32 cursor_x, f32 cursor_y);
  * @param is_a_held TRUE while A is held.
  * @param cursor_x Position X of the cursor sprite.
  * @param cursor_y Position Y of the cursor sprite.
+ * @return TRUE on the frames the held A repeats, for the other arrows the asm press handler repeats (the Manual stock arrows of the
+ *         VS screen).
  */
-extern void mnRemixPanelMenuHoldPress(s32 cursor_port, sb32 is_a_held, f32 cursor_x, f32 cursor_y);
+extern sb32 mnRemixPanelMenuHoldPress(s32 cursor_port, sb32 is_a_held, f32 cursor_x, f32 cursor_y);
 
 /** TRUE while the 1P high scores stay on (SinglePlayer.high_score_enabled): no option that disables them is off its default. */
 extern sb32 mnRemixPanelMenuAreHighScoresEnabled(void);

@@ -20,7 +20,6 @@
 #define IFREMIX_ANNOUNCER_MODE_ALL 1
 #define IFREMIX_ANNOUNCER_MODE_OFF 2
 #define IFREMIX_ANNOUNCER_STOCK_RULE 0x2
-#define IFREMIX_ANNOUNCER_CLOSE_MATCH_STOCKS 2
 #define IFREMIX_ANNOUNCER_GLOBAL_TIMER 0x78
 #define IFREMIX_ANNOUNCER_QUICK_KO_TIME 0x4B0
 #define IFREMIX_ANNOUNCER_LONG_KO_PERCENT 150
@@ -34,6 +33,7 @@
 #define IFREMIX_ANNOUNCER_NAME_ITEM_BASE 0x20
 #define IFREMIX_ANNOUNCER_THERE_GOES_FGM 0x45B
 #define IFREMIX_ANNOUNCER_GAME_SET_DELAY 0x80
+#define IFREMIX_ANNOUNCER_GOBJ_ID 0x3F2
 
 static u32 sIFRemixAnnouncerGlobalTimer;
 static u32 sIFRemixAnnouncerGeneralTimer;
@@ -66,7 +66,10 @@ sb32 ifRemixAnnouncerIsActive(void)
     return ifRemixAnnouncerIsPokemonStage(gSCManagerBattleState->gkind);
 }
 
-/** TRUE when the stock rule is on and every port is down to its last stock, the asm close match condition. */
+/**
+ * TRUE when the stock rule is on and every player of the match is down to the last stock, the asm close match condition.
+ * The asm reads the four stock numbers of the HUD, stale for a port that is not in the match; the port skips those.
+ */
 static sb32 ifRemixAnnouncerIsCloseMatch(void)
 {
     s32 port;
@@ -81,7 +84,11 @@ static sb32 ifRemixAnnouncerIsCloseMatch(void)
     }
     for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
     {
-        if (gSCManagerBattleState->players[port].stock_count >= IFREMIX_ANNOUNCER_CLOSE_MATCH_STOCKS)
+        if (gSCManagerBattleState->players[port].pkind == nFTPlayerKindNot)
+        {
+            continue;
+        }
+        if (!ifRemixAnnouncerRulesIsLastStock(gSCManagerBattleState->players[port].stock_count))
         {
             return FALSE;
         }
@@ -99,23 +106,6 @@ static int ifRemixAnnouncerDraw(int range)
 static IFRemixAnnouncement *ifRemixAnnouncerPickRandom(IFRemixAnnouncerTable *table)
 {
     return &table->entries[ifRemixAnnouncerDraw(table->pick_count)];
-}
-
-/** Random entries until one has no timer left, one attempt per entry. Returns NULL when every attempt is still cooling down. */
-static IFRemixAnnouncement *ifRemixAnnouncerPickFree(IFRemixAnnouncerTable *table)
-{
-    s32 attempt;
-
-    for (attempt = 0; attempt < table->pick_count; attempt++)
-    {
-        IFRemixAnnouncement *entry = ifRemixAnnouncerPickRandom(table);
-
-        if (entry->timer == 0)
-        {
-            return entry;
-        }
-    }
-    return NULL;
 }
 
 /** NAME pick: the Pokemon clip of the item kind, silent while its timer runs or when the item is not a Pokemon. */
@@ -156,16 +146,13 @@ static IFRemixAnnouncement *ifRemixAnnouncerPickQuickKO(void)
     return entry;
 }
 
-/** Long KO pick, falls back to a regular KO while its timer runs. */
+/**
+ * Long KO pick. The asm _long_ko falls back to a regular KO on a running timer, but reads it with lhu: the high half of
+ * the word, always 0 for a 0x258 cooldown, so a long KO clip always plays.
+ */
 static IFRemixAnnouncement *ifRemixAnnouncerPickLongKO(void)
 {
-    IFRemixAnnouncement *entry = ifRemixAnnouncerPickRandom(ifRemixAnnouncerTablesGet(nIFRemixAnnouncerCallLongKO));
-
-    if (entry->timer != 0)
-    {
-        return ifRemixAnnouncerPickRegularKO();
-    }
-    return entry;
+    return ifRemixAnnouncerPickRandom(ifRemixAnnouncerTablesGet(nIFRemixAnnouncerCallLongKO));
 }
 
 /** KO pick: quick under 20 seconds of match time, long above 150 percent damage, regular otherwise. */
@@ -182,16 +169,17 @@ static IFRemixAnnouncement *ifRemixAnnouncerPickKO(FTStruct *victim_fp)
     return ifRemixAnnouncerPickRegularKO();
 }
 
-/** GENERAL pick: the close match clip once per match in a close stock game, else a free general clip. */
+/**
+ * GENERAL pick: the close match clip in a close stock game, else a free general clip. The asm _general skips the close
+ * match clip once it was used, but reads the used halfword with lbu: its high byte, always 0, so the clip is never skipped.
+ */
 static IFRemixAnnouncement *ifRemixAnnouncerPickGeneral(void)
 {
-    IFRemixAnnouncement *close_entry = &ifRemixAnnouncerTablesGet(nIFRemixAnnouncerCallCloseMatch)->entries[0];
-
-    if (ifRemixAnnouncerIsCloseMatch() && (close_entry->used == 0))
+    if (ifRemixAnnouncerIsCloseMatch())
     {
-        return close_entry;
+        return &ifRemixAnnouncerTablesGet(nIFRemixAnnouncerCallCloseMatch)->entries[0];
     }
-    return ifRemixAnnouncerPickFree(ifRemixAnnouncerTablesGet(nIFRemixAnnouncerCallGeneral));
+    return ifRemixAnnouncerRulesPickFree(ifRemixAnnouncerTablesGet(nIFRemixAnnouncerCallGeneral), ifRemixAnnouncerDraw);
 }
 
 /** Starts the timers of a played clip and marks it used, the asm success path of announcer_main_. */
@@ -318,7 +306,7 @@ static void ifRemixAnnouncerRunSleep(void)
     }
 }
 
-/** Per-frame process of the announcer (asm announcer_constant_). Registered by ifRemixAnnouncerSetup. */
+/** Per-frame routine of the announcer GObj (asm announcer_constant_). Registered by ifRemixAnnouncerSetup. */
 static void ifRemixAnnouncerRun(GObj *run_gobj)
 {
     u32 global_timer_before = sIFRemixAnnouncerGlobalTimer;
@@ -345,8 +333,6 @@ static void ifRemixAnnouncerRun(GObj *run_gobj)
 
 void ifRemixAnnouncerSetup(void)
 {
-    GObj *announcer_gobj;
-
     if (!ifRemixAnnouncerIsActive())
     {
         return;
@@ -355,8 +341,8 @@ void ifRemixAnnouncerSetup(void)
     sIFRemixAnnouncerGeneralTimer = 0;
     sIFRemixAnnouncerSleepRequested = FALSE;
     ifRemixAnnouncerTablesReset();
-    announcer_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
-    gcAddGObjProcess(announcer_gobj, ifRemixAnnouncerRun, nGCProcessKindFunc, 0);
+    /* announcer_setup_ makes the object in group 1 with announcer_constant_ as its routine, so it stops with the stage at GAME SET */
+    gcMakeGObjSPAfter(IFREMIX_ANNOUNCER_GOBJ_ID, ifRemixAnnouncerRun, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
 }
 
 /** The vanilla game set clip is replaced only while the announcer is active (asm there_goes_). */

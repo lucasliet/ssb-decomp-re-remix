@@ -2472,7 +2472,8 @@ void sc1PIntroUpdateAnnounce(void)
         50
     };
 #if defined(PORT) && defined(REGION_REMIX)
-    u32 tic = sc1PRemixIntroNameDelay(sSC1PIntroPlayerFighterDemoDesc.fkind) + 1;
+    /* SinglePlayer.asm get_name_delay_ replaces both original lines, so the wait is the table value without the + 1 */
+    u32 tic = sc1PRemixIntroNameDelay(sSC1PIntroPlayerFighterDemoDesc.fkind);
 #elif defined(PORT)
     /* synths reach this on bonus/boss stages where tic is unused; clamp the OOB read */
     u32 tic = announce_wait_tics[(u32)sSC1PIntroPlayerFighterDemoDesc.fkind < ARRAY_COUNT(announce_wait_tics) ? sSC1PIntroPlayerFighterDemoDesc.fkind : 0] + 1;

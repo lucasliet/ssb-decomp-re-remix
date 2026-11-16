@@ -92,6 +92,65 @@ extern unsigned int gmRemixKothRulesTagColor(int tag);
  */
 extern int gmRemixKothRulesContestedGray(int buffer);
 
+/**
+ * Whether a key keeps its win timer this frame (track_score_ _score_next): only the king's key does, so a frame with no king
+ * (NO_KING or CONTESTED) resets the win timer of every key.
+ *
+ * @param key Score key of a fighter.
+ * @param king King of the frame.
+ * @return Non-zero when the win timer of `key` is kept.
+ */
+extern int gmRemixKothRulesWinnerTimeKept(int key, int king);
+
+/** Tint of the meter frame sprite of a GMREMIX_KOTHRULES_TAG_* (KingOfTheHill.colors_meter / team_colors_meter, Color.damage_icon). */
+extern unsigned int gmRemixKothRulesMeterColor(int tag);
+
+/** Fill colour of the meter bar of a GMREMIX_KOTHRULES_TAG_* (KingOfTheHill.colors_bar / team_colors_bar). */
+extern unsigned int gmRemixKothRulesBarColor(int tag);
+
+#define GMREMIX_KOTHRULES_FLASH_STEP 5
+#define GMREMIX_KOTHRULES_FLASH_MAX 100
+
+/**
+ * One frame of the white flash of a full meter (update_indicators_): the alpha moves by the delta, which turns up at 0 and down
+ * at 100. Each meter has its own alpha and delta, starting at 0 and +5, and steps only while its bar is full.
+ *
+ * @param alpha Alpha of the flash rectangle, updated.
+ * @param delta Alpha delta, updated.
+ */
+extern void gmRemixKothRulesFlashStep(int *alpha, int *delta);
+
+/** Draws one random floor line for the hill: its line id, or -1 when the line cannot be a hill (surface, collision, blast zone). */
+typedef int (*GMRemixKothRulesDrawLine)(void *context);
+
+#define GMREMIX_KOTHRULES_HILL_REPEATS 3
+#define GMREMIX_KOTHRULES_HILL_INVALID_MAX 256
+
+/**
+ * set_random_hill_ and get_random_line_id_: draws lines until one can be a hill. An invalid line is drawn again without using
+ * up a try; a repeat of the current hill uses up one of 3 tries, checked before the decrement, so the 4th repeat keeps the hill.
+ * The asm draws invalid lines forever; the port stops after GMREMIX_KOTHRULES_HILL_INVALID_MAX of them and keeps the hill, so
+ * a stage with no valid line does not hang the game.
+ *
+ * @param current Current hill line (-1 none).
+ * @param draw Draws one line.
+ * @param context Passed to `draw`.
+ * @return The new hill line, or `current` when the hill stays.
+ */
+extern int gmRemixKothRulesPickHill(int current, GMRemixKothRulesDrawLine draw, void *context);
+
+/**
+ * Hidden-hill timeout of hill_update_routine_: a shown hill clears the count; a hidden one moves the hill on the frame the
+ * count already equals `hidden_max` (the 121st hidden frame for 120), which also clears it, and otherwise counts the frame.
+ * A hill that does not time out still goes through the blast-zone check.
+ *
+ * @param is_hidden Non-zero while the hill is hidden.
+ * @param hidden_frames Hidden frame count, updated.
+ * @param hidden_max Frames a hill may stay hidden.
+ * @return Non-zero when the hidden timeout moves the hill this frame.
+ */
+extern int gmRemixKothRulesHiddenTimeout(int is_hidden, int *hidden_frames, int hidden_max);
+
 #endif
 
 #endif

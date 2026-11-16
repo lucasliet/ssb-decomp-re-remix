@@ -30,6 +30,12 @@ extern void sc1PTrainingRemixSpawnClear(s32 port);
 extern void sc1PTrainingRemixSpawnSelect(s32 port);
 
 /**
+ * Training.asm load_from_sss_ _initialize_spawns: on entry from the stage select every port goes back to its own spawn point,
+ * so a Custom spawn or a "Port n" choice of an earlier Training does not carry over to this stage.
+ */
+extern void sc1PTrainingRemixSpawnResetAll(void);
+
+/**
  * Spawn.asm load_spawn_ and init_character_: puts the saved position and facing in the fighter description of a Custom port.
  *
  * @return TRUE when `desc` was changed.

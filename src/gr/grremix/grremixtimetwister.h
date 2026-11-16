@@ -12,6 +12,12 @@
 
 void grRemixTimeTwisterSetup(void);
 
+/**
+ * Turns the song swaps of the warps off for the rest of the match (Pause.asm set_alternate_music_ _save clears
+ * Hazards.time_twister_bgm_change): the player picked a song in the pause, so the warps keep it.
+ */
+void grRemixTimeTwisterCancelBgmChange(void);
+
 #endif
 
 #endif

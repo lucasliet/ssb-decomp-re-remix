@@ -76,7 +76,7 @@ typedef struct IFRemixAnnouncerTable
     IFRemixAnnouncement *entries;
     int count;
     int pick_count;
-    int plays_once;
+    int is_spent_by_first;
 } IFRemixAnnouncerTable;
 
 /** Draws a random index in [0, range), the asm Global.get_random_int_. */
@@ -101,8 +101,28 @@ extern void ifRemixAnnouncerTablesCountDown(void);
  */
 extern IFRemixAnnouncement *ifRemixAnnouncerRulesPickStandard(IFRemixAnnouncerTable *table, IFRemixAnnouncerDrawFunc draw);
 
-/** TRUE when the call plays at most once per match and already played (clang_announcement_ tests the used byte). */
+/**
+ * GENERAL pick of announcer_main_ (_unspecific_loop): draws until an entry with no timer left comes up.
+ *
+ * @param table Table of the call.
+ * @param draw Random draw.
+ * @return The entry to play, or NULL when no entry the table draws over is free (the asm would never leave its loop).
+ */
+extern IFRemixAnnouncement *ifRemixAnnouncerRulesPickFree(IFRemixAnnouncerTable *table, IFRemixAnnouncerDrawFunc draw);
+
+/**
+ * TRUE when the call stays silent because its first entry already played in the match (team_ko_announcement_ reads the used
+ * halfword of the first team KO call twice before it calls announcer_main_).
+ */
 extern int ifRemixAnnouncerRulesIsSpent(const IFRemixAnnouncerTable *table);
+
+/**
+ * TRUE when a player counts as down to the last stock for the close match call: the asm tests the stock number of the HUD
+ * (stock_count + 1) against 2, and a defeated player keeps the last number shown.
+ *
+ * @param stock_count Stocks the player has left besides the current one (SCPlayerData stock_count, -1 when defeated).
+ */
+extern int ifRemixAnnouncerRulesIsLastStock(int stock_count);
 
 /**
  * TRUE when announcer_constant_ looks at the sleep request this frame. The asm reads it only after the global timer was

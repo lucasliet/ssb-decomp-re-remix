@@ -22,6 +22,22 @@
  */
 extern int mnRemixVSModeReturnCursor(int is_from_players_vs, int mode);
 
+/** Mode values of the menu that can be played in teams (VsRemixMenu.asm mode.KOTH, mode.SMASHKETBALL, mode.TUG_OF_WAR). */
+#define MNREMIX_VSMODE_RETURN_MODE_DEFAULT 0
+#define MNREMIX_VSMODE_RETURN_MODE_KOTH 3
+#define MNREMIX_VSMODE_RETURN_MODE_SMASHKETBALL 4
+#define MNREMIX_VSMODE_RETURN_MODE_TUG_OF_WAR 5
+
+/**
+ * TRUE when leaving the menu gives the fighters already chosen the costume of their team (VsRemixMenu.asm
+ * save_global_settings_ :438-467): always for Smashketball, and for the default VS, King of the Hill and Tug of War when
+ * their teams setting is on. 12-Character Battle and Tag Team never do.
+ *
+ * @param mode Mode the menu leaves with (0 for the default VS).
+ * @param is_mode_teams Teams setting of that mode (the VS rule for the default VS).
+ */
+extern int mnRemixVSModeExitSyncsTeamCostumes(int mode, int is_mode_teams);
+
 #endif
 
 #endif

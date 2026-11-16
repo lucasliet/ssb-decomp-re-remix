@@ -17,7 +17,10 @@ s32 ftRemixAiMovementShorthopInput(FTStruct *fp, s32 vanilla_input);
 /** jump_in_neutral: the neutral walk input. Level 10 rolls for a jump and sets the Attack objective when it jumps. */
 s32 ftRemixAiMovementNeutralInput(FTStruct *fp);
 
-/** detect_offstage_opponents: TRUE when the CPU may target an opponent who is offstage (level 10). */
+/**
+ * detect_offstage_opponents: TRUE when the CPU may target an opponent who is offstage (level 10). The asm jump lands on
+ * the distance code (0x80132AB8), so it also skips the Metal Mario / Metal Luigi "grounded opponents only" test.
+ */
 sb32 ftRemixAiMovementTargetsOffstage(FTStruct *fp);
 
 /** clamp_target_pos_to_stage: clamps the chosen target position in place (level 10 only). */

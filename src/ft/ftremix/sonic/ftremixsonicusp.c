@@ -7,6 +7,7 @@
 #ifdef PORT
 
 #include "ft/ftremix/ftremix.h"
+#include "ft/ftremix/sonic/ftremixsonicspringrules.h"
 #include "remix/remix_symbols.h"
 #include <ef/efmanager.h>
 #include <ft/ftmain.h>
@@ -36,12 +37,6 @@ enum
 enum
 {
     nFTRemixSonicUSPJumpF = 0x016,
-    nFTRemixSonicUSPPass = 0x021,
-    nFTRemixSonicUSPTumble = 0x039,
-    nFTRemixSonicUSPFallSpecial = 0x03A,
-    nFTRemixSonicUSPShieldBreak = 0x09E,
-    nFTRemixSonicUSPShieldBreakFall = 0x09F,
-    nFTRemixSonicUSPInhalePulled = 0x0AD,
     nFTRemixSonicUSPFoxFireAir = 0x0E8,
     nFTRemixSonicUSPReflectorStartAir = 0x0F1,
     nFTRemixSonicUSPReflectorTurnAir = 0x0F5,
@@ -440,23 +435,15 @@ static s32 ftRemixSonicUSPSpringBounceKind(FTStruct *fp)
 {
     s32 action = fp->status_id;
 
-    if (ftRemixSonicUSPSpringActionInRange(action, nFTRemixSonicUSPJumpF, nFTRemixSonicUSPPass))
+    switch (ftRemixSonicSpringRulesCommonAction(action))
     {
-        return nFTRemixSonicSpringBounceChangeAction;
+        case nFTRemixSonicSpringRulesChangeAction:
+            return nFTRemixSonicSpringBounceChangeAction;
+        case nFTRemixSonicSpringRulesIgnore:
+            return nFTRemixSonicSpringBounceSkip;
+        default:
+            return ftRemixSonicUSPSpringCharacterBounce(fp, action);
     }
-    if (ftRemixSonicUSPSpringActionInRange(action, nFTRemixSonicUSPTumble, nFTRemixSonicUSPFallSpecial))
-    {
-        return nFTRemixSonicSpringBounceChangeAction;
-    }
-    if ((action == nFTRemixSonicUSPShieldBreak) || (action == nFTRemixSonicUSPShieldBreakFall))
-    {
-        return nFTRemixSonicSpringBounceChangeAction;
-    }
-    if (action == nFTRemixSonicUSPInhalePulled)
-    {
-        return nFTRemixSonicSpringBounceSkip;
-    }
-    return ftRemixSonicUSPSpringCharacterBounce(fp, action);
 }
 
 /* Sets the player to JumpF and plays its animation events (asm `_change_action`). */
@@ -700,7 +687,7 @@ static void ftRemixSonicUSPSpringStageSetting(GObj *fighter_gobj, Vec3f *spawn_p
 static void ftRemixSonicUSPCreateSpring(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    Vec3f spawn_pos;
+    Vec3f spawn_pos = { 0.0F, 0.0F, 0.0F }; /* SonicSpecial.asm _create_spring zeroes the joint-space offset before 0x800EDF24 */
 
     gmCollisionGetFighterPartsWorldPosition(fp->joints[SONIC_USP_SPRING_JOINT], &spawn_pos);
     spawn_pos.y += SONIC_USP_SPRING_DROP_Y_OFFSET;

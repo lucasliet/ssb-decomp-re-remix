@@ -13,6 +13,7 @@ extern void *func_800269C0_275C0(u16 id);
 #include <mn/mncommon/mnremixtimeouts.h>
 #if defined(PORT) && defined(REGION_REMIX)
 #include "mn/mn1pmode/mnremix1pmode.h"
+#include "sc/sc1pmode/sc1premixmoderules.h"
 #endif
 
 extern ub8 gSYMainDmemOK;
@@ -722,7 +723,8 @@ static void mn1PRemixMoveOption(s32 step)
     {
         sMN1PModeOption = 0;
     }
-    if ((sMN1PModeOption == 0) || (sMN1PModeOption == last))
+    /* SinglePlayerMenus.asm fix_cursor_wrap_ keeps the vanilla timer compares: End going down, Start going up */
+    if (sc1PRemixModeMenuAddsEdgeWait(step, sMN1PModeOption, last) != 0)
     {
         sMN1PModeOptionChangeWait += 8;
     }

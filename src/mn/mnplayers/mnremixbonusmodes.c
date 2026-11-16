@@ -215,6 +215,12 @@ sb32 mnRemixBonusModesMakeTotal(GObj *gobj, SObj *label, void **files)
 
     mnPlayers1PBonusMakeNumber(gobj, (s32)mnRemixBonusModesSumAllRecords(mode), MNREMIX_BONUSMODES_TOTAL_NUMBER_X,
                                MNREMIX_BONUSMODES_TOTAL_NUMBER_Y, sMNRemixBonusModesDigitColors, digits, TRUE);
+
+    /* SinglePlayerMenus.asm draw_hrc_high_score_decimal_ also hooks the end of the total routine (0x80133F44) */
+    if (mnRemixBonusModesHasDecimal(mode) != 0)
+    {
+        mnRemixBonusModesMakeDecimal(gobj, files[MNREMIX_BONUSMODES_FILE_DIGITS]);
+    }
     return TRUE;
 }
 
@@ -342,10 +348,16 @@ typedef struct MNRemixBonusModesStageRow
 
 static MNRemixBonusModesStageRow sMNRemixBonusModesStageRow;
 
-/** The STAGE row exists on the Bonus 1 and 2 screens only (Bonus.asm setup_ and arrow_routine_ hide it for the other modes). */
+/** The STAGE row works on the Bonus 1 and 2 screens only (Bonus.asm setup_ and arrow_routine_ hide it for the other modes). */
 static sb32 mnRemixBonusModesHasStageRow(void)
 {
     return (sc1PRemixModeGet() == SC1PREMIX_MODE_STANDARD) ? TRUE : FALSE;
+}
+
+/** TRUE while the STAGE row shows: the header is on Bonus 1 or 2 and the choice is Remix (handle_header_toggle_, arrow_routine_). */
+static sb32 mnRemixBonusModesIsStageRowShown(void)
+{
+    return (mnRemixBonusModesStageRowIsShown(sc1PRemixModeGet(), (sc1PBonusRemixIsRemixChoice() != FALSE) ? 1 : 0) != 0) ? TRUE : FALSE;
 }
 
 /** Makes the one or two stock icons of the picked stage again (update_stage_and_icons_). */
@@ -413,10 +425,8 @@ void mnRemixBonusModesToggleMake(void **files)
     sMNRemixBonusModesArrows[1] = ifRemixSpriteMakeFromFile(files[MNREMIX_BONUSMODES_FILE_COMMON], llMNPlayersCommonArrowRSprite,
                                                             MNREMIX_BONUSMODES_GOBJ_LINK, MNREMIX_BONUSMODES_DL_LINK,
                                                             MNREMIX_BONUSMODES_ARROW_RIGHT_X, MNREMIX_BONUSMODES_ARROW_Y, 0xFFFFFFFFu, 0x000000FFu, 1.0F);
-    if (mnRemixBonusModesHasStageRow() != FALSE)
-    {
-        mnRemixBonusModesMakeStageRow(files);
-    }
+    /* Bonus.asm setup_ makes the STAGE row on Bonus 3 too, hidden, so a header cycle to Bonus 1 or 2 can show it */
+    mnRemixBonusModesMakeStageRow(files);
 }
 
 static void mnRemixBonusModesSetFlags(GObj *gobj, sb32 is_visible)
@@ -427,21 +437,22 @@ static void mnRemixBonusModesSetFlags(GObj *gobj, sb32 is_visible)
     }
 }
 
-/** Shows the STAGE row, its arrows and icons while the choice is Remix, and "L: Set Stage" while a token is held over a fighter (arrow_routine_, check_input_). */
+/** Shows the STAGE row, its arrows and icons on Bonus 1 and 2 while the choice is Remix, and "L: Set Stage" while a token is held over a fighter (arrow_routine_, check_input_). */
 static void mnRemixBonusModesUpdateStageRow(sb32 is_blink_on, sb32 is_token_held, s32 fkind)
 {
-    sb32 is_remix = sc1PBonusRemixIsRemixChoice();
-    sb32 is_set_stage = (sc1PBonusRemixRulesSetStageIsVisible(1, (is_remix != FALSE) ? 1 : 0, (is_token_held != FALSE) ? 1 : 0, (fkind != nFTKindNull) ? 1 : 0) != 0) ? TRUE : FALSE;
+    sb32 is_shown = mnRemixBonusModesIsStageRowShown();
+    sb32 is_set_stage = (sc1PBonusRemixRulesSetStageIsVisible((mnRemixBonusModesHasStageRow() != FALSE) ? 1 : 0, (sc1PBonusRemixIsRemixChoice() != FALSE) ? 1 : 0,
+                                                              (is_token_held != FALSE) ? 1 : 0, (fkind != nFTKindNull) ? 1 : 0) != 0) ? TRUE : FALSE;
     s32 index;
 
     for (index = 0; index < 2; index++)
     {
-        mnRemixBonusModesSetFlags(sMNRemixBonusModesStageRow.arrows[index], ((is_remix != FALSE) && (is_blink_on != FALSE)) ? TRUE : FALSE);
-        mnRemixBonusModesSetFlags(sMNRemixBonusModesStageRow.icons[index], is_remix);
+        mnRemixBonusModesSetFlags(sMNRemixBonusModesStageRow.arrows[index], ((is_shown != FALSE) && (is_blink_on != FALSE)) ? TRUE : FALSE);
+        mnRemixBonusModesSetFlags(sMNRemixBonusModesStageRow.icons[index], is_shown);
     }
     mnRemixBonusModesSetFlags(sMNRemixBonusModesStageRow.set_stage_button, is_set_stage);
 
-    if (is_remix != FALSE)
+    if (is_shown != FALSE)
     {
         remix_hud_text_put(MNREMIX_BONUSMODES_TEXT_SLOT_STAGE_LABEL, "STAGE:", SC1PBONUS_REMIX_STAGE_LABEL_X, SC1PBONUS_REMIX_STAGE_LABEL_Y,
                            MNREMIX_BONUSMODES_MODE_LABEL_RGBA, MNREMIX_BONUSMODES_MODE_SCALE, REMIX_HUD_ALIGN_RIGHT);
@@ -492,7 +503,7 @@ static sb32 mnRemixBonusModesPressStageArrow(s32 pos_x, s32 pos_y)
 {
     s32 is_right;
 
-    if ((sMNRemixBonusModesStageRow.icon_file == NULL) || (sc1PBonusRemixIsRemixChoice() == FALSE))
+    if ((sMNRemixBonusModesStageRow.icon_file == NULL) || (mnRemixBonusModesIsStageRowShown() == FALSE))
     {
         return FALSE;
     }
@@ -500,7 +511,7 @@ static sb32 mnRemixBonusModesPressStageArrow(s32 pos_x, s32 pos_y)
     {
         SObj *arrow = SObjGetStruct(sMNRemixBonusModesStageRow.arrows[is_right]);
 
-        if (mnRemixBonusModesToggleArrowHit(pos_x, pos_y, (s32)arrow->pos.x, (s32)arrow->pos.y, arrow->sprite.width, arrow->sprite.height, is_right) == 0)
+        if (mnRemixBonusModesStageArrowHit(pos_x, pos_y, (s32)arrow->pos.x, (s32)arrow->pos.y, arrow->sprite.width, arrow->sprite.height) == 0)
         {
             continue;
         }
@@ -548,7 +559,8 @@ sb32 mnRemixBonusModesOnButtonRelease(u16 released_buttons, sb32 is_token_held, 
     s32 stage_index;
 
     if ((sMNRemixBonusModesStageRow.icon_file == NULL) || ((released_buttons & L_TRIG) == 0) ||
-        (sc1PBonusRemixRulesSetStageIsVisible(1, (sc1PBonusRemixIsRemixChoice() != FALSE) ? 1 : 0, (is_token_held != FALSE) ? 1 : 0, (fkind != nFTKindNull) ? 1 : 0) == 0))
+        (sc1PBonusRemixRulesSetStageIsVisible((mnRemixBonusModesHasStageRow() != FALSE) ? 1 : 0, (sc1PBonusRemixIsRemixChoice() != FALSE) ? 1 : 0,
+                                              (is_token_held != FALSE) ? 1 : 0, (fkind != nFTKindNull) ? 1 : 0) == 0))
     {
         return FALSE;
     }

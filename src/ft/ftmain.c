@@ -2412,8 +2412,8 @@ void ftMainUpdateAttackStatFighter(FTStruct *other_fp, FTAttackColl *other_hit, 
     gmCollisionGetFighterAttacksPosition(&impact_pos, this_hit, other_hit);
 
 #ifdef REGION_REMIX
-    /* Wario.asm body_slam_clang_1_ (0x800E294C): the invincible body slam of other_fp is not stopped by this_hit. */
-    if (((this_hit->damage - 10) < other_hit->damage) && (ftRemixHitRecoilIsBodySlamInvincible(other_fp) == FALSE))
+    /* Wario.asm body_slam_clang_1_ (0x800E294C, a0 = this_fp): the invincible body slam of this_fp is not stopped by other_hit. */
+    if (((this_hit->damage - 10) < other_hit->damage) && (ftRemixHitRecoilIsBodySlamInvincible(this_fp) == FALSE))
 #else
     if ((this_hit->damage - 10) < other_hit->damage)
 #endif
@@ -2428,8 +2428,8 @@ void ftMainUpdateAttackStatFighter(FTStruct *other_fp, FTAttackColl *other_hit, 
         }
     }
 #ifdef REGION_REMIX
-    /* Wario.asm body_slam_clang_2_ (0x800E29EC): the invincible body slam of this_fp is not stopped by other_hit. */
-    if (((other_hit->damage - 10) < this_hit->damage) && (ftRemixHitRecoilIsBodySlamInvincible(this_fp) == FALSE))
+    /* Wario.asm body_slam_clang_2_ (0x800E29EC, a0 = other_fp): the invincible body slam of other_fp is not stopped by this_hit. */
+    if (((other_hit->damage - 10) < this_hit->damage) && (ftRemixHitRecoilIsBodySlamInvincible(other_fp) == FALSE))
 #else
     if ((other_hit->damage - 10) < this_hit->damage)
 #endif
@@ -3025,9 +3025,6 @@ void ftMainUpdateDamageStatItem(ITStruct *ip, ITAttackColl *it_attack_coll, s32 
 
                 sFTMainHitLogID++;
             }
-#ifdef REGION_REMIX
-            grRemixBowserBombsTrackHitObject(fp->player, item_gobj);
-#endif
             ftParamUpdatePlayerBattleStats(ip->player, fp->player, damage);
             ftParamUpdateStaleQueue(ip->player, fp->player, it_attack_coll->motion_attack_id, it_attack_coll->motion_count);
         }
@@ -3138,6 +3135,10 @@ void ftMainProcessHitCollisionStatsMain(GObj *fighter_gobj)
 
     knockback = -1.0F;
 
+#ifdef REGION_REMIX
+    /* Hazards.asm track_hit_object_ (0x800E3F14): every attacker class, from the first hit log */
+    grRemixBowserBombsTrackHitObject(this_fp->player, sFTMainHitLogs[0].attacker_gobj);
+#endif
     for (i = 0; i < sFTMainHitLogID; i++)
     {
         hitlog = &sFTMainHitLogs[i];
@@ -4375,6 +4376,9 @@ void ftMainProcParams(GObj *fighter_gobj)
     u32 hitlag_tics;
     sb32 is_knockback_paused;
     s32 element;
+#if defined(PORT) && defined(REGION_REMIX)
+    f32 knockback_before_squat;
+#endif
 
     damage = 0;
     is_shieldbreak = FALSE;
@@ -4410,6 +4414,9 @@ void ftMainProcParams(GObj *fighter_gobj)
     }
     if (fp->damage_knockback != 0.0F)
     {
+#if defined(PORT) && defined(REGION_REMIX)
+        knockback_before_squat = fp->damage_knockback;
+#endif
         if ((fp->status_id == nFTCommonStatusSquat) || (fp->status_id == nFTCommonStatusSquatWait))
         {
             fp->damage_knockback *= (2.0F / 3.0F);
@@ -4429,7 +4436,13 @@ void ftMainProcParams(GObj *fighter_gobj)
         }
         else knockback_resist = fp->knockback_resist_status;
 
+#if defined(PORT) && defined(REGION_REMIX)
+        /* Stamina.asm stamina_armor_fix_ returns straight to 0x800E632C on the lethal hit: f2 and f12 (status and passive
+         * armor) are 0 and the reload of f0 is skipped, so f0 still holds the knockback read before the crouch discount */
+        fp->damage_knockback = ftRemixStaminaKnockbackAfterArmor(fp, knockback_before_squat, knockback_resist);
+#else
         fp->damage_knockback -= knockback_resist;
+#endif
 
         if (fp->damage_knockback <= 0)
         {

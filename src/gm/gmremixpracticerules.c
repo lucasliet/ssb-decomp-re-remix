@@ -13,7 +13,16 @@ int gmRemixPracticeIsRunActive(int mode, int panel_value)
 
 int gmRemixPracticeIsRetryHeld(unsigned int button_hold)
 {
-    return (button_hold & GMREMIX_PRACTICE_BUTTON_L) != 0;
+    return button_hold == GMREMIX_PRACTICE_BUTTON_L;
+}
+
+int gmRemixPracticeIsGameSetRetryScene(int is_1p_game_scene, int is_bonus_stage_scene, int is_from_bonus_css)
+{
+    if (is_1p_game_scene != 0)
+    {
+        return 1;
+    }
+    return ((is_bonus_stage_scene != 0) && (is_from_bonus_css == 0)) ? 1 : 0;
 }
 
 int gmRemixPracticeIsPauseRetry(int is_practice_active, int is_1p_game_scene, unsigned int button_tap)

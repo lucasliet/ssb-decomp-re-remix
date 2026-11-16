@@ -12,6 +12,10 @@
 #define FTREMIX_TUNE_JFALCON_FALCONDIVE_AIR_ACCEL_MUL 1.2F
 #define FTREMIX_TUNE_JFALCON_FALCONDIVE_AIR_SPEED_MAX_MUL 0.84F
 #define FTREMIX_TUNE_PEPPY_FIREFOX_PITCH_OFFSET 0.0F
+#define FTREMIX_TUNE_JLINK_SPINATTACK_LANDING_LAG 0.75F     /* YoungLink.asm jlink_usp_landing_fsm, 11 frames */
+#define FTREMIX_TUNE_WOLF_REFLECT_SPEED_MUL 2.0F            /* Wolf.asm wolf_reflect_speed, 0x40000000 */
+#define FTREMIX_TUNE_SLIPPY_REFLECT_SPEED_MUL 0.40625F      /* Wolf.asm wolf_reflect_speed, 0x3ED00000 */
+#define FTREMIX_TUNE_REFLECT_SPEED_MUL_DEFAULT 1.0F
 
 /** JDK's Spinning Kong start velocity (JDK.asm spinning_kong_startup_, 0x8015B9C4): 18.0 against 20.3 in the US game. */
 extern float ftRemixVariantTuneRulesSpinningKongAirVelY(int fkind, float vanilla_vel_y);
@@ -24,6 +28,15 @@ extern float ftRemixVariantTuneRulesFalconDiveAirSpeedMaxMul(int fkind, float va
 
 /** Pitch offset subtracted from the Firefox model pitch (Peppy.asm up_special_rotation_offset_air_, 0x8015C074): Peppy uses 0, not Fox's 90 degrees. */
 extern float ftRemixVariantTuneRulesFireFoxPitchOffset(int fkind, float vanilla_offset);
+
+/** J Link's special fall landing lag after the aerial Spin Attack (YoungLink.asm up_special_landing_, 0x80163FF0): 0.75 against 0.65 in the US game. */
+extern float ftRemixVariantTuneRulesSpinAttackLandingLag(int fkind, float vanilla_lag);
+
+/**
+ * Multiplier of the horizontal speed of a weapon reflected by that fighter (Wolf.asm wolf_reflect_speed, 0x80166DDC):
+ * 2.0 for Wolf, 0.40625 for Slippy, 1.0 for everyone else.
+ */
+extern float ftRemixVariantTuneRulesReflectSpeedMul(int reflector_fkind);
 
 /**
  * TRUE when the fighter keeps its facing at the start of the entry (Sonic.asm sonic_facing_, 0x8013DC50), FALSE when the entry

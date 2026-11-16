@@ -22,7 +22,7 @@ extern sb32 sc1PRemixRetryIsModeAvailable(void);
 extern sb32 sc1PRemixRetryTryByPause(u16 button_tap);
 
 /**
- * Starts a retry while GAME SET shows when L is held on any controller (Practice_1P.asm hold_l_to_retry_): in a Bonus 1 or Bonus 2
+ * Starts a retry while GAME SET shows when one controller holds L alone (Practice_1P.asm hold_l_to_retry_): in a Bonus 1 or Bonus 2
  * practice run (the Bonus stage restarts, sc1PBonusStageStartScene consumes the retry) and in Bonus 3, Multi-Man, Cruel Multi-Man
  * and the Home-Run Contest (sc1PRemixModeLeaveRun consumes it). The caller ends the scene.
  *

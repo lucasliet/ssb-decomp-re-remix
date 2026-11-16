@@ -95,4 +95,86 @@ int gmRemixKothRulesContestedGray(int buffer)
     return GMREMIX_KOTHRULES_CONTESTED_GRAY - (2 * buffer);
 }
 
+int gmRemixKothRulesWinnerTimeKept(int key, int king)
+{
+    return (key == king) ? 1 : 0;
+}
+
+/* Color.asm damage_icon.RED, BLUE, GREEN, YELLOW, GRAY. */
+static const unsigned int dGMRemixKothRulesMeterColors[5] = { 0xFFA0A0FF, 0xB4B4FFFF, 0xA0FFA0FF, 0xE6E678FF, 0xDCDCDCFF };
+
+/* KingOfTheHill.asm colors_bar / team_colors_bar, in the tag order. */
+static const unsigned int dGMRemixKothRulesBarColors[5] = { 0xC96A6AFF, 0x7E7EC9FF, 0x4EAD4EFF, 0xB2B244FF, 0x888888FF };
+
+unsigned int gmRemixKothRulesMeterColor(int tag)
+{
+    return dGMRemixKothRulesMeterColors[tag];
+}
+
+unsigned int gmRemixKothRulesBarColor(int tag)
+{
+    return dGMRemixKothRulesBarColors[tag];
+}
+
+void gmRemixKothRulesFlashStep(int *alpha, int *delta)
+{
+    *alpha += *delta;
+
+    if (*alpha == 0)
+    {
+        *delta = GMREMIX_KOTHRULES_FLASH_STEP;
+    }
+    if (*alpha == GMREMIX_KOTHRULES_FLASH_MAX)
+    {
+        *delta = -GMREMIX_KOTHRULES_FLASH_STEP;
+    }
+}
+
+int gmRemixKothRulesPickHill(int current, GMRemixKothRulesDrawLine draw, void *context)
+{
+    int repeats_left = GMREMIX_KOTHRULES_HILL_REPEATS;
+    int invalid_left = GMREMIX_KOTHRULES_HILL_INVALID_MAX;
+
+    for (;;)
+    {
+        int line_id = draw(context);
+
+        if (line_id < 0)
+        {
+            if (invalid_left == 0)
+            {
+                return current;
+            }
+            invalid_left--;
+            continue;
+        }
+        if (line_id != current)
+        {
+            return line_id;
+        }
+        if (repeats_left == 0)
+        {
+            return current;
+        }
+        repeats_left--;
+    }
+}
+
+int gmRemixKothRulesHiddenTimeout(int is_hidden, int *hidden_frames, int hidden_max)
+{
+    if (is_hidden == 0)
+    {
+        *hidden_frames = 0;
+        return 0;
+    }
+    if (*hidden_frames == hidden_max)
+    {
+        *hidden_frames = 0;
+        return 1;
+    }
+    (*hidden_frames)++;
+
+    return 0;
+}
+
 #endif

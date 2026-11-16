@@ -111,6 +111,11 @@ int ftRemixAiSpecialsNeedleChargeOutcome(int is_sheik, int action, int ammo)
     return (ammo < FTREMIX_AI_SPECIALS_NEEDLE_AMMO_FULL) ? FTREMIX_AI_SPECIALS_NEEDLE_PRESS : FTREMIX_AI_SPECIALS_NEEDLE_STOP;
 }
 
+int ftRemixAiSpecialsNeedleChargeReturnsTrue(int outcome)
+{
+    return outcome == FTREMIX_AI_SPECIALS_NEEDLE_PRESS;
+}
+
 /** Charge shot actions of Dark Samus (Kirby copy), Mewtwo (shoots and the Kirby shadow ball copy) and Sheik (own and Kirby needles). */
 int ftRemixAiSpecialsChargeShotActive(int fkind, int action)
 {

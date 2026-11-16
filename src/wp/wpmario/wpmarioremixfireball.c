@@ -2,6 +2,7 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
 #include "wp/wpmario/wpmariofireball.h"
+#include "wp/wpmario/wpmarioremixfireballrules.h"
 #include "ft/ftremix/ftremixfields.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "fighter_registry.h"
@@ -163,7 +164,7 @@ sb32 wpRemixMarioFireballBounceEffect(GObj *weapon_gobj)
     return FALSE;
 }
 
-/* Piano's bonus_ammo is truncated to an int and spends the whole count on extra books; otherwise one book. */
+/* Piano's bonus_ammo is truncated to an int and spent whole: the normal book plus one extra book per ammo. */
 static s32 wpRemixPianoBookCount(FTStruct *fp)
 {
     s32 bonus_ammo;
@@ -178,14 +179,15 @@ static s32 wpRemixPianoBookCount(FTStruct *fp)
         return 1;
     }
     *ftRemixFighterWord(fp, WP_REMIX_PIANO_BONUS_AMMO) = 0;
-    return bonus_ammo;
+    /* fireball.asm Book.create_: the bnel at _end_loop runs the body for t8 = 0..bonus_ammo */
+    return wpRemixPianoBookRulesCount(bonus_ammo);
 }
 
 /* Book angle for the given loop iteration: 60 degrees +/- 25 degrees, spread grows 25% per extra book. */
 static f32 wpRemixPianoBookAngle(s32 iteration)
 {
     f32 random_step = (f32)(syUtilsRandIntRange(101) - 50) * 0.01F;
-    f32 intensity = 1.0F + (0.25F * (f32)iteration);
+    f32 intensity = wpRemixPianoBookRulesSpreadIntensity(iteration);
 
     return 1.0472F + (0.436332F * (random_step * intensity));
 }

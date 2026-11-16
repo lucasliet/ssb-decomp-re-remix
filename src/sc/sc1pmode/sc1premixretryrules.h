@@ -29,13 +29,14 @@ extern int sc1PRemixRetryIsFakeScreenMode(int mode);
 extern int sc1PRemixRetryIsPauseRetry(int mode, int is_1p_game_scene, unsigned int button_tap);
 
 /**
- * Whether L held while GAME SET shows retries the run (hold_l_to_retry_): a Bonus 1 or Bonus 2 practice run (the screen before the
- * stage was the Bonus CSS), or a fake screen mode run. A Bonus stage of the 1P game itself never retries.
+ * Whether L held alone while GAME SET shows retries the run (hold_l_to_retry_): a Bonus 1 or Bonus 2 practice run (the screen before
+ * the stage was the Bonus CSS), or a fake screen mode run. A Bonus stage of the 1P game itself only retries in a practice run
+ * (gmRemixPracticeIsGameSetRetryScene).
  *
  * @param mode Mode id (SC1PREMIX_MODE_*).
  * @param is_1p_game_scene Non-zero while the 1P Game battle scene runs.
  * @param is_bonus_practice_scene Non-zero while a Bonus stage runs that was entered from the Bonus 1 or Bonus 2 CSS.
- * @param button_hold Held buttons of the controllers, ORed.
+ * @param button_hold Held buttons of one controller; the retry needs L and no other button.
  * @return Non-zero when the retry starts.
  */
 extern int sc1PRemixRetryIsGameSetRetry(int mode, int is_1p_game_scene, int is_bonus_practice_scene, unsigned int button_hold);

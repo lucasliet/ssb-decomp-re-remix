@@ -13,6 +13,7 @@
 #include "gm/gmremixtoggle.h"
 #include "gr/grremix/grremixrandommusic.h"
 #include "gr/grremix/grremixstage.h"
+#include "gr/grremix/grremixtimetwister.h"
 
 #include <port_log.h>
 
@@ -55,6 +56,16 @@ sb32 gmRemixBgmChange(u32 track)
     return TRUE;
 }
 
+sb32 gmRemixBgmChangeUnlessItemMusic(u32 track)
+{
+    if (gmRemixBgmRulesIsProtected(gMPCollisionBGMCurrent))
+    {
+        gMPCollisionBGMDefault = track;
+        return FALSE;
+    }
+    return gmRemixBgmChange(track);
+}
+
 /** Track a pause D-pad press selects: the next alternate for Right, a random one for Down. */
 static u32 gmRemixBgmPickPauseTrack(u16 button_hold)
 {
@@ -91,6 +102,8 @@ void gmRemixBgmPauseUpdate(u16 button_hold)
         return;
     }
     track = gmRemixBgmPickPauseTrack(button_hold);
+    /* Pause.asm:562-563 every manual pick clears the flag, even when the track stays the same */
+    grRemixTimeTwisterCancelBgmChange();
     if (gmRemixBgmChange(track))
     {
         func_800269C0_275C0(GMREMIX_BGM_FGM_CHANGE);

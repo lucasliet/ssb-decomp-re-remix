@@ -52,4 +52,15 @@ extern int32_t sc1PTrainingPortRulesPick(int32_t option, int32_t auto_value);
 /** Port whose spawn point a port uses: its own for Auto, Port n for the entry n. */
 extern int32_t sc1PTrainingPortRulesSpawnPort(int32_t option, int32_t port);
 
+/**
+ * Port whose controller pressed one of `buttons` this frame, for the pause any port may open and close (Training.asm
+ * check_enter_menu_ and check_leave_menu_): `first_port` is asked first, then the next ports, wrapping after the last.
+ *
+ * @param taps Buttons pressed this frame by each of the SC1PTRAININGPORTRULES_PORT_COUNT controllers.
+ * @param first_port Port asked first (the one that has the menu), 0 to 3.
+ * @param buttons Button mask.
+ * @return The port, or -1 when none pressed.
+ */
+extern int32_t sc1PTrainingPortRulesFindPressingPort(const uint16_t *taps, int32_t first_port, uint16_t buttons);
+
 #endif

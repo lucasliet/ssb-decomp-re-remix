@@ -55,17 +55,21 @@ typedef struct ITRemixWaddleDooVars
     GObj *last_star_gobj;                       /* 0x0350: most recent beam star */
 } ITRemixWaddleDooVars;
 
-/* Remix projectile fields beyond the vanilla WPStruct weapon_vars union. */
+/* Remix projectile fields of the beam star, laid over WPStruct.weapon_vars. The first field is the star rod's
+ * wpStarRodWeaponVarsStar.lifetime, which the delegated itStarRodWeaponStarProcUpdate counts down, so nothing else
+ * may share its bytes. */
 typedef struct ITRemixWaddleDooBeamVars
 {
-    s16 startup_timer;                          /* 0x029A: frames of spark gfx before the star moves */
-    s16 draw_toggle;                            /* 0x02A8: draw/hitbox toggle, 1 after creation */
+    s32 lifetime;                               /* 0x029C: frames left once the star moves (weapon_vars.star.lifetime) */
+    GObj *parent_gobj;                          /* 0x02A0: the Waddle Doo for the first star, the previous star for the others */
     f32 angle;                                  /* 0x02A4: angle around the parent, in radians */
-    GObj *parent_gobj;                          /* 0x02A0: Waddle Doo that spawned the star */
+    s16 draw_toggle;                            /* 0x02A8: draw/hitbox toggle, 1 after creation */
+    s16 startup_timer;                          /* 0x029A: frames of spark gfx before the star moves (N64: just before weapon_vars) */
 } ITRemixWaddleDooBeamVars;
 
 _Static_assert(sizeof(ITRemixWaddleDooVars) <= sizeof(((ITStruct*)0)->item_vars), "ITRemixWaddleDooVars must fit in ITStruct.item_vars");
 _Static_assert(sizeof(ITRemixWaddleDooBeamVars) <= sizeof(((WPStruct*)0)->weapon_vars), "ITRemixWaddleDooBeamVars must fit in WPStruct.weapon_vars");
+_Static_assert(offsetof(ITRemixWaddleDooBeamVars, lifetime) == offsetof(wpStarRodWeaponVarsStar, lifetime), "the beam star lifetime must be weapon_vars.star.lifetime");
 
 // // // // // // // // // // // //
 //                               //
@@ -266,13 +270,17 @@ static GObj* itRemixWaddleDooCreateBeamStar(GObj *item_gobj, Vec3f *pos)
     return star_gobj;
 }
 
-/** Sets a beam star's stats and initial position. Port of the star_stage_setting setup block. */
-static void itRemixWaddleDooBeamInit(GObj *star_gobj, GObj *item_gobj, Vec3f *pos, f32 angle, s32 duration, s32 startup_timer)
+/**
+ * Sets a beam star's stats and initial position. Port of the star_stage_setting setup block.
+ * parent_gobj is the asm's a2: the object the star orbits, whose position is pos.
+ */
+static void itRemixWaddleDooBeamInit(GObj *star_gobj, GObj *item_gobj, GObj *parent_gobj, Vec3f *pos)
 {
     ITStruct *ip = itGetStruct(item_gobj);
     WPStruct *wp = wpGetStruct(star_gobj);
     ITRemixWaddleDooBeamVars *beam = itRemixWaddleDooGetBeamVars(star_gobj);
     DObj *dobj = DObjGetStruct(star_gobj);
+    f32 angle = ITREMIX_WADDLEDOO_BEAM_INITIAL_ANGLE;
     f32 x = pos->x + ((f32)ip->lr * ITREMIX_WADDLEDOO_BEAM_DISTANCE);
     f32 y = pos->y + (sinf(angle) * ITREMIX_WADDLEDOO_BEAM_DISTANCE);
 
@@ -283,16 +291,17 @@ static void itRemixWaddleDooBeamInit(GObj *star_gobj, GObj *item_gobj, Vec3f *po
     /* The delegated star rod proc (itStarRodWeaponStarProcUpdate) expires the
      * star through weapon_vars.star.lifetime (N64 0x029C), so the duration goes
      * there, not the WPStruct lifetime field. */
-    wp->weapon_vars.star.lifetime = duration;
+    wp->weapon_vars.star.lifetime = ITREMIX_WADDLEDOO_BEAM_DURATION;
     wp->attack_coll.damage = ITREMIX_WADDLEDOO_BEAM_STAR_DAMAGE;
     wp->attack_coll.element = nGMHitElementElectric;
     wp->attack_coll.fgm_id = ITREMIX_WADDLEDOO_BEAM_HIT_FGM;
     wp->attack_coll.attack_state = nGMAttackStateOff;
 
-    beam->startup_timer = startup_timer;
+    beam->startup_timer = ITREMIX_WADDLEDOO_BEAM_START_UP;
     beam->draw_toggle = 1;
     beam->angle = angle;
-    beam->parent_gobj = item_gobj;
+    /* WaddleDoo.asm star_stage_setting 260, 304-305: 0x02A0 gets a2, the Waddle Doo for the first star and the last created star (0x0350) for the next ones, so the stars form a chain. */
+    beam->parent_gobj = parent_gobj;
 
     /* star_stage_setting_ "overwrite visibility": the star spawns with its
      * draw flag set and beam_main toggles it (see the toggle in the update). */
@@ -300,15 +309,17 @@ static void itRemixWaddleDooBeamInit(GObj *star_gobj, GObj *item_gobj, Vec3f *po
 
     dobj->translate.vec.f.x = x;
     dobj->translate.vec.f.y = y;
-    wp->coll_data.pos_prev.x = x;
-    wp->coll_data.pos_prev.y = y;
+    /* WaddleDoo.asm star_stage_setting 374, 393: N64 0x154/0x158 are attack_pos[0].pos_curr, so the first active frame does not sweep from the spawn point. */
+    wp->attack_coll.attack_pos[0].pos_curr.x = x;
+    wp->attack_coll.attack_pos[0].pos_curr.y = y;
 }
 
 /**
  * Creates the beam star for one step of the beam. Port of star_stage_setting.
+ * parent_gobj is the object the star orbits and pos its position.
  * Returns the new star, or NULL when no star could be created.
  */
-static GObj* itRemixWaddleDooStarStageSetting(GObj *item_gobj, Vec3f *pos)
+static GObj* itRemixWaddleDooStarStageSetting(GObj *item_gobj, GObj *parent_gobj, Vec3f *pos)
 {
     GObj *star_gobj = itRemixWaddleDooCreateBeamStar(item_gobj, pos);
 
@@ -316,7 +327,7 @@ static GObj* itRemixWaddleDooStarStageSetting(GObj *item_gobj, Vec3f *pos)
     {
         return NULL;
     }
-    itRemixWaddleDooBeamInit(star_gobj, item_gobj, pos, ITREMIX_WADDLEDOO_BEAM_INITIAL_ANGLE, ITREMIX_WADDLEDOO_BEAM_DURATION, ITREMIX_WADDLEDOO_BEAM_START_UP);
+    itRemixWaddleDooBeamInit(star_gobj, item_gobj, parent_gobj, pos);
 
     return star_gobj;
 }
@@ -349,12 +360,12 @@ static void itRemixWaddleDooBeamInitial(GObj *item_gobj)
 /** Creates the star(s) for this frame of the charge phase. Port of the star branch of waddle_doo_attack_main. */
 static void itRemixWaddleDooAttackCreateStars(GObj *item_gobj, ITRemixWaddleDooVars *vars)
 {
-    Vec3f *pos;
+    GObj *parent_gobj;
 
     if (itGetStruct(item_gobj)->multi == (ITREMIX_WADDLEDOO_BEAM_CHARGE_TIME - ITREMIX_WADDLEDOO_BEAM_STAR_COUNT + 1))
     {
         itRemixWaddleDooBeamInitial(item_gobj);
-        pos = &DObjGetStruct(item_gobj)->translate.vec.f;
+        parent_gobj = item_gobj;
     }
     else
     {
@@ -362,9 +373,9 @@ static void itRemixWaddleDooAttackCreateStars(GObj *item_gobj, ITRemixWaddleDooV
         {
             return;
         }
-        pos = &DObjGetStruct(vars->last_star_gobj)->translate.vec.f;
+        parent_gobj = vars->last_star_gobj;
     }
-    vars->last_star_gobj = itRemixWaddleDooStarStageSetting(item_gobj, pos);
+    vars->last_star_gobj = itRemixWaddleDooStarStageSetting(item_gobj, parent_gobj, &DObjGetStruct(parent_gobj)->translate.vec.f);
     itMainCheckSetColAnimID(item_gobj, ITREMIX_WADDLEDOO_COLANIM_BEAM_FLASH, ITREMIX_WADDLEDOO_BEAM_FLASH_FRAMES);
 }
 
@@ -439,6 +450,19 @@ void itRemixWaddleDooAttackInitial(GObj *item_gobj)
 }
 
 /**
+ * Kind of the object a beam star orbits. beam_main reads the word at 0x000C of the parent's struct, which is the kind
+ * of an item (the Waddle Doo) and of a weapon (another star) alike; the port structs differ, so the GObj id picks one.
+ */
+static s32 itRemixWaddleDooBeamGetParentKind(GObj *parent_gobj)
+{
+    if (parent_gobj->id == nGCCommonKindWeapon)
+    {
+        return wpGetStruct(parent_gobj)->kind;
+    }
+    return itGetStruct(parent_gobj)->kind;
+}
+
+/**
  * Beam star update. Port of beam_main, the Remix Waddle Doo beam projectile proc.
  * Referenced by the beam WPDesc (sITRemixWaddleDooBeamWeaponDesc).
  */
@@ -448,7 +472,6 @@ static sb32 itRemixWaddleDooBeamProcUpdate(GObj *weapon_gobj)
     ITRemixWaddleDooBeamVars *beam = itRemixWaddleDooGetBeamVars(weapon_gobj);
     DObj *dobj = DObjGetStruct(weapon_gobj);
     GObj *parent_gobj = beam->parent_gobj;
-    ITStruct *parent_ip;
     DObj *parent_dobj;
     f32 x;
     f32 y;
@@ -469,7 +492,7 @@ static sb32 itRemixWaddleDooBeamProcUpdate(GObj *weapon_gobj)
     /* beam_main draw/hitbox toggle (asm 688-707): when the GObj draw flag and
      * the 0x02A8 copy (draw_toggle) match, flip the draw flag and the hitbox
      * update interval (attack_state 3 <-> off); otherwise re-sync the copy.
-     * This blinks the star every 2 frames while it orbits the Waddle Doo. */
+     * This blinks the star every 2 frames while it orbits its parent. */
     if (weapon_gobj->flags == (u32)beam->draw_toggle)
     {
         weapon_gobj->flags = (weapon_gobj->flags != FALSE) ? GOBJ_FLAG_NONE : GOBJ_FLAG_HIDDEN;
@@ -486,8 +509,11 @@ static sb32 itRemixWaddleDooBeamProcUpdate(GObj *weapon_gobj)
     {
         return FALSE;
     }
-    parent_ip = itGetStruct(parent_gobj);
-    if ((parent_ip == NULL) || (parent_ip->kind == 0))
+    if (parent_gobj->user_data.p == NULL)
+    {
+        return FALSE;
+    }
+    if (itRemixWaddleDooBeamGetParentKind(parent_gobj) == 0)
     {
         beam->parent_gobj = NULL;
         return FALSE;

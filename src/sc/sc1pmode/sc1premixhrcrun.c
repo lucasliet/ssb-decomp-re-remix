@@ -36,7 +36,7 @@
 #define SC1PREMIX_HRC_BAT_SPAWN_X (-22542.0F)
 #define SC1PREMIX_HRC_BAT_SPAWN_Y 256.0F
 
-/* Action.asm ThrownDK and DK.Cargo; Lanky stands as an Orangstand from DSPGBegin on (HRC.asm _check_sandbag_moving). */
+/* Action.asm ThrownDK and DK.Cargo; Lanky stands as an Orangstand from DSPGBegin on (HRC.asm _check_lanky). */
 #define SC1PREMIX_HRC_STATUS_THROWN_DK 0xB8
 #define SC1PREMIX_HRC_STATUS_DK_CARGO 0xEB
 #define SC1PREMIX_HRC_STATUS_LANKY_ORANGSTAND 0xEB
@@ -96,12 +96,20 @@ static sb32 sc1PRemixHrcRunIsResting(s32 status_id)
     return FALSE;
 }
 
+/** TRUE while the human holds the Sandbag in the DK cargo, which ends the attempt at once when the time is up (HRC.asm _check_sandbag_moving). */
 static sb32 sc1PRemixHrcRunIsHumanStuckInHold(const FTStruct *sandbag_fp, const FTStruct *human_fp)
 {
-    if ((sandbag_fp->status_id == SC1PREMIX_HRC_STATUS_THROWN_DK) && (human_fp->status_id == SC1PREMIX_HRC_STATUS_DK_CARGO))
-    {
-        return TRUE;
-    }
+    return ((sandbag_fp->status_id == SC1PREMIX_HRC_STATUS_THROWN_DK) && (human_fp->status_id == SC1PREMIX_HRC_STATUS_DK_CARGO)) ? TRUE : FALSE;
+}
+
+/**
+ * TRUE while Lanky stands as an Orangstand. HRC.asm _check_lanky reads the fighter id at 0x0C of the fighter struct (it is at 0x08), so
+ * its Orangstand case never runs: a flying Sandbag is waited for, and with the Sandbag stopped behind the start line the attempt never
+ * ends, because the stance only ends on an input. The port keeps the wait and counts the stance as a resting action
+ * (docs/remix/deviations.md).
+ */
+static sb32 sc1PRemixHrcRunIsOrangstand(const FTStruct *human_fp)
+{
     return ((human_fp->fkind == REMIX_ID_LANKY) && (human_fp->status_id >= SC1PREMIX_HRC_STATUS_LANKY_ORANGSTAND)) ? TRUE : FALSE;
 }
 
@@ -113,7 +121,7 @@ static void sc1PRemixHrcRunFillAttempt(SC1PRemixHrcAttempt *attempt, const SC1PR
     attempt->is_over_platform = (sandbag_fp->coll_data.floor_line_id == SC1PREMIX_HRC_PLATFORM_LINE_ID) ? TRUE : FALSE;
     attempt->is_sandbag_moving = (sandbag_fp->coll_data.pos_diff.x != 0.0F) ? TRUE : FALSE;
     attempt->is_human_stuck_in_hold = sc1PRemixHrcRunIsHumanStuckInHold(sandbag_fp, human_fp);
-    attempt->is_human_resting = sc1PRemixHrcRunIsResting(human_fp->status_id);
+    attempt->is_human_resting = ((sc1PRemixHrcRunIsResting(human_fp->status_id) != FALSE) || (sc1PRemixHrcRunIsOrangstand(human_fp) != FALSE)) ? TRUE : FALSE;
 }
 
 static void sc1PRemixHrcRunFollowSandbag(GObj *sandbag_gobj, GObj *human_gobj, SC1PRemixHrcMove *move)
@@ -148,6 +156,10 @@ static void sc1PRemixHrcRunSpawnBat(void)
     itManagerMakeItemSetupCommon(NULL, nITKindBat, &pos, &vel, ITEM_FLAG_PARENT_GROUND);
 }
 
+/**
+ * Counts the end timer down and then announces the result. Only a COMPLETE saves the record: the asm saves from _time_save, the hook
+ * inside the Complete announce (SinglePlayerModes.asm), and HRC.asm _failure calls the plain end message.
+ */
 static void sc1PRemixHrcRunEndAttempt(sb32 is_complete)
 {
     sb32 is_new_record;
@@ -161,14 +173,14 @@ static void sc1PRemixHrcRunEndAttempt(sb32 is_complete)
     sSC1PRemixHrcIsEnded = TRUE;
     port_log("hrc: attempt ended, complete=%d distance=%d\n", (int)is_complete, (int)sSC1PRemixHrcState.distance);
 
-    is_new_record = sc1PRemixHrcRecordSave(gSCManagerBattleState->players[gSCManagerSceneData.player].fkind, sSC1PRemixHrcState.distance);
-
-    if (is_complete != FALSE)
+    if (is_complete == FALSE)
     {
-        ifCommonAnnounceCompleteInitInterface((is_new_record != FALSE) ? SC1PREMIX_HRC_NEW_RECORD_FGM : SC1PREMIX_HRC_COMPLETE_FGM);
+        ifCommonAnnounceEndMessage();
         return;
     }
-    ifCommonAnnounceEndMessage();
+    is_new_record = sc1PRemixHrcRecordSave(gSCManagerBattleState->players[gSCManagerSceneData.player].fkind, sSC1PRemixHrcState.distance);
+
+    ifCommonAnnounceCompleteInitInterface((is_new_record != FALSE) ? SC1PREMIX_HRC_NEW_RECORD_FGM : SC1PREMIX_HRC_COMPLETE_FGM);
 }
 
 static sb32 sc1PRemixHrcRunNeedsInputsToRelease(const FTStruct *fp)

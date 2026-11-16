@@ -314,7 +314,9 @@ static void ftRemixGoemonRyoBurst(GObj *ryo_gobj, sb32 is_charged)
     efManagerDustExpandSmallMakeEffect(&dobj->translate.vec.f, 1.0F);
 }
 
-/* ryo_destruction_: destroys the Ryo with its burst. Used by the hurtbox, shield, hitbox, absorb and expire paths. */
+/* ryo_destruction_: destroys the Ryo with its burst. Used by the hurtbox, shield, hitbox, absorb and expire paths.
+ * The asm skips the burst when the Ryo has no linked effect object (its null check jumps past it); the port always
+ * plays it. See docs/remix/deviations.md. */
 static sb32 ftRemixGoemonRyoDestruction(GObj *ryo_gobj)
 {
     FTRemixGoemonRyoVars *vars = ftRemixGoemonRyoVars(ryo_gobj);

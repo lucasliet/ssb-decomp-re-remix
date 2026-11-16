@@ -2538,10 +2538,10 @@ sb32 mnPlayers1PGameCheckCursorPuckGrab(GObj *gobj, s32 player)
 s32 mnPlayers1PGameGetRemixForcePuckFighterKind(void)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayers1PGameSlot.puck);
-	s32 slot = mnRemixCssSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	s32 slot = mnRemixCssSlotAtPoint((s32)sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32)sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y);
 	s32 fkind;
 
-	if ((slot < 0) && (mnRemixCssTokenGetBookendFighter((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12, sMNPlayers1PGameManPlayer, &fkind) != FALSE))
+	if ((slot < 0) && (mnRemixCssTokenGetBookendFighter((s32)sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32)sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y, sMNPlayers1PGameManPlayer, &fkind) != FALSE))
 	{
 		return fkind;
 	}
@@ -2590,12 +2590,12 @@ s32 mnPlayers1PGameGetForcePuckFighterKind(void)
 s32 mnPlayers1PGameGetRemixPuckFighterKind(s32 player)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayers1PGameSlot.puck);
-	s32 slot = mnRemixCssSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	s32 slot = mnRemixCssSlotAtPoint((s32)sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32)sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y);
 	s32 fkind;
 
 	if (slot < 0)
 	{
-		if (mnRemixCssTokenGetBookendFighter((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12, player, &fkind) == FALSE)
+		if (mnRemixCssTokenGetBookendFighter((s32)sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32)sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y, player, &fkind) == FALSE)
 		{
 			return nFTKindNull;
 		}

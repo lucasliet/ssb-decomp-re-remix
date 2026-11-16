@@ -120,8 +120,18 @@ extern int32_t gmRemixTwelveCBStepPortraitStocks(GMRemixTwelveCBState *state, in
 extern void gmRemixTwelveCBSetNextPortrait(GMRemixTwelveCBState *state, int32_t port, int32_t portrait);
 
 /**
+ * Number of ports whose START may pause the match (gentlemens_reset_ _pause_press_check): the two players of a 12-Character
+ * Battle, every port otherwise, so a third or fourth controller cannot pause the battle or ask for a Gentlemen's reset.
+ *
+ * @param is_twelvecb Non-zero in a 12-Character Battle.
+ * @param port_count Ports the match polls outside the 12-Character Battle.
+ */
+extern int32_t gmRemixTwelveCBGetPausePortCount(int32_t is_twelvecb, int32_t port_count);
+
+/**
  * Portrait the winner of the last game must keep (the CSS only lets him pick it again): the portrait of the last game record when
- * the player still had stocks at its end. -1 when there is none to keep: no game yet, the battle is over, or he lost the game.
+ * the player still had stocks at its end, also once the battle is complete (prevent_defeated_char_select_ and
+ * get_last_match_portrait_and_stocks_ only test "not started"). -1 when there is none to keep: no game yet, or he lost the game.
  *
  * @param state Battle state.
  * @param port Player port (0 or 1).

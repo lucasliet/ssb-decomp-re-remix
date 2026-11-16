@@ -7,6 +7,7 @@
 
 #include "grremixmetallic.h"
 #include "grremixhazards.h"
+#include "grremixhazardtimerrules.h"
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixrobotbee.h"
 #include "it/itremix/itremixsupermushroom.h"
@@ -211,12 +212,18 @@ static void grRemixMetallicSpawnBee(void)
 }
 
 /**
- * shrink_timer_ (asm). Counts down every port's shrink timer and restores its size when it ends.
+ * shrink_timer_ (asm). Clears the shrink timer of every port with an active Super or Poison Mushroom (Hazards.asm
+ * 4746-4760), then counts down every port's shrink timer and restores its size when it ends.
  */
 static void grRemixMetallicShrinkTimerProcUpdate(GObj *timer_gobj)
 {
     s32 port;
 
+    for (port = 0; port < GRREMIX_METALLIC_PORT_COUNT; port++)
+    {
+        sGRRemixMetallicShrinkTimer[port] = grRemixMetallicRulesShrinkTimerKept(sGRRemixMetallicShrinkTimer[port],
+                                                                               itRemixSuperMushroomIsActive(port));
+    }
     for (port = 0; port < GRREMIX_METALLIC_PORT_COUNT; port++)
     {
         grRemixMetallicShrinkTimerTick(port);

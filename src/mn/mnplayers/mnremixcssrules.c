@@ -9,6 +9,7 @@
 
 #define MNREMIX_CSS_FLAG_SCALE 0.625F
 #define MNREMIX_CSS_MASTER_HAND_SCALE 0.5625F
+#define MNREMIX_CSS_FLAG_VS_OFFSET_X (-8)
 
 int mnRemixCssCostumeButtonsActive(int is_team_battle, int is_fighter_selected, int held_player)
 {
@@ -17,6 +18,11 @@ int mnRemixCssCostumeButtonsActive(int is_team_battle, int is_fighter_selected, 
         return 1;
     }
     return ((is_fighter_selected != 0) && (held_player < 0)) ? 1 : 0;
+}
+
+int mnRemixCssCostumeAfterButton(int is_team_battle, int current_costume, int cycled_costume)
+{
+    return (is_team_battle != 0) ? current_costume : cycled_costume;
 }
 
 int mnRemixCssCursorPressesImage(float cursor_x, float cursor_y, float image_x, float image_y, int image_width, int image_height)
@@ -204,6 +210,11 @@ void mnRemixCssDpadIconOffset(int direction, int *offset_x, int *offset_y)
         *offset_x = 16;
         break;
     }
+}
+
+int mnRemixCssFlagOffsetX(int is_vs_screen)
+{
+    return (is_vs_screen != 0) ? MNREMIX_CSS_FLAG_VS_OFFSET_X : 0;
 }
 
 void mnRemixCssDpadMarkOffset(int direction, int *offset_x, int *offset_y)

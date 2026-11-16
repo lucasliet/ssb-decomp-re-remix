@@ -1,5 +1,8 @@
 #include "mn/mnvsmode/mnremixvsstats.h"
 #include "mn/mnvsmode/mnremixvsstatsrules.h"
+#include <ft/fighter.h>
+#include <sc/scmanager.h>
+#include <sc/sctypes.h>
 
 #ifdef REGION_REMIX
 
@@ -49,6 +52,16 @@ s32 mnRemixVSStatsGetTrackerPercent(s32 port, MNRemixVSStatsTracker success, MNR
 void mnRemixVSStatsRecordPercent(s32 port, s32 percent)
 {
     sMNRemixVSStatsHighestPercents[port] = mnRemixVSStatsRulesHighest(sMNRemixVSStatsHighestPercents[port], percent);
+}
+
+void mnRemixVSStatsCollectMidmatch(void)
+{
+    s32 port;
+
+    for (port = 0; port < MN_REMIX_VS_STATS_PORT_COUNT; port++)
+    {
+        mnRemixVSStatsRecordPercent(port, gSCManagerBattleState->players[port].stock_damage_all);
+    }
 }
 
 s32 mnRemixVSStatsGetHighestPercent(s32 port)

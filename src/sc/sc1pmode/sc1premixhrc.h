@@ -23,6 +23,17 @@ extern void sc1PRemixHrcSetupPlayer(s32 player);
 /** Makes the opponent of the contest the Sandbag; no-op outside it. */
 extern void sc1PRemixHrcSetupEnemy(s32 player);
 
+/**
+ * Player kind of the fighter made for a slot. The Sandbag is kind 5 (nFTPlayerKindGameKey with no key script), which gets no input at
+ * all (SinglePlayerModes.asm rest_area_and_hrc_spawning). The slot itself stays a CPU, so the damage display and the player count keep
+ * the Sandbag.
+ *
+ * @param player Slot of the fighter.
+ * @param pkind Player kind of the slot.
+ * @return nFTPlayerKindGameKey for the Sandbag of the contest, pkind elsewhere.
+ */
+extern s32 sc1PRemixHrcFighterKind(s32 player, s32 pkind);
+
 /** TRUE for the item that never leaves the contest by the random despawn of a landed item: the Home-Run Bat (HRC.asm prevent_item_despawn_). */
 extern sb32 sc1PRemixHrcKeepsItem(GObj *item_gobj);
 

@@ -12,6 +12,7 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixbasketball.h"
+#include "it/itremix/itremixbasketballrules.h"
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixsmashketballstate.h"
 #include "it/itmain.h"
@@ -102,7 +103,6 @@
 #define ITREMIX_BASKETBALL_FGM_CROWD_GASP 0x269
 #define ITREMIX_BASKETBALL_FGM_WHOOSH 18
 #define ITREMIX_BASKETBALL_BOUNCE_SCALE_SPEED 40.0F            /* 0x42200000: bounce_patch_ squash threshold */
-#define ITREMIX_BASKETBALL_BOUNCE_HITLAG_SCALE 0.030029296875F /* 0x3CF60000 */
 #define ITREMIX_BASKETBALL_GOBJ_KIND 0x3F5                     /* nGCCommonKindItem: asm object type check for an item */
 
 enum itRemixBasketballStatus
@@ -519,7 +519,7 @@ void itRemixBasketballApplyBounce(GObj *item_gobj, Vec3f *angle, f32 x_scale, f3
             joint->translate.vec.f.x += x_offset;
             joint->translate.vec.f.y += y_offset;
         }
-        ip->hitlag_tics = (s32) (speed * ITREMIX_BASKETBALL_BOUNCE_HITLAG_SCALE) + 1;
+        ip->hitlag_tics = itRemixBasketballRulesBounceHitlag(speed);
         if (vars->is_bounce_scaled)
         {
             func_800269C0_275C0(vars->is_fire ? ITREMIX_BASKETBALL_FGM_FIRE_BOUNCE : ITREMIX_BASKETBALL_FGM_BOUNCE);
@@ -1167,10 +1167,7 @@ static sb32 itRemixBasketballCollideHitbox(GObj *item_gobj)
     itRemixBasketballAddHitPercent(ip);
     knockback = itRemixBasketballGetHitKnockback(ip);
     itRemixBasketballLaunch(item_gobj, knockback);
-    if (!vars->is_fire)
-    {
-        itMainCheckSetColAnimID(item_gobj, ITREMIX_BASKETBALL_HIT_COLANIM, 0);
-    }
+    itMainCheckSetColAnimID(item_gobj, vars->is_fire ? ITREMIX_BASKETBALL_FIRE_COLANIM : ITREMIX_BASKETBALL_HIT_COLANIM, 0);
     itRemixBasketballSetScoreable(item_gobj);
 
     return FALSE;

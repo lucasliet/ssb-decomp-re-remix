@@ -72,16 +72,38 @@ void grZebesAcidSetRandomWait(void)
 }
 
 #ifdef REGION_REMIX
-/* Hazards.asm alt_acid_levels_: the Remix Zebes stages overwrite the lava levels; the other stages keep the table. */
-static void grZebesRemixSetAltAcidLevels(void)
+/* The vanilla lava levels, saved before the first Remix overwrite: on N64 the table is overlay data reloaded for every match. */
+static f32 sGRZebesRemixVanillaAcidLevels[ARRAY_COUNT(dGRZebesAcidAttributes)];
+static sb32 sGRZebesRemixIsVanillaAcidSaved;
+
+/** Saves the vanilla lava levels once, before any Remix stage writes the table. */
+static void grZebesRemixSaveVanillaAcidLevels(void)
 {
-    const f32 *levels = grRemixGetAltAcidLevels(gSCManagerBattleState->gkind);
     s32 i;
 
-    if (levels == NULL)
+    if (sGRZebesRemixIsVanillaAcidSaved)
     {
         return;
     }
+    for (i = 0; i < ARRAY_COUNT(dGRZebesAcidAttributes); i++)
+    {
+        sGRZebesRemixVanillaAcidLevels[i] = dGRZebesAcidAttributes[i].acid_level;
+    }
+    sGRZebesRemixIsVanillaAcidSaved = TRUE;
+}
+
+/**
+ * Hazards.asm alt_acid_levels_: the Remix Zebes stages overwrite the lava levels; every other stage gets the vanilla
+ * levels back, as the N64 overlay reload gives them.
+ */
+static void grZebesRemixSetAltAcidLevels(void)
+{
+    const f32 *levels;
+    s32 i;
+
+    grZebesRemixSaveVanillaAcidLevels();
+    levels = grRemixZebesSelectAcidLevels(gSCManagerBattleState->gkind, sGRZebesRemixVanillaAcidLevels);
+
     for (i = 0; i < ARRAY_COUNT(dGRZebesAcidAttributes); i++)
     {
         dGRZebesAcidAttributes[i].acid_level = levels[i];

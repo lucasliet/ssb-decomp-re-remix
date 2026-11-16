@@ -626,11 +626,7 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
     f32 scale;
 
     fp->lr = desc->lr;
-#ifdef REGION_REMIX
-    fp->percent_damage = ftRemixPanelGetInitialDamage(fp, desc->damage);
-#else
     fp->percent_damage = desc->damage;
-#endif
 
     if (fp->pkind != nFTPlayerKindDemo)
     {
@@ -817,9 +813,18 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
 
     case nFTKindSamus:
     case nFTKindNSamus:
+#ifdef REGION_REMIX
+    case REMIX_ID_DSAMUS: /* Character.asm:265 add_to_table(initial_script, id, parent): the Samus row */
+#endif
         fp->passive_vars.samus.charge_level = 0;
         fp->passive_vars.samus.charge_recoil = 0;
         break;
+
+#ifdef REGION_REMIX
+    case REMIX_ID_DEDEDE:
+        ftRemixDededeInitialScript(fp);
+        break;
+#endif
 
     case nFTKindLuigi:
     case nFTKindNLuigi:
@@ -1251,7 +1256,18 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     }
     else gcAddGObjProcess(fighter_gobj, scSubsysFighterProcUpdate, nGCProcessKindFunc, 5);
 
+#ifdef REGION_REMIX
+    {
+        /* Damage.asm char_init_ and Training.asm init_character_ test ra == 0x800D86B4: only this call sets the Remix
+         * initial damage, the respawn call of ftCommonRebirthDownSetStatus keeps the 0 of its description. */
+        FTDesc remix_desc = *desc;
+
+        remix_desc.damage = ftRemixPanelGetInitialDamage(fp, desc->damage);
+        ftManagerInitFighter(fighter_gobj, &remix_desc);
+    }
+#else
     ftManagerInitFighter(fighter_gobj, desc);
+#endif
 #ifdef PORT
     port_log("SSB64: ftManagerMakeFighter - fighter init complete fkind=%d pkind=%d\n", fp->fkind, fp->pkind);
 #endif

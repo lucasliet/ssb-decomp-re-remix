@@ -406,7 +406,12 @@ void ftFoxSpecialAirHiSetStatusFromGround(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
 
+#ifdef REGION_REMIX
+    /* Slippy.asm up_special_angle_patch_2_ (0x8015C63C): the forced stick_y is also the |y| term of this threshold. */
+    if (ABS(fp->input.pl.stick_range.x) + ABS(ftFoxSpecialHiGetStickY(fp)) >= FTFOX_FIREFOX_ANGLE_STICK_THRESHOLD)
+#else
     if (ABS(fp->input.pl.stick_range.x) + ABS(fp->input.pl.stick_range.y) >= FTFOX_FIREFOX_ANGLE_STICK_THRESHOLD)
+#endif
     {
         if (ABS(fp->input.pl.stick_range.x) >= FTFOX_FIREFOX_MODEL_STICK_THRESHOLD)
         {

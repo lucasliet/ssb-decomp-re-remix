@@ -1,6 +1,5 @@
 #ifdef REGION_REMIX
 #include "ft/ftremix/ftremixhooks.h"
-#include "if/ifremixannouncer.h"
 #include "gm/gmremixspawnsetup.h"
 #include "gm/gmremixstockmode.h"
 #include "mn/mnvsmode/mnremixvsstats.h"
@@ -131,6 +130,9 @@ void scVSBattleFuncUpdate(void)
 		return;
 	}
 	ifCommonBattleUpdateInterfaceAll();
+#ifdef REGION_REMIX
+	mnRemixVSStatsCollectMidmatch();
+#endif
 	syNetSyncRecordTick();
 	syNetReplayUpdate();
 	syNetPeerUpdate();
@@ -294,9 +296,6 @@ void scVSBattleStartBattle(void)
 	gSCManagerSceneData.is_suddendeath = FALSE;
 
 	scVSBattleSetupFiles();
-#ifdef REGION_REMIX
-	ifRemixAnnouncerSetup();
-#endif
 
 #ifndef PORT
 	if (!(gSCManagerBackupData.error_flags & LBBACKUP_ERROR_1PGAMEMARIO) && (gSCManagerBackupData.boot > 68))

@@ -1255,8 +1255,12 @@ static void mnVSResultsPlayerTagProcDisplay(GObj *gobj)
 {
 	SObj *sobj = SObjGetStruct(gobj);
 
-	ifRemixPlayerTagDrawName(gobj->user_data.s, sobj->pos.x + (sobj->sprite.width * 0.5F), sobj->pos.y,
-	                         ((u32)sobj->sprite.red << 24) | ((u32)sobj->sprite.green << 16) | ((u32)sobj->sprite.blue << 8) | 0xFF);
+	/* The name is port overlay text and would draw over the Match Stats page, which in the asm covers the tag with its dimming rectangle */
+	if (mnRemixVSStatsViewIsPageVisible() == FALSE)
+	{
+		ifRemixPlayerTagDrawName(gobj->user_data.s, sobj->pos.x + (sobj->sprite.width * 0.5F), sobj->pos.y,
+		                         ((u32)sobj->sprite.red << 24) | ((u32)sobj->sprite.green << 16) | ((u32)sobj->sprite.blue << 8) | sobj->sprite.alpha);
+	}
 	lbCommonDrawSObjAttr(gobj);
 }
 #endif

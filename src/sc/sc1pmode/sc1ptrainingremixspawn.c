@@ -9,6 +9,8 @@
 #include <ft/ftdef.h>
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
+#include "remix/remix_training.h"
+#include "sc/sc1pmode/sc1ptrainingportrules.h"
 #include "sc/sc1pmode/sc1ptrainingremixspawn.h"
 
 #define SC1PTRAININGREMIXSPAWN_PORT_COUNT 4
@@ -84,6 +86,21 @@ void sc1PTrainingRemixSpawnSelect(s32 port)
     if (sc1PTrainingRemixSpawnIsValidPort(port) != FALSE)
     {
         sSC1PTrainingRemixSpawns[port].is_custom = TRUE;
+    }
+}
+
+void sc1PTrainingRemixSpawnResetAll(void)
+{
+    s32 port;
+
+    for (port = 0; port < SC1PTRAININGREMIXSPAWN_PORT_COUNT; port++)
+    {
+        sSC1PTrainingRemixSpawns[port].is_custom = FALSE;
+
+        if (remix_training_get(REMIX_TRAINING_SPAWN(port)) != SC1PTRAININGPORTRULES_SPAWN_AUTO)
+        {
+            remix_training_set(REMIX_TRAINING_SPAWN(port), SC1PTRAININGPORTRULES_SPAWN_AUTO);
+        }
     }
 }
 

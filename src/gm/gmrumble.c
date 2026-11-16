@@ -194,6 +194,27 @@ GMRumblePlayer sGMRumblePlayers[GMCOMMON_PLAYERS_MAX];
 //                               //
 // // // // // // // // // // // //
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Ends a script relabelled with GMRUMBLE_REMIX_KEEP_ID when it reaches its End event. It has no dGMRumbleEventList
+ * entry to restart from (the N64 would read past the table), so the port lets gmRumbleUpdateEventLinks drop it.
+ *
+ * @param p_script Script that reached its End event.
+ * @return TRUE when the script was a relabelled one and now waits to be dropped.
+ */
+static sb32 gmRumbleRemixEndKeepScript(GMRumbleScript *p_script)
+{
+    if (p_script->rumble_id != GMRUMBLE_REMIX_KEEP_ID)
+    {
+        return FALSE;
+    }
+    p_script->rumble_timer = 0;
+    p_script->rumble_status = 1;
+
+    return TRUE;
+}
+#endif
+
 // 0x80114E30
 sb32 gmRumbleUpdateEventExecute(ub8 *is_active, GMRumbleScript *p_script, s32 player)
 {
@@ -202,6 +223,12 @@ sb32 gmRumbleUpdateEventExecute(ub8 *is_active, GMRumbleScript *p_script, s32 pl
         switch (gmRumbleEventCast(p_script->p_event, GMRumbleEventDefault)->opcode)
         {
         case nGMRumbleEventEnd:
+#if defined(PORT) && defined(REGION_REMIX)
+            if (gmRumbleRemixEndKeepScript(p_script) != FALSE)
+            {
+                break;
+            }
+#endif
             p_script->p_event = dGMRumbleEventList[p_script->rumble_id];
             break;
 
@@ -258,6 +285,12 @@ sb32 gmRumbleUpdateEventQueue(ub8 *is_active, GMRumbleScript *p_script)
         switch (gmRumbleEventCast(p_script->p_event, GMRumbleEventDefault)->opcode)
         {
         case nGMRumbleEventEnd:
+#if defined(PORT) && defined(REGION_REMIX)
+            if (gmRumbleRemixEndKeepScript(p_script) != FALSE)
+            {
+                break;
+            }
+#endif
             p_script->p_event = dGMRumbleEventList[p_script->rumble_id];
             break;
 
@@ -501,6 +534,24 @@ sb32 gmRumbleCheckSetEventID(GMRumblePlayer *rplayer, s32 rumble_id, s32 rumble_
     return FALSE;
 }
 
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * Priority of an active rumble script. A script relabelled with GMRUMBLE_REMIX_KEEP_ID has no table entry: on the N64
+ * the read lands on 0x8012F243, the last byte of the 4000.0F that opens dEFGroundCastleEffectDescs, which is 0.
+ *
+ * @param p_script Active rumble script.
+ * @return Its priority, 0 for the relabelled script.
+ */
+static u8 gmRumbleRemixGetScriptPriority(GMRumbleScript *p_script)
+{
+    if (p_script->rumble_id >= ARRAY_COUNT(dGMRumblePriorities))
+    {
+        return 0;
+    }
+    return dGMRumblePriorities[p_script->rumble_id];
+}
+#endif
+
 // 0x80115458
 GMRumbleScript* gmRumbleGetEventPriorityRelink(GMRumblePlayer *rplayer, s32 rumble_id)
 {
@@ -519,7 +570,11 @@ GMRumbleScript* gmRumbleGetEventPriorityRelink(GMRumblePlayer *rplayer, s32 rumb
 
         if (p_script->p_event != NULL)
         {
+#if defined(PORT) && defined(REGION_REMIX)
+            if (dGMRumblePriorities[rumble_id] >= gmRumbleRemixGetScriptPriority(p_script))
+#else
             if (dGMRumblePriorities[rumble_id] >= dGMRumblePriorities[p_script->rumble_id])
+#endif
             {
                 if (rlink_curr == rlink_main)
                 {
@@ -585,6 +640,40 @@ void gmRumbleSetPlayerRumbleParams(s32 player, s32 rumble_id, s32 rumble_timer)
         }
     }
 }
+
+#if defined(PORT) && defined(REGION_REMIX)
+/**
+ * gmRumbleSetPlayerRumbleParams for a rumble that a status change must not stop. SuperMushroom.asm:573-582 calls
+ * Global.rumble_ and then stores 0x17 over the rumble id of the script left in v0, so gmRumbleStopRumbleID(player, 7)
+ * of ftMainSetStatus no longer finds it. A request that only extends a running script of the same id (v0 = 1 in the
+ * asm) keeps that script's id.
+ *
+ * @param player Player port.
+ * @param rumble_id Rumble event to play.
+ * @param rumble_timer Length in frames.
+ */
+void gmRumbleRemixSetPlayerRumbleKeepOnStatus(s32 player, s32 rumble_id, s32 rumble_timer)
+{
+    GMRumbleScript *p_script;
+
+    if (gmRumbleCheckSetEventID(&sGMRumblePlayers[player], rumble_id, rumble_timer) != FALSE)
+    {
+        return;
+    }
+    p_script = gmRumbleGetEventPriorityRelink(&sGMRumblePlayers[player], rumble_id);
+
+    if (p_script == NULL)
+    {
+        return;
+    }
+    p_script->rumble_timer = (rumble_timer == 0) ? -1 : rumble_timer;
+    p_script->rumble_id = GMRUMBLE_REMIX_KEEP_ID;
+    p_script->is_rumble_active = FALSE;
+    p_script->rumble_status = p_script->loop_count = 0;
+    p_script->p_goto = NULL;
+    p_script->p_event = dGMRumbleEventList[rumble_id];
+}
+#endif
 
 // 0x801155C4 - Unused?
 void func_ovl2_801155C4(s32 player)

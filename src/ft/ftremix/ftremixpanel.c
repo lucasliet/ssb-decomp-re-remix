@@ -17,7 +17,8 @@
 /**
  * Initial damage of a new fighter (asm Damage.char_init_): the panel value of its port for the VS, 1P and Bonus matches,
  * unless the fighter already starts with damage (Sudden Death). Training takes the menu percent (Reset Sets Percent) and the How to Play demo keeps the vanilla value.
- * Called from ftManagerInitFighter with the damage of the fighter description.
+ * Called from ftManagerMakeFighter with the damage of the fighter description, never for a respawn (the asm tests the
+ * return address of the creation call).
  */
 s32 ftRemixPanelGetInitialDamage(FTStruct *fp, s32 desc_damage)
 {

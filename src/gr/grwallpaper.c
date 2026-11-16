@@ -382,7 +382,7 @@ void grWallpaperMakeDecideKind(void)
 #ifdef REGION_REMIX
     else if (gSCManagerBattleState->gkind > nGRKindBonusStageEnd)
     {
-        /* Stages.asm id_fix_1_: Remix RTTF has no wallpaper, stages without a function table entry take the static one */
+        /* Stages.asm id_fix_1_ and bg_type: Remix RTTF has no wallpaper, stages without a function table entry take the static one, the others their bg_type */
         grRemixWallpaperMake(gSCManagerBattleState->gkind);
     }
 #endif

@@ -8,10 +8,11 @@
 
 #include <stdint.h>
 
-/** Wallpaper makers of a Remix stage: grWallpaperMakeStatic, grWallpaperMakeCommon and grWallpaperMakeBonus3. */
+/** Wallpaper makers of a Remix stage: grWallpaperMakeStatic, grWallpaperMakeCommon, grWallpaperMakeBonus3 and grWallpaperMakeSector. */
 #define GRREMIX_WALLPAPER_KIND_STATIC 0
 #define GRREMIX_WALLPAPER_KIND_COMMON 1
 #define GRREMIX_WALLPAPER_KIND_BONUS3 2
+#define GRREMIX_WALLPAPER_KIND_SECTOR 3
 
 /** Big Blue scrolls its background at this X speed per frame (asm word 0xBF17FDFF). */
 #define GRREMIX_BLUE_BACKGROUND_SPEED (-0.5937194F)
@@ -19,9 +20,10 @@
 #define GRREMIX_BLUE_BACKGROUND_POS_Y 8.0F
 
 /**
- * Wallpaper maker of a stage past the vanilla bonus stages. Remix Race to the Finish has no wallpaper (the Bonus3 maker), a
- * stage whose Stages.function_table entry is 0 (the added Break the Targets and Board the Platforms stages) takes the
- * static one, every other stage the common one.
+ * Wallpaper maker of a stage past the vanilla bonus stages (Stages.asm id_fix_1_ and bg_type). Remix Race to the Finish has
+ * no wallpaper (the Bonus3 maker), a stage whose Stages.function_table entry is 0 (the added Break the Targets and Board the
+ * Platforms stages) takes the static one, every other stage the type its set_bg_type call gives (Bonus3, Sector or static),
+ * the common one when it has none.
  *
  * @param gkind Remix stage id.
  * @param function Stages.function_table entry of the stage (Remix RAM address, 0 when it has none).

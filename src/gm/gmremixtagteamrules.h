@@ -30,6 +30,16 @@ extern int gmRemixTagTeamRulesSkippedStocks(int is_last, int global_stocks, int 
 extern int gmRemixTagTeamRulesQueueIndex(int initial_stocks, int stocks_left, int stolen_count, int skipped_stocks, int queue_max);
 
 /**
+ * Queue slot of the stock a teammate takes from a port (TagTeam.asm handle_stock_stealing_): the port's last CSS slot
+ * (current_slot, the per-port stock count of css.get_stock_count_: the Manual count when below the setting) minus the stocks
+ * stolen from it before. Clamped to 0 to queue_max - 1.
+ *
+ * initial_stocks: stock count the port started with. skipped_stocks: Stock Mode Last skip (gmRemixTagTeamRulesSkippedStocks).
+ * stolen_count: stocks already taken from the port.
+ */
+extern int gmRemixTagTeamRulesStealSlot(int initial_stocks, int skipped_stocks, int stolen_count, int queue_max);
+
+/**
  * Shade of a queue slot in a team battle (TagTeam.asm start_match_setup_ _teams_loop): one more for each earlier port whose
  * same slot holds the same fighter on the same team.
  *

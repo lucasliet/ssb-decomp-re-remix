@@ -100,6 +100,7 @@ void ftCommonLightGetProcDamage(GObj *fighter_gobj)
             {
             case nITKindTomato:
 #ifdef REGION_REMIX
+                /* Crash.asm crash_eat_sfx patches the Tomato heal call (0x80145C44) only, not the Heart's (0x80145CAC) */
                 ftRemixCrashEatSfx(fp);
 #endif
                 ftParamSetHealDamage(fp, ITTOMATO_DAMAGE_HEAL);
@@ -112,9 +113,6 @@ void ftCommonLightGetProcDamage(GObj *fighter_gobj)
                 break;
 
             case nITKindHeart:
-#ifdef REGION_REMIX
-                ftRemixCrashEatSfx(fp);
-#endif
                 ftParamSetHealDamage(fp, ITHEART_DAMAGE_HEAL);
                 itMainDestroyItem(item_gobj);
 

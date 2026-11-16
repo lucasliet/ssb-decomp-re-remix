@@ -533,6 +533,9 @@ typedef struct ITCommonItemVarsShell
 	ub8 is_setup_vars;
 	u8 interact; // Decremented each time the shell is attacked, reflected, or
 				 // it hits something; despawns shell at 0
+#if defined(PORT) && defined(REGION_REMIX)
+	s8 remix_target_port; // Blue Shell: port of the cached first-place fighter, -1 for none (BlueShell.asm ITStruct+0x180)
+#endif
 	f32 vel_x;
 
 } ITCommonItemVarsShell;

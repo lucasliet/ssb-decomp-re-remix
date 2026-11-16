@@ -10,6 +10,8 @@
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
+#include "gm/gmremixstamina.h"
+#include "gm/gmremixstockmode.h"
 #include "gm/gmremixtwelvecb.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 
@@ -45,6 +47,7 @@ typedef struct GMRemixVanillaSettings
     u8 time_limit;
     sb32 is_team_battle;
     sb32 is_stage_select;
+    sb32 is_stamina_rule;
 } GMRemixVanillaSettings;
 
 /* Rules, forced settings and defaults of the modes, indexed by MNREMIX_VSMODE_* (TwelveCharBattle, TagTeam, KingOfTheHill,
@@ -89,6 +92,7 @@ static void gmRemixModeSaveVanilla(void)
     sGMRemixModeVanilla.time_limit = gSCManagerTransferBattleState.time_limit;
     sGMRemixModeVanilla.is_team_battle = gSCManagerTransferBattleState.is_team_battle;
     sGMRemixModeVanilla.is_stage_select = gSCManagerTransferBattleState.is_stage_select;
+    sGMRemixModeVanilla.is_stamina_rule = gGMRemixStaminaRule;
     sGMRemixModeVanillaIsSaved = TRUE;
 }
 
@@ -103,6 +107,7 @@ static void gmRemixModeRestoreVanilla(void)
     gSCManagerTransferBattleState.time_limit = sGMRemixModeVanilla.time_limit;
     gSCManagerTransferBattleState.is_team_battle = sGMRemixModeVanilla.is_team_battle;
     gSCManagerTransferBattleState.is_stage_select = sGMRemixModeVanilla.is_stage_select;
+    gGMRemixStaminaRule = sGMRemixModeVanilla.is_stamina_rule;
     sGMRemixModeVanillaIsSaved = FALSE;
 }
 
@@ -125,6 +130,16 @@ static void gmRemixModeSaveFromCSS(s32 mode)
     }
 }
 
+sb32 gmRemixModeGetTeams(s32 mode)
+{
+    if (mode == MNREMIX_VSMODE_DEFAULT)
+    {
+        return gSCManagerTransferBattleState.is_team_battle;
+    }
+    gmRemixModeInitSaved();
+    return sGMRemixModeSaved[mode].teams;
+}
+
 void gmRemixModeBeforeCSS(void)
 {
     s32 mode = gmRemixModeGet();
@@ -145,6 +160,8 @@ void gmRemixModeBeforeCSS(void)
     saved = &sGMRemixModeSaved[mode];
 
     gSCManagerTransferBattleState.game_rules = profile->game_rules;
+    /* Every mode's before_css_setup_ writes a game_mode other than 5, so no Stamina hook runs (TagTeam.asm:381-385) */
+    gGMRemixStaminaRule = FALSE;
     gSCManagerTransferBattleState.is_team_battle = saved->teams;
 
     if (profile->uses_stocks != FALSE)
@@ -158,6 +175,10 @@ void gmRemixModeBeforeCSS(void)
     if (profile->stage_select_off != FALSE)
     {
         gSCManagerTransferBattleState.is_stage_select = FALSE;
+    }
+    if ((mode == MNREMIX_VSMODE_KOTH) || (mode == MNREMIX_VSMODE_SMASHKETBALL))
+    {
+        gmRemixStockModeClearModes();
     }
 }
 

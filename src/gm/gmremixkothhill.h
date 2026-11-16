@@ -11,8 +11,6 @@
  * is_hill_outside_blast_zone_): a random floor line with a valid surface, inside the blast zone.
  */
 
-#define GMREMIX_KOTH_HILL_TRIES 3
-
 /**
  * Picks a random floor line of the stage that can be a hill: a surface that does not hurt (valid materials of the asm), at
  * least two vertices, active collision and inside the blast zone.

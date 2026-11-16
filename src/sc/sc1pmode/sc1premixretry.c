@@ -15,19 +15,6 @@
 /* reset_flag of the asm */
 static sb32 sSC1PRemixRetryIsPending = FALSE;
 
-/** Buttons held on any controller, ORed (Joypad.check_buttons_all_ reads every port). */
-static u32 sc1PRemixRetryGetButtonHold(void)
-{
-    u32 button_hold = 0;
-    s32 i;
-
-    for (i = 0; i < MAXCONTROLLERS; i++)
-    {
-        button_hold |= gSYControllerDevices[i].button_hold;
-    }
-    return button_hold;
-}
-
 /** Whether a Bonus stage runs that was entered from the Bonus 1 or Bonus 2 CSS (Practice_1P.asm _check_bonus_not_1p). */
 static sb32 sc1PRemixRetryIsBonusPracticeScene(void)
 {
@@ -58,13 +45,19 @@ sb32 sc1PRemixRetryTryByPause(u16 button_tap)
 sb32 sc1PRemixRetryTryByGameSet(void)
 {
     sb32 is_1p_game_scene = (gSCManagerSceneData.scene_curr == nSCKind1PGame) ? TRUE : FALSE;
+    sb32 is_bonus_practice_scene = sc1PRemixRetryIsBonusPracticeScene();
+    s32 i;
 
-    if (sc1PRemixRetryIsGameSetRetry(sc1PRemixModeGet(), is_1p_game_scene, sc1PRemixRetryIsBonusPracticeScene(), sc1PRemixRetryGetButtonHold()) == 0)
+    /* Joypad.check_buttons_all_ checks each port by itself */
+    for (i = 0; i < MAXCONTROLLERS; i++)
     {
-        return FALSE;
+        if (sc1PRemixRetryIsGameSetRetry(sc1PRemixModeGet(), is_1p_game_scene, is_bonus_practice_scene, gSYControllerDevices[i].button_hold) != 0)
+        {
+            sSC1PRemixRetryIsPending = TRUE;
+            return TRUE;
+        }
     }
-    sSC1PRemixRetryIsPending = TRUE;
-    return TRUE;
+    return FALSE;
 }
 
 sb32 sc1PRemixRetryConsume(void)

@@ -18,12 +18,11 @@
 #include <mp/mpdef.h>
 #include <sys/obj.h>
 #include "ft/ftremix/ftremixbury.h"
+#include "ft/ftremix/ftremixburyrules.h"
 
 extern void *func_800269C0_275C0(u16 id);
 
-/* Damage.asm: initial_buried_time 99, buried_percent_multiplier 0.7F, BURIED_Y_OFFSET -48.0F, INITIAL_PLUNGE_SPEED -50.0F */
-#define FTREMIX_BURY_BASE_TICS 99
-#define FTREMIX_BURY_PERCENT_MUL 0.7F
+/* Damage.asm: BURIED_Y_OFFSET -48.0F, INITIAL_PLUNGE_SPEED -50.0F (the timer constants are in ftremixburyrules.h) */
 #define FTREMIX_BURY_JOINT_Y_OFFSET (-48.0F)
 #define FTREMIX_BURY_SOFT_PLATFORM_DROP 10.0F
 #define FTREMIX_BURY_PLUNGE_SPEED (-50.0F)
@@ -51,12 +50,10 @@ static void ftRemixBuryIgnoreProc(GObj *fighter_gobj)
 {
 }
 
-/* Damage.asm bury_initial_: the buried timer is 99 plus 0.7 times the damage percent (truncated) */
+/* Damage.asm bury_initial_: the buried timer is 99 plus 0.7 times the damage percent (rounded, see ftremixburyrules.c) */
 static void ftRemixBurySetTimer(FTStruct *fp)
 {
-    f32 percent = (f32) fp->percent_damage;
-
-    fp->breakout_wait = (s32) (percent * FTREMIX_BURY_PERCENT_MUL) + FTREMIX_BURY_BASE_TICS;
+    fp->breakout_wait = ftRemixBuryRulesTimer(fp->percent_damage);
 }
 
 /* Damage.asm bury_player_: TRUE when the hazard mode bit 0x1 disables the hazards (modes 1 and 3) */

@@ -33,6 +33,11 @@ int gmRemixTagTeamRulesQueueIndex(int initial_stocks, int stocks_left, int stole
     return gmRemixTagTeamRulesGetSlot(initial_stocks + skipped_stocks, stocks_left + stolen_count, queue_max);
 }
 
+int gmRemixTagTeamRulesStealSlot(int initial_stocks, int skipped_stocks, int stolen_count, int queue_max)
+{
+    return gmRemixTagTeamRulesGetSlot(initial_stocks + skipped_stocks, stolen_count, queue_max);
+}
+
 int gmRemixTagTeamRulesShade(int fkind, int team, const int *previous_fkinds, const int *previous_teams, int previous_count)
 {
     int shade = 0;

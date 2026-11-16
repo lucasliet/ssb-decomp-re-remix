@@ -12,6 +12,7 @@
 
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixdekunut.h"
+#include "it/itremix/itremixdekunutrules.h"
 #include "it/itremix/itremixscreenflash.h"
 #include "it/itmain.h"
 #include "it/itmap.h"
@@ -27,7 +28,6 @@
 #define ITREMIX_DEKUNUT_FILE_OFFSET 0x0ED0 /* asm FILE_OFFSET: item footer in the common item file 0xFB */
 #define ITREMIX_DEKUNUT_HURTBOX_FGM 0x0408 /* asm hurtbox FGM, set on spawn and on explosion */
 #define ITREMIX_DEKUNUT_EXPLODE_FGM 0x0407 /* asm explode_transition_ FGM */
-#define ITREMIX_DEKUNUT_KNOCKBACK_SCALE 0x0100 /* asm writes 0x100 as a halfword at attack_coll.knockback_scale (0x140) */
 #define ITREMIX_DEKUNUT_ELEMENT_DEKU_STUN 0x0A /* Damage.asm index 0xA, DEKU_STUN */
 #define ITREMIX_DEKUNUT_ANGLE 269 /* decoded from hurtbox_struct_ word 0x00434040, bits 31..22 (signed) */
 #define ITREMIX_DEKUNUT_DAMAGE 1 /* decoded from hurtbox_struct_ word 0x00434040, bits 13..6 */
@@ -193,7 +193,7 @@ static ITDesc sITRemixDekuNutItemInfo =
     NULL
 };
 
-/** DekuNut.spawn_deku_nut_ setup after itManagerMakeItem: translate, hitbox defaults, arrow. */
+/** DekuNut.spawn_deku_nut_ setup after itManagerMakeItem: explode_subroutine_ (teamless, is_damage_all), translate, hitbox defaults, arrow. */
 static void itRemixDekuNutSetup(GObj *item_gobj)
 {
     DObj *joint = DObjGetStruct(item_gobj);
@@ -201,11 +201,12 @@ static void itRemixDekuNutSetup(GObj *item_gobj)
     Vec3f translate = joint->translate.vec.f;
 
     ip->multi = 0;
+    itRemixDekuNutSetDamageAll(item_gobj);
     gcAddXObjForDObjFixed(joint, 0x2E, 0);
     joint->translate.vec.f = translate;
     joint->rotate.vec.f.z = 0.0F;
     ip->attack_coll.fgm_id = ITREMIX_DEKUNUT_HURTBOX_FGM;
-    ip->attack_coll.knockback_scale = ITREMIX_DEKUNUT_KNOCKBACK_SCALE;
+    ip->attack_coll.knockback_scale = itRemixDekuNutRulesKnockbackScale(ip->attack_coll.knockback_scale);
     ip->is_unused_item_bool = TRUE;
     ip->arrow_gobj = ifCommonItemArrowMakeInterface(ip);
 }
@@ -240,7 +241,7 @@ static void itRemixDekuNutThrowInitial(GObj *item_gobj)
 
     itBombHeiCommonSetHitStatusNormal(item_gobj);
     ip->attack_coll.element = ITREMIX_DEKUNUT_ELEMENT_DEKU_STUN;
-    ip->attack_coll.knockback_scale = ITREMIX_DEKUNUT_KNOCKBACK_SCALE;
+    ip->attack_coll.knockback_scale = itRemixDekuNutRulesKnockbackScale(ip->attack_coll.knockback_scale);
     itMainSetStatus(item_gobj, sITRemixDekuNutStatusDescs, nITRemixDekuNutStatusThrown);
 }
 

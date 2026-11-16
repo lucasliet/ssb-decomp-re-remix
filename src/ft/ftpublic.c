@@ -80,7 +80,8 @@ u16 sFTPublicDefeatedCurrentOrder;          // Current "<player> defeated" annou
 // // // // // // // // // // // //
 
 #ifdef REGION_REMIX
-// Smashketball.asm force_chant_ (RAM 0x80164AE0): TRUE while a forced chant skips the damage, wait and repeat checks below
+// Smashketball.asm force_chant_ (RAM 0x80164AE0): TRUE while a forced chant skips the damage and wait checks below; it
+// jumps back to 0x80164B14, so the same-player check still runs
 static sb32 sFTPublicRemixIsForcedCall;
 #endif
 
@@ -103,7 +104,7 @@ sb32 ftPublicTryStartCall(GObj *gobj, f32 knockback, s32 player_num)
     {
         return FALSE;
     }
-    else if ((is_forced == FALSE) && (player_num == sFTPublicCallPlayerNum))
+    else if (player_num == sFTPublicCallPlayerNum)
     {
         return FALSE;
     }

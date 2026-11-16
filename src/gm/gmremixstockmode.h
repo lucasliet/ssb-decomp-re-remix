@@ -37,6 +37,12 @@ extern void gmRemixStockModeOnKo(s32 player, s32 stock_before);
 /* TRUE when the StockMode option of the port's panel is Manual. */
 extern sb32 gmRemixStockModeIsManual(s32 player);
 
+/**
+ * Sets the StockMode option of every port back to Default, as the character selects of King of the Hill and Smashketball do on
+ * entry (KingOfTheHill.asm 220-224, Smashketball.asm 164-168: before_css_setup_ clears stockmode_table).
+ */
+extern void gmRemixStockModeClearModes(void);
+
 /* Forgets the stock count the Last mode stored (the CSS reset of css/StockMode.asm _check_reset). */
 extern void gmRemixStockModeResetLast(void);
 

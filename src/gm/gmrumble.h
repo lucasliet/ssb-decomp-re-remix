@@ -21,4 +21,10 @@ extern void gmRumbleMakeActor(void);
 extern void gmRumbleInitPlayers(void);
 extern void gmRumbleResumeProcessAll(void);
 
+#if defined(PORT) && defined(REGION_REMIX)
+#define GMRUMBLE_REMIX_KEEP_ID 0x17 /* SuperMushroom.asm:580 "non-valid rumble_id": no gmRumbleStopRumbleID call matches it */
+
+extern void gmRumbleRemixSetPlayerRumbleKeepOnStatus(s32 player, s32 rumble_id, s32 rumble_timer);
+#endif
+
 #endif

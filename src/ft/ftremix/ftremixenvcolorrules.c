@@ -1,5 +1,5 @@
 /**
- * ftremixenvcolorrules.c - pure rule of the Remix env colour opacity, see ftremixenvcolorrules.h.
+ * ftremixenvcolorrules.c - pure rules of the Remix env colour override, see ftremixenvcolorrules.h.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -16,6 +16,16 @@ int ftRemixEnvColorRulesForcesTranslucent(unsigned int rgba)
         return 0;
     }
     return (rgba & 0xFFu) != FTREMIX_ENVCOLOR_ALPHA_OPAQUE;
+}
+
+/** TRUE when the env colour override replaces the stage light colour: there is one and no colanim colour 2 or fog colour. */
+int ftRemixEnvColorRulesReplacesLight(unsigned int rgba, int is_use_color2, int is_use_fogcolor)
+{
+    if (rgba == 0)
+    {
+        return 0;
+    }
+    return (is_use_color2 == 0) && (is_use_fogcolor == 0);
 }
 
 #endif

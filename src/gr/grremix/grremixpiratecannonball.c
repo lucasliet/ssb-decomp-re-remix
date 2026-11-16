@@ -47,7 +47,7 @@ static WPDesc sGRRemixPirateCannonballWeaponDesc =
     0,                                      /* Offset of the hitbox in the file (asm: cannonball_projectile_struct) */
     {
         nGCMatrixKindTra,
-        0x47,
+        0x48,                               /* Hazards.asm 4326 word 0x12480000: billboard that keeps the DObj scale */
         0
     },
     grRemixPirateCannonballProcUpdate,
@@ -74,7 +74,8 @@ static void grRemixPirateCannonballApplyTrack(GObj *weapon_gobj, AObjEvent32 *an
 }
 
 /**
- * Creates a cannonball at spawn_pos. Returns NULL when the weapon pool is full (asm: 0x801655C8 returns 0).
+ * Creates a cannonball at spawn_pos with the white muzzle sparkle there (asm 0x80100480, Hazards.asm 4179-4182).
+ * Returns NULL when the weapon pool is full (asm: 0x801655C8 returns 0).
  * The cannonball has no launch velocity: wpManagerMakeWeapon (0x801655C8) zeroes vel_air and the asm never writes it.
  * cannonball_properties_struct (speed 100, angle 270, gravity 0) is dead data: its only reference is the file pointer
  * store at pirate_land_setup (Hazards.asm 3736-3737), and cannonball_stage_setting_ passes only
@@ -92,6 +93,7 @@ GObj* grRemixPirateCannonballMake(Vec3f *spawn_pos, void *hitbox_file, AObjEvent
     {
         return NULL;
     }
+    efManagerSparkleWhiteMakeEffect(spawn_pos);
     wp = wpGetStruct(weapon_gobj);
     wp->lifetime = GRREMIX_PIRATE_CANNONBALL_LIFETIME;
     wp->is_camera_follow = TRUE;

@@ -19,6 +19,16 @@
 extern int sc1PRemixModeLeavesBonusCSSFor1P(int mode);
 
 /**
+ * Whether the 1P game of the mode runs on the asm screen 0x77 (Global.screen.REMIX_MODES): SinglePlayerModes.asm
+ * _initial_screen_set stores it for every Remix 1P mode but Remix 1P, so Bonus 3, Multi-Man, Cruel Multi-Man, All-Star and the
+ * Home-Run Contest. The port runs these on the 1P game scene, so a check of that screen becomes the scene plus this rule.
+ *
+ * @param mode Mode id (SC1PREMIX_MODE_*).
+ * @return Non-zero for the modes of the screen 0x77.
+ */
+extern int sc1PRemixModeRunsOnRemixModesScreen(int mode);
+
+/**
  * Whether the crowd cheer that opens a Bonus stage or a 1P game run stays silent (Training.asm skip_crowd_cheer_._bonus):
  * the "skip start cheer" toggle must be 2 (Training and Bonus), and the run must be Bonus 3, the Home-Run Contest or a
  * Bonus practice entered from the Bonus 1/2 CSS. Runs of the 1P game itself keep the cheer.
@@ -110,6 +120,18 @@ extern void sc1PRemixMultimanKosSetPlayerKo(SC1PRemixMultimanKos *counter);
  * @param counter_y Receives the Y of the counter text.
  */
 extern void sc1PRemixMultimanHudY(int dragon_king_hud, float *polygon_y, float *cross_y, float *counter_y);
+
+/**
+ * Whether a cursor move on the 1P menu adds the 8 extra frames of repeat wait (SinglePlayerMenus.asm fix_cursor_wrap_ only widens
+ * the vanilla compares): going down, when the cursor lands on the last button; going up, when it lands on the first. A wrap to the
+ * other end adds nothing.
+ *
+ * @param step 1 for a move down, -1 for a move up.
+ * @param option Button the cursor landed on, after the wrap.
+ * @param last Index of the last button of the page.
+ * @return Non-zero when the extra wait is added.
+ */
+extern int sc1PRemixModeMenuAddsEdgeWait(int step, int option, int last);
 
 #endif
 

@@ -56,6 +56,10 @@ f32 ftRemixMarinaCargoAnimSpeed(FTStruct *fp);
 s32 ftRemixMarinaCargoThrowFDamage(FTStruct *fp);
 void ftRemixMarinaCargoThrowFInitGemSpawned(FTStruct *fp);
 
+/* Marina jump patches, marina/ftremixmarina.c: jump_height_patch_ (0x8013FE58) and jump_timing_patch_ (0x80140310) */
+s32 ftRemixMarinaJumpAerialStickRange(FTStruct *fp, s32 stick_range_y);
+sb32 ftRemixMarinaJumpAerialIsLocked(FTStruct *fp);
+
 /* Marina absorb patches: ftMainSearchHitItem (0x800E5A10) and ftMainSearchHitWeapon (0x800E5330),
  * see docs/remix/deviations.md */
 void ftRemixMarinaDSPAbsorbItemCharge(FTStruct *fp, ITStruct *ip);
@@ -79,6 +83,8 @@ void ftRemixConkerDSPSetActiveGrenade(FTStruct *fp, GObj *grenade_gobj);
 void ftRemixDededeDSPAddFieldMinion(GObj *owner_gobj, GObj *minion_gobj);
 void ftRemixDededeDSPFreeMinion(GObj *owner_gobj, GObj *minion_gobj);
 sb32 ftRemixDededeDSPFieldMinionsFull(FTStruct *fp);
+/* Dedede.asm initial_script_: clears the field minion slots and the charge level at every spawn and respawn */
+void ftRemixDededeInitialScript(FTStruct *fp);
 
 /* Mad Piano, ftremixpianodsp.c: Ness's absorb enters Piano's own absorb status */
 sb32 ftRemixPianoDSPAbsorbRedirect(FTStruct *fp, GObj *fighter_gobj);
@@ -706,6 +712,7 @@ s32 ftRemixStaminaKOStatus(FTStruct *fp, s32 status_id);
  * the invisible flag and the dead wait in the actions the asm lists */
 sb32 ftRemixStaminaIsOutOfHP(FTStruct *fp);
 sb32 ftRemixStaminaArmorIsZeroed(FTStruct *fp);
+f32 ftRemixStaminaKnockbackAfterArmor(FTStruct *fp, f32 knockback_before_squat, f32 knockback_resist);
 sb32 ftRemixStaminaSkipsInvisible(FTStruct *fp);
 sb32 ftRemixStaminaSkipsDeadWaitInit(FTStruct *fp);
 

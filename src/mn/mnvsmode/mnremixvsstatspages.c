@@ -13,6 +13,7 @@
 #include "if/ifremixcombometer.h"
 #include "mn/mnvsmode/mnremixvsstats.h"
 #include "mn/mnvsmode/mnremixvsstatspages.h"
+#include "mn/mnvsmode/mnremixvsstatsrules.h"
 #include "remix/remix_hud_text.h"
 
 #define MNVSSTATS_PAGES_TEXT_SLOT_FIRST 48
@@ -39,6 +40,9 @@
 #define MNVSSTATS_PAGES_CELL_X 184.0F
 #define MNVSSTATS_PAGES_CELL_STEP 35.0F
 #define MNVSSTATS_PAGES_PORT_HEADER_Y 16.0F
+/* VsStats.asm:633-643 draw_port_headers_: white 26x1 rectangle at Y 26 under each port header, from the icon to the cell edge */
+#define MNVSSTATS_PAGES_PORT_UNDERLINE_Y 26.0F
+#define MNVSSTATS_PAGES_PORT_UNDERLINE_WIDTH 26.0F
 #define MNVSSTATS_PAGES_TEXT_SCALE 0.8125F
 #define MNVSSTATS_PAGES_WHITE 0xFFFFFFFF
 #define MNVSSTATS_PAGES_INDENT 8
@@ -51,6 +55,10 @@ static const char *const dMNVSStatsPagesPortNames[MN_REMIX_VS_STATS_PORT_COUNT] 
 {
     "1P", "2P", "3P", "4P"
 };
+
+/* VsStats.asm stripe_on at the start of the current results screen and of the next one */
+static sb32 sMNRemixVSStatsPagesScreenStripe = FALSE;
+static sb32 sMNRemixVSStatsPagesNextScreenStripe = FALSE;
 
 typedef struct MNRemixVSStatsCursor
 {
@@ -303,7 +311,7 @@ static void mnRemixVSStatsPagesDrawGap(MNRemixVSStatsCursor *cursor)
     cursor->y += MNVSSTATS_PAGES_GROUP_GAP;
 }
 
-/** Draws the 1P to 4P headers of the active ports above the page (asm draw_port_headers_), right aligned over the cells. */
+/** Draws the 1P to 4P headers of the active ports above the page (asm draw_port_headers_), right aligned over the cells, each with its underline. */
 static void mnRemixVSStatsPagesDrawPortHeader(MNRemixVSStatsCursor *cursor)
 {
     s32 column;
@@ -317,6 +325,10 @@ static void mnRemixVSStatsPagesDrawPortHeader(MNRemixVSStatsCursor *cursor)
         }
         mnRemixVSStatsPagesPutText(cursor, dMNVSStatsPagesPortNames[column], mnRemixVSStatsPagesCellX(column_index),
                                    MNVSSTATS_PAGES_PORT_HEADER_Y, REMIX_HUD_ALIGN_RIGHT);
+        remix_hud_rect_put(cursor->rect_slot, mnRemixVSStatsPagesCellX(column_index) - MNVSSTATS_PAGES_PORT_UNDERLINE_WIDTH,
+                           MNVSSTATS_PAGES_PORT_UNDERLINE_Y, MNVSSTATS_PAGES_PORT_UNDERLINE_WIDTH,
+                           MNVSSTATS_PAGES_UNDERLINE_HEIGHT, MNVSSTATS_PAGES_UNDERLINE_RGBA);
+        cursor->rect_slot++;
         column_index++;
     }
 }
@@ -450,14 +462,17 @@ static s32 mnRemixVSStatsPagesCountActivePorts(void)
  */
 static sb32 mnRemixVSStatsPagesPageTwoStartsStriped(void)
 {
-    s32 active = mnRemixVSStatsPagesCountActivePorts();
-    s32 rows_with_values = active + 3;
+    s32 rows = mnRemixVSStatsRulesPageOneRows(mnRemixVSStatsPagesCountActivePorts(), gmRemixToggle(combo_meter) != FALSE);
 
-    if (gmRemixToggle(combo_meter) != FALSE)
-    {
-        rows_with_values += active + 2;
-    }
-    return (rows_with_values & 1) != 0;
+    return mnRemixVSStatsRulesStripeAfterRows(sMNRemixVSStatsPagesScreenStripe, rows);
+}
+
+void mnRemixVSStatsPagesStartScreen(void)
+{
+    s32 rows = mnRemixVSStatsRulesScreenRows(mnRemixVSStatsPagesCountActivePorts(), gmRemixToggle(combo_meter) != FALSE);
+
+    sMNRemixVSStatsPagesScreenStripe = sMNRemixVSStatsPagesNextScreenStripe;
+    sMNRemixVSStatsPagesNextScreenStripe = mnRemixVSStatsRulesStripeAfterRows(sMNRemixVSStatsPagesScreenStripe, rows);
 }
 
 void mnRemixVSStatsPagesDraw(s32 page)
@@ -467,7 +482,7 @@ void mnRemixVSStatsPagesDraw(s32 page)
     cursor.y = MNVSSTATS_PAGES_FIRST_Y;
     cursor.text_slot = MNVSSTATS_PAGES_TEXT_SLOT_FIRST;
     cursor.rect_slot = MNVSSTATS_PAGES_RECT_SLOT_FIRST;
-    cursor.stripe_on = FALSE;
+    cursor.stripe_on = sMNRemixVSStatsPagesScreenStripe;
 
     mnRemixVSStatsPagesDrawPortHeader(&cursor);
     if (page == 0)

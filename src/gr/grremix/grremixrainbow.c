@@ -8,7 +8,9 @@
 #include "grremixrainbow.h"
 #include "grremixrainbowchomp.h"
 #include "grremixhazards.h"
+#include "grremixhazardtimerrules.h"
 #include <gr/ground.h>
+#include <gr/grdisplay.h>
 #include <mp/map.h>
 #include <sys/utils.h>
 
@@ -23,13 +25,7 @@ extern void *func_800269C0_275C0(u16 id);
 #define GRREMIX_RAINBOW_SPAWN_CHANCE 810
 #define GRREMIX_RAINBOW_SPAWN_ROLL 0x100
 #define GRREMIX_RAINBOW_FGM_CHOMP_SPAWN 0x0401
-#define GRREMIX_RAINBOW_SFX_FIRST_TIMER 0x0960
-#define GRREMIX_RAINBOW_SFX_INTERVAL 0x003C
-#define GRREMIX_RAINBOW_SFX_LOOP_COUNT 4
-#define GRREMIX_RAINBOW_SFX_LAST_TIMER (GRREMIX_RAINBOW_SFX_FIRST_TIMER + GRREMIX_RAINBOW_SFX_INTERVAL * (GRREMIX_RAINBOW_SFX_LOOP_COUNT + 1))
-#define GRREMIX_RAINBOW_FGM_SFX_FIRST 0x0402
-#define GRREMIX_RAINBOW_FGM_SFX_LOOP 0x0403
-#define GRREMIX_RAINBOW_FGM_SFX_LAST 0x0404
+#define GRREMIX_RAINBOW_CHOMP_DISPLAY_LINK 0x11 /* Hazards.asm 5707-5715: DISPLAY_INIT_ link 0x11 */
 
 typedef struct GRRemixRainbowScene
 {
@@ -47,7 +43,6 @@ typedef struct GRRemixRainbowState
     void *hitbox_file;
     s32 timer;
     s32 chomp_flag;
-    sb32 chomp_visible;
     s32 sfx_timer;
 } GRRemixRainbowState;
 
@@ -71,17 +66,24 @@ static void *grRemixRainbowReadStageFile(s32 offset)
     return (void *) PORT_RESOLVE(*(u32 *) ((uintptr_t) gMPCollisionGroundData + offset));
 }
 
-/** Creates the Chain Chomp ground GObj with its model; it stays hidden until its first spawn. */
+/**
+ * Creates the Chain Chomp ground GObj with its model, drawn without the z-buffer on display link 0x11 and hidden until
+ * its first spawn (Hazards.asm rainbow_road_setup sets GObj 0x7C to 1). gcPlayAnimAll runs as a per-frame process
+ * (Hazards.asm 5737-5743), so the spawn animation moves the chomp along the track.
+ */
 static void grRemixRainbowChompCreate(void)
 {
     GObj *chomp_gobj;
 
     chomp_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
     sRainbow.chomp_gobj = chomp_gobj;
+    chomp_gobj->flags = GOBJ_FLAG_HIDDEN;
+    gcAddGObjDisplay(chomp_gobj, grDisplayLayer0PriProcDisplay, GRREMIX_RAINBOW_CHOMP_DISPLAY_LINK, GOBJ_PRIORITY_DEFAULT, ~0);
 
     gcSetupCustomDObjs(chomp_gobj, (DObjDesc *) ((uintptr_t) sRainbow.chomp_file + GRREMIX_RAINBOW_CHOMP_OFFSET_DOBJDESC), NULL, nGCMatrixKindTraRotRpyRSca, nGCMatrixKindNull, nGCMatrixKindNull);
     gcAddMObjAll(chomp_gobj, (MObjSub ***) ((uintptr_t) sRainbow.chomp_file + GRREMIX_RAINBOW_CHOMP_OFFSET_MODEL));
     gcAddGObjProcess(chomp_gobj, grRemixRainbowChompProcUpdate, nGCProcessKindFunc, 5);
+    gcAddGObjProcess(chomp_gobj, gcPlayAnimAll, nGCProcessKindFunc, 5);
 }
 
 /** Creates the Rainbow Road sound GObj (Hazards.asm sfx_main_). */
@@ -93,29 +95,20 @@ static void grRemixRainbowSfxCreate(void)
     gcAddGObjProcess(sfx_gobj, grRemixRainbowSfxProcUpdate, nGCProcessKindFunc, 5);
 }
 
-/** Plays the stage sound of one timer value: a first cue, four loop cues, then a last cue that restarts the sound timer. */
+/** Plays the stage sound of one timer value: a first cue, five loop cues, then a last cue that restarts the sound timer. */
 static void grRemixRainbowSfxPlayAt(s32 timer)
 {
-    s32 i;
+    s32 fgm_id = grRemixRainbowRulesSfxCue(timer);
 
-    if (timer == GRREMIX_RAINBOW_SFX_FIRST_TIMER)
+    if (fgm_id == GRREMIX_RAINBOW_FGM_SFX_NONE)
     {
-        func_800269C0_275C0(GRREMIX_RAINBOW_FGM_SFX_FIRST);
         return;
     }
-    for (i = 1; i <= GRREMIX_RAINBOW_SFX_LOOP_COUNT; i++)
-    {
-        if (timer == GRREMIX_RAINBOW_SFX_FIRST_TIMER + GRREMIX_RAINBOW_SFX_INTERVAL * i)
-        {
-            func_800269C0_275C0(GRREMIX_RAINBOW_FGM_SFX_LOOP);
-            return;
-        }
-    }
-    if (timer == GRREMIX_RAINBOW_SFX_LAST_TIMER)
+    if (fgm_id == GRREMIX_RAINBOW_FGM_SFX_LAST)
     {
         sRainbow.sfx_timer = 0;
-        func_800269C0_275C0(GRREMIX_RAINBOW_FGM_SFX_LAST);
     }
+    func_800269C0_275C0(fgm_id);
 }
 
 /** Per-frame sound routine of the stage. */
@@ -137,15 +130,10 @@ static void grRemixRainbowChompAnimate(GObj *chomp_gobj, const GRRemixRainbowSce
     gcPlayAnimAll(chomp_gobj);
 }
 
-/** Shows the chomp at its first spawn; Hazards.asm creates it invisible (0x7C = 1) and clears that flag here. */
+/** Shows the chomp on every spawn; Hazards.asm _animation clears GObj 0x7C (the hidden flag). */
 static void grRemixRainbowChompMakeVisible(GObj *chomp_gobj)
 {
-    if (sRainbow.chomp_visible)
-    {
-        return;
-    }
-    sRainbow.chomp_visible = TRUE;
-    gcAddGObjDisplay(chomp_gobj, gcDrawDObjTreeForGObj, 6, GOBJ_PRIORITY_DEFAULT, ~0);
+    chomp_gobj->flags = 0;
 }
 
 /** Runs one chomp spawn: animation, visibility, the hitbox weapon and its sound. */

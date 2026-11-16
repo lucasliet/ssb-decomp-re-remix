@@ -44,8 +44,8 @@ extern float mnRemixTwelveCBLayoutNextX(int slot, float current_x);
  * the right half.
  *
  * @param player 0 or 1.
- * @param point_x X of the token point in screen units.
- * @param point_y Y of the token point in screen units.
+ * @param point_x X of the token sprite (its raw position, no offset to its centre) in screen units.
+ * @param point_y Y of the token sprite in screen units.
  * @return The slot, or MNREMIX_TCB_NO_SLOT when the point is off the player's portraits.
  */
 extern int mnRemixTwelveCBLayoutSlotAtPoint(int player, int point_x, int point_y);

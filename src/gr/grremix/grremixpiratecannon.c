@@ -78,8 +78,6 @@ static struct
     void *cannonball_hitbox_file;
 } sGRRemixPirateCannon;
 
-static DObjTransformTypes sGRRemixPirateCannonTransformKinds[DOBJ_ARRAY_MAX];
-
 static void grRemixPirateCannonBeginWaiting(void);
 static void grRemixPirateCannonBeginTurning(GObj *cannon_gobj);
 static void grRemixPirateCannonBeginFiring(GObj *cannon_gobj);
@@ -296,8 +294,9 @@ static void grRemixPirateCannonMakeObject(void *cannon_file)
 
     cannon_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(cannon_gobj, grDisplayLayer0PriProcDisplay, 4, GOBJ_PRIORITY_DEFAULT, ~0);
-    grModelSetupGroundDObjs(cannon_gobj, (DObjDesc*)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_JOINT_DESC),
-                            NULL, sGRRemixPirateCannonTransformKinds);
+    /* Hazards.asm 3770-3778: STAGE_OBJECT_INIT_ (gcSetupCustomDObjs) with tk1 0x1C gives every joint its own matrix */
+    gcSetupCustomDObjs(cannon_gobj, (DObjDesc*)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_JOINT_DESC),
+                       NULL, nGCMatrixKindTraRotRpyRSca, nGCMatrixKindNull, nGCMatrixKindNull);
     gcAddMObjAll(cannon_gobj, (MObjSub***)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_MODEL));
     gcAddAnimAll(cannon_gobj, (AObjEvent32**)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_ANIM_JOINTS),
                  (AObjEvent32***)((uintptr_t)cannon_file + GRREMIX_PIRATE_CANNON_ANIM_MATERIALS), 0.0F);

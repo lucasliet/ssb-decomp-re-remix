@@ -81,30 +81,55 @@ sb32 gmRemixPracticeIsActive(void)
 }
 
 /**
- * Starts a retry when the run is a practice run and L is held on any controller (hold_l_to_retry_ and
- * hold_l_to_retry_stage_clear_ read Joypad.check_buttons_all_ with any port). The caller ends its scene.
+ * Whether one of the controllers holds L and nothing else (Joypad.check_buttons_all_ checks each port by itself).
+ */
+static sb32 gmRemixPracticeIsRetryHeldOnAnyController(void)
+{
+    s32 i;
+
+    for (i = 0; i < MAXCONTROLLERS; i++)
+    {
+        if (gmRemixPracticeIsRetryHeld(gSYControllerDevices[i].button_hold) != 0)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/**
+ * Starts a retry when the run is a practice run and one controller holds L alone (hold_l_to_retry_ and
+ * hold_l_to_retry_stage_clear_). The caller ends its scene.
  *
  * @return TRUE when the retry started.
  */
 sb32 gmRemixPracticeTryRetryByHold(void)
 {
-    u32 button_hold = 0;
-    s32 i;
-
-    if (sGMRemixPracticeIsActive == FALSE)
-    {
-        return FALSE;
-    }
-    for (i = 0; i < MAXCONTROLLERS; i++)
-    {
-        button_hold |= gSYControllerDevices[i].button_hold;
-    }
-    if (gmRemixPracticeIsRetryHeld(button_hold) == 0)
+    if ((sGMRemixPracticeIsActive == FALSE) || (gmRemixPracticeIsRetryHeldOnAnyController() == FALSE))
     {
         return FALSE;
     }
     sGMRemixPracticeIsRetry = TRUE;
     return TRUE;
+}
+
+/**
+ * The L retry while GAME SET shows (hold_l_to_retry_): in the 1P Game battle and in a Bonus stage of the 1P run, whose previous
+ * scene is not a Bonus CSS. The caller ends its scene.
+ *
+ * @return TRUE when the retry started.
+ */
+sb32 gmRemixPracticeTryRetryByGameSet(void)
+{
+    sb32 is_1p_game_scene = (gSCManagerSceneData.scene_curr == nSCKind1PGame) ? TRUE : FALSE;
+    sb32 is_bonus_stage_scene = (gSCManagerSceneData.scene_curr == nSCKind1PBonusStage) ? TRUE : FALSE;
+    sb32 is_from_bonus_css = ((gSCManagerSceneData.scene_prev == nSCKind1PBonus1Players) || (gSCManagerSceneData.scene_prev == nSCKind1PBonus2Players)) ? TRUE : FALSE;
+
+    if (gmRemixPracticeIsGameSetRetryScene(is_1p_game_scene, is_bonus_stage_scene, is_from_bonus_css) == 0)
+    {
+        return FALSE;
+    }
+    return gmRemixPracticeTryRetryByHold();
 }
 
 /**

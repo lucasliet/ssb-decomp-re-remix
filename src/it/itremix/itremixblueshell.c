@@ -74,6 +74,8 @@ static void itRemixBlueShellGroundedGfx(GObj *item_gobj);
 static sb32 itRemixBlueShellGroundedHurtboxCollide(GObj *item_gobj);
 static sb32 itRemixBlueShellIdleHurtboxCollide(GObj *item_gobj);
 static void itRemixBlueShellHoldProc(GObj *item_gobj);
+static s32 itRemixBlueShellGetPortInFirst(void);
+static void itRemixBlueShellTargetPlayer(GObj *item_gobj);
 
 static ITStatusDesc sITRemixBlueShellStatusDescs[nITRemixBlueShellStatusEnumCount] =
 {
@@ -236,6 +238,7 @@ static void itRemixBlueShellSetupState(GObj *item_gobj)
     ip->item_vars.shell.is_damage = FALSE;
     ip->item_vars.shell.damage_all_delay = ITREMIX_BLUESHELL_THROW_TIMER_RESET;
     ip->item_vars.shell.vel_x = 0.0F;
+    ip->item_vars.shell.remix_target_port = -1;
     ip->arrow_gobj = ifCommonItemArrowMakeInterface(ip);
 }
 
@@ -347,6 +350,7 @@ static void itRemixBlueShellThrowSetStatus(GObj *item_gobj)
     ip->item_vars.shell.is_damage = TRUE;
     ip->item_vars.shell.damage_all_delay = ITREMIX_BLUESHELL_THROW_TIMER;
     ip->times_thrown = 0;
+    ip->item_vars.shell.remix_target_port = itRemixBlueShellGetPortInFirst();
     itMapSetAir(ip);
     itMainSetStatus(item_gobj, sITRemixBlueShellStatusDescs, nITRemixBlueShellStatusThrown);
 }
@@ -434,14 +438,13 @@ static void itRemixBlueShellSetAerial(GObj *item_gobj)
     itMainSetStatus(item_gobj, sITRemixBlueShellStatusDescs, nITRemixBlueShellStatusAerial);
 }
 
-/* grounded_active_ (state 5 update). SKIPPED(player-in-first): the homing (target_player_, BlueShell.asm line 1349) caches the
- * player in first in ITStruct offset 0x180 and refreshes it every 8 frames. The port has no named field for that slot, and
- * itRemixBlueShellGetPlayerInFirst is the lookup it needs. */
+/* grounded_active_ (state 5 update): dust, homing toward the first place, floor edge check, lifetime */
 static sb32 itRemixBlueShellGroundedProcUpdate(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
 
     itRemixBlueShellGroundedGfx(item_gobj);
+    itRemixBlueShellTargetPlayer(item_gobj);
     itRShellSpinCheckCollisionEdge(item_gobj);
     if (ip->lifetime == 0)
     {
@@ -578,6 +581,18 @@ static s32 itRemixBlueShellGetPlayerValue(SCBattleState *battle, s32 port, s32 g
  */
 GObj* itRemixBlueShellGetPlayerInFirst(void)
 {
+    s32 port = itRemixBlueShellGetPortInFirst();
+
+    return (port < 0) ? NULL : gSCManagerBattleState->players[port].fighter_gobj;
+}
+
+/**
+ * Port of the first place (get_player_in_first_), checked against the fighter of that port.
+ *
+ * @return Port index 0..3, or -1 when the match state is missing or that port has no fighter.
+ */
+static s32 itRemixBlueShellGetPortInFirst(void)
+{
     SCBattleState *battle = gSCManagerBattleState;
     s32 game_rules;
     s32 values[ITREMIX_BLUESHELL_RULES_PLAYERS];
@@ -587,7 +602,7 @@ GObj* itRemixBlueShellGetPlayerInFirst(void)
 
     if (battle == NULL)
     {
-        return NULL;
+        return -1;
     }
     game_rules = battle->game_rules;
     for (port = 0; port < ITREMIX_BLUESHELL_RULES_PLAYERS; port++)
@@ -598,7 +613,52 @@ GObj* itRemixBlueShellGetPlayerInFirst(void)
     }
     port = itRemixBlueShellRulesFirstPort(itRemixBlueShellRulesIsStamina(game_rules), values, percents, is_present);
 
-    return battle->players[port].fighter_gobj;
+    return (battle->players[port].fighter_gobj != NULL) ? port : -1;
+}
+
+/**
+ * Fighter of the cached first place (ITStruct+0x180 in the asm), NULL when none is cached.
+ *
+ * @param ip Blue Shell item struct.
+ * @return Cached fighter GObj, or NULL.
+ */
+static GObj* itRemixBlueShellGetTarget(ITStruct *ip)
+{
+    s32 port = ip->item_vars.shell.remix_target_port;
+
+    if ((port < 0) || (gSCManagerBattleState == NULL))
+    {
+        return NULL;
+    }
+    return gSCManagerBattleState->players[port].fighter_gobj;
+}
+
+/**
+ * target_player_ (BlueShell.asm 1349-1429): refreshes the cached first place on the frames the dust timer was just
+ * reset (every 8 frames), then runs the red shell follow routine (0x8017A3A0) toward that fighter.
+ *
+ * @param item_gobj Rolling Blue Shell.
+ */
+static void itRemixBlueShellTargetPlayer(GObj *item_gobj)
+{
+    ITStruct *ip = itGetStruct(item_gobj);
+    GObj *target_gobj;
+
+    if (gGCCommonLinks[nGCCommonLinkIDFighter] == NULL)
+    {
+        return;
+    }
+    if (ip->item_vars.shell.dust_effect_int == (ITREMIX_BLUESHELL_GFX_INTERVAL - 1))
+    {
+        ip->item_vars.shell.remix_target_port = itRemixBlueShellGetPortInFirst();
+    }
+    target_gobj = itRemixBlueShellGetTarget(ip);
+
+    if ((target_gobj == NULL) || (DObjGetStruct(target_gobj) == NULL))
+    {
+        return;
+    }
+    itRShellSpinUpdateFollowPlayer(item_gobj, target_gobj);
 }
 
 #endif

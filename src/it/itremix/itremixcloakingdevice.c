@@ -17,6 +17,8 @@
 #define ITREMIX_CLOAKINGDEVICE_TRANSITION_FRAMES 32
 #define ITREMIX_CLOAKINGDEVICE_OPACITY_PER_FRAME 8
 #define ITREMIX_CLOAKINGDEVICE_SPEED_ONLY_FRAMES 4 /* asm: the speed term is added from the 4th frame on */
+#define ITREMIX_CLOAKINGDEVICE_CHARGE_LOOP_WORD 5 /* asm 0x8012CB34: first word of the loop body of the script at 0x8012CB20 */
+#define ITREMIX_CLOAKINGDEVICE_CHARGE_LOOP_COUNT 2
 #define ITREMIX_CLOAKINGDEVICE_FGM_CLOAK 0x0529
 #define ITREMIX_CLOAKINGDEVICE_FGM_DECLOAK 0x052A
 
@@ -27,6 +29,7 @@ typedef struct ITRemixCloakingDeviceState
 } ITRemixCloakingDeviceState;
 
 extern void *func_800269C0_275C0(u16 id);
+extern u32 dGMColScriptsFighterCommonSpecialNCharge[];
 
 static ITRemixCloakingDeviceState sITRemixCloakingDeviceStates[ITREMIX_CLOAKINGDEVICE_PORTS];
 
@@ -74,7 +77,8 @@ static u32 itRemixCloakingDeviceGetOpacity(FTStruct *fp, s32 timer)
 
     if (timer >= ITREMIX_CLOAKINGDEVICE_SPEED_ONLY_FRAMES)
     {
-        f32 speed = sqrtf((fp->physics.vel_air.x * fp->physics.vel_air.x) + (fp->physics.vel_air.y * fp->physics.vel_air.y));
+        /* CloakingDevice.asm 132-133 reads FTStruct 0x008C/0x0090: the distance moved this frame, knockback included. */
+        f32 speed = sqrtf((fp->coll_data.pos_diff.x * fp->coll_data.pos_diff.x) + (fp->coll_data.pos_diff.y * fp->coll_data.pos_diff.y));
 
         opacity += (s32)speed;
         if (opacity >= 0)
@@ -103,7 +107,8 @@ static u32 itRemixCloakingDeviceGetOpacity(FTStruct *fp, s32 timer)
     return (u32)opacity & 0xFF;
 }
 
-/* CloakingDevice: writes the env colour override of the port for this opacity (asm _set_env_color). */
+/* CloakingDevice: writes the env colour override of the port for this opacity (asm _set_env_color). The asm ORs the
+ * state id 1 for Cloaked where it means 0xFFFFFF00 (docs/remix/deviations.md 5.5). */
 static void itRemixCloakingDeviceSetEnvColor(FTStruct *fp, u32 opacity)
 {
     FTRemixEnvColorState state = ftRemixEnvColorGetState(fp->player);
@@ -120,12 +125,27 @@ static void itRemixCloakingDeviceSetEnvColor(FTStruct *fp, u32 opacity)
     ftRemixEnvColorSetOverride(fp->player, rgba);
 }
 
+/* CloakingDevice.asm 100-104: while the colanim loop slot (N64 0x0A30) holds the loop of the fully charged script, the loop
+ * count (0x0A34) goes back to 2 every frame. The loop never ends, so the script never reaches its Goto and never spawns
+ * the charge sparkle effect again. */
+static void itRemixCloakingDeviceHoldChargeSparkle(FTStruct *fp)
+{
+    GMColScript *script = &fp->colanim.cs[0];
+
+    if (script->p_subroutine[0] != (void*) &dGMColScriptsFighterCommonSpecialNCharge[ITREMIX_CLOAKINGDEVICE_CHARGE_LOOP_WORD])
+    {
+        return;
+    }
+    script->p_subroutine[1] = (void*) (uintptr_t) ITREMIX_CLOAKINGDEVICE_CHARGE_LOOP_COUNT;
+}
+
 /* CloakingDevice: handle_active_cloaking_device_. Runs every frame while a cloak is active. */
 static void itRemixCloakingDeviceProcUpdate(GObj *routine_gobj)
 {
     FTStruct *fp = (FTStruct*) routine_gobj->user_data.p;
     ITRemixCloakingDeviceState *state = itRemixCloakingDeviceGetState(fp);
 
+    itRemixCloakingDeviceHoldChargeSparkle(fp);
     state->timer += 1;
     if ((state->timer >= ITREMIX_CLOAKINGDEVICE_DECLOAK_FRAMES) || (fp->status_id <= nFTCommonStatusDeadUpFall))
     {
@@ -139,7 +159,8 @@ static void itRemixCloakingDeviceProcUpdate(GObj *routine_gobj)
     itRemixCloakingDeviceSetEnvColor(fp, itRemixCloakingDeviceGetOpacity(fp, state->timer));
 }
 
-/* CloakingDevice: starts the cloak from a zero timer. A second pickup while cloaked only restarts the timer. */
+/* CloakingDevice: starts the cloak from a zero timer. A second pickup while cloaked only restarts the timer: the asm
+ * registers a second handler, whose elder plays the decloak sound mid-cloak (docs/remix/deviations.md 5.5). */
 static void itRemixCloakingDeviceStart(FTStruct *fp)
 {
     ITRemixCloakingDeviceState *state = itRemixCloakingDeviceGetState(fp);

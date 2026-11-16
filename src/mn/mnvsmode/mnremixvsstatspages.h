@@ -11,4 +11,10 @@
  */
 void mnRemixVSStatsPagesDraw(s32 page);
 
+/**
+ * Starts the pages of a new results screen: the first row takes the stripe state the previous results screen left, because
+ * VsStats.asm never resets stripe_on. Call once when the results screen is set up.
+ */
+void mnRemixVSStatsPagesStartScreen(void);
+
 #endif

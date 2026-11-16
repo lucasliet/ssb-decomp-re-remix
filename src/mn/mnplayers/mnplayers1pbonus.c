@@ -2133,15 +2133,15 @@ sb32 mnPlayers1PBonusCheckCursorPuckGrab(GObj *gobj, s32 player)
 s32 mnPlayers1PBonusGetRemixForcePuckFighterKind(void)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayers1PBonusSlot.puck);
-	s32 slot = mnRemixCssSlotAtPoint((s32) sobj->pos.x + 13, (s32) sobj->pos.y + 12);
+	s32 slot = mnRemixCssSlotAtPoint((s32) sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32) sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y);
 
 	if (slot < 0)
 	{
-		if (mnRemixBonusModesRandomBookendContains((s32) sobj->pos.x + 13, (s32) sobj->pos.y + 12) != FALSE)
+		if (mnRemixBonusModesRandomBookendContains((s32) sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32) sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y) != FALSE)
 		{
 			return REMIX_ID_RANDOM;
 		}
-		if (mnRemixCssBonusBookendContains((s32) sobj->pos.x + 13, (s32) sobj->pos.y + 12) != FALSE)
+		if (mnRemixCssBonusBookendContains((s32) sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32) sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y) != FALSE)
 		{
 			return mnRemixCssBonusGetFighterKind(sMNPlayers1PBonusManPlayer);
 		}
@@ -2154,16 +2154,16 @@ s32 mnPlayers1PBonusGetRemixForcePuckFighterKind(void)
 s32 mnPlayers1PBonusGetRemixPuckFighterKind(s32 player)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayers1PBonusSlot.puck);
-	s32 slot = mnRemixCssSlotAtPoint((s32) sobj->pos.x + 13, (s32) sobj->pos.y + 12);
+	s32 slot = mnRemixCssSlotAtPoint((s32) sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32) sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y);
 	s32 fkind;
 
 	if (slot < 0)
 	{
-		if (mnRemixBonusModesRandomBookendContains((s32) sobj->pos.x + 13, (s32) sobj->pos.y + 12) != FALSE)
+		if (mnRemixBonusModesRandomBookendContains((s32) sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32) sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y) != FALSE)
 		{
 			return REMIX_ID_RANDOM;
 		}
-		if (mnRemixCssBonusBookendContains((s32) sobj->pos.x + 13, (s32) sobj->pos.y + 12) != FALSE)
+		if (mnRemixCssBonusBookendContains((s32) sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32) sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y) != FALSE)
 		{
 			fkind = mnRemixCssBonusGetFighterKind(player);
 

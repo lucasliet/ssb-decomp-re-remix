@@ -4,8 +4,8 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 /*
- * Pure rule of the Remix env colour opacity (CharEnvColor.asm override_env_color_ _override), so the headless unit tests
- * (tests/remix) can run it. Only int and unsigned int.
+ * Pure rules of the Remix env colour override (CharEnvColor.asm override_env_color_), so the headless unit tests
+ * (tests/remix) can run them. Only int and unsigned int.
  */
 
 /*
@@ -20,6 +20,17 @@
  * its alpha byte is not 0xFF (asm: andi t2, t2, 0xFF; bnel t2, 0xFF, _fix_parts with t6 = 0x20).
  */
 extern int ftRemixEnvColorRulesForcesTranslucent(unsigned int rgba);
+
+/**
+ * TRUE when the env colour override is the colour the fighter draws with. The asm patches only the stage light colour
+ * routines (override_env_color_ at 0x800FC9DC and 0x80390548), which the fighter draw reaches when neither the colanim
+ * colour 2 nor the fog colour is in use.
+ *
+ * rgba: override of the port (0 = none).
+ * is_use_color2: the colour animation set its colour 2 (GMColAnim.is_use_color2).
+ * is_use_fogcolor: the fighter draws with its fog colour (FTStruct.is_use_fogcolor).
+ */
+extern int ftRemixEnvColorRulesReplacesLight(unsigned int rgba, int is_use_color2, int is_use_fogcolor);
 
 #endif
 

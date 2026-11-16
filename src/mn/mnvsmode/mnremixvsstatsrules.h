@@ -35,6 +35,36 @@ int mnRemixVSStatsRulesPercent(int part, int total);
 int mnRemixVSStatsRulesHighest(int highest, int current);
 
 /**
+ * Rows with values of page 1 (VsStats.asm setup_ _page_1): one damage row per active port and the three totals, plus, with
+ * the Combo Meter on, one combo row per active port and the two maximums. Each one flips stripe_on in draw_line_.
+ *
+ * @param active_ports Ports with a fighter in the match.
+ * @param is_combo_meter_on Non-zero when the Combo Meter setting is on.
+ * @return Number of rows with values on page 1.
+ */
+int mnRemixVSStatsRulesPageOneRows(int active_ports, int is_combo_meter_on);
+
+/**
+ * Rows with values the asm draws for one results screen: page 1 and the ten rows of page 2. With the Combo Meter off the
+ * asm branches past page 2 (VsStats.asm:989-995), so only the page 1 rows count.
+ *
+ * @param active_ports Ports with a fighter in the match.
+ * @param is_combo_meter_on Non-zero when the Combo Meter setting is on.
+ * @return Number of draw_line_ calls that flip stripe_on in that screen.
+ */
+int mnRemixVSStatsRulesScreenRows(int active_ports, int is_combo_meter_on);
+
+/**
+ * State of stripe_on after a number of rows with values (VsStats.asm draw_line_ flips the byte once per row and nothing
+ * ever resets it, so it carries from page 1 to page 2 and from one results screen to the next).
+ *
+ * @param is_stripe_on stripe_on before the rows.
+ * @param rows Rows with values drawn.
+ * @return 1 when the row after them is striped, else 0.
+ */
+int mnRemixVSStatsRulesStripeAfterRows(int is_stripe_on, int rows);
+
+/**
  * Page shown after the given one, wrapping to the first page after the last (VsStats.asm check_menu_toggle_, R press).
  *
  * @param page Page index, 0 to MNREMIX_VSSTATS_RULES_TOTAL_PAGES - 1.

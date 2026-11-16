@@ -78,7 +78,9 @@ static void ftRemixAiCloudGoemonInput(FTStruct *fp)
 }
 
 /**
- * recovery_stick_y_fix (AI.asm): runs after the command script of each frame, for Goemon and Ebisumaru CPUs only.
+ * recovery_stick_y_fix (AI.asm): runs after every command of the input script except END (the hook sits on the loop
+ * condition of ftComputerUpdateInputs, 0x8013253C), for Goemon and Ebisumaru CPUs only. It so runs on the MoveAuto of
+ * the MoveAuto, END script that the walk and recover objectives send every frame.
  */
 void ftRemixAiCloudRecoveryInput(FTStruct *fp)
 {

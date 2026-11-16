@@ -7,6 +7,7 @@
 
 #include "grremixrainbowchomp.h"
 #include "grremixrainbow.h"
+#include "grremixhazardtimerrules.h"
 #include <gr/ground.h>
 #include <sys/utils.h>
 #include <wp/wpmanager.h>
@@ -18,10 +19,9 @@ extern void *func_800269C0_275C0(u16 id);
 #define GRREMIX_RAINBOW_CHOMP_KIND 0x002A
 #define GRREMIX_RAINBOW_CHOMP_LIFETIME 0x0546
 #define GRREMIX_RAINBOW_CHOMP_DAMAGE 25
-/* Hazards.asm chainchomp_hitbox_main_: roll of Global.get_random_int_(0x50) that must return 2, during frames 0-14. */
+/* Hazards.asm chainchomp_hitbox_main_: roll of Global.get_random_int_(0x50) that must return 2 while the window is open. */
 #define GRREMIX_RAINBOW_CHOMP_SOUND_ROLL_RANGE 0x50
 #define GRREMIX_RAINBOW_CHOMP_SOUND_ROLL_HIT 2
-#define GRREMIX_RAINBOW_CHOMP_SOUND_FRAMES 0x0F
 #define GRREMIX_RAINBOW_CHOMP_FGM 0x0401
 /* Hazards.asm chainchomp_hitbox_main_ loop: three records (WPStruct 0x214, stride 8) and counters (WPStruct 0x29C). */
 #define GRREMIX_RAINBOW_CHOMP_HITBOX_SLOTS 3
@@ -54,16 +54,15 @@ static void grRemixRainbowChompSyncPosition(GObj *wp_gobj)
 }
 
 /**
- * Chain chomp growl of the first frames (chainchomp_hitbox_main_): rolls every frame of frames 0-14 and plays the FGM
- * on a roll of 2. The asm reads the frame count at projectile offset 0x0E; the port derives it from the spawn lifetime,
- * since no port field is mapped to that byte.
+ * Chain chomp growl (chainchomp_hitbox_main_): rolls on every frame of the window and plays the FGM on a roll of 2.
+ * Hazards.asm 6081 reads byte 0x0E of the weapon GObj, frame_draw_last, so the window is open whenever the low 8 bits
+ * of the last drawn frame are below 15, for the chomp's whole life.
  */
-static void grRemixRainbowChompRollSound(WPStruct *wp)
+static void grRemixRainbowChompRollSound(GObj *wp_gobj)
 {
-    s32 frame = GRREMIX_RAINBOW_CHOMP_LIFETIME - wp->lifetime;
     s32 roll;
 
-    if (frame >= GRREMIX_RAINBOW_CHOMP_SOUND_FRAMES)
+    if (!grRemixRainbowRulesGrowlWindowIsOpen(wp_gobj->frame_draw_last))
     {
         return;
     }
@@ -135,7 +134,7 @@ static sb32 grRemixRainbowChompProcUpdate(GObj *wp_gobj)
 
     grRemixRainbowChompSyncPosition(wp_gobj);
     grRemixRainbowChompRefreshHitSlots(wp);
-    grRemixRainbowChompRollSound(wp);
+    grRemixRainbowChompRollSound(wp_gobj);
 
     if (wp->lifetime == 0)
     {

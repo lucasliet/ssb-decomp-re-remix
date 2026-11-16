@@ -84,6 +84,17 @@ typedef enum MNRemixCssVariantIcon
  */
 extern int mnRemixCssCostumeButtonsActive(int is_team_battle, int is_fighter_selected, int held_player);
 
+/**
+ * Costume a C button press leaves on a panel of the VS character select (Costumes.asm select_, 879-885): in a team battle the
+ * delay slot of the Sonic check reloads the current costume for every fighter, so the team costume stays and only the shade
+ * (and the Classic Sonic model) changes; without teams it is the cycled costume.
+ *
+ * @param is_team_battle TRUE in a team battle.
+ * @param current_costume Costume of the panel before the press.
+ * @param cycled_costume Costume the press cycles to.
+ */
+extern int mnRemixCssCostumeAfterButton(int is_team_battle, int current_costume, int cycled_costume);
+
 /** Offset from the cursor sprite position to the point that presses an image (CharacterSelect.asm check_press_: x + 20, y + 3). */
 #define MNREMIX_CSS_PRESS_OFFSET_X 20.0F
 #define MNREMIX_CSS_PRESS_OFFSET_Y 3.0F
@@ -200,6 +211,15 @@ extern int mnRemixCssDpadPanelX(int panel);
 
 /** Offset from the D-pad corner to the variant image of a direction (draw_variant_icon_). */
 extern void mnRemixCssDpadIconOffset(int direction, int *offset_x, int *offset_y);
+
+/**
+ * Offset from the D-pad corner to the J or E flag of a selected regional fighter (update_variant_indicators_ _draw_flag,
+ * CharacterSelect.asm 5394-5398): the flag sits 8 units left of the D-pad on the VS screen only, at the D-pad x on the 1P,
+ * Training and Bonus screens.
+ *
+ * @param is_vs_screen TRUE on the VS character select.
+ */
+extern int mnRemixCssFlagOffsetX(int is_vs_screen);
 
 /** Offset from the D-pad corner to the yellow mark of a direction (setup_). */
 extern void mnRemixCssDpadMarkOffset(int direction, int *offset_x, int *offset_y);

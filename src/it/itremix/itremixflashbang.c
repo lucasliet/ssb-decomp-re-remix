@@ -229,7 +229,7 @@ static void itRemixFlashbangUpdateRotationDirection(ITStruct *ip, ITRemixFlashba
     vars->rotation_direction = (x < 0.0F) ? -1.0F : 1.0F;
 }
 
-/* Spins the first joint around its x axis. The spin stops when the flashbang has no speed. */
+/* Spins the first joint around its z axis (Flashbang.asm _apply_rotation writes DObj 0x0038). The spin stops when the flashbang has no speed. */
 static void itRemixFlashbangUpdateRotation(GObj *item_gobj, f32 abs_speed, ITRemixFlashbangVars *vars)
 {
     DObj *joint = DObjGetStruct(item_gobj);
@@ -239,7 +239,7 @@ static void itRemixFlashbangUpdateRotation(GObj *item_gobj, f32 abs_speed, ITRem
     {
         rotation_speed = 0.0F;
     }
-    joint->rotate.vec.f.x -= rotation_speed;
+    joint->rotate.vec.f.z -= rotation_speed;
 }
 
 /* Clears the hit records so the flashbang can hit the same targets again. */
@@ -276,7 +276,7 @@ static void itRemixFlashbangSpawnSmoke(GObj *item_gobj)
 {
     DObj *joint = DObjGetStruct(item_gobj);
     DObj *pin_joint = DObjGetChild(joint);
-    f32 theta = -joint->rotate.vec.f.x;
+    f32 theta = -joint->rotate.vec.f.z;
     f32 cos_theta = __cosf(theta);
     f32 sin_theta = __sinf(theta);
     Vec3f smoke_pos;
@@ -649,8 +649,8 @@ static void itRemixFlashbangSetupState(ITStruct *ip, GObj *parent_gobj, FTStruct
     ip->owner_gobj = parent_gobj;
     ip->team = fp->team;
     ip->player = fp->player;
-    /* asm 0x02CE bit 0x80 (stage_setting_): decomp names it is_allow_pickup by the bitfield order; see the notes. */
-    ip->is_allow_pickup = TRUE;
+    /* Flashbang.asm 171-173: lhu/ori 0x0080/sh at 0x02CE sets bit 7 of byte 0x02CF, is_damage_all. */
+    ip->is_damage_all = TRUE;
     /* asm 0x0158 bit 0x10 (Flashbang.asm 127-128): the bitfield the decomp names can_rehit_shield. */
     ip->attack_coll.can_rehit_shield = TRUE;
     /* asm 0x0100 (Flashbang.asm 184) is the word named coll_data.cliff_id; the asm clears it. */

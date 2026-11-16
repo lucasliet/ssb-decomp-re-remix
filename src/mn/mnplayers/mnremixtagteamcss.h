@@ -62,6 +62,16 @@ extern void mnRemixTagTeamCssNextSlot(s32 port, s32 stock_count);
 extern sb32 mnRemixTagTeamCssStepBack(s32 port);
 
 /**
+ * The queue of one port is clamped to its new stock count (CharacterSelect.asm update_remaining_stocks_ _end, after a Manual stock
+ * arrow press).
+ *
+ * @param port Port of the panel.
+ * @param stock_count New 0-based stock count of the port.
+ * @return TRUE when the current slot of the port went down (the caller shows the fighter of the panel again).
+ */
+extern sb32 mnRemixTagTeamCssPortStocksChanged(s32 port, s32 stock_count);
+
+/**
  * adjust_current_slot_on_stock_count_change_: clamps the queue of every port to a new stock count.
  *
  * @param stock_count New 0-based stock count.

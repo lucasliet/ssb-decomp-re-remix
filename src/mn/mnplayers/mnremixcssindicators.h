@@ -24,8 +24,9 @@ typedef struct MNRemixCssPanelState
 } MNRemixCssPanelState;
 
 /**
- * Places the D-pads of the panels of a screen: x of the D-pad of panel 0 and the distance between two panels (css_settings, X padding
- * and panel offset). The VS values are the default and come back with every mnRemixCssIndicatorsReset.
+ * Places the D-pads of the panels of the 1P, Training or Bonus screen: x of the D-pad of panel 0 and the distance between two panels
+ * (css_settings, X padding and panel offset); the flag of a regional fighter then sits at the D-pad x. The VS values (and the flag
+ * 8 units left of the D-pad) are the default and come back with every mnRemixCssIndicatorsReset.
  */
 extern void mnRemixCssIndicatorsSetLayout(s32 first_panel_x, s32 panel_stride);
 

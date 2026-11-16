@@ -71,7 +71,8 @@ extern sb32 mnRemixBonusModesShowsTime(s32 fkind, sb32 is_complete);
 extern sb32 mnRemixBonusModesShowsTotal(sb32 is_all_complete);
 
 /**
- * Turns the total line of the standard bonus into the KO or feet total of the mode (total_kos_or_feet_._total_texture).
+ * Turns the total line of the standard bonus into the KO or feet total of the mode (total_kos_or_feet_._total_texture); the feet
+ * total gets the decimal point of the record (draw_hrc_high_score_decimal_).
  *
  * @param gobj Total line GObj.
  * @param label The "TOTAL BEST TIME" sprite already placed by the standard code.
@@ -131,7 +132,8 @@ extern void mnRemixBonusModesUpdateHint(s32 token, sb32 is_token_held, s32 fkind
 extern sb32 mnRemixBonusModesRandomBookendContains(s32 pos_x, s32 pos_y);
 
 /**
- * Makes the Option panel of Bonus 3: the title, the MODE row and its two arrows (Bonus.asm setup_). Does nothing in the other modes.
+ * Makes the Option panel of Bonus 1, 2 and 3: the title, the MODE row with its two arrows and the STAGE row, which only shows on
+ * Bonus 1 and 2 (Bonus.asm setup_). Does nothing in the other modes.
  *
  * @param files Loaded files of the screen.
  */

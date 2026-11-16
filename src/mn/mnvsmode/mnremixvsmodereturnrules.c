@@ -15,4 +15,18 @@ int mnRemixVSModeReturnCursor(int is_from_players_vs, int mode)
     return mode - MNREMIX_VSMODE_RETURN_MODE_FIRST;
 }
 
+int mnRemixVSModeExitSyncsTeamCostumes(int mode, int is_mode_teams)
+{
+    if (mode == MNREMIX_VSMODE_RETURN_MODE_SMASHKETBALL)
+    {
+        return 1;
+    }
+    if ((mode != MNREMIX_VSMODE_RETURN_MODE_DEFAULT) && (mode != MNREMIX_VSMODE_RETURN_MODE_KOTH) &&
+        (mode != MNREMIX_VSMODE_RETURN_MODE_TUG_OF_WAR))
+    {
+        return 0;
+    }
+    return is_mode_teams != 0;
+}
+
 #endif

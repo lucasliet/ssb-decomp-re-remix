@@ -81,6 +81,13 @@ s32 mnRemixVSStatsGetTrackerPercent(s32 port, MNRemixVSStatsTracker success, MNR
 void mnRemixVSStatsRecordPercent(s32 port, s32 percent);
 
 /**
+ * Samples the current damage of every port into its highest percent (VsStats.asm run_collect_: collect_stats_midmatch
+ * reads Global.vs.pN + 0x4C every frame of the match, so damage from any source counts: the initial damage of the
+ * panel, poison, hits). Call once per frame of a VS battle.
+ */
+void mnRemixVSStatsCollectMidmatch(void);
+
+/**
  * @return Highest damage percent the port reached in the current match, 0 when it took no damage.
  */
 s32 mnRemixVSStatsGetHighestPercent(s32 port);

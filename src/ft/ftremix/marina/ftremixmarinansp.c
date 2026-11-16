@@ -12,6 +12,7 @@
 
 #include "ft/ftremix/ftremix.h"
 #include "ft/ftremix/ftremixhooks.h"
+#include "ft/ftremix/marina/ftremixmarinarules.h"
 #include "remix/remix_symbols.h"
 #include "ft/ftchar/ftcaptain/ftcaptain.h"
 #include "ft/ftchar/ftdonkey/ftdonkeyfunctions.h"
@@ -511,34 +512,31 @@ static sb32 ftRemixMarinaCargoShakeIsLoopFrame(f32 anim_frame)
     return frame.bits == 0x80000000;
 }
 
-/** Applies the stored damage to the captured fighter (Cargo shake, temp variable 1). */
-static void ftRemixMarinaCargoShakeApplyDamage(FTStruct *fp)
+/**
+ * Applies the stored damage to the captured fighter (Cargo shake, temp variable 1).
+ *
+ * @return TRUE when the damage was applied: it is not 0 and the captured fighter is vulnerable.
+ */
+static sb32 ftRemixMarinaCargoShakeApplyDamage(FTStruct *fp)
 {
     s32 damage = fp->motion_vars.flags.flag0;
 
-    if (damage == 0)
+    if ((damage == 0) || (ftRemixMarinaShakeDamageApplies(damage, ftParamGetBestHitStatusAll(fp->catch_gobj)) == 0))
     {
-        return;
-    }
-    if (ftParamGetBestHitStatusAll(fp->catch_gobj) != 1)
-    {
-        return;
+        return FALSE;
     }
     ftParamUpdateDamage(ftGetStruct(fp->catch_gobj), damage);
     fp->motion_vars.flags.flag0 = 0;
+    return TRUE;
 }
 
-/** Spawns the gem once per shake, from the grab joint, and clips it into the walls. */
+/** Spawns the gem once per throw, from the grab joint, and keeps it out of the walls. */
 static void ftRemixMarinaCargoShakeSpawnGem(FTStruct *fp)
 {
-    Vec3f pos;
+    Vec3f pos = { 0.0F, 0.0F, 0.0F };
     Vec3f vel;
     GObj *item_gobj;
 
-    if (MARINA_GEM_SPAWNED(fp) != FALSE)
-    {
-        return;
-    }
     MARINA_GEM_SPAWNED(fp) = TRUE;
     gmCollisionGetFighterPartsWorldPosition(fp->joints[MARINA_NSP_GRAB_JOINT], &pos);
     pos.z = 0.0F;
@@ -594,8 +592,11 @@ static void ftRemixMarinaCargoShakeProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    ftRemixMarinaCargoShakeApplyDamage(fp);
-    ftRemixMarinaCargoShakeSpawnGem(fp);
+    /* MarinaSpecial.asm shake_main_: the gem block is reached only on the frame the damage is applied */
+    if (ftRemixMarinaShakeSpawnsGem(ftRemixMarinaCargoShakeApplyDamage(fp), MARINA_GEM_SPAWNED(fp)) != 0)
+    {
+        ftRemixMarinaCargoShakeSpawnGem(fp);
+    }
     ftRemixMarinaCargoShakeCheckBPress(fp);
     ftRemixMarinaCargoShakeCheckLoop(fighter_gobj, fp);
 }

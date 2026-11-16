@@ -22,11 +22,6 @@
 static sb32 sFTRemixKirbyMagicHatOn[FTREMIX_KIRBYPOWER_PORTS];
 static sb32 sFTRemixKirbyTauntLosesPower[FTREMIX_KIRBYPOWER_PORTS] = { TRUE, TRUE, TRUE, TRUE };
 
-static sb32 ftRemixKirbyPowerIsKirby(FTStruct *fp)
-{
-    return (fp->fkind == nFTKindKirby) || (fp->fkind == nFTKindNKirby) || (fp->fkind == REMIX_ID_JKIRBY);
-}
-
 static sb32 ftRemixKirbyPowerHasPort(FTStruct *fp)
 {
     return (fp->player >= 0) && (fp->player < FTREMIX_KIRBYPOWER_PORTS);
@@ -86,14 +81,10 @@ void ftRemixKirbyPowerStolen(FTStruct *fp)
     sFTRemixKirbyTauntLosesPower[fp->player] = TRUE;
 }
 
-/* set_absorbed_hat_ (0x80162110): inhaling a Kirby that holds the magic hat gives the magic power. */
+/* set_absorbed_hat_ (0x80162110): inhaling a Kirby or J Kirby that holds the magic hat gives the magic power. */
 s32 ftRemixKirbyStolenPowerID(FTStruct *victim_fp, s32 copy_id)
 {
-    if (ftRemixKirbyPowerIsKirby(victim_fp) && ftRemixKirbyPowerHasPort(victim_fp) && (sFTRemixKirbyMagicHatOn[victim_fp->player] != FALSE))
-    {
-        return REMIX_ID_NONE;
-    }
-    return copy_id;
+    return ftRemixKirbySpawnStolenPower(victim_fp->fkind, ftRemixKirbyMagicHatIsOn(victim_fp), copy_id);
 }
 
 /* set_absorbed_hat_._update_magic_hat_on (0x80161F3C): copying the magic power turns the magic hat on. */

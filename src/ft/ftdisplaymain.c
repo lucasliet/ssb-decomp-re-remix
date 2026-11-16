@@ -1346,7 +1346,9 @@ void ftDisplayMainProcDisplay(GObj *fighter_gobj)
         CALL_EVENT(FighterEnvColorQueryEvent, fp->player, 0u);
         sr_env_color = FighterEnvColorQueryEvent_.rgba;
 #ifdef REGION_REMIX
-        if (sr_env_color == 0u)
+        /* CharEnvColor.asm override_env_color_ patches only the stage light colour routines (0x800FC9DC inside
+         * mpCollisionSetLightColorGetAlpha, 0x80390548 in the menu one): the colanim colour 2 and the fog colour win */
+        if ((sr_env_color == 0u) && ftRemixEnvColorRulesReplacesLight(ftRemixEnvColorGetOverride(fp->player), fp->colanim.is_use_color2, fp->is_use_fogcolor))
         {
             sr_env_color = ftRemixEnvColorGetOverride(fp->player);
             is_env_render_mode_forced = ftRemixEnvColorRulesForcesTranslucent(sr_env_color);

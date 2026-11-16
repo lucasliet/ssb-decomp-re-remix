@@ -43,6 +43,17 @@ extern int gmRemixStaminaRulesDamageToFinish(int total_hp, int percent);
  */
 extern int gmRemixStaminaRulesHPLeft(int total_hp, int damage);
 
+/**
+ * Knockback of a hit after the armor. On the lethal hit (stamina_armor_fix_) the armor is 0 and the crouch discount is
+ * lost, because the asm returns past the reload of the knockback: the result is knockback_before_squat.
+ *
+ * is_lethal: the percent plus the damage of this frame is above the total HP.
+ * knockback_before_squat: knockback before the 2/3 of a crouching fighter.
+ * knockback: knockback after that discount.
+ * resist: the larger of the status and the passive armor.
+ */
+extern float gmRemixStaminaRulesKnockbackAfterArmor(int is_lethal, float knockback_before_squat, float knockback, float resist);
+
 #endif
 
 #endif

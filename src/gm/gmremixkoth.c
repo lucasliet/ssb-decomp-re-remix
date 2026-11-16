@@ -18,6 +18,7 @@
 #include "gm/gmremixkothhill.h"
 #include "gm/gmremixkothking.h"
 #include "gm/gmremixkothmodel.h"
+#include "gm/gmremixkothrules.h"
 #include "gm/gmremixkothstate.h"
 #include "gm/gmremixmode.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
@@ -121,52 +122,63 @@ static sb32 gmRemixKothPickDebugHill(void)
     return TRUE;
 }
 
+/* get_random_line_id_ with the asm's set_random_hill_ checks: one random floor line, -1 when it cannot be the hill. */
+static int gmRemixKothDrawHillLine(void *context)
+{
+    return gmRemixKothHillPickLine();
+}
+
 static void gmRemixKothPickHill(void)
 {
-    s32 tries;
+    s32 line_id;
 
     gGMRemixKoth.timer = GMREMIX_KOTH_HILL_FRAMES_MIN + syUtilsRandIntRange(GMREMIX_KOTH_HILL_FRAMES_RANGE);
     if (gmRemixKothPickDebugHill() != FALSE)
     {
         return;
     }
+    line_id = gmRemixKothRulesPickHill(gGMRemixKoth.hill_line, gmRemixKothDrawHillLine, NULL);
 
-    for (tries = 0; tries < GMREMIX_KOTH_HILL_TRIES; tries++)
+    if (line_id == gGMRemixKoth.hill_line)
     {
-        s32 line_id = gmRemixKothHillPickLine();
-
-        if ((line_id < 0) || (line_id == gGMRemixKoth.hill_line))
-        {
-            continue;
-        }
-        gGMRemixKoth.hill_line = line_id;
-        gGMRemixKoth.hidden_frames = 0;
-        gGMRemixKoth.contested_buffer = 0;
-        func_800269C0_275C0(GMREMIX_KOTH_FGM_HILL_CHANGE);
-        {
-            f32 x0, y0, x1, y1;
-            s32 n = gmRemixKothHillGetVertexCount(line_id);
-
-            gmRemixKothHillGetVertex(line_id, 0, &x0, &y0);
-            gmRemixKothHillGetVertex(line_id, n - 1, &x1, &y1);
-            port_log("koth: hill line %d vertices %d from (%d,%d) to (%d,%d)\n", (int)line_id, (int)n, (int)x0, (int)y0, (int)x1, (int)y1);
-        }
         return;
+    }
+    gGMRemixKoth.hill_line = line_id;
+    gGMRemixKoth.contested_buffer = 0;
+    func_800269C0_275C0(GMREMIX_KOTH_FGM_HILL_CHANGE);
+    {
+        f32 x0, y0, x1, y1;
+        s32 n = gmRemixKothHillGetVertexCount(line_id);
+
+        gmRemixKothHillGetVertex(line_id, 0, &x0, &y0);
+        gmRemixKothHillGetVertex(line_id, n - 1, &x1, &y1);
+        port_log("koth: hill line %d vertices %d from (%d,%d) to (%d,%d)\n", (int)line_id, (int)n, (int)x0, (int)y0, (int)x1, (int)y1);
     }
 }
 
+/*
+ * hill_update_routine_: no hill yet waits for the timer (the asm skips while the strip object does not exist), a hidden hill
+ * times out on its 121st hidden frame, and a shown hill moves when it leaves the blast zone. The port cannot read the vertices
+ * of a line whose collision is off (mpCollisionGetVertexPositionID stops there), so a hidden hill skips the blast-zone check.
+ */
 static sb32 gmRemixKothHillNeedsChange(void)
 {
+    sb32 is_hidden;
+
     if (gGMRemixKoth.hill_line < 0)
+    {
+        return FALSE;
+    }
+    is_hidden = (gmRemixKothHillLineIsUsable(gGMRemixKoth.hill_line) == FALSE) ? TRUE : FALSE;
+
+    if (gmRemixKothRulesHiddenTimeout(is_hidden, &gGMRemixKoth.hidden_frames, GMREMIX_KOTH_HIDDEN_FRAMES_MAX) != 0)
     {
         return TRUE;
     }
-    if (gmRemixKothHillLineIsUsable(gGMRemixKoth.hill_line) == FALSE)
+    if (is_hidden != FALSE)
     {
-        gGMRemixKoth.hidden_frames++;
-        return (gGMRemixKoth.hidden_frames >= GMREMIX_KOTH_HIDDEN_FRAMES_MAX) ? TRUE : FALSE;
+        return FALSE;
     }
-    gGMRemixKoth.hidden_frames = 0;
     return (gmRemixKothHillIsInsideBlastZone(gGMRemixKoth.hill_line) == FALSE) ? TRUE : FALSE;
 }
 

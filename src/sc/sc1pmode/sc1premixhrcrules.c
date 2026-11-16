@@ -6,7 +6,8 @@
 
 #include "sc/sc1pmode/sc1premixhrcrules.h"
 
-#define SC1PREMIX_HRC_CAMERA_PAN_DIVISOR 3.0F
+/* HRC.asm main_ loads 0x41000000 (8.0); the comment beside it says 3. */
+#define SC1PREMIX_HRC_CAMERA_PAN_DIVISOR 8.0F
 #define SC1PREMIX_HRC_COUNTER_SINK_PER_TIC 0.5F
 #define SC1PREMIX_HRC_COUNTER_GROWTH_PER_TIC 0.01F
 #define SC1PREMIX_HRC_COUNTER_HALF_GROWN 0.725F

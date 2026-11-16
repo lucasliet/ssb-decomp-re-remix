@@ -7,8 +7,12 @@
 #include "sc/sc1pmode/sc1premixendingrules.h"
 #include "sc/sc1pmode/sc1premixmodename.h"
 
-int sc1PRemixEndingUsesFighterSong(int mode)
+int sc1PRemixEndingUsesFighterSong(int mode, int is_opened_from_menu)
 {
+    if (is_opened_from_menu != 0)
+    {
+        return 0;
+    }
     return ((mode == SC1PREMIX_MODE_REMIX_1P) || (mode == SC1PREMIX_MODE_ALLSTAR)) ? 1 : 0;
 }
 

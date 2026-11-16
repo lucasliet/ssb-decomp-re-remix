@@ -116,7 +116,7 @@ static void grRemixWaterUpdateFighter(GObj *fighter_gobj)
 }
 
 /**
- * Process of the water object, one call per frame.
+ * Run function of the water object, one call per frame before the process queues.
  */
 static void grRemixWaterProcUpdate(GObj *water_gobj)
 {
@@ -135,7 +135,6 @@ static void grRemixWaterProcUpdate(GObj *water_gobj)
  */
 void grRemixWaterMakeGround(f32 water_y, f32 splash_y)
 {
-    GObj *water_gobj;
     s32 port;
 
     sGRRemixWaterY = water_y;
@@ -145,8 +144,9 @@ void grRemixWaterMakeGround(f32 water_y, f32 splash_y)
         sGRRemixWaterUnderWater[port] = FALSE;
     }
 
-    water_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
-    gcAddGObjProcess(water_gobj, grRemixWaterProcUpdate, nGCProcessKindFunc, 4);
+    /* The asm passes the water routine as the object's run function (Hazards.asm great_bay_setup,
+     * twilight_city_setup, pirate_land_setup via Render.CREATE_OBJECT_), so it runs before every fighter process. */
+    gcMakeGObjSPAfter(nGCCommonKindGround, grRemixWaterProcUpdate, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
 }
 
 #endif

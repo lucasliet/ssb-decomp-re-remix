@@ -18,6 +18,15 @@
 #define MNREMIX_CSS_TOKEN_FOLLOW_X 12.0F
 #define MNREMIX_CSS_TOKEN_FOLLOW_Y (-10.0F)
 
+/**
+ * Offset from the token sprite position to the point the grid and bookend hit tests read (get_character_id_, CharacterSelect.asm
+ * 488-493). The hook replaces the two mfc1 of the vanilla routine and returns from it, so the vanilla +13 / +12 never run: the asm
+ * tests the raw position against START_X - TOKEN_OFFSET_X = 29 and START_Y - TOKEN_OFFSET_Y = 35. The rectangles of the port
+ * start at START_VISUAL + START (39 and 44), 10 and 9 past those.
+ */
+#define MNREMIX_CSS_TOKEN_HIT_OFFSET_X 10
+#define MNREMIX_CSS_TOKEN_HIT_OFFSET_Y 9
+
 /** Lowest the cursor goes, so the Reset button of the 12CB and the bottom rows of the panel menu are reachable (CharacterSelect.asm:992-1004). */
 #define MNREMIX_CSS_CURSOR_MAX_Y 212.0F
 

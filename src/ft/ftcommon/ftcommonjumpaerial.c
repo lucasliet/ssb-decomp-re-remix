@@ -58,7 +58,12 @@ void ftCommonJumpAerialProcInterrupt(GObj *fighter_gobj)
 {
     if ((ftCommonSpecialAirCheckInterruptCommon(fighter_gobj) == FALSE) && (ftCommonAttackAirCheckInterruptCommon(fighter_gobj) == FALSE))
     {
+#ifdef REGION_REMIX
+        /* PeachSpecial.asm check_float_ "Jump 2" (0x8013FB54) replaces this call */
+        ftRemixPeachJumpAerialCheckOrFloat(fighter_gobj);
+#else
         ftCommonJumpAerialCheckInterruptCommon(fighter_gobj);
+#endif
     }
 }
 
@@ -182,6 +187,8 @@ void ftCommonJumpAerialSetStatus(GObj *fighter_gobj, s32 input_source)
         break;
     } 
 #ifdef REGION_REMIX
+    stick_range_y = ftRemixMarinaJumpAerialStickRange(fp, stick_range_y);
+
     fp->physics.vel_air.y = (((stick_range_y * ftRemixSizeJumpHeightMul(fp, attr->jump_height_mul)) +
                               ftRemixSizeJumpHeightBase(fp, attr->jump_height_base)) *
                              ftRemixSizeAerialJumpHeightSingle(fp, attr->jumpaerial_height));
@@ -452,6 +459,13 @@ sb32 ftCommonJumpAerialCheckInterruptCommon(GObj *fighter_gobj)
 #endif
         if ((input_source != FTCOMMON_JUMPAERIAL_INPUT_TYPE_NONE) && (fp->jumps_used < fp->attr->jumps_max))
         {
+#ifdef REGION_REMIX
+            /* Marina.asm jump_timing_patch_ (0x80140310) replaces the jal to this status change */
+            if (ftRemixMarinaJumpAerialIsLocked(fp) != FALSE)
+            {
+                return FALSE;
+            }
+#endif
             ftCommonJumpAerialSetStatus(fighter_gobj, input_source);
 
             return TRUE;

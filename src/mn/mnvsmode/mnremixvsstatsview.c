@@ -130,6 +130,7 @@ void mnRemixVSStatsViewSetup(void)
     sMNRemixVSStatsViewVisible = FALSE;
     sMNRemixVSStatsViewPromptShown = FALSE;
     sMNRemixVSStatsViewPressBuffer = 0;
+    mnRemixVSStatsPagesStartScreen();
     mnRemixVSStatsSceneMake();
 }
 

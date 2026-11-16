@@ -85,7 +85,7 @@ typedef struct SC1PRemixHrcAttempt
 extern void sc1PRemixHrcStateReset(SC1PRemixHrcState *state);
 
 /**
- * Follows the Sandbag for one frame: the camera waits at the default X until the Sandbag passes the start line, then pans a third of the way
+ * Follows the Sandbag for one frame: the camera waits at the default X until the Sandbag passes the start line, then pans an eighth of the way
  * to it each frame; past the warp threshold the camera and the Sandbag move back together and the warp grows so the distance stays right.
  *
  * @param state State of the contest, updated (distance, warp).

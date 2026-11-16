@@ -27,7 +27,8 @@
 #define GRREMIX_TIMETWISTER_RECT_X1 310
 #define GRREMIX_TIMETWISTER_RECT_Y1 230
 #define GRREMIX_TIMETWISTER_PROC_PRIORITY 3
-#define GRREMIX_TIMETWISTER_DISPLAY_PRIORITY 6
+/* Hazards.asm:7789 Render.draw_rectangle room 0: the display link of the wallpaper camera, so only the background is tinted */
+#define GRREMIX_TIMETWISTER_DISPLAY_DL_LINK 0
 #define GRREMIX_TIMETWISTER_FGM_WARP_APPEAR 0x059D
 #define GRREMIX_TIMETWISTER_FGM_WARP_DIE 0x059E
 #define GRREMIX_TIMETWISTER_FGM_WARPING 0x0094
@@ -132,6 +133,11 @@ static void grRemixTimeTwisterDecideBgmChange(void)
     sGRRemixTimeTwister.bgm_change = gmRemixBgmRulesTimeTwisterChanges(gMPCollisionBGMDefault) ? TRUE : FALSE;
 }
 
+void grRemixTimeTwisterCancelBgmChange(void)
+{
+    sGRRemixTimeTwister.bgm_change = FALSE;
+}
+
 /**
  * Camera restore at the warp disappearing frame: the status resets, and the camera routine returns to the saved one when
  * it is still the map zoom (asm: _warp_disappear).
@@ -146,7 +152,7 @@ static void grRemixTimeTwisterRestoreCamera(void)
     }
 }
 
-/** Starts the next song of the background and restores the volume (asm: START_NEW_BGM). */
+/** Starts the next song of the background, or queues it behind Hammer or Star music, and restores the volume (asm: START_NEW_BGM). */
 static void grRemixTimeTwisterStartNewBgm(void)
 {
     s32 track;
@@ -158,7 +164,7 @@ static void grRemixTimeTwisterStartNewBgm(void)
     track = gmRemixBgmRulesTimeTwisterTrack(sGRRemixTimeTwister.bg_index);
     if (track != GMREMIX_BGM_NO_TRACK)
     {
-        gmRemixBgmChange(track);
+        gmRemixBgmChangeUnlessItemMusic(track);
     }
     syAudioSetBGMVolume(0, GRREMIX_TIMETWISTER_BGM_VOLUME);
 }
@@ -248,7 +254,7 @@ static void grRemixTimeTwisterAdvanceTransition(void)
 
 /**
  * Per-frame update of the fade object. Waits for the warp ball while no transition runs (asm: _finish on
- * timer 0), otherwise advances the transition.
+ * timer 0), otherwise advances the transition; the frame that finds the warp ball also advances it.
  * @param gobj the fade object, unused
  */
 static void grRemixTimeTwisterUpdate(GObj *gobj)
@@ -267,6 +273,8 @@ static void grRemixTimeTwisterUpdate(GObj *gobj)
         return;
     }
     grRemixTimeTwisterStartTransition(warp_bg_index);
+    /* Hazards.asm:7901-7918 the start falls through into _in_transition, so the detection frame counts frame 1 */
+    grRemixTimeTwisterAdvanceTransition();
 }
 
 /**
@@ -311,7 +319,7 @@ void grRemixTimeTwisterSetup(void)
     grRemixTimeTwisterLoadBackgrounds();
     gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjProcess(gobj, grRemixTimeTwisterUpdate, nGCProcessKindFunc, GRREMIX_TIMETWISTER_PROC_PRIORITY);
-    gcAddGObjDisplay(gobj, grRemixTimeTwisterDisplay, GRREMIX_TIMETWISTER_DISPLAY_PRIORITY, GOBJ_PRIORITY_DEFAULT, ~0);
+    gcAddGObjDisplay(gobj, grRemixTimeTwisterDisplay, GRREMIX_TIMETWISTER_DISPLAY_DL_LINK, GOBJ_PRIORITY_DEFAULT, ~0);
 }
 
 #endif

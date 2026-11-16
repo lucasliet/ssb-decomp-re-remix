@@ -23,8 +23,11 @@ sb32 grRemixBowserBombsExplodeOnHit(GObj *item_gobj);
 /** FGM played when a bomb lands on the ground: the Remix bomb sound on BOWSERB, the given FGM otherwise. */
 u16 grRemixBowserBombsMapFgm(u16 fgm_id);
 
-/** Records the item that most recently hit a fighter (asm track_hit_object_). Players outside 0..3 are ignored. */
-void grRemixBowserBombsTrackHitObject(u8 player, GObj *item_gobj);
+/**
+ * Records the object that most recently hit a fighter: the attacker of its first hit log, fighter, weapon, item or
+ * ground, every time its hit stats are processed (asm track_hit_object_). Players outside 0..3 are ignored.
+ */
+void grRemixBowserBombsTrackHitObject(u8 player, GObj *attacker_gobj);
 
 /** Hitstun of a fighter hit by a bomb: scaled by 9 / (gravity + 4) as in the asm, otherwise unchanged. */
 f32 grRemixBowserBombsHitstunTics(FTStruct *fp, f32 hitstun_tics);

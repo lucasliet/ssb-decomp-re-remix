@@ -32,7 +32,8 @@
 #define GRREMIX_SCUTTLE_RECT_X1 310
 #define GRREMIX_SCUTTLE_RECT_Y1 230
 #define GRREMIX_SCUTTLE_PROC_PRIORITY 3
-#define GRREMIX_SCUTTLE_DISPLAY_PRIORITY 6
+/* Hazards.asm:7302 Render.draw_rectangle room 0: the display link of the wallpaper camera, so only the background is tinted */
+#define GRREMIX_SCUTTLE_DISPLAY_DL_LINK 0
 
 #define GRREMIX_SCUTTLE_NIGHT 0
 #define GRREMIX_SCUTTLE_DAY 1
@@ -267,7 +268,7 @@ static void grRemixScuttleFadeSetup(void)
         return;
     }
     gcAddGObjProcess(gobj, grRemixScuttleFadeUpdate, nGCProcessKindFunc, GRREMIX_SCUTTLE_PROC_PRIORITY);
-    gcAddGObjDisplay(gobj, grRemixScuttleFadeDisplay, GRREMIX_SCUTTLE_DISPLAY_PRIORITY, GOBJ_PRIORITY_DEFAULT, ~0);
+    gcAddGObjDisplay(gobj, grRemixScuttleFadeDisplay, GRREMIX_SCUTTLE_DISPLAY_DL_LINK, GOBJ_PRIORITY_DEFAULT, ~0);
 }
 
 /**

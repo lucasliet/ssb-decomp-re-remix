@@ -98,8 +98,14 @@ static void grRemixBowserBombsSetSpawnPos(s32 side, Vec3f *pos)
     pos->z = 0.0F;
 }
 
-/** Creates the bomb of one side and starts its flash. A failed spawn retries after the respawn time. */
-static void grRemixBowserBombsSpawn(s32 side)
+/**
+ * Creates the bomb of one side (asm add_item_). The bomb keeps the RTTF fall status and its hitbox, as the two bombs of
+ * the match start do. A failed spawn retries after the respawn time.
+ *
+ * @param side GRREMIX_BOWSER_BOMBS_RIGHT or the left side.
+ * @return The bomb, or NULL when the spawn failed.
+ */
+static GObj* grRemixBowserBombsSpawn(s32 side)
 {
     GRRemixBowserBombSlot *slot = &sBowserBombs.slots[side];
     Vec3f pos;
@@ -116,12 +122,26 @@ static void grRemixBowserBombsSpawn(s32 side)
     {
         slot->bomb_gobj = NULL;
         slot->respawn_timer = GRREMIX_BOWSER_BOMBS_RESPAWN_TIME;
-        return;
+        return NULL;
     }
     itGetStruct(bomb_gobj)->coll_data.map_coll.bottom = GRREMIX_BOWSER_BOMBS_HOVER_ECB_BOTTOM;
     slot->bomb_gobj = bomb_gobj;
-    slot->flash_timer = GRREMIX_BOWSER_BOMBS_FLASH_TIME;
+    slot->flash_timer = 0;
     slot->is_exploded = FALSE;
+
+    return bomb_gobj;
+}
+
+/**
+ * Starts the flash of a respawned bomb: hitbox off, flash update in place of the fall update (asm
+ * replenish_bowser_bombs_ _setup_bomb, which runs only on the respawn path).
+ *
+ * @param side Side of the bomb.
+ * @param bomb_gobj The respawned bomb.
+ */
+static void grRemixBowserBombsStartFlash(s32 side, GObj *bomb_gobj)
+{
+    sBowserBombs.slots[side].flash_timer = GRREMIX_BOWSER_BOMBS_FLASH_TIME;
 
     itMainSetStatus(bomb_gobj, sGRRemixBowserBombStatusDescs, 0);
     itGetStruct(bomb_gobj)->attack_coll.attack_state = nGMAttackStateOff;
@@ -155,6 +175,7 @@ static sb32 grRemixBowserBombsFlashProcUpdate(GObj *item_gobj)
 static void grRemixBowserBombsUpdateRespawn(s32 side)
 {
     GRRemixBowserBombSlot *slot = &sBowserBombs.slots[side];
+    GObj *bomb_gobj;
 
     if (!slot->is_exploded && (slot->bomb_gobj != NULL))
     {
@@ -167,7 +188,12 @@ static void grRemixBowserBombsUpdateRespawn(s32 side)
     {
         return;
     }
-    grRemixBowserBombsSpawn(side);
+    bomb_gobj = grRemixBowserBombsSpawn(side);
+
+    if (bomb_gobj != NULL)
+    {
+        grRemixBowserBombsStartFlash(side, bomb_gobj);
+    }
 }
 
 /** replenish_bowser_bombs_: per-frame respawn process of both sides. */
@@ -242,19 +268,19 @@ u16 grRemixBowserBombsMapFgm(u16 fgm_id)
     return fgm_id;
 }
 
-void grRemixBowserBombsTrackHitObject(u8 player, GObj *item_gobj)
+void grRemixBowserBombsTrackHitObject(u8 player, GObj *attacker_gobj)
 {
     if (player >= GRREMIX_BOWSER_BOMBS_PLAYERS)
     {
         return;
     }
-    sBowserBombs.hit_by[player] = item_gobj;
+    sBowserBombs.hit_by[player] = attacker_gobj;
 }
 
 /** True when the last object that hit this player is one of the bowser bombs on BOWSERB. */
 static sb32 grRemixBowserBombsIsHitByBomb(u8 player)
 {
-    if (!grRemixBowserBombsIsStage() || (player >= GRREMIX_BOWSER_BOMBS_PLAYERS))
+    if (!grRemixBowserBombsIsStage() || (player >= GRREMIX_BOWSER_BOMBS_PLAYERS) || (sBowserBombs.hit_by[player] == NULL))
     {
         return FALSE;
     }

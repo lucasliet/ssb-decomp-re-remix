@@ -154,6 +154,7 @@ static s32 mnPlayersVSGetPanelIndex(s32 player)
 
 #if defined(PORT) && defined(REGION_REMIX)
 static void mnPlayersVSTagTeamWriteSlot(s32 player);
+static s32 mnPlayersVSGetTagTeamStockCount(s32 player);
 #endif
 
 // 0x8013BA80
@@ -600,7 +601,7 @@ static GObj *sMNPlayersVSTwelveCBDefeatedGObjs[MNREMIX_TCB_SLOTS];
 static GObj *sMNPlayersVSTwelveCBSetArrowGObjs[4];
 static GObj *sMNPlayersVSTwelveCBResetGObj;
 static GObj *sMNPlayersVSTwelveCBCrownGObj;
-static GObj *sMNPlayersVSTwelveCBCrossGObjs[2];
+static GObj *sMNPlayersVSTwelveCBCrossGObjs[GMCOMMON_PLAYERS_MAX];
 static s32 sMNPlayersVSTwelveCBPortrait[2] = { MNREMIX_TCB_NO_SLOT, MNREMIX_TCB_NO_SLOT };
 static s32 sMNPlayersVSTwelveCBStartPortrait[2] = { MNREMIX_TCB_NO_SLOT, MNREMIX_TCB_NO_SLOT };
 
@@ -1007,12 +1008,16 @@ static int mnPlayersVSTwelveCBPickRandomFkind(void)
 	return fkind;
 }
 
-/** Slot of the token player's own half that the token hovers, MNREMIX_TCB_NO_SLOT when it hovers none. */
+/**
+ * Slot of the token player's own half that the token hovers, MNREMIX_TCB_NO_SLOT when it hovers none. The test reads the raw sprite
+ * position: CharacterSelect.asm get_character_id_ (509-521) undoes its own adjustment before TwelveCharBattle.get_character_id_, and
+ * the vanilla +13 / +12 sit after the hook and never run.
+ */
 static s32 mnPlayersVSTwelveCBGetHoveredSlot(s32 token_player)
 {
 	SObj *sobj = SObjGetStruct(sMNPlayersVSSlots[token_player].puck);
 
-	return mnRemixTwelveCBLayoutSlotAtPoint(token_player, (s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	return mnRemixTwelveCBLayoutSlotAtPoint(token_player, (s32)sobj->pos.x, (s32)sobj->pos.y);
 }
 
 /** TRUE when the cursor edits the Custom set: it holds a token over a portrait of a Custom set before the battle started. */
@@ -1127,15 +1132,21 @@ static void mnPlayersVSTwelveCBUpdateManualStocks(s32 cursor)
 
 /* CharacterSelect.asm update_stock_icon_and_count_indicators_ (5499-5915), always shown in the 12-Character Battle: the stocks left
  * of the portrait a player's token sits on, as "<icon> x N" against the right edge of the panel card. The number is Kabel text
- * (overlay slots 47 and 48), the cross is text too (the asm draws a sprite of the interface digits file, not loaded here). */
+ * (overlay slots 47 and 48), the cross is text too (the asm draws a sprite of the interface digits file, not loaded here). The VS
+ * screen draws the same indicator under each of its four panels for Stock Mode Last and Manual (overlay slots 47 to 50). */
 #define MNPLAYERSVS_TWELVECB_STOCK_Y 191.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_SCALE 0.90625F
 #define MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP 18.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_CROSS_GAP 9.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_CROSS_Y 192.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_NUMBER_SLOT 47
+/* FGM.asm menu.TOGGLE, the sound of a Manual stock arrow (update_remaining_stocks_ _play_fgm), at most once every 3 frames while A
+ * is held (hold_a_handler_ FGM_BUFFER). */
+#define MNPLAYERSVS_STOCKMODE_FGM_TOGGLE 163
+#define MNPLAYERSVS_STOCKMODE_FGM_BUFFER 3
 
-static GObj *sMNPlayersVSTwelveCBStockIcons[2];
+static GObj *sMNPlayersVSTwelveCBStockIcons[GMCOMMON_PLAYERS_MAX];
+static s32 sMNPlayersVSStockModeFgmBuffer;
 
 static void mnPlayersVSTwelveCBHideStockIndicator(s32 player)
 {
@@ -1167,10 +1178,10 @@ static void mnPlayersVSTwelveCBPlaceStockIcon(s32 player, FTStruct *fp, f32 x, f
 	}
 	else sobj = SObjGetStruct(gobj);
 
+	/* the stock sprite of a fighter file is stored hidden and big-endian; the battle HUD prepares it the same way */
+	ifCommonPlayerStockPrepareSprite((Sprite*)PORT_RESOLVE(sprites->stock_sprite));
 	sobj->sprite = *(Sprite*)PORT_RESOLVE(sprites->stock_sprite);
 	sobj->sprite.LUT = luts[fp->costume];
-	sobj->sprite.attr &= ~SP_FASTCOPY;
-	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->pos.x = x;
 	sobj->pos.y = y;
 	gobj->flags = GOBJ_FLAG_NONE;
@@ -1203,17 +1214,33 @@ static MNRemixTwelveCBStockControls mnPlayersVSGetTwelveCBStockControls(s32 play
 	return (sMNPlayersVSSlots[player].is_selected != FALSE) ? MNREMIX_TCB_STOCK_CONTROLS_ARROWS : MNREMIX_TCB_STOCK_CONTROLS_DPAD;
 }
 
+/**
+ * Draws "<icon> x N" against the right edge of the panel card of a player, with the Manual stock mode controls.
+ *
+ * @param player Player of the panel, whose fighter model exists.
+ * @param stocks Number shown.
+ * @param controls Which Manual stock mode controls the panel shows.
+ */
+static void mnPlayersVSDrawStockIndicator(s32 player, s32 stocks, MNRemixTwelveCBStockControls controls)
+{
+	Sprite *card = lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonRedCardSprite);
+	f32 panel_x = (mnPlayersVSGetPanelIndex(player) * 69) + 22;
+	f32 right_edge = panel_x + card->width + mnRemixTwelveCBLayoutStockPadding((controls == MNREMIX_TCB_STOCK_CONTROLS_ARROWS) ? 1 : 0, stocks);
+	f32 digits_x = right_edge - remix_hud_text_measure((stocks > 9) ? "00" : "0", MNPLAYERSVS_TWELVECB_STOCK_SCALE);
+
+	remix_hud_text_putf(MNPLAYERSVS_TWELVECB_STOCK_NUMBER_SLOT + player, right_edge, MNPLAYERSVS_TWELVECB_STOCK_Y, 0xFFFFFFFF,
+	                    MNPLAYERSVS_TWELVECB_STOCK_SCALE, REMIX_HUD_ALIGN_RIGHT, "%d", (int)stocks);
+	mnPlayersVSTwelveCBPlaceStockCross(player, digits_x - MNPLAYERSVS_TWELVECB_STOCK_CROSS_GAP);
+	mnPlayersVSTwelveCBPlaceStockIcon(player, ftGetStruct(sMNPlayersVSSlots[player].player), digits_x - MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP,
+	                                  MNPLAYERSVS_TWELVECB_STOCK_Y);
+	mnRemixTwelveCBStockManualUpdate(player, controls, panel_x, card->width, digits_x, sMNPlayersVSFiles[0]);
+}
+
 static void mnPlayersVSUpdateTwelveCBStockIndicator(s32 player)
 {
 	const GMRemixTwelveCBState *state = gmRemixTwelveCBGetState();
 	s32 slot = (sMNPlayersVSSlots[player].fkind == nFTKindNull) ? MNREMIX_TCB_NO_SLOT : mnPlayersVSTwelveCBGetPortrait(player, sMNPlayersVSSlots[player].fkind);
 	GObj *fighter_gobj = sMNPlayersVSSlots[player].player;
-	MNRemixTwelveCBStockControls controls;
-	Sprite *card;
-	f32 panel_x;
-	f32 right_edge;
-	f32 digits_x;
-	s32 stocks;
 
 	if ((state == NULL) || (slot == MNREMIX_TCB_NO_SLOT) || (fighter_gobj == NULL) ||
 	    (sMNPlayersVSSlots[player].fkind == nFTKindNull) || (mnPlayersVSTwelveCBSlotFkind(slot) != sMNPlayersVSSlots[player].fkind) ||
@@ -1223,18 +1250,110 @@ static void mnPlayersVSUpdateTwelveCBStockIndicator(s32 player)
 		mnRemixTwelveCBStockManualUpdate(player, MNREMIX_TCB_STOCK_CONTROLS_NONE, 0.0F, 0.0F, 0.0F, NULL);
 		return;
 	}
-	stocks = gmRemixTwelveCBGetPortraitStocks(state, slot);
-	controls = mnPlayersVSGetTwelveCBStockControls(player, slot);
-	card = lbRelocGetFileData(Sprite*, sMNPlayersVSFiles[0], llMNPlayersCommonRedCardSprite);
-	panel_x = (mnPlayersVSGetPanelIndex(player) * 69) + 22;
-	right_edge = panel_x + card->width + mnRemixTwelveCBLayoutStockPadding((controls == MNREMIX_TCB_STOCK_CONTROLS_ARROWS) ? 1 : 0, stocks);
-	digits_x = right_edge - remix_hud_text_measure((stocks > 9) ? "00" : "0", MNPLAYERSVS_TWELVECB_STOCK_SCALE);
+	mnPlayersVSDrawStockIndicator(player, gmRemixTwelveCBGetPortraitStocks(state, slot), mnPlayersVSGetTwelveCBStockControls(player, slot));
+}
 
-	remix_hud_text_putf(MNPLAYERSVS_TWELVECB_STOCK_NUMBER_SLOT + player, right_edge, MNPLAYERSVS_TWELVECB_STOCK_Y, 0xFFFFFFFF,
-	                    MNPLAYERSVS_TWELVECB_STOCK_SCALE, REMIX_HUD_ALIGN_RIGHT, "%d", (int)stocks);
-	mnPlayersVSTwelveCBPlaceStockCross(player, digits_x - MNPLAYERSVS_TWELVECB_STOCK_CROSS_GAP);
-	mnPlayersVSTwelveCBPlaceStockIcon(player, ftGetStruct(fighter_gobj), digits_x - MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP, MNPLAYERSVS_TWELVECB_STOCK_Y);
-	mnRemixTwelveCBStockManualUpdate(player, controls, panel_x, card->width, digits_x, sMNPlayersVSFiles[0]);
+/**
+ * 0-based stock count the VS panel of a player shows under Stock Mode Last or Manual (update_stock_icon_and_count_indicators_, VS
+ * branch, CharacterSelect.asm 5625-5652). The asm writes the Manual count back lowered to the rules (`sb t8, 0x0000(a2)`).
+ */
+static s32 mnPlayersVSGetStockModeCount(s32 player)
+{
+	sb32 is_tug_of_war = gmRemixModeIs(MNREMIX_VSMODE_TUG_OF_WAR);
+	s32 manual_count;
+	s32 count;
+
+	if (gmRemixStockModeIsManual(player) == FALSE)
+	{
+		return gmRemixStockModeRulesCssCount(gmRemixStockModeGetLastCount(player), sMNPlayersVSStockValue, is_tug_of_war);
+	}
+	manual_count = gmRemixPanel(STOCK_COUNT, player);
+	count = gmRemixStockModeRulesCssCount(manual_count, sMNPlayersVSStockValue, is_tug_of_war);
+
+	if (count != manual_count)
+	{
+		remix_panel_set(REMIX_PANEL_STOCK_COUNT, player, count);
+	}
+	return count;
+}
+
+/**
+ * VS screen (not the 12-Character Battle): the stock counter under the panel of a player whose Stock Mode is Last or Manual, for the
+ * fighter the panel shows; a selected fighter in Manual also gets the two blinking arrows that step the count
+ * (update_stock_icon_and_count_indicators_ VS branch, _draw_arrows and _update_display).
+ */
+static void mnPlayersVSUpdateStockModeIndicator(s32 player)
+{
+	sb32 is_manual = gmRemixStockModeIsManual(player);
+	MNRemixTwelveCBStockControls controls;
+
+	if (((is_manual == FALSE) && (gmRemixStockModeIsLast(player) == FALSE)) || (sMNPlayersVSSlots[player].fkind == nFTKindNull) ||
+	    (sMNPlayersVSSlots[player].player == NULL) || (mnRemixPanelMenuIsOpen(player) != FALSE))
+	{
+		mnPlayersVSTwelveCBHideStockIndicator(player);
+		mnRemixTwelveCBStockManualUpdate(player, MNREMIX_TCB_STOCK_CONTROLS_NONE, 0.0F, 0.0F, 0.0F, NULL);
+		return;
+	}
+	controls = ((is_manual != FALSE) && (sMNPlayersVSSlots[player].is_selected != FALSE)) ? MNREMIX_TCB_STOCK_CONTROLS_ARROWS : MNREMIX_TCB_STOCK_CONTROLS_NONE;
+
+	mnPlayersVSDrawStockIndicator(player, mnPlayersVSGetStockModeCount(player) + 1, controls);
+}
+
+/** Per-frame work of the Stock Mode indicators of the VS screen; the 12-Character Battle draws its own. */
+static void mnPlayersVSStockModeFrameUpdate(void)
+{
+	s32 player;
+
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		return;
+	}
+	for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)
+	{
+		mnPlayersVSUpdateStockModeIndicator(player);
+	}
+	mnRemixTwelveCBStockManualTick();
+
+	if (sMNPlayersVSStockModeFgmBuffer > 0)
+	{
+		sMNPlayersVSStockModeFgmBuffer--;
+	}
+}
+
+/**
+ * A press of the cursor on a Manual stock arrow of the VS screen (check_manual_stock_arrow_press_ and update_remaining_stocks_, VS
+ * path): the count of that panel steps and wraps between 0 and the rules count; in Tag Team a queue past the new count is cut.
+ * Returns TRUE when the press was on an arrow.
+ */
+static sb32 mnPlayersVSCheckStockModeArrowPress(GObj *cursor_gobj)
+{
+	SObj *sobj = SObjGetStruct(cursor_gobj);
+	s32 player;
+
+	for (player = 0; player < GMCOMMON_PLAYERS_MAX; player++)
+	{
+		s32 direction = mnRemixTwelveCBStockManualArrowAt(player, sobj->pos.x + MNREMIX_CSS_PRESS_OFFSET_X, sobj->pos.y + MNREMIX_CSS_PRESS_OFFSET_Y);
+		s32 count;
+
+		if (direction == 0)
+		{
+			continue;
+		}
+		count = gmRemixStockModeRulesStepManualCount(gmRemixPanel(STOCK_COUNT, player), direction, sMNPlayersVSStockValue);
+		remix_panel_set(REMIX_PANEL_STOCK_COUNT, player, count);
+
+		if (sMNPlayersVSStockModeFgmBuffer == 0)
+		{
+			sMNPlayersVSStockModeFgmBuffer = MNPLAYERSVS_STOCKMODE_FGM_BUFFER;
+			func_800269C0_275C0(MNPLAYERSVS_STOCKMODE_FGM_TOGGLE);
+		}
+		if (mnRemixTagTeamCssPortStocksChanged(player, mnPlayersVSGetTagTeamStockCount(player)) != FALSE)
+		{
+			mnPlayersVSUpdateFighter(player);
+		}
+		return TRUE;
+	}
+	return FALSE;
 }
 
 /** Player (0 or 1) whose token is the GObj, 0 when it is none of them. */
@@ -1422,17 +1541,18 @@ void mnPlayersVSMakePortraitAll(void)
 #ifdef REGION_REMIX
 	s32 slot;
 
+	/* the GObjs of the previous CSS visit are gone with their scene */
+	memset(sMNPlayersVSTwelveCBStockIcons, 0, sizeof(sMNPlayersVSTwelveCBStockIcons));
+	memset(sMNPlayersVSTwelveCBCrossGObjs, 0, sizeof(sMNPlayersVSTwelveCBCrossGObjs));
+	mnRemixTwelveCBStockManualReset();
+	sMNPlayersVSStockModeFgmBuffer = 0;
+
 	if (gmRemixTwelveCBIsActive() != FALSE)
 	{
-		/* the GObjs of the previous CSS visit are gone with their scene */
 		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
 		{
 			sMNPlayersVSTwelveCBPortraitGObjs[slot] = NULL;
 		}
-		sMNPlayersVSTwelveCBStockIcons[0] = NULL;
-		sMNPlayersVSTwelveCBStockIcons[1] = NULL;
-		sMNPlayersVSTwelveCBCrossGObjs[0] = NULL;
-		sMNPlayersVSTwelveCBCrossGObjs[1] = NULL;
 		memset(sMNPlayersVSTwelveCBDefeatedGObjs, 0, sizeof(sMNPlayersVSTwelveCBDefeatedGObjs));
 		memset(sMNPlayersVSTwelveCBSetArrowGObjs, 0, sizeof(sMNPlayersVSTwelveCBSetArrowGObjs));
 		sMNPlayersVSTwelveCBResetGObj = NULL;
@@ -1442,7 +1562,6 @@ void mnPlayersVSMakePortraitAll(void)
 		sMNPlayersVSTwelveCBLegendSide[0] = -1;
 		sMNPlayersVSTwelveCBLegendSide[1] = -1;
 		mnRemixTwelveCBCustomLegendReset();
-		mnRemixTwelveCBStockManualReset();
 
 		for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
 		{
@@ -4722,8 +4841,7 @@ static s32 mnPlayersVSRandTwelveCBFighterKind(GObj *puck_gobj)
  */
 static s32 mnPlayersVSGetTwelveCBPuckFighterKind(s32 player)
 {
-	SObj *sobj = SObjGetStruct(sMNPlayersVSSlots[player].puck);
-	s32 slot = (player > 1) ? MNREMIX_TCB_NO_SLOT : mnRemixTwelveCBLayoutSlotAtPoint(player, (s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	s32 slot = (player > 1) ? MNREMIX_TCB_NO_SLOT : mnPlayersVSTwelveCBGetHoveredSlot(player);
 	s32 fkind;
 
 	if (slot == MNREMIX_TCB_NO_SLOT)
@@ -4754,15 +4872,15 @@ s32 mnPlayersVSGetRemixPuckFighterKind(s32 player)
 		return mnPlayersVSGetTwelveCBPuckFighterKind(player);
 	}
 	sobj = SObjGetStruct(sMNPlayersVSSlots[player].puck);
-	slot = mnPlayersVSRemixSlotAtPoint((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12);
+	slot = mnPlayersVSRemixSlotAtPoint((s32)sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32)sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y);
 
 	if (slot < 0)
 	{
-		if (mnRemixCssRandomBookendContains((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12) != FALSE)
+		if (mnRemixCssRandomBookendContains((s32)sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32)sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y) != FALSE)
 		{
 			return REMIX_ID_RANDOM;
 		}
-		if (mnRemixCssBonusBookendContains((s32)sobj->pos.x + 13, (s32)sobj->pos.y + 12) == FALSE)
+		if (mnRemixCssBonusBookendContains((s32)sobj->pos.x + MNREMIX_CSS_TOKEN_HIT_OFFSET_X, (s32)sobj->pos.y + MNREMIX_CSS_TOKEN_HIT_OFFSET_Y) == FALSE)
 		{
 			return nFTKindNull;
 		}
@@ -4966,6 +5084,7 @@ void mnPlayersVSUpdateCostume(s32 player, s32 select_button)
 
 	costume = sMNPlayersVSSlots[player].costume;
 	mnRemixCostumeApplyButton(sMNPlayersVSSlots[player].fkind, select_button, &costume, &shade);
+	costume = mnRemixCssCostumeAfterButton(sMNPlayersVSIsTeamBattle, sMNPlayersVSSlots[player].costume, costume);
 	sonic_frame = mnRemixSonicClassicToggle(player, sMNPlayersVSSlots[player].fkind, select_button, sMNPlayersVSSlots[player].costume, costume, sMNPlayersVSIsTeamBattle, sMNPlayersVSSlots[player].player);
 
 	if (sonic_frame != MNREMIX_SONIC_CLASSIC_NO_TOGGLE)
@@ -5326,8 +5445,11 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 
 	mnPlayersVSAdjustCursor(gobj, player);
 #if defined(PORT) && defined(REGION_REMIX)
-	mnRemixPanelMenuHoldPress(player, (gSYControllerDevices[player].button_hold & A_BUTTON) ? TRUE : FALSE, SObjGetStruct(gobj)->pos.x,
-	                          SObjGetStruct(gobj)->pos.y);
+	if ((mnRemixPanelMenuHoldPress(player, (gSYControllerDevices[player].button_hold & A_BUTTON) ? TRUE : FALSE, SObjGetStruct(gobj)->pos.x,
+	                               SObjGetStruct(gobj)->pos.y) != FALSE) && (gmRemixTwelveCBIsActive() == FALSE))
+	{
+		mnPlayersVSCheckStockModeArrowPress(gobj);
+	}
 #endif
 	if
 	(
@@ -5355,6 +5477,10 @@ void mnPlayersVSCursorProcUpdate(GObj *gobj)
 			goto classic_arrows_consumed;
 		}
 		if ((gmRemixTwelveCBIsActive() != FALSE) && (mnPlayersVSCheckTwelveCBPress(gobj) != FALSE))
+		{
+			goto classic_arrows_consumed;
+		}
+		if ((gmRemixTwelveCBIsActive() == FALSE) && (mnPlayersVSCheckStockModeArrowPress(gobj) != FALSE))
 		{
 			goto classic_arrows_consumed;
 		}
@@ -7060,6 +7186,7 @@ static void mnPlayersVSTwelveCBFrameUpdate(void)
 		gmRemixTwelveCBSetCssPortrait(player, is_valid ? slot : -1);
 		mnPlayersVSUpdateTwelveCBStockIndicator(player);
 	}
+	mnRemixTwelveCBStockManualTick();
 	for (player = 2; player < GMCOMMON_PLAYERS_MAX; player++)
 	{
 		GObj *hidden[] =
@@ -7089,6 +7216,7 @@ void mnPlayersVSFuncRun(GObj *gobj)
 	s32 *gkinds;
 #if defined(PORT) && defined(REGION_REMIX)
 	mnPlayersVSTwelveCBFrameUpdate();
+	mnPlayersVSStockModeFrameUpdate();
 	mnPlayersVSRemixIndicatorsFrameUpdate();
 	mnPlayersVSRemixPanelMenuFrameUpdate();
 #endif

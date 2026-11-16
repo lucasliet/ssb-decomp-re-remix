@@ -21,7 +21,7 @@ extern int ftRemixAiSpecialsMewtwoCancels(int action);
 
 /** Result of the Sheik and Peppy charge decision (AI.asm improve_remix_specials, _check_needle and _check_revolver). */
 #define FTREMIX_AI_SPECIALS_NEEDLE_STOP 0  /* no charge now: the vanilla function returns FALSE */
-#define FTREMIX_AI_SPECIALS_NEEDLE_KEEP 1  /* already starting or holding the charge: returns TRUE, no new command */
+#define FTREMIX_AI_SPECIALS_NEEDLE_KEEP 1  /* already starting or holding the charge: returns FALSE too (0x80136BF8) */
 #define FTREMIX_AI_SPECIALS_NEEDLE_PRESS 2 /* below the full ammo: presses B (command 0xB) and returns TRUE */
 
 /**
@@ -29,6 +29,13 @@ extern int ftRemixAiSpecialsMewtwoCancels(int action);
  * her own falls into the Peppy checks, as the asm does ("don't add any lines here").
  */
 extern int ftRemixAiSpecialsNeedleChargeOutcome(int is_sheik, int action, int ammo);
+
+/**
+ * TRUE when ftComputerCheckTryChargeSpecialN returns TRUE for a Sheik and Peppy charge outcome: only the B press does.
+ * The keep outcome returns FALSE (AI.asm _end_0x80136BF8, `move v0, zero`), so the caller goes on to its attack and far
+ * range logic while the charge is held.
+ */
+extern int ftRemixAiSpecialsNeedleChargeReturnsTrue(int outcome);
 
 /**
  * TRUE when a Samus-like or Sheik fighter is already in a charge shot action, so the far-range NSP must not start

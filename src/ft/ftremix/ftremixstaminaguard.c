@@ -33,8 +33,8 @@ sb32 ftRemixStaminaIsOutOfHP(FTStruct *fp)
 }
 
 /**
- * TRUE when the Stamina rule is active and the damage percent plus the damage queued this frame is above the total HP.
- * passive_armor_ (RAM 0x800E6324) then returns no armor (Stamina.asm stamina_armor_fix_, called from Size.asm).
+ * TRUE when the Stamina rule is active and the damage percent plus the damage queued this frame is above the total HP:
+ * the lethal hit of Stamina.asm stamina_armor_fix_ (called from Size.asm passive_armor_, RAM 0x800E6324).
  */
 sb32 ftRemixStaminaArmorIsZeroed(FTStruct *fp)
 {
@@ -46,6 +46,18 @@ sb32 ftRemixStaminaArmorIsZeroed(FTStruct *fp)
     }
     total_hp = gmRemixStaminaGetTotalHP();
     return gmRemixStaminaRulesIsOverTotal(fp->percent_damage + fp->damage_queue, total_hp) ? TRUE : FALSE;
+}
+
+/**
+ * Knockback of the hit of this frame after the armor (RAM 0x800E6320). On the hit that takes the last HP the asm clears
+ * the status and the passive armor and keeps the knockback read before the crouch discount (stamina_armor_fix_).
+ *
+ * knockback_before_squat: damage_knockback before the 2/3 of Squat and SquatWait.
+ * knockback_resist: the larger of the status and the passive armor.
+ */
+f32 ftRemixStaminaKnockbackAfterArmor(FTStruct *fp, f32 knockback_before_squat, f32 knockback_resist)
+{
+    return gmRemixStaminaRulesKnockbackAfterArmor(ftRemixStaminaArmorIsZeroed(fp), knockback_before_squat, fp->damage_knockback, knockback_resist);
 }
 
 /**

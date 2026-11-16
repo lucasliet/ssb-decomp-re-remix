@@ -14,6 +14,8 @@
 #include <ef/efmanager.h>
 #include "it/itremix/itremix.h"
 #include "it/itremix/itremixfranklinbadge.h"
+#include "it/itremix/itremixfranklinbadgerules.h"
+#include "ft/ftremix/ftremixreflect.h"
 #include "it/itremix/itremixsupermushroom.h"
 #include "it/itmanager.h"
 #include "it/itcommon/ittomato.h"
@@ -46,10 +48,11 @@ extern void* func_800269C0_275C0(u16 id);
 /* asm players_with_franklin_badge: one state per player port. */
 static ITRemixFranklinBadgeState sITRemixFranklinBadgeStates[MAXCONTROLLERS];
 
-/* asm reflect_hitbox_struct. The first word packs index 0 and custom reflect type 4. */
+/* asm reflect_hitbox_struct. The first word packs index 0 of Reflect.custom_reflect_table and Reflect.reflect_type.CUSTOM
+ * (the asm comment says "custom value of 4", the constant is 3). */
 static FTSpecialColl sITRemixFranklinBadgeReflectColl =
 {
-    (0x0000 << 16) | 0x0004,
+    (0x0000 << 16) | FTREMIX_REFLECT_TYPE_CUSTOM,
     4, /* asm word "?" after the reflect type */
     { 0.0F, 60.0F, 0.0F },
     { 350.0F, 350.0F, 350.0F }, /* asm comments say 512, but 0x43AF0000 is 350.0F */
@@ -107,17 +110,79 @@ static void itRemixFranklinBadgeRestoreColAnim(FTStruct *fp)
 }
 
 /**
- * handle_active_franklin_badge_ (destroy path). Frees the player's slot and clears
- * the reflect flag, unless the player is dead. Then restores the default colour animation.
+ * handle_active_franklin_badge_ (destroy path). Frees the player's slot and clears the reflect flag, unless the
+ * player is dead or another reflector owns the hitbox (asm t2). Then restores the default colour animation.
+ *
+ * @param fp Player whose badge ends.
+ * @param state Badge slot of the player.
+ * @param keeps_reflect TRUE when the reflect flag belongs to another reflector and stays as it is.
  */
-static void itRemixFranklinBadgeEnd(FTStruct *fp, ITRemixFranklinBadgeState *state)
+static void itRemixFranklinBadgeEnd(FTStruct *fp, ITRemixFranklinBadgeState *state, sb32 keeps_reflect)
 {
     state->is_active = FALSE;
-    if (itRemixFranklinBadgeIsAlive(fp))
+    if ((itRemixFranklinBadgeIsAlive(fp)) && (keeps_reflect == FALSE))
     {
         fp->is_reflect = FALSE;
     }
     itRemixFranklinBadgeRestoreColAnim(fp);
+}
+
+/**
+ * The halfword at 0x18C of the N64 player struct, which handle_active_franklin_badge_ compares as a whole: the 16
+ * bitfields of FTStruct from is_attack_active (0x8000) down to is_invisible (0x0001).
+ *
+ * @param fp Player to read.
+ * @return The flags in the N64 bit order.
+ */
+static u16 itRemixFranklinBadgeGetFlags(FTStruct *fp)
+{
+    u16 flags = 0;
+
+    flags |= fp->is_attack_active << 15;
+    flags |= fp->is_hitstatus_nodamage << 14;
+    flags |= fp->is_damage_coll_modify << 13;
+    flags |= fp->is_modelpart_modify << 12;
+    flags |= fp->is_texturepart_modify << 11;
+    flags |= fp->is_reflect << 10;
+    flags |= (fp->reflect_lr & 3) << 8;
+    flags |= fp->is_absorb << 7;
+    flags |= (fp->absorb_lr & 3) << 5;
+    flags |= fp->is_goto_attack100 << 4;
+    flags |= fp->is_fastfall << 3;
+    flags |= fp->is_magnify_show << 2;
+    flags |= fp->is_limit_map_bounds << 1;
+    flags |= fp->is_invisible;
+
+    return flags;
+}
+
+/**
+ * handle_active_franklin_badge_, from the hitbox compare to _maintain_badge: keeps the reflect flag on while the badge
+ * hitbox is the player's, and takes the hitbox back once the reflector or absorber that replaced it is off.
+ *
+ * @param fp Player with the active badge.
+ * @param maintain What itRemixFranklinBadgeRulesGetMaintain decided for this frame.
+ */
+static void itRemixFranklinBadgeApplyMaintain(FTStruct *fp, ITRemixFranklinBadgeMaintain maintain)
+{
+    switch (maintain)
+    {
+    case nITRemixFranklinBadgeMaintainRestore:
+        fp->special_coll = &sITRemixFranklinBadgeReflectColl;
+        fp->is_reflect = TRUE;
+        break;
+
+    case nITRemixFranklinBadgeMaintainReflect:
+        fp->is_reflect = TRUE;
+        break;
+
+    case nITRemixFranklinBadgeMaintainDropReflect:
+        fp->is_reflect = FALSE;
+        break;
+
+    default:
+        break;
+    }
 }
 
 /**
@@ -128,6 +193,8 @@ static void itRemixFranklinBadgeProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     ITRemixFranklinBadgeState *state = itRemixFranklinBadgeGetState(fp);
+    ITRemixFranklinBadgeMaintain maintain;
+    u16 flags;
 
     if (state->is_active == FALSE)
     {
@@ -135,17 +202,17 @@ static void itRemixFranklinBadgeProcUpdate(GObj *fighter_gobj)
     }
     if (itRemixFranklinBadgeIsAlive(fp) == FALSE)
     {
-        itRemixFranklinBadgeEnd(fp, state);
+        itRemixFranklinBadgeEnd(fp, state, FALSE);
         return;
     }
-    if (fp->special_coll == &sITRemixFranklinBadgeReflectColl)
-    {
-        fp->is_reflect = TRUE;
-    }
+    flags = itRemixFranklinBadgeGetFlags(fp);
+    maintain = itRemixFranklinBadgeRulesGetMaintain(fp->special_coll == &sITRemixFranklinBadgeReflectColl, flags);
+    itRemixFranklinBadgeApplyMaintain(fp, maintain);
+
     state->timer -= 1;
     if (state->timer == 0)
     {
-        itRemixFranklinBadgeEnd(fp, state);
+        itRemixFranklinBadgeEnd(fp, state, itRemixFranklinBadgeRulesKeepsReflectAtExpiry(maintain, flags));
     }
 }
 
@@ -301,7 +368,11 @@ sb32 itRemixFranklinBadgeIsItemImmune(FTStruct *fp, ITStruct *ip)
     return TRUE;
 }
 
-/** clear_active_franklin_badges_. Drops every active badge at scene end. */
+/**
+ * clear_active_franklin_badges_. Drops every active badge at scene end. The fighter GObjs and their countdown
+ * processes end with the scene, and the next scene can hand the same GObj address to the same port, so the
+ * remembered process owner is dropped too: the asm registers a new routine on every first pickup (FranklinBadge.asm:79).
+ */
 void itRemixFranklinBadgeClearAll(void)
 {
     s32 port;
@@ -309,6 +380,7 @@ void itRemixFranklinBadgeClearAll(void)
     for (port = 0; port < MAXCONTROLLERS; port++)
     {
         sITRemixFranklinBadgeStates[port].is_active = FALSE;
+        sITRemixFranklinBadgeStates[port].process_fighter_gobj = NULL;
     }
 }
 

@@ -3757,10 +3757,11 @@ void ftComputerUpdateInputs(FTStruct *this_fp)
                     com->p_command = NULL;
                     return;
                 }
-            }
 #if defined(PORT) && defined(REGION_REMIX)
-            ftRemixAiCloudRecoveryInput(this_fp);
+                /* AI.asm recovery_stick_y_fix hooks the loop condition (0x8013253C): it runs after every command but END */
+                ftRemixAiCloudRecoveryInput(this_fp);
 #endif
+            }
             com->p_command = p_command;
         }
     }
@@ -3868,6 +3869,8 @@ sb32 ftComputerCheckFindTarget(FTStruct *this_fp)
                     (
 #if defined(PORT) && defined(REGION_REMIX)
                         (ftRemixAiIsMetalKind(this_fp->fkind) == FALSE) ||
+                        /* AI.asm detect_offstage_opponents: level 10 jumps to 0x80132AB8, past the Metal test too */
+                        ftRemixAiMovementTargetsOffstage(this_fp) ||
 #else
                         (this_fp->fkind != nFTKindMMario) ||
 #endif

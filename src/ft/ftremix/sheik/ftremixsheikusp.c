@@ -59,11 +59,10 @@ static s32 ftRemixSheikUSPStickMagnitude(FTStruct *fp)
     return (s32)(sqrtf((f32)((stick_x * stick_x) + (stick_y * stick_y))) + 0.5F);
 }
 
-/* SheikUSP.end_invisibility_: invisible while temp variable 3 is set. */
+/* SheikUSP.end_invisibility_: invisible while temp variable 3 is set; the moveset env colour stays as the action change left it. */
 static void ftRemixSheikUSPEndInvisibility(FTStruct *fp)
 {
     fp->is_invisible = (fp->motion_vars.flags.flag2 != 0);
-    ftRemixEnvColorSetMoveset(fp->player, (fp->motion_vars.flags.flag2 != 0) ? 0xFFFFFF00 : 0);
 }
 
 /* Clears the vanish's temp variables 1-3 (motion_vars.flags 0-2). */

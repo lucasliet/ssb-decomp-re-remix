@@ -228,7 +228,7 @@ void ftCommonThrownReleaseThrownUpdateStats(GObj *fighter_gobj, s32 lr, s32 scri
     ifRemixHitAnnouncerPlayThrow(damage, knockback_final);
 #endif
 #ifdef REGION_REMIX
-    ftCommonDamageInitDamageVars(fighter_gobj, ft_throw->status_id, damage, knockback_final, ftRemixKnockbackAngle(this_fp, ft_throw->angle), lr, 1, ft_throw->element, capture_fp->player_num, TRUE, TRUE, TRUE); /* Knockback.asm get_angle_throw_ (0x8014B16C) */
+    ftCommonDamageInitDamageVars(fighter_gobj, ft_throw->status_id, damage, knockback_final, ftRemixKnockbackAngle(capture_fp, ft_throw->angle), lr, 1, ft_throw->element, capture_fp->player_num, TRUE, TRUE, TRUE); /* Knockback.asm get_angle_throw_ (0x8014B16C): s0 is the thrower, so its port option and its throw action pick the angle */
 #else
     ftCommonDamageInitDamageVars(fighter_gobj, ft_throw->status_id, damage, knockback_final, ft_throw->angle, lr, 1, ft_throw->element, capture_fp->player_num, TRUE, TRUE, TRUE);
 #endif

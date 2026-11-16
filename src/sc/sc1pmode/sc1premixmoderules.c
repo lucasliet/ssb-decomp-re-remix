@@ -29,6 +29,22 @@ int sc1PRemixModeLeavesBonusCSSFor1P(int mode)
     }
 }
 
+int sc1PRemixModeRunsOnRemixModesScreen(int mode)
+{
+    switch (mode)
+    {
+    case SC1PREMIX_MODE_BONUS3:
+    case SC1PREMIX_MODE_MULTIMAN:
+    case SC1PREMIX_MODE_CRUEL:
+    case SC1PREMIX_MODE_ALLSTAR:
+    case SC1PREMIX_MODE_HRC:
+        return 1;
+
+    default:
+        return 0;
+    }
+}
+
 int sc1PRemixModeSkipsBonusStartCheer(int toggle_value, int mode, int is_bonus_practice)
 {
     if (toggle_value < SC1PREMIX_START_CHEER_SKIP_BONUS)
@@ -90,6 +106,15 @@ void sc1PRemixMultimanKosAddEnemy(SC1PRemixMultimanKos *counter)
 void sc1PRemixMultimanKosSetPlayerKo(SC1PRemixMultimanKos *counter)
 {
     counter->is_player_ko = 1;
+}
+
+int sc1PRemixModeMenuAddsEdgeWait(int step, int option, int last)
+{
+    if (step > 0)
+    {
+        return (option == last) ? 1 : 0;
+    }
+    return (option == 0) ? 1 : 0;
 }
 
 void sc1PRemixMultimanHudY(int dragon_king_hud, float *polygon_y, float *cross_y, float *counter_y)

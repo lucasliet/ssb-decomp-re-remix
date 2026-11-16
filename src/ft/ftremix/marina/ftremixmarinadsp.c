@@ -263,8 +263,9 @@ static void ftRemixMarinaDSPWaitSetStatus(GObj *fighter_gobj, s32 status_id)
 
 /* absorb_initial_: picks the aerial or grounded absorb, faces the reflected
  * direction and adds the stored charge. Remix tests the flag word at 0x18C for
- * the kinetic state (its comment says so); ported as ga (0x14C), the field
- * Remix reads for kinetic state elsewhere. See the notes file. */
+ * the kinetic state (its comment says so), which is never 0 there, so a grounded
+ * Marina passes through DSPA_Absorb; ported as ga (0x14C), the field Remix reads
+ * for kinetic state elsewhere. See docs/remix/deviations.md. */
 static void ftRemixMarinaDSPAbsorbSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);

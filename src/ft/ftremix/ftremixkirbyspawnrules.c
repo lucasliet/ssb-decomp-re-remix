@@ -65,6 +65,15 @@ int ftRemixKirbySpawnTauntLosesPower(int panel_value)
     return (panel_value == FTREMIX_KIRBYSPAWN_PANEL_NONE) ? 1 : 0;
 }
 
+int ftRemixKirbySpawnStolenPower(int victim_fkind, int magic_hat_on, int copy_id)
+{
+    if ((victim_fkind != REMIX_ID_KIRBY) && (victim_fkind != REMIX_ID_JKIRBY))
+    {
+        return copy_id;
+    }
+    return (magic_hat_on != 0) ? REMIX_ID_NONE : copy_id;
+}
+
 unsigned int ftRemixKirbyGunHatOffset(int hat_id)
 {
     switch (hat_id)

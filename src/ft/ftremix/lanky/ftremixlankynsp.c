@@ -29,13 +29,15 @@ enum
 {
     nFTRemixLankyStatusNSPGround = 0xDF,
     nFTRemixLankyStatusNSPAir = 0xE0,
-    nFTRemixLankyKirbyStatusNSPGround = 0xE7,
-    nFTRemixLankyKirbyStatusNSPAir = 0xE8
+    nFTRemixLankyKirbyStatusNSPGround = 0x1C5,      /* Kirby.Action.LANKY_NSP_Ground: 0x12F + its index 150 in Kirby.asm */
+    nFTRemixLankyKirbyStatusNSPAir = 0x1C6          /* Kirby.Action.LANKY_NSP_Air */
 };
 
 #define LANKY_NUT_PROJECTILE_ID 0x25                /* Projectile.id.LANKY_NUT (Projectile.asm) */
 #define LANKY_NSP_HAND_JOINT 18                     /* FTStruct.joints[18] at N64 0x0930, the grape's hand */
 #define LANKY_NSP_KIRBY_HAND_JOINT 17               /* FTStruct.joints[17] at N64 0x092C, Kirby's hand */
+#define LANKY_NSP_GRAPE_OFFSET_Y -200.0F            /* 0xC3480000: grape offset along Lanky's shooter joint */
+#define LANKY_NSP_KIRBY_GRAPE_OFFSET_X 300.0F       /* 0x43960000 (the asm comment says 200): grape offset along Kirby's shooter joint */
 #define LANKY_NSP_AMMO_N64_OFFSET 0x0B20            /* status_vars scratch word: grape ammo */
 #define LANKY_NSP_AMMO_START 3
 #define LANKY_NSP_CANCEL_START_FRAME 14.0F          /* 0x41600000: re-fire starts at this animation frame */
@@ -170,14 +172,20 @@ static void ftRemixLankyNSPStageGrape(GObj *fighter_gobj, Vec3f *spawn_pos)
     ftRemixLankyNSPInitGrape(grape_gobj, fp);
 }
 
-/* LankyNSP.main_ spawn path: the grape starts at the hand joint. Kirby and J Kirby use the other hand joint.
- * The asm writes fixed offsets to the vector before the call, but gmCollisionGetFighterPartsWorldPosition
- * overwrites it with the joint's world position, so those offsets never reach the grape. */
+/* LankyNSP.main_ spawn path: the grape starts out of the shooter joint, 200 units along the joint's local -Y for
+ * Lanky and 300 along local +X for Kirby and J Kirby, who use the other hand joint. gmCollisionGetFighterPartsWorldPosition
+ * takes the vector as a local offset and returns its world position. */
 static void ftRemixLankyNSPCreateGrape(GObj *fighter_gobj, FTStruct *fp)
 {
-    Vec3f spawn_pos = { 0.0F, 0.0F, 0.0F };
-    s32 joint_index = ftRemixLankyNSPIsKirby(fp) ? LANKY_NSP_KIRBY_HAND_JOINT : LANKY_NSP_HAND_JOINT;
+    Vec3f spawn_pos = { 0.0F, LANKY_NSP_GRAPE_OFFSET_Y, 0.0F };
+    s32 joint_index = LANKY_NSP_HAND_JOINT;
 
+    if (ftRemixLankyNSPIsKirby(fp))
+    {
+        spawn_pos.x = LANKY_NSP_KIRBY_GRAPE_OFFSET_X;
+        spawn_pos.y = 0.0F;
+        joint_index = LANKY_NSP_KIRBY_HAND_JOINT;
+    }
     gmCollisionGetFighterPartsWorldPosition(fp->joints[joint_index], &spawn_pos);
     spawn_pos.z = 0.0F;
     ftRemixLankyNSPStageGrape(fighter_gobj, &spawn_pos);

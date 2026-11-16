@@ -73,6 +73,10 @@ static void gmRemixKothSetKing(s32 candidate)
     func_800269C0_275C0((candidate >= 0) ? GMREMIX_KOTH_FGM_KING_GAINED : GMREMIX_KOTH_FGM_KING_LOST);
 }
 
+/*
+ * track_score_ _score_loop: runs with no king too (KingOfTheHill.asm 1292-1381), so an empty or contested hill resets the win
+ * timer of every team.
+ */
 static void gmRemixKothScoreKing(sb32 on_hill[GMCOMMON_PLAYERS_MAX], sb32 eligible[GMCOMMON_PLAYERS_MAX])
 {
     GObj *fighter_gobj;
@@ -85,7 +89,7 @@ static void gmRemixKothScoreKing(sb32 on_hill[GMCOMMON_PLAYERS_MAX], sb32 eligib
         FTStruct *fp = ftGetStruct(fighter_gobj);
         s32 key = gmRemixKothGetKey(fp);
 
-        if (key != gGMRemixKoth.king)
+        if (gmRemixKothRulesWinnerTimeKept(key, gGMRemixKoth.king) == 0)
         {
             gGMRemixKoth.winner_times[key] = 0;
             continue;
@@ -119,11 +123,6 @@ void gmRemixKothTrackScore(void)
     sb32 eligible[GMCOMMON_PLAYERS_MAX] = { FALSE, FALSE, FALSE, FALSE };
 
     gmRemixKothSetKing(gmRemixKothFindKing(on_hill, eligible));
-
-    if (gGMRemixKoth.king < 0)
-    {
-        return;
-    }
     gmRemixKothScoreKing(on_hill, eligible);
 }
 

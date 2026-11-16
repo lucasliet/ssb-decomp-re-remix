@@ -24,7 +24,9 @@ extern void sc1PTrainingRemixRestoreModelDisplay(void);
 extern void sc1PTrainingRemixOnReset(void);
 
 /**
- * Reads the D-pad of every controller for one frame of the match. Up and right change the freeze, down changes the model display.
+ * Reads the D-pad of every controller for one frame, paused or not (advance_frame_ has no game status test). Up and right are
+ * latched for sc1PTrainingRemixResolveFrame, down changes the model display; D-pad Controls set to Reset Only or Off clears the
+ * freeze.
  *
  * @return TRUE when the D-pad asks for a reset (left), which the training scene carries out.
  */
@@ -62,8 +64,13 @@ extern s32 sc1PTrainingRemixGetPortFighter(s32 port);
 /** Port whose spawn point `port` starts on (the Spawn entry of the chain). */
 extern s32 sc1PTrainingRemixSpawnPort(s32 port);
 
-/** TRUE when this frame of the match must not run (frozen, and no frame advance was asked for). Consumes a frame advance. */
-extern sb32 sc1PTrainingRemixIsFrameHeld(void);
+/**
+ * What this frame does (SC1PTrainingFrameKind of sc1ptrainingframerules.h): run, run exactly once for a D-pad right, skip for a
+ * lag tic of the vanilla Speed option, or stay frozen. A lag tic keeps the D-pad up or right press for the next frame.
+ *
+ * @param is_lag_skip sc1PTrainingModeCheckLagTic of the frame.
+ */
+extern s32 sc1PTrainingRemixResolveFrame(sb32 is_lag_skip);
 
 /** Draws the reset count. */
 extern void sc1PTrainingRemixDrawHud(void);

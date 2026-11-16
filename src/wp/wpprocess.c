@@ -2,6 +2,7 @@
 #include "ft/ftremix/ftremixreflect.h"
 #include "ft/ftremix/ftremixhooks.h"
 #include "ft/ftremix/ftremixjapanfix_reflect.h"
+#include "ft/ftremix/ftremixvarianttunerules.h"
 #endif
 #include <wp/weapon.h>
 #include <it/item.h>
@@ -583,6 +584,8 @@ next_check:
         if (!(wp->is_static_damage))
         {
 #if defined(PORT) && defined(REGION_REMIX)
+            /* Wolf.asm wolf_reflect_speed (hook 0x80166DDC): Wolf doubles the horizontal speed, Slippy cuts it to 0.40625. */
+            wp->physics.vel_air.x *= ftRemixVariantTuneRulesReflectSpeedMul(fp->fkind);
             /* Japan.asm reflect_ (hook 0x80166DD4): a J fighter reflects with 1.5 instead of the US 1.8. */
             wp->attack_coll.damage = (wp->attack_coll.damage * ftRemixJapanFixReflectMul(wp->owner_gobj, WEAPON_REFLECT_MUL_DEFAULT)) + WEAPON_REFLECT_ADD_DEFAULT;
 #else

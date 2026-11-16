@@ -22,16 +22,11 @@
 #define GMREMIX_KOTH_FRAME_SHADOW 0x000000FF
 #define GMREMIX_KOTH_GROUP 0x0B
 #define GMREMIX_KOTH_DL_LINK 23
-#define GMREMIX_KOTH_FLASH_STEP 5
-#define GMREMIX_KOTH_FLASH_MAX 100
 #define GMREMIX_KOTH_BAR_SLOT_FIRST 0
 
-/* KingOfTheHill.colors_bar (free-for-all, the fifth is the CPU gray) and team_colors_bar. */
-static const u32 dGMRemixKothBarColors[] = { 0xC96A6AFF, 0x7E7EC9FF, 0xB2B244FF, 0x4EAD4EFF, 0x888888FF };
-static const u32 dGMRemixKothTeamBarColors[] = { 0xC96A6AFF, 0x7E7EC9FF, 0x4EAD4EFF, 0xB2B244FF };
-
-static s32 sGMRemixKothFlashAlpha;
-static s32 sGMRemixKothFlashDelta;
+/* update_indicators_: every meter has its own flash rectangle, alpha 0 and delta +5 at setup_. */
+static int sGMRemixKothFlashAlpha[GMCOMMON_PLAYERS_MAX];
+static int sGMRemixKothFlashDelta[GMCOMMON_PLAYERS_MAX];
 static f32 sGMRemixKothBarY;
 
 static sb32 gmRemixKothHudIsPortActive(s32 port)
@@ -45,13 +40,12 @@ static s32 gmRemixKothHudGetKey(s32 port)
     return (gSCManagerBattleState->is_team_battle != FALSE) ? gSCManagerBattleState->players[port].team : port;
 }
 
-static u32 gmRemixKothHudGetColor(s32 port)
+/* Colour tag of a port's meter (setup_): the team colour in a team battle, the port colour or the CPU gray otherwise. */
+static s32 gmRemixKothHudGetTag(s32 port)
 {
-    if (gSCManagerBattleState->is_team_battle != FALSE)
-    {
-        return dGMRemixKothTeamBarColors[gSCManagerBattleState->players[port].team];
-    }
-    return (gSCManagerBattleState->players[port].pkind == nFTPlayerKindCom) ? dGMRemixKothBarColors[4] : dGMRemixKothBarColors[port];
+    sb32 is_cpu = (gSCManagerBattleState->players[port].pkind == nFTPlayerKindCom) ? TRUE : FALSE;
+
+    return gmRemixKothRulesTag(gmRemixKothHudGetKey(port), gSCManagerBattleState->is_team_battle, is_cpu);
 }
 
 static sb32 gmRemixKothHudIsDragonKingStage(void)
@@ -68,29 +62,21 @@ void gmRemixKothHudSetup(void)
     f32 frame_y;
     s32 port;
 
-    sGMRemixKothFlashAlpha = 0;
-    sGMRemixKothFlashDelta = GMREMIX_KOTH_FLASH_STEP;
     gmRemixKothRulesMeterY(gmRemixToggle(dragon_king_hud), gmRemixKothHudIsDragonKingStage(), &frame_y, &sGMRemixKothBarY);
 
     for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
     {
+        sGMRemixKothFlashAlpha[port] = 0;
+        sGMRemixKothFlashDelta[port] = GMREMIX_KOTHRULES_FLASH_STEP;
+
         if (gmRemixKothHudIsPortActive(port) == FALSE)
         {
             continue;
         }
         ifRemixSpriteMake(IFREMIX_SPRITE_KOTH_METER, GMREMIX_KOTH_GROUP, GMREMIX_KOTH_DL_LINK,
-                          gmRemixKothRulesMeterX(port) + GMREMIX_KOTH_FRAME_X_OFFSET, frame_y, gmRemixKothHudGetColor(port),
+                          gmRemixKothRulesMeterX(port) + GMREMIX_KOTH_FRAME_X_OFFSET, frame_y,
+                          gmRemixKothRulesMeterColor(gmRemixKothHudGetTag(port)),
                           GMREMIX_KOTH_FRAME_SHADOW, 1.0F);
-    }
-}
-
-static void gmRemixKothHudStepFlash(void)
-{
-    sGMRemixKothFlashAlpha += sGMRemixKothFlashDelta;
-
-    if ((sGMRemixKothFlashAlpha >= GMREMIX_KOTH_FLASH_MAX) || (sGMRemixKothFlashAlpha <= 0))
-    {
-        sGMRemixKothFlashDelta = -sGMRemixKothFlashDelta;
     }
 }
 
@@ -98,8 +84,6 @@ void gmRemixKothHudUpdate(void)
 {
     s32 target = gmRemixKothGetTargetFrames();
     s32 port;
-
-    gmRemixKothHudStepFlash();
 
     for (port = 0; port < GMCOMMON_PLAYERS_MAX; port++)
     {
@@ -113,10 +97,16 @@ void gmRemixKothHudUpdate(void)
         }
         score = gmRemixKothGetScoreOf(gmRemixKothHudGetKey(port));
         fraction = (target > 0) ? ((f32)score / (f32)target) : 1.0F;
-        flash = (fraction >= 1.0F) ? ((f32)sGMRemixKothFlashAlpha / 255.0F) : 0.0F;
+        flash = 0.0F;
+
+        if (fraction >= 1.0F)
+        {
+            gmRemixKothRulesFlashStep(&sGMRemixKothFlashAlpha[port], &sGMRemixKothFlashDelta[port]);
+            flash = (f32)sGMRemixKothFlashAlpha[port] / 255.0F;
+        }
 
         remix_hud_bar_put(GMREMIX_KOTH_BAR_SLOT_FIRST + port, gmRemixKothRulesMeterX(port), sGMRemixKothBarY, GMREMIX_KOTH_BAR_WIDTH,
-                          GMREMIX_KOTH_BAR_HEIGHT, fraction, gmRemixKothHudGetColor(port), flash);
+                          GMREMIX_KOTH_BAR_HEIGHT, fraction, gmRemixKothRulesBarColor(gmRemixKothHudGetTag(port)), flash);
     }
 }
 

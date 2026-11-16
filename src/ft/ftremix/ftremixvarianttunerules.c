@@ -27,6 +27,24 @@ float ftRemixVariantTuneRulesFireFoxPitchOffset(int fkind, float vanilla_offset)
     return (fkind == REMIX_ID_PEPPY) ? FTREMIX_TUNE_PEPPY_FIREFOX_PITCH_OFFSET : vanilla_offset;
 }
 
+float ftRemixVariantTuneRulesSpinAttackLandingLag(int fkind, float vanilla_lag)
+{
+    return (fkind == REMIX_ID_JLINK) ? FTREMIX_TUNE_JLINK_SPINATTACK_LANDING_LAG : vanilla_lag;
+}
+
+float ftRemixVariantTuneRulesReflectSpeedMul(int reflector_fkind)
+{
+    if (reflector_fkind == REMIX_ID_WOLF)
+    {
+        return FTREMIX_TUNE_WOLF_REFLECT_SPEED_MUL;
+    }
+    if (reflector_fkind == REMIX_ID_SLIPPY)
+    {
+        return FTREMIX_TUNE_SLIPPY_REFLECT_SPEED_MUL;
+    }
+    return FTREMIX_TUNE_REFLECT_SPEED_MUL_DEFAULT;
+}
+
 int ftRemixVariantTuneRulesEntryKeepsFacing(int fkind)
 {
     if (fkind >= REMIX_ID_NWARIO)

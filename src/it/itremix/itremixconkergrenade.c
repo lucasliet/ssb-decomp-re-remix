@@ -10,6 +10,7 @@
 #ifdef PORT
 
 #include "it/itremix/itremixconkergrenade.h"
+#include "it/itremix/itremixconkergrenaderules.h"
 #include <math.h>
 #include <ft/fighter.h>
 #include <ft/ftcommon/ftcommonfunctions.h>
@@ -52,7 +53,6 @@ extern void *func_800269C0_275C0(u16 id);
 #define ITREMIX_CONKER_GRENADE_HIT_KNOCKBACK_SCALE 4.0F
 #define ITREMIX_CONKER_GRENADE_HIT_KNOCKBACK_BASE 10.0F
 #define ITREMIX_CONKER_GRENADE_HIT_MIN_DURATION 20
-#define ITREMIX_CONKER_GRENADE_HURT_MIN_DURATION 12
 #define ITREMIX_CONKER_GRENADE_HURT_SPEED_SCALE 0.5F
 #define ITREMIX_CONKER_GRENADE_HURT_SPEED_BASE 5.0F
 #define ITREMIX_CONKER_GRENADE_SMOKE_DURATION 50
@@ -222,7 +222,7 @@ static void itRemixConkerGrenadeUpdateRotationDirection(ITStruct *ip, ITRemixCon
     vars->rotation_direction = (x < 0.0F) ? -1.0F : 1.0F;
 }
 
-/* Spins the first joint around its x axis. */
+/* Spins the first joint around its z axis (ConkerSpecial.asm writes DObj 0x0038). */
 static void itRemixConkerGrenadeUpdateRotation(GObj *item_gobj, f32 abs_speed, ITRemixConkerGrenadeVars *vars)
 {
     DObj *joint = DObjGetStruct(item_gobj);
@@ -232,7 +232,7 @@ static void itRemixConkerGrenadeUpdateRotation(GObj *item_gobj, f32 abs_speed, I
     {
         rotation_speed = 0.0F;
     }
-    joint->rotate.vec.f.x -= rotation_speed;
+    joint->rotate.vec.f.z -= rotation_speed;
 }
 
 /* Clears the four hit-object records so the grenade can hit the same targets again. */
@@ -278,7 +278,7 @@ static void itRemixConkerGrenadeSpawnSmoke(GObj *item_gobj, ITStruct *ip)
 {
     DObj *joint = DObjGetStruct(item_gobj);
     DObj *pin_joint = DObjGetChild(joint);
-    f32 theta = -joint->rotate.vec.f.x;
+    f32 theta = -joint->rotate.vec.f.z;
     f32 cos_theta = __cosf(theta);
     f32 sin_theta = __sinf(theta);
     Vec3f smoke_pos;
@@ -379,8 +379,6 @@ static sb32 itRemixConkerGrenadeProcHurtbox(GObj *item_gobj)
     ITStruct *ip = itGetStruct(item_gobj);
     ITRemixConkerGrenadeVars *vars = itRemixConkerGrenadeGetVars(ip);
     f32 abs_speed;
-    s32 whole_speed;
-    s32 duration_loss;
 
     itRemixConkerGrenadeSetAir(item_gobj);
 
@@ -393,13 +391,7 @@ static sb32 itRemixConkerGrenadeProcHurtbox(GObj *item_gobj)
     vars->is_hit_collide = FALSE;
     vars->hitbox_refresh_timer = 0;
 
-    whole_speed = (s32)abs_speed;
-    duration_loss = whole_speed + (whole_speed >> 1);
-    ip->lifetime -= duration_loss;
-    if (ip->lifetime < ITREMIX_CONKER_GRENADE_HURT_MIN_DURATION)
-    {
-        ip->lifetime = ITREMIX_CONKER_GRENADE_HURT_MIN_DURATION;
-    }
+    ip->lifetime = itRemixConkerGrenadeRulesHurtFuse(ip->lifetime, abs_speed);
     return FALSE;
 }
 
