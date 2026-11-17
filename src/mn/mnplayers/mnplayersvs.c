@@ -8040,6 +8040,7 @@ void mnPlayersVSFuncStart(void)
 #if defined(PORT) && defined(REGION_REMIX)
 	mnRemixPanelMenuStart(MNREMIX_PANELMENU_MODE_VS, sMNPlayersVSFiles[11], sMNPlayersVSFiles[0]);
 	mnRemixTagTeamCssSetup(mnPlayersVSGetTagTeamPortInfo);
+	gmRemixTwelveCBHudMakeCSSLayers();
 #endif
 	scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
 

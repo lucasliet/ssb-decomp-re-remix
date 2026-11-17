@@ -7,6 +7,7 @@
 #include <ssb_types.h>
 #include "gm/gmremixtwelvecb.h"
 #include "gm/gmremixtwelvecbhud.h"
+#include "if/ifremixtextlayer.h"
 #include "mn/mnvsmode/mnremixvsstatsview.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_modes.h"
@@ -35,6 +36,13 @@
 #define GMREMIX_TWELVECB_HUD_WHITE 0xFFFFFFFF
 #define GMREMIX_TWELVECB_HUD_GAME_X 32.0F
 #define GMREMIX_TWELVECB_HUD_GAME_Y 46.0F
+
+/* TCB:5093-5121: every CSS string is in room 0x1E (the display link under the cursor hands and the tokens), in the group
+ * that the battle status shows: GROUP_ALWAYS, GROUP_NOT_STARTED, GROUP_STARTED. */
+#define GMREMIX_TWELVECB_HUD_CSS_DL_LINK 0x1E
+#define GMREMIX_TWELVECB_HUD_GROUP_ALWAYS 8
+#define GMREMIX_TWELVECB_HUD_GROUP_NOT_STARTED 9
+#define GMREMIX_TWELVECB_HUD_GROUP_STARTED 10
 
 /* TCB p1_color 0xB00000FF and p2_color 0x4040C0FF */
 static const u32 dGMRemixTwelveCBHudPlayerColors[GMREMIX_TWELVECB_PLAYERS] = { 0xB00000FF, 0x4040C0FF };
@@ -116,6 +124,28 @@ static void gmRemixTwelveCBHudDrawBest(const GMRemixTwelveCBState *state)
                             dGMRemixTwelveCBHudPlayerColors[port], GMREMIX_TWELVECB_HUD_BEST_SCALE, REMIX_HUD_ALIGN_CENTER, "%d",
                             (int)state->players[port].best_tkos_for);
     }
+}
+
+/** One layer of the CSS room for a run of label slots. */
+static void gmRemixTwelveCBHudMakeCSSLayer(s32 group, s32 first_slot, s32 count)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(group, GMREMIX_TWELVECB_HUD_CSS_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+
+    ifRemixTextLayerBindLabels(layer_gobj, first_slot, count);
+}
+
+void gmRemixTwelveCBHudMakeCSSLayers(void)
+{
+    if (gmRemixTwelveCBIsActive() == FALSE)
+    {
+        return;
+    }
+    gmRemixTwelveCBHudMakeCSSLayer(GMREMIX_TWELVECB_HUD_GROUP_ALWAYS, GMREMIX_TWELVECB_HUD_SLOT_REMAINING_TITLE,
+                                   1 + GMREMIX_TWELVECB_PLAYERS);
+    gmRemixTwelveCBHudMakeCSSLayer(GMREMIX_TWELVECB_HUD_GROUP_NOT_STARTED, GMREMIX_TWELVECB_HUD_SLOT_SET_TITLE,
+                                   1 + GMREMIX_TWELVECB_PLAYERS);
+    gmRemixTwelveCBHudMakeCSSLayer(GMREMIX_TWELVECB_HUD_GROUP_STARTED, GMREMIX_TWELVECB_HUD_SLOT_BEST_TITLE,
+                                   1 + (2 * GMREMIX_TWELVECB_PLAYERS));
 }
 
 void gmRemixTwelveCBHudDrawCSS(void)
