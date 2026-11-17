@@ -35,6 +35,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcssslide.h"
 #include "mn/mnplayers/mnremixcsstokenrules.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
+#include "mn/mnplayers/mnremixcsstextlayers.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #define MN_PLAYERS_1P_TRAINING_REMIX_PORTRAITS_FILE 8
 #define MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE 9
@@ -3855,6 +3856,7 @@ void mnPlayers1PTrainingFuncStart(void)
 	mnPlayers1PTrainingMakeReady();
 #ifdef REGION_REMIX
 	mnRemixPanelMenuStart(MNREMIX_PANELMENU_MODE_TRAINING, sMNPlayers1PTrainingFiles[MN_PLAYERS_1P_TRAINING_REMIX_IMAGES_FILE], sMNPlayers1PTrainingFiles[0]);
+	mnRemixCssTextLayersMake(MNREMIX_CSS_TEXT_INDICATOR_PRIORITY_VS);
 #endif
 	scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
 
@@ -3885,7 +3887,11 @@ SYTaskmanSetup dMNPlayers1PTrainingTaskmanSetup =
         0,                          	// Allocatable memory pool size
         1,                          	// ???
         2,                          	// Number of contexts?
+#ifdef REGION_REMIX
+        sizeof(Gfx) * (2750 + 2048),    // Display List Buffer 0 Size, +2048 Gfx for the text layers (two open panel menus)
+#else
         sizeof(Gfx) * 2750,         	// Display List Buffer 0 Size
+#endif
         sizeof(Gfx) * 64,          		// Display List Buffer 1 Size
         0,                          	// Display List Buffer 2 Size
         0,                          	// Display List Buffer 3 Size

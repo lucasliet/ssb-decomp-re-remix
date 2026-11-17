@@ -1345,6 +1345,7 @@ void mnVSItemSwitchFuncStart(void)
     mnVSItemSwitchInitToggles();
 #if defined(PORT) && defined(REGION_REMIX)
     mnRemixItemSwitchLegendMake();
+    mnRemixItemSwitchLegendMakeLayer();
 #endif
 
     mnItemSwitchMakeSubtitle(sMNVSItemSwitchOptionSelectID);

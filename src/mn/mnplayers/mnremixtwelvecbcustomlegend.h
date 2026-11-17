@@ -9,8 +9,11 @@
  * Legend of the Custom character set in the panel of the player holding a token over a portrait (TwelveCharBattle.asm
  * draw_custom_portrait_indicators_ 4615-5046): the Z and R buttons with blinking arrows, L "Set All", D-pad up "Presets",
  * D-pad down "Random" and D-pad up held "Copy". The buttons are native sprites, the texts and the square pips of the D-pad
- * icons go through the HUD overlay.
+ * icons go through a text layer of the panel card room.
  */
+
+/** Makes the layer that draws the legend texts and marks in the room of the panel cards; call once per scene after the screen's own objects. */
+extern void mnRemixTwelveCBCustomLegendMakeLayer(void);
 
 /** Forgets the sprites of the previous visit of the CSS (their scene is gone). */
 extern void mnRemixTwelveCBCustomLegendReset(void);

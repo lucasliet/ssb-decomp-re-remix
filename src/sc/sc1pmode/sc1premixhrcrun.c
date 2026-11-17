@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <sys/objdef.h>
 #include "ft/ftremix/ftremixhooks.h"
+#include "if/ifremixtextlayer.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_roster_data.h"
 #include "sc/sc1pmode/sc1premixhrc.h"
@@ -28,6 +29,8 @@
 #define SC1PREMIX_HRC_HUD_SLOT 29
 #define SC1PREMIX_HRC_LABEL_SLOT 30
 #define SC1PREMIX_HRC_NUMBER_LENGTH 16
+#define SC1PREMIX_HRC_HUD_GROUP 0x0B
+#define SC1PREMIX_HRC_HUD_DL_LINK 23
 #define SC1PREMIX_HRC_HUD_COLOR 0xFFFFFFFF
 #define SC1PREMIX_HRC_FEET_TENTHS 10
 #define SC1PREMIX_HRC_PLATFORM_LINE_ID 0
@@ -227,6 +230,18 @@ static void sc1PRemixHrcRunDrawHud(void)
                        REMIX_HUD_ALIGN_RIGHT);
     remix_hud_text_put(SC1PREMIX_HRC_LABEL_SLOT, "FT.", layout.label_x, layout.label_y, SC1PREMIX_HRC_HUD_COLOR, layout.label_scale,
                        REMIX_HUD_ALIGN_LEFT);
+}
+
+void sc1PRemixHrcRunMakeTextLayer(void)
+{
+    GObj *layer_gobj;
+
+    if (sc1PRemixHrcIsActive() == FALSE)
+    {
+        return;
+    }
+    layer_gobj = ifRemixTextLayerMake(SC1PREMIX_HRC_HUD_GROUP, SC1PREMIX_HRC_HUD_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+    ifRemixTextLayerBindLabels(layer_gobj, SC1PREMIX_HRC_HUD_SLOT, 2);
 }
 
 void sc1PRemixHrcRunStart(void)

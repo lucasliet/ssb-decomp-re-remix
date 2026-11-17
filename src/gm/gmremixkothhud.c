@@ -1,7 +1,7 @@
 /**
  * gmremixkothhud.c - score meters of Remix King of the Hill (KingOfTheHill.asm update_indicators_, setup_ colours and
  * positions). Each active port has a frame sprite (the KOTH GFX file, a native sprite on the interface display link, group 0xB)
- * and a bar plus a white flash rectangle drawn by the port overlay over it.
+ * and a bar plus a white flash rectangle drawn over it by a text layer of the same room.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -14,6 +14,7 @@
 #include "gm/gmremixkothrules.h"
 #include "gm/gmremixtoggle.h"
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "remix/remix_hud_text.h"
 
 #define GMREMIX_KOTH_BAR_WIDTH 40.0F
@@ -57,6 +58,17 @@ static sb32 gmRemixKothHudIsDragonKingStage(void)
     return (gSCManagerSceneData.gkind == nGRRemixStage_DRAGONKING_REMIX) ? TRUE : FALSE;
 }
 
+/**
+ * Makes the layer that draws the bars and the flash of the meters in the interface group and room, after the frame sprites and
+ * the rest of the HUD, so the frames, the item arrows made later and the hidden HUD (pause, Disable HUD) sort as in the asm.
+ */
+static void gmRemixKothHudMakeLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(GMREMIX_KOTH_GROUP, GMREMIX_KOTH_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+
+    ifRemixTextLayerBindBars(layer_gobj, GMREMIX_KOTH_BAR_SLOT_FIRST, GMCOMMON_PLAYERS_MAX);
+}
+
 void gmRemixKothHudSetup(void)
 {
     f32 frame_y;
@@ -78,6 +90,7 @@ void gmRemixKothHudSetup(void)
                           gmRemixKothRulesMeterColor(gmRemixKothHudGetTag(port)),
                           GMREMIX_KOTH_FRAME_SHADOW, 1.0F);
     }
+    gmRemixKothHudMakeLayer();
 }
 
 void gmRemixKothHudUpdate(void)

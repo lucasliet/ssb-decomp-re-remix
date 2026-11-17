@@ -8,6 +8,7 @@
 #include <sys/obj.h>
 #include <sys/objman.h>
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "mn/mnplayers/mnremixenemylabel.h"
 #include "remix/remix_hud_text.h"
 #include "sc/sc1pmode/sc1premixenemy.h"
@@ -22,6 +23,9 @@
 #define ENEMY_LABEL_TEXT_COLOR 0xFFFFFFFF
 #define ENEMY_LABEL_TEXT_SLOT_ENEMY 120
 #define ENEMY_LABEL_TEXT_SLOT_PRESS 121
+/* SinglePlayerEnemy.asm setup_: Render.draw_string(0x1E, 0x8, ...), the display link of the cursor hands, whose priority is lower */
+#define ENEMY_LABEL_TEXT_GOBJ_LINK 8
+#define ENEMY_LABEL_TEXT_DL_LINK 30
 /* The asm colour words end in 00; the sprite alpha is kept opaque. */
 #define ENEMY_LABEL_PALETTE 0xFFFFFFFF
 
@@ -47,6 +51,8 @@ void mnRemixEnemyLabelMake(void *common_file)
     s32 port;
 
     sEnemyLabelBlinkTimer = 0;
+    ifRemixTextLayerBindLabels(ifRemixTextLayerMake(ENEMY_LABEL_TEXT_GOBJ_LINK, ENEMY_LABEL_TEXT_DL_LINK, GOBJ_PRIORITY_DEFAULT),
+                               ENEMY_LABEL_TEXT_SLOT_ENEMY, 2);
 
     for (port = 0; port < SC1PREMIX_ENEMY_PORT_COUNT; port++)
     {

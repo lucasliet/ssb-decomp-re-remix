@@ -3341,6 +3341,8 @@ void mnMapsFuncStart(void)
 #ifdef REGION_REMIX
 	mnRemixStagePanelMake();
 	mnRemixStagePagerMake(sMNMapsFiles[nMNMapsFileRemixArrows]);
+	mnRemixStagePagerMakeLayer();
+	mnRemixStagePanelMakeLayers();
 	MNMAPS_START_STEP("remix panel and pager");
 #endif
 	mnMapsMakePreview(mnMapsGetDisplayGroundKind(sMNMapsCursorSlot));
@@ -3362,7 +3364,11 @@ SYTaskmanSetup dMNMapsTaskmanSetup =
         0,                          // Allocatable memory pool size
         1,                          // ???
         2,                          // Number of contexts?
+#ifdef REGION_REMIX
+        sizeof(Gfx) * (2125 + 1536), // Display List Buffer 0 Size, +1536 Gfx for the text layers (about 80 glyphs)
+#else
         sizeof(Gfx) * 2125,         // Display List Buffer 0 Size
+#endif
         sizeof(Gfx) * 512,          // Display List Buffer 1 Size
         0,                          // Display List Buffer 2 Size
         0,                          // Display List Buffer 3 Size

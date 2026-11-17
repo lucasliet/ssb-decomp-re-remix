@@ -7,6 +7,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include "if/ifremixtextlayer.h"
 #include "mn/mnplayers/mnremixcsspanelmenustate.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_player_panel.h"
@@ -38,6 +39,11 @@ s32 mnRemixPanelMenuGetTextSlot(s32 panel_index, s32 row, sb32 is_value)
         return base + MNREMIX_PANELMENU_PAGE_SLOT_OFFSET;
     }
     return base + row + ((is_value != FALSE) ? MNREMIX_PANELMENU_VALUE_SLOT_OFFSET : 0);
+}
+
+void mnRemixPanelMenuBindTextLayer(GObj *layer_gobj)
+{
+    ifRemixTextLayerBindLabels(layer_gobj, MNREMIX_PANELMENU_TEXT_SLOT_FIRST, MNREMIX_PANELMENU_TEXT_SLOTS_PER_PANEL * MNREMIX_PANELMENU_PANELS);
 }
 
 s32 mnRemixPanelMenuGetValue(s32 item, s32 port)

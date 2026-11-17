@@ -176,6 +176,10 @@ s32 sMNVSResultsWallpaperTint2Alpha;
 
 // 0x80139BD0
 sb32 sMNVSResultsIsPresent[GMCOMMON_PLAYERS_MAX];
+#if defined(PORT) && defined(REGION_REMIX)
+/* The results header (and with it "Game NN") exists */
+static sb32 sMNVSResultsIsLabelMade;
+#endif
 
 // 0x80139BE0
 GObj *sMNVSResultsFighterGObjs[GMCOMMON_PLAYERS_MAX];
@@ -1255,12 +1259,8 @@ static void mnVSResultsPlayerTagProcDisplay(GObj *gobj)
 {
 	SObj *sobj = SObjGetStruct(gobj);
 
-	/* The name is port overlay text and would draw over the Match Stats page, which in the asm covers the tag with its dimming rectangle */
-	if (mnRemixVSStatsViewIsPageVisible() == FALSE)
-	{
-		ifRemixPlayerTagDrawName(gobj->user_data.s, sobj->pos.x + (sobj->sprite.width * 0.5F), sobj->pos.y,
-		                         ((u32)sobj->sprite.red << 24) | ((u32)sobj->sprite.green << 16) | ((u32)sobj->sprite.blue << 8) | sobj->sprite.alpha);
-	}
+	ifRemixPlayerTagDrawName(gobj->user_data.s, sobj->pos.x + (sobj->sprite.width * 0.5F), sobj->pos.y,
+	                         ((u32)sobj->sprite.red << 24) | ((u32)sobj->sprite.green << 16) | ((u32)sobj->sprite.blue << 8) | sobj->sprite.alpha);
 	lbCommonDrawSObjAttr(gobj);
 }
 #endif
@@ -2768,6 +2768,10 @@ void mnVSResultsMakeLabel(void)
 	SObjGetStruct(gobj)->sprite.red = 0xFF;
 	SObjGetStruct(gobj)->sprite.green = 0xFF;
 	SObjGetStruct(gobj)->sprite.blue = 0xFF;
+#if defined(PORT) && defined(REGION_REMIX)
+	sMNVSResultsIsLabelMade = TRUE;
+	gmRemixTwelveCBHudMakeResultsLayer();
+#endif
 }
 
 // 0x80136830
@@ -3174,6 +3178,9 @@ void mnVSResultsInitFightersAll(void)
 	{
 		mnVSResultsInitFighter(3);
 	}
+#if defined(PORT) && defined(REGION_REMIX)
+	ifRemixPlayerTagMakeNameLayer(18, 27);
+#endif
 	if (sMNVSResultsKind != nMNVSResultsKindNoContest)
 	{
 		for (i = 0; i < (ARRAY_COUNT(sMNVSResultsIsPresent) + ARRAY_COUNT(sMNVSResultsFighterGObjs)) / 2; i++)
@@ -3198,6 +3205,7 @@ void mnVSResultsInitVars(void)
 	sMNVSResultsTotalTimeTics = 0;
 #if defined(PORT) && defined(REGION_REMIX)
 	sMNVSResultsIsRemixRowMade = FALSE;
+	sMNVSResultsIsLabelMade = FALSE;
 #endif
 	sMNVSResultsBarWidth = 0;
 	sMNVSResultsCharacterAlpha = 0x00;
@@ -3759,7 +3767,10 @@ void mnVSResultsFuncRun(GObj *gobj)
 
 	sMNVSResultsTotalTimeTics++;
 #if defined(PORT) && defined(REGION_REMIX)
-	gmRemixTwelveCBHudDrawResults();
+	if (sMNVSResultsIsLabelMade != FALSE)
+	{
+		gmRemixTwelveCBHudDrawResults();
+	}
 	mnRemixVSStatsViewRun(sMNVSResultsTotalTimeTics, sMNVSResultsAllowExitWait);
 	mnVSResultsMakeRemixRow();
 #endif
@@ -3931,6 +3942,9 @@ void mnVSResultsFuncStart(void)
 	mnVSResultsMakeHeaderCamera();
 	mnVSResultsMakeWallpaperTintCamera();
 	mnVSResultsMakeWallpaperTint2Camera();
+#if defined(PORT) && defined(REGION_REMIX)
+	mnRemixVSStatsSceneMakeLayers();
+#endif
 
 	if (sMNVSResultsKind != nMNVSResultsKindNoContest)
 	{
@@ -3966,7 +3980,11 @@ SYTaskmanSetup dMNVSResultsTaskmanSetup =
         0,                          // Allocatable memory pool size
         1,                          // ???
         2,                          // Number of contexts?
+#ifdef REGION_REMIX
+        sizeof(Gfx) * (2500 + 6144),    // Display List Buffer 0 Size, +6144 Gfx for the text layers (measured peak with 4 ports, Combo Meter, long tag names: about 5100 Gfx)
+#else
         sizeof(Gfx) * 2500,         // Display List Buffer 0 Size
+#endif
         sizeof(Gfx) * 128,          // Display List Buffer 1 Size
         0,                          // Display List Buffer 2 Size
         0,                          // Display List Buffer 3 Size

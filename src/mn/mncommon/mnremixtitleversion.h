@@ -15,6 +15,15 @@
 #define MN_REMIX_TITLE_VERSION_RGBA 0x888800FFU
 #define MN_REMIX_TITLE_VERSION_SCALE 0.9375F
 
+/* Group and room of the string in the asm (Render.draw_string call of Boot.asm:160): GObj link 3, display link 1. */
+#define MN_REMIX_TITLE_VERSION_GOBJ_LINK 3
+#define MN_REMIX_TITLE_VERSION_DL_LINK 1
+
+/**
+ * Makes the layer that draws the version text in the title's sprite room; call once when the title starts.
+ */
+extern void mnRemixTitleVersionMakeLayer(void);
+
 /**
  * Keeps the "Smash Remix v2.0.1" text of the title screen visible; call once per frame while the title runs.
  */

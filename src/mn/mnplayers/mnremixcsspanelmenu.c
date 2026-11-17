@@ -15,6 +15,7 @@
 #include <sys/objman.h>
 #include "gm/gmremixtoggle.h"
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "mn/mnplayers/mnremixcsshighscores.h"
 #include "mn/mnplayers/mnremixcsspanelmenustate.h"
 
@@ -326,6 +327,7 @@ void mnRemixPanelMenuStart(s32 mode, void *images_file, void *arrows_file)
 
     gcAddGObjProcess(gcMakeGObjSPAfter(0, NULL, MNREMIX_PANELMENU_CONTROLLER_LINK, GOBJ_PRIORITY_DEFAULT), mnRemixPanelMenuProcUpdate,
                      nGCProcessKindFunc, 1);
+    mnRemixPanelMenuBindTextLayer(ifRemixTextLayerMake(MNREMIX_PANELMENU_GOBJ_LINK, MNREMIX_PANELMENU_DL_LINK, GOBJ_PRIORITY_DEFAULT));
 }
 
 #endif

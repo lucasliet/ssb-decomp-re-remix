@@ -5,7 +5,7 @@
  * Remix draws four short lines under the stage preview, each with a button image: "Hazards (L):" and "Movement (L):" with their
  * On or Off value, "Layout (C-down):" with the variant type, and "Roulette (C-down)" over the RANDOM square. The tournament
  * layout drops the button images and the Layout line and shows "Hazards:" and "Movement:". The text goes through the HUD
- * overlay (remix_hud_text) and the buttons are native sprites.
+ * text layer (remix_hud_text) and the buttons are native sprites.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -16,6 +16,7 @@
 #include "gr/grremix/grremixids.h"
 #include "gr/grremix/grremixstage.h"
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "mn/mnmaps/mnremixstagepanel.h"
 #include "mn/mnmaps/mnremixstagepanelrules.h"
 #include "mn/mnmaps/mnremixstagetournament.h"
@@ -66,6 +67,11 @@
 #define PANEL_GOBJ_LINK 4
 #define PANEL_DL_LINK 2
 
+/* Stages.asm setup_: the four lines are group 0xD..0xF of room 2, the stage name group 3 of room 4. */
+#define PANEL_LINES_TEXT_GOBJ_LINK 0x0D
+#define PANEL_NAME_TEXT_GOBJ_LINK 3
+#define PANEL_NAME_TEXT_DL_LINK 4
+
 #define PANEL_CURSOR_COLOR_UNSET (-1)
 #define PANEL_CURSOR_COLOR_COUNT 4
 
@@ -100,6 +106,15 @@ static GObj *mnRemixStagePanelMakeArrow(f32 x)
         SObjGetStruct(gobj)->sprite.scalex = PANEL_ARROW_SCALE_X;
     }
     return gobj;
+}
+
+void mnRemixStagePanelMakeLayers(void)
+{
+    GObj *lines_gobj = ifRemixTextLayerMake(PANEL_LINES_TEXT_GOBJ_LINK, PANEL_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+    GObj *name_gobj = ifRemixTextLayerMake(PANEL_NAME_TEXT_GOBJ_LINK, PANEL_NAME_TEXT_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+
+    ifRemixTextLayerBindLabels(lines_gobj, PANEL_TEXT_SLOT_HAZARDS_LABEL, PANEL_TEXT_SLOT_ROULETTE_LABEL - PANEL_TEXT_SLOT_HAZARDS_LABEL + 1);
+    ifRemixTextLayerBindLabels(name_gobj, PANEL_TEXT_SLOT_STAGE_NAME, 1);
 }
 
 void mnRemixStagePanelMake(void)

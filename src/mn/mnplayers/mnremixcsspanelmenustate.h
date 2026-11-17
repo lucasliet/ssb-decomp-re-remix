@@ -63,6 +63,14 @@ extern sb32 mnRemixPanelMenuIsPanelActive(const MNRemixPanelMenuPanel *panel);
 /** Text slot of a row label (is_value FALSE), a row value (TRUE) or the page number (row -1) of a panel. */
 extern s32 mnRemixPanelMenuGetTextSlot(s32 panel_index, s32 row, sb32 is_value);
 
+/**
+ * Binds every text slot of the panel menus to a layer, so the game draws them in the room of the panel card
+ * (CharacterSelectDebugMenu.asm create_item_label_) and the cursor, tokens and doors pass over them.
+ *
+ * @param layer_gobj Layer GObj of the panel card room; NULL binds nothing.
+ */
+extern void mnRemixPanelMenuBindTextLayer(GObj *layer_gobj);
+
 /** Hides the labels, values and page number of a panel at once (a label otherwise stays one more frame). */
 extern void mnRemixPanelMenuHideText(s32 panel_index);
 

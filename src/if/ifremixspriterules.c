@@ -27,6 +27,9 @@ static const IFRemixSpriteEntry sIFRemixSpriteEntries[IFREMIX_SPRITE_COUNT] =
     { IFREMIX_SPRITE_FILE_DIGITS, 0x0828 },      /* the "x" of the Multi-Man counter (llIFCommonDigitsCrossSprite) */
     { IFREMIX_SPRITE_FILE_SOUND_TEST, 0x1D50 },  /* the START button of the Gentlemen's Reset request (TwelveCharBattle.asm 3610) */
     { IFREMIX_SPRITE_FILE_MENU_COMMON, 0xDD90 }, /* the right arrow of the item switch legend (Item.asm item_switch_setup_) */
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x2378 }, /* the D-pad body of the Input Display (InputDisplay.asm create_input_display_objects_) */
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x20B8 }, /* the joystick gate of the Input Display */
+    { IFREMIX_SPRITE_FILE_CSS_IMAGES, 0x2218 }, /* the joystick of the Input Display */
 };
 
 const IFRemixSpriteEntry *ifRemixSpriteRulesGetEntry(int id)

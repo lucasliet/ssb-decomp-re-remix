@@ -29,6 +29,10 @@ extern void ifCommonPlayerDamageProcDisplay(GObj *interface_gobj);
 extern void ifCommonPlayerDamageSetDigitAttr(void);
 extern void ifCommonPlayerDamageSetDigitPositions(void);
 extern void ifCommonPlayerDamageInitInterface(void);
+#if defined(PORT) && defined(REGION_REMIX)
+/** X of the series logo of the percent HUD of a port, the anchor of its Input Display; FALSE when the port has no logo. */
+extern sb32 ifCommonPlayerDamageGetLogoX(s32 player, f32 *logo_x);
+#endif
 extern void ifCommonPlayerDamageStartBreakAnim(FTStruct *fp);
 extern void ifCommonPlayerDamageStopBreakAnim(FTStruct *fp);
 extern void ifCommonPlayerStockMultiProcDisplay(GObj *interface_gobj);

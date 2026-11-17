@@ -3,13 +3,14 @@
  *
  * Under the 3 x 6 grid Remix draws, from left to right: an arrow and the Z button, "Page N", the R button and an arrow. The
  * arrows are sprites of the players common file, the buttons are the pause interface sprites and the text goes through the HUD
- * overlay (remix_hud_text).
+ * text layer (remix_hud_text).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <reloc_data.h>
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "mn/mnmaps/mnremixstagegridrules.h"
 #include "mn/mnmaps/mnremixstagepager.h"
 #include "remix/remix_hud_text.h"
@@ -18,9 +19,9 @@
 #define PAGER_TEXT_SLOT_PAGE 126
 #define PAGER_TEXT_SLOT_NUMBER 127
 
-/* The sprites share the GObj link 4 and the name and emblem camera (dl link 2) with the stage panel. */
-#define PAGER_GOBJ_LINK 4
-#define PAGER_DL_LINK 2
+/* Stages.asm setup_ draws the strip in room 4 (the labels camera, dl link 4), group 3. */
+#define PAGER_GOBJ_LINK 3
+#define PAGER_DL_LINK 4
 
 /* Stages.asm setup_ draw_texture_at_offset arguments. */
 #define PAGER_ARROW_LEFT_X 29.0F
@@ -54,6 +55,13 @@ void mnRemixStagePagerMake(void *arrows_file)
                       PAGER_BUTTON_PALETTE, PAGER_BUTTON_SCALE);
     ifRemixSpriteMake(IFREMIX_SPRITE_BUTTON_R, PAGER_GOBJ_LINK, PAGER_DL_LINK, PAGER_R_BUTTON_X, PAGER_R_BUTTON_Y, PAGER_BUTTON_TINT,
                       PAGER_BUTTON_PALETTE, PAGER_BUTTON_SCALE);
+}
+
+void mnRemixStagePagerMakeLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(PAGER_GOBJ_LINK, PAGER_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+
+    ifRemixTextLayerBindLabels(layer_gobj, PAGER_TEXT_SLOT_PAGE, 2);
 }
 
 void mnRemixStagePagerUpdate(s32 page)

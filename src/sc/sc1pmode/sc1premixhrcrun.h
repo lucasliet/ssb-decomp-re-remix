@@ -13,6 +13,9 @@
 /** Starts a new attempt: distance and warp to zero, the camera back at its start. No-op outside the contest. */
 extern void sc1PRemixHrcRunStart(void);
 
+/** Makes the layer that draws the distance counter and "FT." over the HUD of the scene; no-op outside the contest. */
+extern void sc1PRemixHrcRunMakeTextLayer(void);
+
 /** Runs one frame of the contest; no-op outside it. */
 extern void sc1PRemixHrcRunUpdate(void);
 

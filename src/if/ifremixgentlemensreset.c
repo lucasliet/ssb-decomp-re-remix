@@ -18,6 +18,7 @@
 #include "if/ifremixgentlemensreset.h"
 #include "if/ifremixpauselegend.h"
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "remix/remix_hud_text.h"
 
 #define IFREMIX_GENTLEMENS_DL_LINK 24
@@ -149,6 +150,11 @@ void ifRemixGentlemensResetUpdate(void)
                        IFREMIX_GENTLEMENS_COLOR, 1.0F, REMIX_HUD_ALIGN_LEFT);
     remix_hud_text_put(IFREMIX_GENTLEMENS_SLOT_DECLINE, "Decline:", IFREMIX_GENTLEMENS_DECLINE_X, IFREMIX_GENTLEMENS_BUTTONS_Y,
                        IFREMIX_GENTLEMENS_COLOR, 1.0F, REMIX_HUD_ALIGN_LEFT);
+}
+
+void ifRemixGentlemensResetBindLayer(GObj *layer_gobj)
+{
+    ifRemixTextLayerBindLabels(layer_gobj, IFREMIX_GENTLEMENS_SLOT_LINE_1, IFREMIX_GENTLEMENS_SLOT_DECLINE - IFREMIX_GENTLEMENS_SLOT_LINE_1 + 1);
 }
 
 sb32 ifRemixGentlemensResetIsRequested(void)

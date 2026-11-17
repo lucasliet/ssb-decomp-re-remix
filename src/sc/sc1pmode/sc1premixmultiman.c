@@ -18,6 +18,7 @@
 #include "sc/sc1pmode/sc1premixmultiman.h"
 #include "gm/gmremixtoggle.h"
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "remix/remix_hud_text.h"
 
 #define SC1PREMIX_MULTIMAN_POLYGON_KINDS 12
@@ -82,6 +83,18 @@ void sc1PRemixMultimanSetupHud(void)
                       SC1PREMIX_MULTIMAN_POLYGON_X, polygon_y, SC1PREMIX_MULTIMAN_ICON_TINT, SC1PREMIX_MULTIMAN_ICON_PALETTE, 1.0F);
     ifRemixSpriteMake(IFREMIX_SPRITE_MULTIMAN_CROSS, SC1PREMIX_MULTIMAN_GROUP, SC1PREMIX_MULTIMAN_DL_LINK,
                       SC1PREMIX_MULTIMAN_CROSS_X, cross_y, SC1PREMIX_MULTIMAN_ICON_TINT, SC1PREMIX_MULTIMAN_ICON_PALETTE, 1.0F);
+}
+
+void sc1PRemixMultimanMakeTextLayer(void)
+{
+    GObj *layer_gobj;
+
+    if (sc1PRemixMultimanIsActive() == FALSE)
+    {
+        return;
+    }
+    layer_gobj = ifRemixTextLayerMake(SC1PREMIX_MULTIMAN_GROUP, SC1PREMIX_MULTIMAN_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+    ifRemixTextLayerBindLabels(layer_gobj, SC1PREMIX_MULTIMAN_HUD_SLOT, 1);
 }
 
 void sc1PRemixMultimanSetupPlayer(s32 player)

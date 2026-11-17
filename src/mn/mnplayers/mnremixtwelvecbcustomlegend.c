@@ -8,13 +8,19 @@
 #include <sys/obj.h>
 #include <sys/objman.h>
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "mn/mnplayers/mnremixtwelvecbcustomlegend.h"
 #include "remix/remix_hud_text.h"
 
 #define LEGEND_CURSORS 2 /* one legend per panel: the side of the player whose token is held */
 #define LEGEND_SPRITES 8
 #define LEGEND_GOBJ_LINK 25
-#define LEGEND_DL_LINK 26
+/* TwelveCharBattle.asm draw_custom_portrait_indicators_: Render.draw_texture_at_offset(0x1C, 0x16, ...), the room of the panel cards */
+#define LEGEND_DL_LINK 28
+#define LEGEND_TEXT_GOBJ_LINK 0x16
+/* The asm makes the legend while the token is held, after every object of the room: the order 0x40000000 draws after the default
+ * 0x80000000 of the sprites the port makes the first time the legend shows (Render.display_order_room) */
+#define LEGEND_TEXT_DL_PRIORITY 0x40000000
 #define LEGEND_TEXT_SLOT_FIRST 100
 #define LEGEND_TEXT_SLOTS 4
 #define LEGEND_RECT_SLOT_FIRST 40
@@ -95,6 +101,14 @@ static const LegendPip sLegendPips[LEGEND_RECT_SLOTS] =
 
 static GObj *sLegendGObjs[LEGEND_CURSORS][LEGEND_SPRITES];
 static s32 sLegendBlinkTimer[LEGEND_CURSORS];
+
+void mnRemixTwelveCBCustomLegendMakeLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(LEGEND_TEXT_GOBJ_LINK, LEGEND_DL_LINK, LEGEND_TEXT_DL_PRIORITY);
+
+    ifRemixTextLayerBindLabels(layer_gobj, LEGEND_TEXT_SLOT_FIRST, LEGEND_CURSORS * LEGEND_TEXT_SLOTS);
+    ifRemixTextLayerBindRects(layer_gobj, LEGEND_RECT_SLOT_FIRST, LEGEND_CURSORS * LEGEND_RECT_SLOTS);
+}
 
 void mnRemixTwelveCBCustomLegendReset(void)
 {

@@ -12,6 +12,7 @@
 #include "it/itremix/itremix.h"
 #include <sc/scene.h>
 #include "gm/gmremixtoggle.h"
+#include "gm/gmremixmode.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_ram_image.h"
 #include "remix/remix_symbols.h"
@@ -80,6 +81,12 @@ void sc1PTrainingRemixRestoreModelDisplay(void)
 
 void sc1PTrainingRemixStartScene(sb32 is_reset)
 {
+    if (is_reset != FALSE)
+    {
+        /* A reset runs scManagerFuncUpdate again without scManagerRunLoop, the only caller of gmRemixModeSceneClear: the layer
+         * routes, the sprite file table and the Input Display blocks would still point into the freed scene heap. */
+        gmRemixModeSceneClear();
+    }
     sc1PTrainingFrameRulesInit(&sSC1PTrainingRemixFrame);
     sc1PTrainingRemixMenuStartScene();
     sc1PTrainingRemixActionStartScene();

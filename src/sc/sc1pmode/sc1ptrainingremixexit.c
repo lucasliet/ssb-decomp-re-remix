@@ -108,7 +108,7 @@ static sb32 sc1PTrainingRemixExitIsShown(sb32 is_cursor_on_exit)
 }
 
 /**
- * "(Hold --)" with the A glyph over the dashes: the glyph is a game sprite under the overlay text, so the dashes are left out and the
+ * "(Hold --)" with the A glyph over the dashes: the glyph is a game sprite under the layer text, so the dashes are left out and the
  * closing parenthesis sits where the full string would end.
  */
 static void sc1PTrainingRemixExitPutText(void)

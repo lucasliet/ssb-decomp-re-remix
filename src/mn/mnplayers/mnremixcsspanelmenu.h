@@ -33,7 +33,7 @@ typedef struct MNRemixPanelMenuPanelInfo
 
 /**
  * Starts the menu for a scene: forgets the objects of the previous visit and makes the controller object that runs the menu every
- * frame (after the processes of the CSS, so what it hides stays hidden).
+ * frame (after the processes of the CSS, so what it hides stays hidden), and the layer that draws the menu texts in the panel card room.
  *
  * @param mode MNRemixPanelMenuMode of the screen.
  * @param images_file Loaded Remix CSS images file (File.CSS_IMAGES), where the button sprites are.

@@ -36,6 +36,8 @@ extern float port_widescreen_clip_x_scale(void);
 #include "mn/mnplayers/mnremixcostumes.h"
 #include "mn/mnplayers/mnremixsonicclassic.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
+#include "mn/mnplayers/mnremixcsstextlayers.h"
+#include "mn/mnplayers/mnremixcsshighscores.h"
 #include "mn/mnplayers/mnremixvariants.h"
 #include "mn/mnplayers/mnremixenemylabel.h"
 #include "sc/sc1pmode/sc1premixenemy.h"
@@ -4131,6 +4133,8 @@ void mnPlayers1PGameFuncStart(void)
 #ifdef REGION_REMIX
 	mnRemixPanelMenuStart((sc1PRemixModeIs(SC1PREMIX_MODE_ALLSTAR) != FALSE) ? MNREMIX_PANELMENU_MODE_ALLSTAR : MNREMIX_PANELMENU_MODE_1P,
 	                      sMNPlayers1PGameFiles[MN_PLAYERS_1PGAME_REMIX_IMAGES_FILE], sMNPlayers1PGameFiles[0]);
+	mnRemixCssTextLayersMake(MNREMIX_CSS_TEXT_INDICATOR_PRIORITY_1P);
+	mnRemixCssHighScoresMakeLayer();
 #endif
 	scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
 
@@ -4168,7 +4172,7 @@ SYTaskmanSetup dMNPlayers1PGameTaskmanSetup =
         1,                          // ???
         2,                          // Number of contexts?
 #ifdef REGION_REMIX
-        sizeof(Gfx) * (2375 + 0x4000 / 8), // Display List Buffer 0 Size, Hitbox.asm (RAM 0x80138CC8): +0x4000 N64 bytes of Gfx
+        sizeof(Gfx) * (2375 + 0x4000 / 8 + 1024), // Display List Buffer 0 Size, Hitbox.asm (RAM 0x80138CC8): +0x4000 N64 bytes of Gfx, +1024 Gfx for the text layers
 #else
         sizeof(Gfx) * 2375,         // Display List Buffer 0 Size
 #endif

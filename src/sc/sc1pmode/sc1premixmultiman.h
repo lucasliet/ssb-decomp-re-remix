@@ -23,6 +23,9 @@ extern void sc1PRemixMultimanSetupBattle(void);
 /** Makes the polygon icon and the "x" of the KO counter at the scene start; no-op outside the horde modes. */
 extern void sc1PRemixMultimanSetupHud(void);
 
+/** Makes the layer that draws the KO counter over the HUD of the scene, in the group and room of the icon; no-op outside the horde modes. */
+extern void sc1PRemixMultimanMakeTextLayer(void);
+
 /** Gives the 1P game player the knockback ratio and the single stock of the horde modes; no-op outside them. */
 extern void sc1PRemixMultimanSetupPlayer(s32 player);
 
@@ -52,7 +55,7 @@ extern void sc1PRemixMultimanLeaveRun(void);
  */
 extern u32 sc1PRemixMultimanRecordGet(s32 fkind);
 
-/** Draws the KO counter of the horde modes as an overlay label (1P slot); no-op outside them. Call once per frame. */
+/** Draws the KO counter of the horde modes as a layer label (1P slot); no-op outside them. Call once per frame. */
 extern void sc1PRemixMultimanDrawHud(void);
 
 #endif

@@ -2,6 +2,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "remix/remix_hud_text.h"
 
 /**
@@ -42,6 +43,22 @@ void mnRemixItemSwitchLegendMake(void)
         MN_REMIX_ITEM_SWITCH_BUTTON_PALETTE,
         MN_REMIX_ITEM_SWITCH_BUTTON_SCALE
     );
+}
+
+/**
+ * Makes the layer that draws the legend text in the cursor's room (Item.asm item_switch_setup_), after the legend sprites and
+ * the cursor; call once when the screen starts.
+ */
+void mnRemixItemSwitchLegendMakeLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake
+    (
+        MN_REMIX_ITEM_SWITCH_LEGEND_TEXT_GOBJ_LINK,
+        MN_REMIX_ITEM_SWITCH_LEGEND_DL_LINK,
+        GOBJ_PRIORITY_DEFAULT
+    );
+
+    ifRemixTextLayerBindLabels(layer_gobj, MN_REMIX_ITEM_SWITCH_TEXT_SLOT, 1);
 }
 
 /**

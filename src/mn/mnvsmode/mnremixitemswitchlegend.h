@@ -11,9 +11,13 @@
  * Render.draw_string arguments are copied as hex floats.
  */
 
-/** GObj link and display list link of the screen that carry the legend sprites (the decal camera draws on top). */
+/**
+ * GObj link and display list link of the legend: room 3 of the asm, the cursor's link, whose camera (priority 30) draws after
+ * the labels (40) and the decal camera (60). The text is group 12 (Item.asm:969).
+ */
 #define MN_REMIX_ITEM_SWITCH_LEGEND_GOBJ_LINK 3
-#define MN_REMIX_ITEM_SWITCH_LEGEND_DL_LINK 4
+#define MN_REMIX_ITEM_SWITCH_LEGEND_TEXT_GOBJ_LINK 12
+#define MN_REMIX_ITEM_SWITCH_LEGEND_DL_LINK 3
 
 /** Colour (sprite PRIM) and palette (sprite ENV) of the L and R button sprites, and their scale (0x3F400000). */
 #define MN_REMIX_ITEM_SWITCH_BUTTON_TINT 0x848484FFU
@@ -45,6 +49,9 @@
 
 /** Makes the button and arrow sprites of the legend; call once when the screen starts, after its cameras exist. */
 extern void mnRemixItemSwitchLegendMake(void);
+
+/** Makes the layer that draws the legend text; call once when the screen starts, after the sprites. */
+extern void mnRemixItemSwitchLegendMakeLayer(void);
 
 /** Keeps the legend text visible; call once per frame while the screen runs. */
 extern void mnRemixItemSwitchLegendPut(void);

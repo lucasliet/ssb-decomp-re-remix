@@ -13,9 +13,12 @@
  */
 extern void mnRemixStagePagerMake(void *arrows_file);
 
+/** Makes the layer that draws "Page N" in room 4, over the strip sprites. Call once after mnRemixStagePagerMake. */
+extern void mnRemixStagePagerMakeLayer(void);
+
 /**
  * Draws "Page N" (Render.draw_string of string_page and draw_number_adjusted of page_number, adjusted by 1). Call every frame:
- * the text overlay lives two frames.
+ * a put lives two frames.
  *
  * @param page Current page, 0 based.
  */

@@ -6,6 +6,12 @@
 #include <ssb_types.h>
 
 /**
+ * Makes the layer that draws the text of the pause legends and of the Gentlemen's Reset request in the pause link, over the pause
+ * menu objects of every pause. Call once when the battle scene sets up its interface.
+ */
+void ifRemixPauseLegendMakeLayer(void);
+
+/**
  * Starts the pause legends of a new pause: makes their sprites, with the R legend shown and the music and camera legends hidden
  * (Pause.asm show_legend_helper_).
  */

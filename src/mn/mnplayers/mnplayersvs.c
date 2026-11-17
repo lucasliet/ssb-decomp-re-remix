@@ -61,6 +61,7 @@ extern float port_widescreen_clip_x_scale(void);
 #include "ft/ftremix/ftremixtwelvecbdefeated.h"
 #include "ft/ftremix/ftremixpartimage.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
+#include "mn/mnplayers/mnremixcsstextlayers.h"
 #include "if/ifremixsprite.h"
 #include <string.h>
 #include "remix/remix_debug.h"
@@ -1128,7 +1129,8 @@ static void mnPlayersVSTwelveCBUpdateCustom(s32 cursor)
 	{
 		return;
 	}
-	mnRemixTwelveCBCustomLegendUpdate(token_player, TRUE, sMNPlayersVSFiles[0]);
+	/* set_panel_display_ hides the legend of a panel while the menu of the token holder is open */
+	mnRemixTwelveCBCustomLegendUpdate(token_player, (mnRemixPanelMenuIsOpen(token_player) == FALSE) ? TRUE : FALSE, sMNPlayersVSFiles[0]);
 	sMNPlayersVSTwelveCBLegendSide[cursor] = token_player;
 
 	if ((gSYControllerDevices[cursor].button_tap & (A_BUTTON | U_CBUTTONS | D_CBUTTONS | L_CBUTTONS | R_CBUTTONS)) != 0)
@@ -1166,8 +1168,8 @@ static void mnPlayersVSTwelveCBUpdateManualStocks(s32 cursor)
 
 /* CharacterSelect.asm update_stock_icon_and_count_indicators_ (5499-5915), always shown in the 12-Character Battle: the stocks left
  * of the portrait a player's token sits on, as "<icon> x N" against the right edge of the panel card. The number is Kabel text
- * (overlay slots 47 and 48), the cross is text too (the asm draws a sprite of the interface digits file, not loaded here). The VS
- * screen draws the same indicator under each of its four panels for Stock Mode Last and Manual (overlay slots 47 to 50). */
+ * (text slots 47 and 48), the cross is text too (the asm draws a sprite of the interface digits file, not loaded here). The VS
+ * screen draws the same indicator under each of its four panels for Stock Mode Last and Manual (text slots 47 to 50). */
 #define MNPLAYERSVS_TWELVECB_STOCK_Y 191.0F
 #define MNPLAYERSVS_TWELVECB_STOCK_SCALE 0.90625F
 #define MNPLAYERSVS_TWELVECB_STOCK_ICON_GAP 18.0F
@@ -8039,8 +8041,13 @@ void mnPlayersVSFuncStart(void)
 	mnPlayersVSMakeReady();
 #if defined(PORT) && defined(REGION_REMIX)
 	mnRemixPanelMenuStart(MNREMIX_PANELMENU_MODE_VS, sMNPlayersVSFiles[11], sMNPlayersVSFiles[0]);
+	mnRemixCssTextLayersMake(MNREMIX_CSS_TEXT_INDICATOR_PRIORITY_VS);
 	mnRemixTagTeamCssSetup(mnPlayersVSGetTagTeamPortInfo);
 	gmRemixTwelveCBHudMakeCSSLayers();
+	if (gmRemixTwelveCBIsActive() != FALSE)
+	{
+		mnRemixTwelveCBCustomLegendMakeLayer();
+	}
 #endif
 	scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
 
@@ -8091,7 +8098,11 @@ SYTaskmanSetup dMNPlayersVSTaskmanSetup =
         0,                          // Allocatable memory pool size
         1,                          // ???
         2,                          // Number of contexts?
+#ifdef REGION_REMIX
+        sizeof(Gfx) * (2750 + 4096), // Display List Buffer 0 Size, +4096 Gfx for the text layers (four open panel menus are about 3100 Gfx)
+#else
         sizeof(Gfx) * 2750,         // Display List Buffer 0 Size
+#endif
         sizeof(Gfx) * 64,          	// Display List Buffer 1 Size
         0,                          // Display List Buffer 2 Size
         0,                          // Display List Buffer 3 Size

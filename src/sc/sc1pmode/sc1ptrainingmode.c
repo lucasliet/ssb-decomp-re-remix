@@ -18,6 +18,7 @@ extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned in
 #include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 #include "sc/sc1pmode/sc1ptrainingremixmenudraw.h"
 #include "sc/sc1pmode/sc1ptrainingremixspawn.h"
+#include "sc/sc1pmode/sc1ptrainingremixtextlayers.h"
 #include "sc/sc1pmode/sc1ptrainingremixpause.h"
 #include "sc/sc1pmode/sc1ptrainingframerules.h"
 #include "gm/gmremixspawnsetup.h"
@@ -2419,6 +2420,7 @@ void sc1PTrainingModeFuncStart(void)
 	sc1PTrainingModeMakeMenuAll();
 #if defined(PORT) && defined(REGION_REMIX)
 	sc1PTrainingRemixMenuDrawMake();
+	sc1PTrainingRemixTextLayersMake();
 #endif
 #ifdef REGION_REMIX
 	if (ifRemixHudDisabledAll())

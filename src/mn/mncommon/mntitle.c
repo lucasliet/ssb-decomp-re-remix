@@ -1566,6 +1566,9 @@ void mnTitleFuncStart(void)
 	mnTitleMakePressStart();
 	mnTitleMakeSlash();
 	mnTitleMakeLogoFireParticles();
+#if defined(PORT) && defined(REGION_REMIX)
+	mnRemixTitleVersionMakeLayer();
+#endif
 
 	if (gSCManagerSceneData.scene_prev == nSCKindOpeningNewcomers)
 	{

@@ -9,6 +9,7 @@
 #include <sc/scmanager.h>
 #include <sc/sctypes.h>
 #include "gm/gmremixmode.h"
+#include "if/ifremixinputdisplay.h"
 #include "if/ifremixsprite.h"
 #include "mn/mnvsmode/mnremixvsmode.h"
 #include "remix/remix_debug.h"
@@ -79,6 +80,7 @@ void gmRemixModeSceneClear(void)
 {
     remix_hud_text_clear();
     ifRemixSpriteSceneReset();
+    ifRemixInputDisplayClear();
 }
 
 void gmRemixModeLogMatch(void)

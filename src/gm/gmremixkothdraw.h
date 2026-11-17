@@ -7,7 +7,7 @@
 
 /*
  * King of the Hill on screen: the hill strip over the floor line (render_ground_gfx_, drawn as a display list in the
- * world) and the score meters (update_indicators_, drawn by the port overlay remix_hud_text).
+ * world) and the score meters (update_indicators_, drawn by a text layer, remix_hud_text).
  */
 
 /** Colour render_ground_gfx_ puts in the prim colour of the hill: white without a king, gray while contested, the colour of the king. */
@@ -19,7 +19,7 @@ extern void gmRemixKothDrawMake(void);
 /** Match start: sets the colour of each meter and clears the full-bar flash. */
 extern void gmRemixKothHudSetup(void);
 
-/** Every frame: puts the meter of each port (free-for-all) or team in the overlay. */
+/** Every frame: puts the meter of each port (free-for-all) or team to the text layer. */
 extern void gmRemixKothHudUpdate(void);
 
 /** Goal of the match in frames on the hill (the CSS goal in seconds times 60). */

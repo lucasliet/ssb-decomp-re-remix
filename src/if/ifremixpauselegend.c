@@ -4,7 +4,7 @@
  *
  * The glyphs (buttons, D-pad, C stick arrows, the "Legend" word) are native sprites on the pause display link, one GObj each in
  * the Remix group (GObj link) they belong to, so the group display of I1 shows and hides them as the asm does. The text is
- * Kabel text of the port overlay, put every frame its group is visible. The sprites are made when a pause starts and ejected
+ * Kabel text of a text layer, put every frame its group is visible. The sprites are made when a pause starts and ejected
  * when it ends. Reference: the real Remix pause in the reference emulator (docs/remix/notes/i8_reference_emulator.md).
  */
 
@@ -19,6 +19,7 @@
 #include "if/ifremixgentlemensreset.h"
 #include "if/ifremixpauselegend.h"
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_music_title.h"
 
@@ -39,6 +40,10 @@
 #define IFREMIX_PAUSE_LEGEND_TITLE_Y 74.0F
 #define IFREMIX_PAUSE_LEGEND_GAME_Y 90.0F
 #define IFREMIX_PAUSE_LEGEND_ITEMS_MAX 40
+#define IFREMIX_PAUSE_LEGEND_LABEL_COUNT 20
+#define IFREMIX_PAUSE_LEGEND_RECT_COUNT 2
+/* The asm makes its strings after the pause menu objects of every pause; one layer made with the scene draws after them. */
+#define IFREMIX_PAUSE_LEGEND_LAYER_ORDER 0x40000000U
 
 typedef enum IFRemixPauseLegendKind
 {
@@ -156,6 +161,15 @@ static void ifRemixPauseLegendApplyGroups(void)
 
     gmRemixGroupDisplaySet(IFREMIX_PAUSE_LEGEND_GROUP_MUSIC, extra_visible ? 0 : 1);
     gmRemixGroupDisplaySet(IFREMIX_PAUSE_LEGEND_GROUP_CAMERA, (extra_visible && sIFRemixPauseLegendCameraAllowed) ? 0 : 1);
+}
+
+void ifRemixPauseLegendMakeLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(IFREMIX_PAUSE_LEGEND_GROUP_R, IFREMIX_PAUSE_LEGEND_DL_LINK, IFREMIX_PAUSE_LEGEND_LAYER_ORDER);
+
+    ifRemixTextLayerBindLabels(layer_gobj, IFREMIX_PAUSE_LEGEND_SLOT_FIRST, IFREMIX_PAUSE_LEGEND_LABEL_COUNT);
+    ifRemixTextLayerBindRects(layer_gobj, 0, IFREMIX_PAUSE_LEGEND_RECT_COUNT);
+    ifRemixGentlemensResetBindLayer(layer_gobj);
 }
 
 void ifRemixPauseLegendReset(void)

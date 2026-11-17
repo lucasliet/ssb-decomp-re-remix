@@ -4,6 +4,7 @@
 
 #if defined(PORT) && defined(REGION_REMIX)
 
+#include "if/ifremixtextlayer.h"
 #include "mn/mnplayers/mnremixcsshighscores.h"
 #include "mn/mnplayers/mnremixcsspanelmenurules.h"
 #include "remix/remix_hud_text.h"
@@ -14,6 +15,9 @@
 #define HIGH_SCORES_TOGGLE_CAPACITY 96
 /* Render.draw_string(0x22, 0x1B, string_high_scores_disabled, ..., 0x43400000, 0x43590000, 0xFF8080FF, 0x3F500000, LEFT), CharacterSelect.asm 4767 */
 #define HIGH_SCORES_TEXT_SLOT 96
+/* Room 0x22 (the labels camera of the 1P and Bonus selects, display link 34), group 0x1B */
+#define HIGH_SCORES_GOBJ_LINK 0x1B
+#define HIGH_SCORES_DL_LINK 34
 #define HIGH_SCORES_TEXT_X 192.0F
 #define HIGH_SCORES_TEXT_Y 217.0F
 #define HIGH_SCORES_TEXT_RGBA 0xFF8080FF
@@ -34,6 +38,11 @@ static void mnRemixCssHighScoresReadGlobals(MNRemixPanelMenuHighScoreGlobals *gl
     mnRemixCssHighScoresPackGroup(REMIX_TOGGLE_GROUP_GAMEPLAY, globals->gameplay_words, MNREMIX_PANELMENU_GAMEPLAY_WORDS);
     mnRemixCssHighScoresPackGroup(REMIX_TOGGLE_GROUP_POKEMON, &globals->pokemon_word, 1);
     globals->enemy_port = sc1PRemixEnemyPortGet();
+}
+
+void mnRemixCssHighScoresMakeLayer(void)
+{
+    ifRemixTextLayerBindLabels(ifRemixTextLayerMake(HIGH_SCORES_GOBJ_LINK, HIGH_SCORES_DL_LINK, GOBJ_PRIORITY_DEFAULT), HIGH_SCORES_TEXT_SLOT, 1);
 }
 
 sb32 mnRemixCssHighScoresUpdate(s32 mode, const s32 *item_values)

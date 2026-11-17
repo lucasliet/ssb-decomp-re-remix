@@ -3,7 +3,8 @@
  *
  * The asm draws a translucent rectangle with the track line ("note title note", scale 1.0) and the game line (scale 0.75)
  * in Kabel when the GO lights are made, and destroys them when the GO! text is made. The rectangle and both lines go through
- * the port overlay (remix_hud_text), put every frame by a process of the scene while the banner is shown.
+ * remix_hud_text, put every frame by a process of the scene while the banner is shown and drawn by a text layer made with the
+ * banner in the interface group and room, so the countdown, GO! and the fade made after it sort as in the asm.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -13,6 +14,7 @@
 #include <mp/map.h>
 #include <sys/audio.h>
 #include <sys/objman.h>
+#include "if/ifremixtextlayer.h"
 #include "remix/remix_hud_text.h"
 #include "remix/remix_music_title.h"
 
@@ -31,6 +33,8 @@
 #define GMREMIX_MUSIC_TITLE_GAME_SCALE 0.75F
 #define GMREMIX_MUSIC_TITLE_COLOR 0xFFFFFFFF
 #define GMREMIX_MUSIC_TITLE_PROC_PRIORITY 3
+#define GMREMIX_MUSIC_TITLE_GOBJ_LINK 11
+#define GMREMIX_MUSIC_TITLE_DL_LINK 23
 
 static sb32 sGMRemixMusicTitleIsShown;
 static const char *sGMRemixMusicTitleGame;
@@ -69,6 +73,15 @@ static sb32 gmRemixMusicTitleLookup(void)
     return remix_music_title_get((s32)gMPCollisionGroundData->bgm_id, &sGMRemixMusicTitleTrack, &sGMRemixMusicTitleGame) != 0;
 }
 
+/** Makes the layer of the banner (rectangle, track line, game line) over the HUD objects the scene already made. */
+static void gmRemixMusicTitleMakeLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(GMREMIX_MUSIC_TITLE_GOBJ_LINK, GMREMIX_MUSIC_TITLE_DL_LINK, GOBJ_PRIORITY_DEFAULT);
+
+    ifRemixTextLayerBindRects(layer_gobj, GMREMIX_MUSIC_TITLE_RECT_SLOT, 1);
+    ifRemixTextLayerBindLabels(layer_gobj, GMREMIX_MUSIC_TITLE_TRACK_SLOT, 2);
+}
+
 void gmRemixMusicTitleShowAtCountdown(void)
 {
     GObj *gobj;
@@ -87,6 +100,7 @@ void gmRemixMusicTitleShowAtCountdown(void)
 
     gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjProcess(gobj, gmRemixMusicTitleProcUpdate, nGCProcessKindFunc, GMREMIX_MUSIC_TITLE_PROC_PRIORITY);
+    gmRemixMusicTitleMakeLayer();
 }
 
 void gmRemixMusicTitleHideAtGo(void)

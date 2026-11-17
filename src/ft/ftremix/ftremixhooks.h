@@ -688,12 +688,12 @@ u8 ftRemixHandicapGetFighterValue(FTStruct *fp, u8 vanilla_handicap);
 intptr_t ifRemixPlayerTagSpriteOffset(s32 player, intptr_t vanilla_offset);
 sb32 ifRemixPlayerTagAlwaysShown(s32 player);
 void ifRemixPlayerTagDrawName(s32 player, f32 center_x, f32 top_y, u32 rgba);
+void ifRemixPlayerTagMakeNameLayer(s32 gobj_link, s32 dl_link);
+void ifRemixPlayerTagMakeBattleLayer(void);
 
 /* Remix CSS panel Input Display, ftremix/ftremixinputdisplay.c (InputDisplay.asm update_input_display_): the controller
- * sample of a fighter sent to the port overlay (ftMainProcUpdateInterrupt), and the overlay clear at each scene change
- * (scManagerRunLoop) */
+ * sample of a fighter sent to the Input Display sprites of its port (ftMainProcUpdateInterrupt) */
 void ftRemixInputDisplayUpdate(FTStruct *fp, u16 buttons, s8 stick_x, s8 stick_y);
-void ftRemixInputDisplayClear(void);
 
 /* Remix Stamina knockback, ftremix/ftremixstaminaknockback.c (Stamina.asm stamina_knockback_ and the three siblings):
  * the damage sum ftParamGetCommonKnockback scales, 20 percent while the Stamina rule is active */

@@ -8,7 +8,7 @@
 /*
  * Drawing of the Remix Training Z menu (Training.asm setup_ 1639-1648 and Menu.asm draw_ 530-720). The background, the modal frame
  * and the R / Z page glyphs are game objects of the Remix group 0x16 (custom menu group); the rows, the pagination text, the cursor
- * and its underline are the HUD text overlay with the asm positions: menu at (68, 50), 23 characters wide, 12 rows of 12 pixels,
+ * and its underline are the HUD text layer with the asm positions: menu at (68, 50), 23 characters wide, 12 rows of 12 pixels,
  * scale 0.921875, label at x 76 and value right aligned at x 252.
  */
 

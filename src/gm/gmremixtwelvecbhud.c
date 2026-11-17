@@ -1,5 +1,5 @@
 /**
- * gmremixtwelvecbhud.c - overlay text of the 12-Character Battle, see gmremixtwelvecbhud.h.
+ * gmremixtwelvecbhud.c - layer text of the 12-Character Battle, see gmremixtwelvecbhud.h.
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
@@ -36,6 +36,9 @@
 #define GMREMIX_TWELVECB_HUD_WHITE 0xFFFFFFFF
 #define GMREMIX_TWELVECB_HUD_GAME_X 32.0F
 #define GMREMIX_TWELVECB_HUD_GAME_Y 46.0F
+/* TCB:1946 Render.draw_string(0x1F, 0x16, string_game, ...): room of the results header, group of the normal results rows */
+#define GMREMIX_TWELVECB_HUD_RESULTS_DL_LINK 0x1F
+#define GMREMIX_TWELVECB_HUD_RESULTS_GROUP 0x16
 
 /* TCB:5093-5121: every CSS string is in room 0x1E (the display link under the cursor hands and the tokens), in the group
  * that the battle status shows: GROUP_ALWAYS, GROUP_NOT_STARTED, GROUP_STARTED. */
@@ -182,6 +185,19 @@ void gmRemixTwelveCBHudDrawResults(void)
     remix_hud_text_putf(GMREMIX_TWELVECB_HUD_SLOT_GAME, GMREMIX_TWELVECB_HUD_GAME_X, GMREMIX_TWELVECB_HUD_GAME_Y,
                         GMREMIX_TWELVECB_HUD_WHITE, GMREMIX_TWELVECB_HUD_TITLE_SCALE, REMIX_HUD_ALIGN_LEFT, "Game %02d",
                         (int)((state != NULL) ? (state->current_game + 1) : 1));
+}
+
+void gmRemixTwelveCBHudMakeResultsLayer(void)
+{
+    GObj *layer_gobj;
+
+    if (gmRemixTwelveCBIsActive() == FALSE)
+    {
+        return;
+    }
+    layer_gobj = ifRemixTextLayerMake(GMREMIX_TWELVECB_HUD_RESULTS_GROUP, GMREMIX_TWELVECB_HUD_RESULTS_DL_LINK,
+                                      GOBJ_PRIORITY_DEFAULT);
+    ifRemixTextLayerBindLabels(layer_gobj, GMREMIX_TWELVECB_HUD_SLOT_GAME, 1);
 }
 
 #endif

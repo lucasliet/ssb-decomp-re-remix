@@ -1,40 +1,28 @@
 /**
- * ftremixinputdisplay.c - Smash Remix InputDisplay.asm: sends the controller sample of each fighter to the port overlay.
+ * ftremixinputdisplay.c - Smash Remix InputDisplay.asm: sends the controller sample of each fighter to the Input Display sprites.
  *
  * ftRemixInputDisplayUpdate (ftMainProcUpdateInterrupt) feeds the sample the fighter reads this frame, for human and CPU
- * fighters. ftRemixInputDisplayClear (scmanager, at each scene change) hides every port.
+ * fighters. The sprites are made with the match by ifRemixInputDisplayMake (if/ifremixinputdisplay.c).
  */
 
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include "ft/ftremix/ftremixhooks.h"
 #include <ft/fighter.h>
-#include <gm/gmremixpanel.h>
-#include "remix/remix_input_display.h"
+#include "if/ifremixinputdisplay.h"
 
 /**
- * Sends the sample of a fighter to the Input Display overlay of its port. Does nothing when the port's Input Display
- * panel value is 0 (Disabled), so the overlay never draws a port that is not set to show it.
+ * Lights the Input Display sprites of the port of a fighter for its sample; a port with no block (panel value Disabled when
+ * the match started) is left alone.
+ *
+ * @param fp Fighter that reads the sample.
+ * @param buttons Pressed buttons, libultra CONT_* bits.
+ * @param stick_x Raw stick X.
+ * @param stick_y Raw stick Y.
  */
 void ftRemixInputDisplayUpdate(FTStruct *fp, u16 buttons, s8 stick_x, s8 stick_y)
 {
-    s32 player = fp->player;
-
-    if (player >= GMCOMMON_PLAYERS_MAX)
-    {
-        return;
-    }
-    if (gmRemixPanel(INPUT_DISPLAY, player) == 0)
-    {
-        return;
-    }
-    remix_input_display_update(player, buttons, stick_x, stick_y);
-}
-
-/** Hides every Input Display port. Called from scManagerRunLoop at each scene change. */
-void ftRemixInputDisplayClear(void)
-{
-    remix_input_display_clear();
+    ifRemixInputDisplayApply(fp->player, buttons, stick_x, stick_y);
 }
 
 #endif

@@ -23,13 +23,13 @@
  * @param gobj_link GObj link (asm group) the layer joins; gmRemixGroupDisplaySet hides or shows it with the group.
  * @param dl_link Display link (asm room) a sprite camera of the scene draws.
  * @param dl_priority Priority inside the display link; GOBJ_PRIORITY_DEFAULT is the asm default (drawn last).
- * @return The layer GObj, or NULL when the text stays on the overlay: the font file or its metrics are missing, the scene
- *         has no layer left (both go to the log) or SSB64_REMIX_TEXT_OVERLAY=1 is set.
+ * @return The layer GObj, or NULL (logged) when the font file or its metrics are missing or the scene has no layer left;
+ *         the text of its slots is then not drawn.
  */
 extern GObj *ifRemixTextLayerMake(s32 gobj_link, s32 dl_link, u32 dl_priority);
 
 /**
- * Binds label slots to a layer; from then on the layer draws them and the overlay does not.
+ * Binds label slots to a layer; from then on the layer draws them.
  *
  * @param layer_gobj Layer from ifRemixTextLayerMake; NULL does nothing.
  * @param first_slot First label slot.

@@ -32,6 +32,8 @@ extern float port_widescreen_clip_x_scale(void);
 #include "sc/sc1pmode/sc1pbonusremix.h"
 #include "remix/remix_roster_data.h"
 #include "mn/mnplayers/mnremixcsspanelmenu.h"
+#include "mn/mnplayers/mnremixcsstextlayers.h"
+#include "mn/mnplayers/mnremixcsshighscores.h"
 #include "mn/mnplayers/mnremixcssbonus.h"
 #include "mn/mnplayers/mnremixcssrandom.h"
 #include "mn/mnplayers/mnremixcssslide.h"
@@ -3506,6 +3508,8 @@ void mnPlayers1PBonusFuncStart(void)
 	mnPlayers1PBonusMakeReady();
 #ifdef REGION_REMIX
 	mnRemixPanelMenuStart(MNREMIX_PANELMENU_MODE_BONUS, sMNPlayers1PBonusFiles[MNPLAYERS1PBONUS_REMIX_IMAGES_FILE], sMNPlayers1PBonusFiles[0]);
+	mnRemixCssTextLayersMake(MNREMIX_CSS_TEXT_INDICATOR_PRIORITY_1P);
+	mnRemixCssHighScoresMakeLayer();
 #endif
 	scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
 
@@ -3534,7 +3538,11 @@ SYTaskmanSetup dMNPlayers1PBonusTaskmanSetup =
         0,                          // Allocatable memory pool size
         1,                          // ???
         2,                          // Number of contexts?
+#ifdef REGION_REMIX
+        sizeof(Gfx) * (2375 + 1536), // Display List Buffer 0 Size, +1536 Gfx for the text layers (panel menu, Bonus 3 row)
+#else
         sizeof(Gfx) * 2375,         // Display List Buffer 0 Size
+#endif
         sizeof(Gfx) * 64,          	// Display List Buffer 1 Size
         0,                          // Display List Buffer 2 Size
         0,                          // Display List Buffer 3 Size

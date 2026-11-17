@@ -13,9 +13,15 @@
 extern void mnRemixStagePanelMake(void);
 
 /**
+ * Makes the layers that draw the four lines (room 2, over the buttons) and the stage name (room 4). Call once after
+ * mnRemixStagePanelMake and mnRemixStagePagerMake.
+ */
+extern void mnRemixStagePanelMakeLayers(void);
+
+/**
  * Draws the four lines for the hovered square, hides the ones that do not apply and colours the cursor (Stages.asm
  * update_text_). On the tournament layout it also forces the Hazard Mode toggle to the value of the hovered stage first.
- * Call every frame: the text overlay lives two frames.
+ * Call every frame: a put lives two frames.
  *
  * @param cursor_gobj Cursor GObj whose sprite takes the hazard colour.
  * @param base_gkind Stage id of the hovered square before its variant, or the RANDOM id.

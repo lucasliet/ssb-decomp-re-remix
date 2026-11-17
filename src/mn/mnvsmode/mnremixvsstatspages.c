@@ -16,8 +16,8 @@
 #include "mn/mnvsmode/mnremixvsstatsrules.h"
 #include "remix/remix_hud_text.h"
 
-#define MNVSSTATS_PAGES_TEXT_SLOT_FIRST 48
-#define MNVSSTATS_PAGES_RECT_SLOT_FIRST 1
+#define MNVSSTATS_PAGES_TEXT_SLOT_FIRST MNREMIX_VSSTATS_PAGES_LABEL_SLOT_FIRST
+#define MNVSSTATS_PAGES_RECT_SLOT_FIRST MNREMIX_VSSTATS_PAGES_RECT_SLOT_FIRST
 #define MNVSSTATS_PAGES_FIRST_Y 30
 #define MNVSSTATS_PAGES_LINE_STEP 11
 #define MNVSSTATS_PAGES_GROUP_GAP 5
@@ -212,7 +212,7 @@ static void mnRemixVSStatsPagesFormatNumber(char *out, s32 value)
 
 static void mnRemixVSStatsPagesFormatDash(char *out);
 
-/** Draws one string at the cursor text slot. The overlay keeps it for the frame it was put in and the next one. */
+/** Draws one string at the cursor text slot. The store keeps it for the frame it was put in and the next one. */
 static void mnRemixVSStatsPagesPutText(MNRemixVSStatsCursor *cursor, const char *text, f32 x, f32 y, s32 align)
 {
     remix_hud_text_put(cursor->text_slot, text, x, y, MNVSSTATS_PAGES_WHITE, MNVSSTATS_PAGES_TEXT_SCALE, align);

@@ -13,16 +13,22 @@
 #include <sys/taskman.h>
 #include "gm/gmremixgroupdisplay.h"
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
+#include "mn/mnvsmode/mnremixvsstatspages.h"
 #include "mn/mnvsmode/mnremixvsstatsscene.h"
+#include "remix/remix_hud_text.h"
 
 extern Gfx *gSYTaskmanDLHeads[4];
 extern GObj *sMNVSResultsFighterGObjs[GMCOMMON_PLAYERS_MAX];
 extern sb32 sMNVSResultsIsPresent[GMCOMMON_PLAYERS_MAX];
 
-/* Display links nothing else in the results scene uses (it takes 26 to 35), and the camera that draws them after the rows
- * (camera priority 15) and before the transition (10). */
-#define MNREMIX_VSSTATS_SCENE_DL_BACKGROUND 36
-#define MNREMIX_VSSTATS_SCENE_DL_SPRITES 37
+/* Display links nothing else in the results scene uses (it takes 26 to 35), and the camera that draws them in this order after
+ * the rows (camera priority 15) and before the transition (10): the A button and the prompt, the background that dims them,
+ * then the B and R buttons, the stock icons and the page text (the order of the room 0x1F objects of VsStats.asm setup_). */
+#define MNREMIX_VSSTATS_SCENE_DL_PROMPT 36
+#define MNREMIX_VSSTATS_SCENE_DL_BACKGROUND 37
+#define MNREMIX_VSSTATS_SCENE_DL_SPRITES 38
+#define MNREMIX_VSSTATS_SCENE_DL_PAGES_TEXT 39
 #define MNREMIX_VSSTATS_SCENE_CAMERA_PRIORITY 12
 #define MNREMIX_VSSTATS_SCENE_CAMERA_LINK 16
 #define MNREMIX_VSSTATS_SCENE_BACKGROUND_LINK_ID 0x0E
@@ -66,7 +72,8 @@ static void mnRemixVSStatsSceneMakeCamera(void)
             GOBJ_PRIORITY_DEFAULT,
             lbCommonDrawSprite,
             MNREMIX_VSSTATS_SCENE_CAMERA_PRIORITY,
-            COBJ_MASK_DLLINK(MNREMIX_VSSTATS_SCENE_DL_BACKGROUND) | COBJ_MASK_DLLINK(MNREMIX_VSSTATS_SCENE_DL_SPRITES),
+            COBJ_MASK_DLLINK(MNREMIX_VSSTATS_SCENE_DL_PROMPT) | COBJ_MASK_DLLINK(MNREMIX_VSSTATS_SCENE_DL_BACKGROUND) |
+            COBJ_MASK_DLLINK(MNREMIX_VSSTATS_SCENE_DL_SPRITES) | COBJ_MASK_DLLINK(MNREMIX_VSSTATS_SCENE_DL_PAGES_TEXT),
             ~0,
             FALSE,
             nGCProcessKindFunc,
@@ -101,11 +108,32 @@ static void mnRemixVSStatsSceneMakeBackground(void)
     gcAddGObjDisplay(gobj, mnRemixVSStatsSceneBackgroundDisplay, MNREMIX_VSSTATS_SCENE_DL_BACKGROUND, GOBJ_PRIORITY_DEFAULT, ~0);
 }
 
+/** The prompt layer, after the A button of its link (the asm makes the string first, but they do not overlap). */
+static void mnRemixVSStatsSceneMakePromptLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(MNREMIX_VSSTATS_GROUP_PROMPT, MNREMIX_VSSTATS_SCENE_DL_PROMPT, GOBJ_PRIORITY_DEFAULT);
+
+    ifRemixTextLayerBindLabels(layer_gobj, MNREMIX_VSSTATS_SLOT_PROMPT, 1);
+}
+
+/** The page layer, in a link of its own drawn after the buttons and the stock icons, which are made later than it at tic 120. */
+static void mnRemixVSStatsSceneMakePagesLayer(void)
+{
+    GObj *layer_gobj = ifRemixTextLayerMake(MNREMIX_VSSTATS_GROUP_PAGES, MNREMIX_VSSTATS_SCENE_DL_PAGES_TEXT,
+                                            GOBJ_PRIORITY_DEFAULT);
+
+    ifRemixTextLayerBindLabels(layer_gobj, MNREMIX_VSSTATS_SLOT_HINT_FIRST, MNREMIX_VSSTATS_SLOT_HINT_COUNT);
+    ifRemixTextLayerBindLabels(layer_gobj, MNREMIX_VSSTATS_PAGES_LABEL_SLOT_FIRST,
+                               REMIX_HUD_TEXT_SLOTS - MNREMIX_VSSTATS_PAGES_LABEL_SLOT_FIRST);
+    ifRemixTextLayerBindRects(layer_gobj, MNREMIX_VSSTATS_PAGES_RECT_SLOT_FIRST,
+                              REMIX_HUD_RECT_SLOTS - MNREMIX_VSSTATS_PAGES_RECT_SLOT_FIRST);
+}
+
 void mnRemixVSStatsSceneMake(void)
 {
     mnRemixVSStatsSceneMakeCamera();
     mnRemixVSStatsSceneMakeBackground();
-    ifRemixSpriteMake(IFREMIX_SPRITE_BUTTON_A, MNREMIX_VSSTATS_GROUP_PROMPT, MNREMIX_VSSTATS_SCENE_DL_SPRITES,
+    ifRemixSpriteMake(IFREMIX_SPRITE_BUTTON_A, MNREMIX_VSSTATS_GROUP_PROMPT, MNREMIX_VSSTATS_SCENE_DL_PROMPT,
                       MNREMIX_VSSTATS_SCENE_A_X, MNREMIX_VSSTATS_SCENE_A_Y, MNREMIX_VSSTATS_SCENE_A_TINT,
                       MNREMIX_VSSTATS_SCENE_A_PALETTE, 1.0F);
     ifRemixSpriteMake(IFREMIX_SPRITE_BUTTON_B, MNREMIX_VSSTATS_GROUP_PAGES, MNREMIX_VSSTATS_SCENE_DL_SPRITES,
@@ -114,6 +142,14 @@ void mnRemixVSStatsSceneMake(void)
     ifRemixSpriteMake(IFREMIX_SPRITE_BUTTON_R, MNREMIX_VSSTATS_GROUP_PAGES, MNREMIX_VSSTATS_SCENE_DL_SPRITES,
                       MNREMIX_VSSTATS_SCENE_R_X, MNREMIX_VSSTATS_SCENE_R_Y, MNREMIX_VSSTATS_SCENE_R_TINT,
                       MNREMIX_VSSTATS_SCENE_R_PALETTE, MNREMIX_VSSTATS_SCENE_R_SCALE);
+    gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PROMPT, 1);
+    gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PAGES, 1);
+}
+
+void mnRemixVSStatsSceneMakeLayers(void)
+{
+    mnRemixVSStatsSceneMakePromptLayer();
+    mnRemixVSStatsSceneMakePagesLayer();
     gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PROMPT, 1);
     gmRemixGroupDisplaySet(MNREMIX_VSSTATS_GROUP_PAGES, 1);
 }

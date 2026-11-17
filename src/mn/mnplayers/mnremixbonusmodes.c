@@ -14,6 +14,7 @@
 #include <sys/utils.h>
 #include <sys/objman.h>
 #include "if/ifremixsprite.h"
+#include "if/ifremixtextlayer.h"
 #include "mn/mnplayers/mnplayers1pbonus.h"
 #include "mn/mnplayers/mnremixbonusmodes.h"
 #include "mn/mnplayers/mnremixbonusmodesrules.h"
@@ -44,6 +45,8 @@
 /* GObj link and display list link of the labels camera of the screen (mnPlayers1PBonusMakeLabels). */
 #define MNREMIX_BONUSMODES_GOBJ_LINK 23
 #define MNREMIX_BONUSMODES_DL_LINK 34
+/* Bonus.asm setup_: the bar, MODE and STAGE strings and the mode name are in room 0x22, group 0x19; ": Set Stage" in group 0x1A */
+#define MNREMIX_BONUSMODES_TEXT_GOBJ_LINK 0x19
 
 /* Record number and label, the standard best task count layout of the US build with the colours of the digits (mnPlayers1PBonusMakeBestTaskCount). */
 #define MNREMIX_BONUSMODES_RECORD_LABEL_X 235.0F
@@ -415,6 +418,8 @@ void mnRemixBonusModesToggleMake(void **files)
     {
         return;
     }
+    ifRemixTextLayerBindRects(ifRemixTextLayerMake(MNREMIX_BONUSMODES_TEXT_GOBJ_LINK, MNREMIX_BONUSMODES_DL_LINK, GOBJ_PRIORITY_DEFAULT),
+                              MNREMIX_BONUSMODES_BAR_SLOT, 1);
     ifRemixSpriteMakeFromFile(files[MNREMIX_BONUSMODES_FILE_1P_MODE], llMNPlayers1PModeOptionTextSprite, MNREMIX_BONUSMODES_GOBJ_LINK,
                               MNREMIX_BONUSMODES_DL_LINK, MNREMIX_BONUSMODES_OPTION_X, MNREMIX_BONUSMODES_OPTION_Y,
                               MNREMIX_BONUSMODES_OPTION_TINT, MNREMIX_BONUSMODES_OPTION_PALETTE, 1.0F);
@@ -427,6 +432,8 @@ void mnRemixBonusModesToggleMake(void **files)
                                                             MNREMIX_BONUSMODES_ARROW_RIGHT_X, MNREMIX_BONUSMODES_ARROW_Y, 0xFFFFFFFFu, 0x000000FFu, 1.0F);
     /* Bonus.asm setup_ makes the STAGE row on Bonus 3 too, hidden, so a header cycle to Bonus 1 or 2 can show it */
     mnRemixBonusModesMakeStageRow(files);
+    ifRemixTextLayerBindLabels(ifRemixTextLayerMake(MNREMIX_BONUSMODES_TEXT_GOBJ_LINK, MNREMIX_BONUSMODES_DL_LINK, GOBJ_PRIORITY_DEFAULT),
+                               MNREMIX_BONUSMODES_TEXT_SLOT_MODE_LABEL, 4);
 }
 
 static void mnRemixBonusModesSetFlags(GObj *gobj, sb32 is_visible)

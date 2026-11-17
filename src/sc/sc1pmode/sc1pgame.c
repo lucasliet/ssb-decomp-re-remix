@@ -2983,7 +2983,9 @@ void sc1PGameFuncStart(void)
     color = dSC1PGameFadeColor;
     lbFadeMakeActor(nGCCommonKindTransition, nGCCommonLinkIDTransition, 10, &color, 12, TRUE, NULL);
 #if defined(PORT) && defined(REGION_REMIX)
-    /* Render.asm setup_ runs ComboMeter.setup_ after func_start returns, once the fighters and the HUD exist */
+    /* Render.asm setup_ runs after func_start returns, once the fighters and the HUD exist: the HUD texts go over them */
+    sc1PRemixMultimanMakeTextLayer();
+    sc1PRemixHrcRunMakeTextLayer();
     ifRemixComboMeterSetup();
 #endif
 }

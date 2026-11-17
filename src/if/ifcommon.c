@@ -22,6 +22,7 @@
 #include "if/ifremixstaminahud.h"
 #include "if/ifremixgentlemensreset.h"
 #include "if/ifremixpauselegend.h"
+#include "if/ifremixinputdisplay.h"
 #include "gm/gmremixbgm.h"
 #include "gm/gmremixbgmswap.h"
 #include "gm/gmremixpractice.h"
@@ -1123,6 +1124,28 @@ void ifCommonPlayerDamageSetDigitPositions(void)
 #endif
 }
 
+#ifdef REGION_REMIX
+sb32 ifCommonPlayerDamageGetLogoX(s32 player, f32 *logo_x)
+{
+    GObj *interface_gobj = sIFCommonPlayerDamageInterface[player].interface_gobj;
+    SObj *sobj;
+
+    if (interface_gobj == NULL)
+    {
+        return FALSE;
+    }
+    sobj = SObjGetStruct(interface_gobj);
+
+    if ((sobj->sprite.attr & SP_HIDDEN) && (ifRemixDragonKingHudIsOn() == FALSE))
+    {
+        return FALSE;
+    }
+    *logo_x = sobj->pos.x;
+
+    return TRUE;
+}
+#endif
+
 // 0x8010F3C0
 void ifCommonPlayerDamageInitInterface(void)
 {
@@ -1215,6 +1238,9 @@ void ifCommonPlayerDamageInitInterface(void)
             gcAddGObjProcess(interface_gobj, ifCommonPlayerDamageProcUpdate, nGCProcessKindFunc, 0);
         }
     }
+#ifdef REGION_REMIX
+    ifRemixInputDisplayMake();
+#endif
 }
 
 // 0x8010F76C
@@ -2297,6 +2323,10 @@ void ifCommonPlayerTagMakeInterface(void)
             ifSetPlayer(interface_gobj, player);
         }
     }
+#ifdef REGION_REMIX
+    ifRemixPlayerTagMakeBattleLayer();
+    ifRemixPauseLegendMakeLayer();
+#endif
 }
 
 // 0x80111D64

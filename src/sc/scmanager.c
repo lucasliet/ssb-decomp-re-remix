@@ -1290,7 +1290,6 @@ void scManagerRunLoop(sb32 arg)
 		 * no effect leaks into CSS / the next match. */
 		itRemixClearActiveItems();
 		ftRemixKirbyHatsClearCache();
-		ftRemixInputDisplayClear();
 		gmRemixModeSceneClear();
 #endif
 		switch (gSCManagerSceneData.scene_curr)

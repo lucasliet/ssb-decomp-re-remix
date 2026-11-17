@@ -12,6 +12,9 @@
  * and, while it is off, the select shows "High Scores Disabled".
  */
 
+/** Makes the layer that draws "High Scores Disabled" in the labels room of the select; call once per scene, after the screen's own objects. */
+extern void mnRemixCssHighScoresMakeLayer(void);
+
 /**
  * Recomputes the switch and the "High Scores Disabled" text; call every frame on the 1P, Bonus and All-Star selects.
  *

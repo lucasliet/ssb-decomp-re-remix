@@ -255,14 +255,13 @@ static void gmRemixKothCheckMatchEnd(void)
 
 static void gmRemixKothProcUpdate(GObj *gobj)
 {
-    if ((gSCManagerBattleState->game_status != nSCBattleGameStatusGo) || (gGMRemixKoth.is_ended != FALSE))
+    if ((gSCManagerBattleState->game_status == nSCBattleGameStatusGo) && (gGMRemixKoth.is_ended == FALSE))
     {
-        return;
+        gmRemixKothUpdateHill();
+        gmRemixKothModelSync();
+        gmRemixKothTrackScore();
+        gmRemixKothCheckMatchEnd();
     }
-    gmRemixKothUpdateHill();
-    gmRemixKothModelSync();
-    gmRemixKothTrackScore();
-    gmRemixKothCheckMatchEnd();
     gmRemixKothHudUpdate();
 }
 

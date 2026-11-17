@@ -4,6 +4,7 @@
 #if defined(PORT) && defined(REGION_REMIX)
 
 #include <ssb_types.h>
+#include <sys/objtypes.h>
 
 /*
  * Gentlemen's Reset of the 12-Character Battle pause (TwelveCharBattle.asm gentlemens_reset_): the reset combo of the pause
@@ -21,6 +22,9 @@ extern sb32 ifRemixGentlemensResetHandleCombo(u8 *pause_player);
 
 /** Puts the request texts every frame while a request is shown. */
 extern void ifRemixGentlemensResetUpdate(void);
+
+/** Binds the four request texts to the pause text layer (ifRemixPauseLegendMakeLayer). */
+extern void ifRemixGentlemensResetBindLayer(GObj *layer_gobj);
 
 /** TRUE while a reset request is shown. */
 extern sb32 ifRemixGentlemensResetIsRequested(void);

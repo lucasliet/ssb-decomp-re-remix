@@ -156,7 +156,7 @@ static void ifRemixTextLayerDrawRects(s32 layer)
 }
 
 /**
- * Display function of a layer: rectangles, bars, then labels, the order of the overlay.
+ * Display function of a layer: rectangles, bars, then labels.
  *
  * @param layer_gobj Layer GObj, user_data.s is its layer id.
  */
@@ -175,7 +175,7 @@ GObj* ifRemixTextLayerMake(s32 gobj_link, s32 dl_link, u32 dl_priority)
 
     if (ifRemixTextLayerLoadFont() == FALSE)
     {
-        port_log("ifRemixTextLayer: font file 0x%X not loaded, the text of display link %d stays on the overlay\n",
+        port_log("ifRemixTextLayer: font file 0x%X not loaded, the text of display link %d is not drawn\n",
                  IFREMIX_TEXTLAYER_FONT_FILE, (int)dl_link);
         return NULL;
     }
@@ -192,7 +192,7 @@ GObj* ifRemixTextLayerMake(s32 gobj_link, s32 dl_link, u32 dl_priority)
     return layer_gobj;
 }
 
-/** Binds a slot range of one kind to the layer; a NULL layer leaves the slots on the overlay. */
+/** Binds a slot range of one kind to the layer; a NULL layer binds nothing. */
 static void ifRemixTextLayerBind(GObj *layer_gobj, s32 kind, s32 first_slot, s32 count)
 {
     if (layer_gobj == NULL)

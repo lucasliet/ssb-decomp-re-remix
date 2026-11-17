@@ -21,9 +21,9 @@ extern void *func_800269C0_275C0(u16 id);
 #define MNVSSTATS_VIEW_FGM_MENU_TOGGLE 163
 #define MNVSSTATS_VIEW_FGM_MENU_SCROLL 164
 
-#define MNVSSTATS_VIEW_PROMPT_SLOT 0
-#define MNVSSTATS_VIEW_HINT_BACK_SLOT 1
-#define MNVSSTATS_VIEW_HINT_NEXT_SLOT 2
+#define MNVSSTATS_VIEW_PROMPT_SLOT MNREMIX_VSSTATS_SLOT_PROMPT
+#define MNVSSTATS_VIEW_HINT_BACK_SLOT MNREMIX_VSSTATS_SLOT_HINT_FIRST
+#define MNVSSTATS_VIEW_HINT_NEXT_SLOT (MNREMIX_VSSTATS_SLOT_HINT_FIRST + 1)
 #define MNVSSTATS_VIEW_PROMPT_X 160.0F
 #define MNVSSTATS_VIEW_PROMPT_Y 218.0F
 #define MNVSSTATS_VIEW_HINT_Y 15.9375F
@@ -31,8 +31,6 @@ extern void *func_800269C0_275C0(u16 id);
 #define MNVSSTATS_VIEW_HINT_NEXT_X 87.0F
 #define MNVSSTATS_VIEW_TEXT_SCALE 0.8125F
 #define MNVSSTATS_VIEW_WHITE 0xFFFFFFFF
-/* White at the transparency the page background (alpha 0xB0 black) leaves a drawn object: about 31 percent. */
-#define MNVSSTATS_VIEW_DIMMED 0xFFFFFF4F
 /* Display group (gGCCommonLinks) of the normal results rows, which VsStats.asm check_menu_toggle_ hides while a page shows. */
 #define MNVSSTATS_VIEW_GROUP_RESULTS_ROWS 0x16
 
@@ -165,7 +163,7 @@ void mnRemixVSStatsViewRun(s32 results_tics, s32 allow_exit_wait)
     {
         mnRemixVSStatsPagesDraw(sMNRemixVSStatsViewPage);
         mnRemixVSStatsViewDrawHints();
-        mnRemixVSStatsViewDrawPrompt(MNVSSTATS_VIEW_DIMMED);
+        mnRemixVSStatsViewDrawPrompt(MNVSSTATS_VIEW_WHITE);
         return;
     }
     mnRemixVSStatsViewDrawPrompt(MNVSSTATS_VIEW_WHITE);

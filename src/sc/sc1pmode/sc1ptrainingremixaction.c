@@ -16,7 +16,6 @@
 #include "remix/remix_symbols.h"
 #include "sc/sc1pmode/sc1ptrainingleftoverrules.h"
 #include "sc/sc1pmode/sc1ptrainingremixaction.h"
-#include "sc/sc1pmode/sc1ptrainingremixmenu.h"
 
 #define SC1PTRAININGREMIXACTION_PORT_COUNT 4
 #define SC1PTRAININGREMIXACTION_NAME_LENGTH 40
@@ -228,8 +227,7 @@ void sc1PTrainingRemixActionUpdate(void)
     {
         sc1PTrainingRemixActionPutLegend();
     }
-    /* DEVIATION(overlay text): the asm draws the rows in room 0x39 under the Z menu panel; the overlay text would cross the menu rows. */
-    if ((sSC1PTrainingRemixActionIsShown == FALSE) || (sc1PTrainingRemixMenuIsOpen() != FALSE))
+    if (sSC1PTrainingRemixActionIsShown == FALSE)
     {
         return;
     }
