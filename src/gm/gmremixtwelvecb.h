@@ -67,6 +67,15 @@ extern sb32 gmRemixTwelveCBTokenIsFree(s32 port, sb32 is_human);
  */
 extern void gmRemixTwelveCBSetCssPortrait(s32 port, s32 slot);
 
+/**
+ * Remembers that the player's token on the CSS stood on the Random portrait and was resolved to a fighter (random_char_flag_vs):
+ * the game that starts next records it (was_random) and the portrait shows the fighter it rolled from then on.
+ *
+ * @param port Player port (0 or 1).
+ * @param is_random TRUE when the token was resolved from the Random portrait, FALSE to forget it.
+ */
+extern void gmRemixTwelveCBSetCssRandom(s32 port, sb32 is_random);
+
 /** Character set (0 Default, 1 Japanese, 2 Polygon, 3 Remix) a player shows in his half of the CSS, and its setter. */
 extern s32 gmRemixTwelveCBGetCssSet(s32 port);
 extern void gmRemixTwelveCBSetCssSet(s32 port, s32 set);

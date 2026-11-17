@@ -847,6 +847,8 @@ static void mnPlayersVSTwelveCBResetBattle(void)
 	s32 slot;
 
 	gmRemixTwelveCBReset();
+	mnPlayersVSTwelveCBRebuildHalf(0);
+	mnPlayersVSTwelveCBRebuildHalf(1);
 
 	for (slot = 0; slot < MNREMIX_TCB_SLOTS; slot++)
 	{
@@ -983,6 +985,7 @@ static s32 mnPlayersVSTwelveCBGetRosterCount(void)
 			sMNPlayersVSTwelveCBRoster[index] = sMNPlayersVSTwelveCBRosterEntries[index].fkind;
 			sMNPlayersVSTwelveCBRosterCount++;
 		}
+		sMNPlayersVSTwelveCBRoster[sMNPlayersVSTwelveCBRosterCount++] = REMIX_ID_RANDOM; /* entry_id_to_char_id ends with the Random placeholder */
 	}
 	return sMNPlayersVSTwelveCBRosterCount;
 }
@@ -6990,6 +6993,7 @@ static void mnPlayersVSResolveRandomPlayer(s32 player)
 	}
 	gSCManagerTransferBattleState.players[player].fkind = mnPlayersVSRollRandomFighterKind(player);
 	sMNPlayersVSIsRandomResolved[player] = TRUE;
+	gmRemixTwelveCBSetCssRandom(player, TRUE);
 
 	if (sMNPlayersVSIsTeamBattle == FALSE)
 	{
@@ -7661,6 +7665,7 @@ static void mnPlayersVSTwelveCBSetupPort(s32 player)
 		return;
 	}
 	sMNPlayersVSTwelveCBStartPortrait[player] = MNREMIX_TCB_NO_SLOT;
+	gmRemixTwelveCBSetCssRandom(player, FALSE);
 
 	if (state == NULL)
 	{

@@ -385,12 +385,35 @@ void gmRemixTwelveCBUndoGame(GMRemixTwelveCBState *state)
         match->fkind = GMREMIX_TWELVECB_NO_STOCKS;
         match->stocks_start = 0;
         match->stocks_end = 0;
+        match->was_random = 0;
     }
     if (game == 0)
     {
         state->status = GMREMIX_TWELVECB_STATUS_NOT_STARTED;
     }
     state->current_game = game - 1;
+}
+
+int32_t gmRemixTwelveCBCollectRandomPortraits(const GMRemixTwelveCBState *state, int32_t port, int32_t first_game,
+                                              int32_t portraits[GMREMIX_TWELVECB_GAMES])
+{
+    int32_t count = 0;
+    int32_t game;
+
+    if ((gmRemixTwelveCBPortIsValid(port) == 0) || (state->status == GMREMIX_TWELVECB_STATUS_NOT_STARTED))
+    {
+        return 0;
+    }
+    for (game = (first_game < 0) ? 0 : first_game; (game <= state->current_game) && (game < GMREMIX_TWELVECB_GAMES); game++)
+    {
+        const GMRemixTwelveCBMatch *match = &state->players[port].matches[game];
+
+        if ((match->was_random != 0) && (gmRemixTwelveCBPortraitIsValid(match->portrait) != 0))
+        {
+            portraits[count++] = match->portrait;
+        }
+    }
+    return count;
 }
 
 /** Applies the result of the last game to the slot: winner keeps the character, loser keeps what he can still play. */

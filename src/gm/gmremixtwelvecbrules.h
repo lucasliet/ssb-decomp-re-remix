@@ -216,6 +216,19 @@ extern void gmRemixTwelveCBCalculateBest(GMRemixTwelveCBState *state);
  */
 extern void gmRemixTwelveCBUndoGame(GMRemixTwelveCBState *state);
 
+/**
+ * Portraits of a player whose games were started from the Random portrait, in game order (handle_reset_ and the gentlemens_reset_
+ * _reset branch put the "?" back on them). Nothing before the battle started.
+ *
+ * @param state Battle state.
+ * @param port Player port (0 or 1).
+ * @param first_game First game to look at; the games up to the current one are read.
+ * @param portraits Receives the portrait of each Random game, one per game at most.
+ * @return Number of portraits written.
+ */
+extern int32_t gmRemixTwelveCBCollectRandomPortraits(const GMRemixTwelveCBState *state, int32_t port, int32_t first_game,
+                                                     int32_t portraits[GMREMIX_TWELVECB_GAMES]);
+
 /** Player kinds of a CSS slot as the battle rules see them; the same values as nFTPlayerKindMan, nFTPlayerKindCom and nFTPlayerKindNot. */
 #define GMREMIX_TWELVECB_PKIND_HUMAN 0
 #define GMREMIX_TWELVECB_PKIND_CPU 1

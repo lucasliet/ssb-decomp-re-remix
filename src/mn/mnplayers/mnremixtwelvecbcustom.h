@@ -40,6 +40,12 @@ extern int mnRemixTwelveCBCustomFkind(int slot);
 extern int mnRemixTwelveCBCustomFkindOf(int player, int slot);
 
 /**
+ * Puts a fighter kind on one portrait of a player's own Custom table: the Random placeholder when a game started from the Random
+ * portrait is taken back (set_portrait_), the fighter it rolled when the game starts (game_setup_). Does nothing for an invalid player or slot.
+ */
+extern void mnRemixTwelveCBCustomSetFkind(int player, int slot, int fkind);
+
+/**
  * Moves the character of a portrait to the next or the previous one of the roster, skipping one entry (the Sandbag).
  *
  * @param slot Portrait slot under the token.
