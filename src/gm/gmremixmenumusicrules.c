@@ -62,4 +62,9 @@ int gmRemixMenuMusicRulesVolumeResets(int play_music, int current_bgm)
     return (play_music != 0) && (current_bgm < 0);
 }
 
+int gmRemixMenuMusicRulesResultsBgmShouldReplay(int is_stopped, int is_exiting)
+{
+    return is_stopped && !is_exiting;
+}
+
 #endif

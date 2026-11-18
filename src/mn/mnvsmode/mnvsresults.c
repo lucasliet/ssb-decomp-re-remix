@@ -24,6 +24,7 @@ extern void port_log(const char *fmt, ...);
 #include "gm/gmremixgameendrows.h"
 #include "gm/gmremixgameendrowsrules.h"
 #include "gm/gmremixkoth.h"
+#include "gm/gmremixmenumusicrules.h"
 #include "gm/gmremixmode.h"
 #include "gm/gmremixsmashketball.h"
 #include "gm/gmremixtwelvecb.h"
@@ -3265,7 +3266,15 @@ void mnVSResultsAudioThreadUpdate(GObj *gobj)
 	}
 	while (TRUE)
 	{
+#if defined(PORT) && defined(REGION_REMIX)
+		// BGM.asm prevent_results_bgm_on_css_: skip the replay while the screen exits, else the thread observes
+		// AL_STOPPED after the exit's syAudioStopBGMAll (the scene tears down only after this frame) and the CSS
+		// keeps the restarted results track under a RANDOM menu music value.
+		if (gmRemixMenuMusicRulesResultsBgmShouldReplay(gSYAudioCSPlayers[0]->state == AL_STOPPED,
+														gSCManagerSceneData.scene_curr != nSCKindVSResults))
+#else
 		if (gSYAudioCSPlayers[0]->state == AL_STOPPED)
+#endif
 		{
 			syAudioPlayBGM(0, nSYAudioBGMResults);
 			gcEjectGObj(NULL);

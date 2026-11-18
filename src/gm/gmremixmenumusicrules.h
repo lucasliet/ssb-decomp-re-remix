@@ -81,6 +81,19 @@ extern int gmRemixMenuMusicRulesSettingsCloseResets(int play_music, int current_
  */
 extern int gmRemixMenuMusicRulesVolumeResets(int play_music, int current_bgm);
 
+/**
+ * Checks whether the VS results audio thread replays the results BGM (BGM.asm prevent_results_bgm_on_css_): it replays
+ * when the player stopped and the screen is not exiting. The Remix adds its screen_interrupt to the loop condition so the
+ * replay is skipped during the exit; without the guard the thread observes AL_STOPPED after the exit's syAudioStopBGMAll
+ * before the scene ejects it, restarts the results track and the CSS keeps it (the RANDOM menu music rule keeps any
+ * non-menu track).
+ *
+ * @param is_stopped TRUE when the BGM player state is AL_STOPPED.
+ * @param is_exiting TRUE while the results screen is exiting (its exit path already moved scene_curr off nSCKindVSResults).
+ * @return TRUE when the thread replays the results BGM.
+ */
+extern int gmRemixMenuMusicRulesResultsBgmShouldReplay(int is_stopped, int is_exiting);
+
 #endif
 
 #endif
